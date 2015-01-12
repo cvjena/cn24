@@ -32,53 +32,53 @@ public:
   /**
    * @brief Gets the task this Dataset is designed for.
    */
-  virtual Task GetTask() = 0;
+  virtual Task GetTask() const = 0;
   
   /**
    * @brief Gets the width of the images in this Dataset.
    */
-  virtual unsigned int GetWidth() = 0;
+  virtual unsigned int GetWidth() const = 0;
   
   /**
    * @brief Gets the height of the images in this Dataset.
    */
-  virtual unsigned int GetHeight() = 0;
+  virtual unsigned int GetHeight() const = 0;
   
   /**
    * @brief Gets the number of input maps in this Dataset.
    */
-  virtual unsigned int GetInputMaps() = 0;
+  virtual unsigned int GetInputMaps() const = 0;
   
   /**
    * @brief Gets the number of label maps in this Dataset.
    */
-  virtual unsigned int GetLabelMaps() = 0;
+  virtual unsigned int GetLabelMaps() const = 0;
   
   /**
    * @brief Gets the number of classes in this Dataset.
    */
-  virtual unsigned int GetClasses() = 0;
+  virtual unsigned int GetClasses() const = 0;
   
   /**
    * @brief Gets the names of the classes in this Dataset.
    */
-  virtual std::vector<std::string> GetClassNames() = 0;
+  virtual std::vector<std::string> GetClassNames() const = 0;
   
   /**
    * @brief Gets the number of training samples in this Dataset.
    */
-  virtual unsigned int GetTrainingSamples() = 0;
+  virtual unsigned int GetTrainingSamples() const = 0;
   
   /**
    * @brief Gets the number of testing samples in this Dataset.
    */
-  virtual unsigned int GetTestingSamples() = 0;
+  virtual unsigned int GetTestingSamples() const = 0;
   
   /**
     * @brief Checks if this Dataset supports testing.
     * @returns True if testing is supported
     */
-  virtual bool SupportsTesting () = 0;
+  virtual bool SupportsTesting () const = 0;
 
   /**
     * @brief Fill the specified Tensors with the specified training sample.
@@ -121,16 +121,16 @@ public:
   TensorStreamDataset(std::istream& training_stream, std::istream& testing_stream, unsigned int classes, std::vector<std::string> class_names, dataset_localized_error_function error_function = DefaultLocalizedErrorFunction);
   
   // Dataset implementations
-  virtual Task GetTask();
-  virtual unsigned int GetWidth();
-  virtual unsigned int GetHeight();
-  virtual unsigned int GetInputMaps();
-  virtual unsigned int GetLabelMaps();
-  virtual unsigned int GetClasses();
-  virtual std::vector< std::string > GetClassNames();
-  virtual unsigned int GetTrainingSamples();
-  virtual unsigned int GetTestingSamples();
-  virtual bool SupportsTesting();
+  virtual Task GetTask() const;
+  virtual unsigned int GetWidth() const;
+  virtual unsigned int GetHeight() const;
+  virtual unsigned int GetInputMaps() const;
+  virtual unsigned int GetLabelMaps() const;
+  virtual unsigned int GetClasses() const;
+  virtual std::vector< std::string > GetClassNames() const;
+  virtual unsigned int GetTrainingSamples() const;
+  virtual unsigned int GetTestingSamples() const;
+  virtual bool SupportsTesting() const;
   virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
   virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& weight_tensor,  unsigned int sample, unsigned int index);
   

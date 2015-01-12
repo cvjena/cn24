@@ -92,43 +92,43 @@ TensorStreamDataset::TensorStreamDataset ( std::istream& training_stream, std::i
   // System::viewer->show(&error_cache);
 }
 
-Task TensorStreamDataset::GetTask() {
+Task TensorStreamDataset::GetTask() const {
   return Task::SEMANTIC_SEGMENTATION;
 }
 
-unsigned int TensorStreamDataset::GetWidth() {
+unsigned int TensorStreamDataset::GetWidth() const {
   return data_[0].width();
 }
 
-unsigned int TensorStreamDataset::GetHeight() {
+unsigned int TensorStreamDataset::GetHeight() const {
   return data_[0].height();
 }
 
-unsigned int TensorStreamDataset::GetInputMaps() {
+unsigned int TensorStreamDataset::GetInputMaps() const {
   return input_maps_;
 }
 
-unsigned int TensorStreamDataset::GetLabelMaps() {
+unsigned int TensorStreamDataset::GetLabelMaps() const {
   return label_maps_;
 }
 
-unsigned int TensorStreamDataset::GetClasses() {
+unsigned int TensorStreamDataset::GetClasses() const {
   return classes_;
 }
 
-std::vector<std::string> TensorStreamDataset::GetClassNames() {
+std::vector<std::string> TensorStreamDataset::GetClassNames() const {
   return class_names_;
 }
 
-unsigned int TensorStreamDataset::GetTrainingSamples() {
+unsigned int TensorStreamDataset::GetTrainingSamples() const {
   return tensor_count_training_ / 2;
 }
 
-unsigned int TensorStreamDataset::GetTestingSamples() {
+unsigned int TensorStreamDataset::GetTestingSamples() const {
   return tensor_count_testing_ / 2;
 }
 
-bool TensorStreamDataset::SupportsTesting() {
+bool TensorStreamDataset::SupportsTesting() const {
   return tensor_count_testing_ > 0;
 }
 
