@@ -1,0 +1,472 @@
+/*
+ * This file is part of the CN24 semantic segmentation software,
+ * copyright (C) 2015 Clemens-Alexander Brust (ikosa dot de at gmail dot com).
+ *
+ * For licensing information, see the LICENSE file included with this project.
+ */  
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <iostream>
+#include <limits>
+#include <cmath>
+
+#ifdef BLAS_MKL
+#include <mkl_service.h>
+#endif
+
+#ifdef BUILD_OPENCL
+#include <CL/cl.h>
+#endif
+
+#include "Config.h"
+#include "Log.h"
+#include "Tensor.h"
+#include <Init.h>
+
+namespace Conv {
+
+Tensor::Tensor() {
+
+}
+
+Tensor::Tensor ( const Tensor& tensor, bool intentional ) {
+  // Match size of source Tensor
+  Resize ( tensor );
+
+  // Get pointers
+  const datum* source_data = tensor.data_ptr_const();
+  datum* target_data = data_ptr();
+
+  // Count copy size
+  std::size_t bytes_to_copy = tensor.elements() * sizeof ( datum );
+
+  // Copy
+  std::memcpy ( target_data, source_data, bytes_to_copy );
+
+  if ( !intentional )
+    LOGDEBUG << "Tensor copied! Is this intentional?";
+}
+
+Tensor::Tensor ( Tensor && tensor ) {
+  data_ptr_ = tensor.data_ptr_;
+  samples_ = tensor.samples_;
+  maps_ = tensor.maps_;
+  width_ = tensor.width_;
+  height_ = tensor.height_;
+  elements_ = tensor.elements_;
+
+  tensor.data_ptr_ = nullptr;
+  tensor.DeleteIfPossible();
+}
+
+Tensor::Tensor ( const std::size_t samples, const std::size_t width,
+                 const std::size_t height, const std::size_t maps ) {
+  Resize ( samples, width, height, maps );
+}
+
+
+Tensor::~Tensor() {
+  DeleteIfPossible();
+}
+
+void Tensor::Clear ( const datum value, const int sample ) {
+  if ( sample == -1 ) {
+    for ( std::size_t element = 0; element < elements_; element++ ) {
+      data_ptr_[element] = value;
+    }
+  } else {
+    for ( std::size_t element = ( width_ * height_ * maps_ * sample );
+          element < ( width_* height_ * maps_ * ( sample+1 ) ); element++ ) {
+      data_ptr_[element] = value;
+    }
+  }
+}
+
+void Tensor::Shadow ( Tensor& tensor ) {
+  DeleteIfPossible();
+
+  data_ptr_ = tensor.data_ptr_;
+  samples_ = tensor.samples_;
+  maps_ = tensor.maps_;
+  width_ = tensor.width_;
+  height_ = tensor.height_;
+  elements_ = tensor.elements_;
+
+  is_shadow_ = true;
+  shadow_target_ = &tensor;
+
+#ifdef BUILD_OPENCL
+  shadow_target_->MoveToGPU();
+  shadow_target_->MoveToCPU();
+  cl_data_ptr_ = shadow_target_->cl_data_ptr_;
+#endif
+}
+
+
+void Tensor::Resize ( const std::size_t samples, const std::size_t width,
+                      const std::size_t height, const std::size_t maps ) {
+  // Check if reshaping works
+  if ( Reshape ( samples, width, height, maps ) )
+    return;
+
+  // Delete the old allocation
+  DeleteIfPossible();
+
+  // Calculate memory requirement
+  std::size_t elements = samples * maps * width * height;
+
+  // Don't need to allocate zero memory
+  if ( elements == 0 )
+    return;
+
+  // Allocate
+#ifdef BLAS_MKL
+  data_ptr_ = ( datum* ) MKL_malloc ( elements * sizeof ( datum ) / sizeof ( char ), 32 );
+#else
+  data_ptr_ = new datum[elements];
+#endif
+
+  // Save configuration
+  samples_ = samples;
+  width_ = width;
+  height_ = height;
+  maps_ = maps;
+  elements_ = elements;
+}
+
+void Tensor::Resize ( const Tensor& tensor ) {
+  Resize ( tensor.samples(), tensor.width(), tensor.height(), tensor.maps() );
+}
+
+
+bool Tensor::Reshape ( const std::size_t samples, const std::size_t width,
+                       const std::size_t height, const std::size_t maps ) {
+  // Check for null pointer
+  if ( data_ptr_ == nullptr )
+    return false;
+
+  // Check if element count matches
+  std::size_t proposed_elements = samples * maps * width * height;
+
+  if ( elements_ != proposed_elements )
+    return false;
+
+  // Reshape the Tensor
+  samples_ = samples;
+  width_ = width;
+  height_ = height;
+  maps_ = maps;
+  elements_ = proposed_elements;
+
+  return true;
+}
+
+
+void Tensor::Transpose() {
+  if ( data_ptr_ == nullptr )
+    return;
+
+  // This copy _is_ intentional
+  Tensor tmp ( *this, true );
+
+  if ( !Reshape ( samples_, height_, width_, maps_ ) )
+    FATAL ( "Didn't reshape!" );
+
+  // This could be optimized
+  for ( std::size_t s = 0; s < samples_; s++ ) {
+    for ( std::size_t m = 0; m < maps_; m++ ) {
+      for ( std::size_t x = 0; x < width_; x++ ) {
+        for ( std::size_t y = 0; y < height_; y++ ) {
+          *data_ptr ( x, y, m, s ) = *tmp.data_ptr_const ( y, x, m, s );
+        }
+      }
+    }
+  }
+}
+
+
+void Tensor::Serialize ( std::ostream& output, bool convert ) {
+#ifdef BUILD_OPENCL
+  MoveToCPU();
+#endif
+
+  if ( convert ) {
+    if ( maps_ == 3 ) {
+      std::size_t ime_count = width_ * height_;
+      std::size_t is_count = ime_count * maps_;
+
+      for ( std::size_t sample = 0; sample < samples_; sample++ ) {
+        for ( std::size_t ime = 0; ime < ime_count; ime++ ) {
+          unsigned char r = MCHAR_FROM_DATUM (
+                              data_ptr_[is_count * sample + ime] );
+          unsigned char g = MCHAR_FROM_DATUM (
+                              data_ptr_[is_count * sample + ime_count * 1 + ime] );
+          unsigned char b = MCHAR_FROM_DATUM (
+                              data_ptr_[is_count * sample + ime_count * 2 + ime] );
+          output.write ( ( const char* ) &r, 1 );
+          output.write ( ( const char* ) &g, 1 );
+          output.write ( ( const char* ) &b, 1 );
+        }
+      }
+    } else {
+      for ( std::size_t e = 0; e < elements_; e++ ) {
+        unsigned char x = MCHAR_FROM_DATUM ( data_ptr_[e] );
+        output.write ( ( const char* ) &x, 1 );
+      }
+    }
+
+  } else {
+    uint64_t samples = samples_;
+    uint64_t width = width_;
+    uint64_t height = height_;
+    uint64_t maps = maps_;
+
+    output.write ( ( const char* ) &samples, sizeof ( uint64_t ) / sizeof ( char ) );
+    output.write ( ( const char* ) &width, sizeof ( uint64_t ) / sizeof ( char ) );
+    output.write ( ( const char* ) &height, sizeof ( uint64_t ) / sizeof ( char ) );
+    output.write ( ( const char* ) &maps, sizeof ( uint64_t ) / sizeof ( char ) );
+
+    if ( elements_ > 0 )
+      output.write ( ( const char* ) data_ptr_, ( elements_ * sizeof ( datum ) )
+                     / sizeof ( char ) );
+  }
+}
+
+void Tensor::Deserialize ( std::istream& input ) {
+#ifdef BUILD_OPENCL
+  MoveToCPU ( true );
+#endif
+  uint64_t samples = 0;
+  uint64_t width = 0;
+  uint64_t height = 0;
+  uint64_t maps = 0;
+  
+  if(!input.good())
+    LOGERROR << "Cannot deserialize from this stream!";
+
+  input.read ( ( char* ) &samples, sizeof ( uint64_t ) / sizeof ( char ) );
+  input.read ( ( char* ) &width, sizeof ( uint64_t ) / sizeof ( char ) );
+  input.read ( ( char* ) &height, sizeof ( uint64_t ) / sizeof ( char ) );
+  input.read ( ( char* ) &maps, sizeof ( uint64_t ) / sizeof ( char ) );
+
+  Resize ( samples, width, height, maps );
+
+  if ( elements_ > 0 )
+    input.read ( ( char* ) data_ptr_, ( elements_ * sizeof ( datum ) )
+                 / sizeof ( char ) );
+}
+
+
+bool Tensor::CopySample ( const Tensor& source, const std::size_t source_sample,
+                          Tensor& target, const std::size_t target_sample ) {
+  // Check if both Tensors have the same amount of feature maps/channels
+  if ( source.maps() != target.maps() )
+    return false;
+
+  bool result = true;
+
+  for ( std::size_t map = 0; map < source.maps(); map++ ) {
+    result &= CopyMap ( source, source_sample, map,
+                        target, target_sample, map );
+  }
+
+  return result;
+}
+
+bool Tensor::CopyMap ( const Tensor& source, const std::size_t source_sample,
+                       const std::size_t source_map, Tensor& target,
+                       const std::size_t target_sample,
+                       const std::size_t target_map ) {
+  // Check sample bounds
+  if ( source_sample >= source.samples() || target_sample >= target.samples() )
+    return false;
+
+  // Check if image dimensions match
+  if ( source.width() != target.width() || source.height() != target.height() )
+    return false;
+
+  // Okay, good to go...
+
+  // Get offsets
+  const datum* source_map_data = source.data_ptr_const ( 0, 0, source_map, source_sample );
+  datum* target_map_data = target.data_ptr ( 0, 0, target_map, target_sample );
+
+  // Count the number of elements to copy
+  std::size_t elements_to_copy = source.width() * source.height();
+
+  // Copy the data
+  std::memcpy ( target_map_data, source_map_data,
+                sizeof ( datum ) * elements_to_copy / sizeof ( char ) );
+
+  return true;
+}
+
+void Tensor::DeleteIfPossible() {
+  if ( data_ptr_ != nullptr ) {
+    if ( !is_shadow_ ) {
+#ifdef BLAS_MKL
+      mkl_free ( data_ptr_ );
+#else
+      delete[] data_ptr_;
+#endif
+#ifdef BUILD_OPENCL
+
+      if ( cl_data_ptr_ != 0 ) {
+        clReleaseMemObject ( cl_data_ptr_ );
+        cl_data_ptr_ = 0;
+      }
+
+#endif
+    }
+
+    data_ptr_ = nullptr;
+  }
+
+  samples_ = 0;
+  width_ = 0;
+  height_ = 0;
+  maps_ = 0;
+  elements_ = 0;
+  is_shadow_ = false;
+  shadow_target_ = nullptr;
+}
+#ifdef BUILD_OPENCL
+void Tensor::MoveToGPU ( bool no_copy ) {
+  if ( is_shadow_ ) {
+    shadow_target_->MoveToGPU ( no_copy );
+    return;
+  }
+
+  if ( !cl_gpu_ ) {
+    if ( cl_data_ptr_ == 0 ) {
+      // Error variable
+      cl_int error_ret = 0;
+
+      cl_data_ptr_ = clCreateBuffer ( System::context, CL_MEM_READ_WRITE,
+                                      elements_ * sizeof ( datum ), NULL, &error_ret );
+
+      if ( cl_data_ptr_ == NULL || error_ret != CL_SUCCESS ) {
+        FATAL ( "Error creating GPU buffer: " << error_ret );
+      }
+    }
+
+
+    if ( !no_copy ) {
+
+      // Write to GPU
+      cl_int error_ret = 0;
+#ifdef BRUTAL_FINISH
+      error_ret = clFinish ( System::queue );
+
+      if ( error_ret != CL_SUCCESS ) {
+        FATAL ( "Error finishing command queue (1): " << error_ret );
+      }
+
+#endif
+
+      error_ret = clEnqueueWriteBuffer ( System::queue, cl_data_ptr_, CL_TRUE,
+                                         0, elements_ * sizeof ( datum ), data_ptr_, 0, NULL, NULL );
+
+      if ( error_ret != CL_SUCCESS ) {
+        FATAL ( "Error moving to GPU: " << error_ret );
+      }
+
+#ifdef BRUTAL_FINISH
+      error_ret = clFinish ( System::queue );
+
+      if ( error_ret != CL_SUCCESS ) {
+        FATAL ( "Error finishing command queue (2): " << error_ret );
+      }
+
+#endif
+    }
+
+    cl_gpu_ = true;
+  }
+}
+
+void Tensor::MoveToCPU ( bool no_copy ) {
+  if ( is_shadow_ ) {
+    shadow_target_->MoveToCPU ( no_copy );
+    return;
+  }
+
+  if ( cl_gpu_ ) {
+    if ( !no_copy ) {
+      if ( cl_data_ptr_ == 0 ) {
+        FATAL ( "Move to CPU requested for memory that was not on the GPU" );
+      }
+
+      cl_int error_ret = 0;
+      error_ret = clFinish ( System::queue );
+
+      if ( error_ret != CL_SUCCESS ) {
+        FATAL ( "Error finishing command queue (1): " << error_ret );
+      }
+
+      // Read from GPU
+      error_ret = clEnqueueReadBuffer ( System::queue, cl_data_ptr_, CL_TRUE, 0,
+                                        elements_ * sizeof ( datum ), data_ptr_, 0, NULL, NULL );
+
+      if ( error_ret != CL_SUCCESS ) {
+        FATAL ( "Error moving to CPU: " << error_ret );
+      }
+
+#ifdef BRUTAL_FINISH
+      error_ret = clFinish ( System::queue );
+
+      if ( error_ret != CL_SUCCESS ) {
+        FATAL ( "Error finishing command queue (2): " << error_ret );
+      }
+
+#endif
+
+    }
+
+    cl_gpu_ = false;
+  }
+}
+
+#endif
+
+std::size_t Tensor::Maximum ( std::size_t sample ) {
+  datum max_y = std::numeric_limits<datum>::min();
+  std::size_t max_x = 0;
+
+  for ( std::size_t x = 0; x < width_ * height_ * maps_; x++ ) {
+    if ( data_ptr_[sample * ( width_ * height_ * maps_ ) + x] > max_y ) {
+      max_x = x;
+      max_y = data_ptr_[sample * ( width_ * height_ * maps_ ) + x];
+    }
+  }
+
+  return max_x;
+}
+
+std::size_t Tensor::AbsMaximum () {
+  datum max_y = 0;
+  std::size_t max_x = 0;
+
+  for ( std::size_t x = 0; x < elements_; x++ ) {
+    const datum d = data_ptr_[x];
+    const datum a = fabs ( d );
+
+    if ( a > max_y ) {
+      max_x = x;
+      max_y = a;
+    }
+  }
+
+  return max_x;
+}
+
+
+std::ostream& operator<< ( std::ostream& output, const Tensor& tensor ) {
+  return output << "(" << tensor.samples() << "s@" << tensor.width() <<
+         "x" << tensor.height() << "x" << tensor.maps() << "m)";
+}
+
+
+
+}

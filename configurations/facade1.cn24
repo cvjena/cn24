@@ -1,0 +1,22 @@
+# Sample CNN for LabelMeFacade Dataset
+# Input configuration
+patch=24x24
+helper=none
+
+# Network configuration
+conv1<patch>:convolutional kernels=16 size=7x7
+?maxpooling size=2x2
+?tanh
+
+?convolutional kernels=12 size=5x5
+?tanh
+
+?flatten
+?fullyconnected neurons=64
+?tanh
+
+?fullyconnected neurons=192
+?tanh
+
+?fullyconnected neurons=9
+?sigm
