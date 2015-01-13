@@ -3,7 +3,7 @@
  * copyright (C) 2015 Clemens-Alexander Brust (ikosa dot de at gmail dot com).
  *
  * For licensing information, see the LICENSE file included with this project.
- */  
+ */
 
 #include "SpatialPriorLayer.h"
 namespace Conv {
@@ -59,28 +59,37 @@ bool SpatialPriorLayer::Connect ( const CombinedTensor* input,
 
 void SpatialPriorLayer::FeedForward() {
   output_->data.Clear ( 1.0 );
+  
   #pragma omp parallel for default(shared)
-
   for ( unsigned int sample = 0; sample < input_->data.samples(); sample++ ) {
     for ( unsigned int map = 2; map < input_->data.maps() + 2; map++ ) {
       for ( unsigned int y = 0; y < input_->data.height(); y++ ) {
         Tensor::CopyMap ( input_->data, sample, map-2,
-			  output_->data, sample, map );
+                          output_->data, sample, map );
       }
     }
-    for(unsigned int y = 0; y < input_->data.height(); y++) {
-      for(unsigned int x = 0; x < input_->data.width(); x++) {
-	// Copy x helper
-	*output_->data.data_ptr(x,y,0,sample) = ((datum)x) / ((datum)input_->data.width());
-	// Copy y helper
-	*output_->data.data_ptr(x,y,1,sample) = ((datum)y) / ((datum)input_->data.height());
+
+    for ( unsigned int y = 0; y < input_->data.height(); y++ ) {
+      for ( unsigned int x = 0; x < input_->data.width(); x++ ) {
+        // Copy x helper
+        *output_->data.data_ptr ( x,y,0,sample ) = ( ( datum ) x ) / ( ( datum ) input_->data.width() );
+        // Copy y helper
+        *output_->data.data_ptr ( x,y,1,sample ) = ( ( datum ) y ) / ( ( datum ) input_->data.height() );
       }
     }
   }
 }
 
 void SpatialPriorLayer::BackPropagate() {
-  // Nothing to do here
+  #pragma omp parallel for default(shared)
+  for ( unsigned int sample = 0; sample < input_->data.samples(); sample++ ) {
+    for ( unsigned int map = 2; map < input_->data.maps() + 2; map++ ) {
+      for ( unsigned int y = 0; y < input_->data.height(); y++ ) {
+        Tensor::CopyMap ( output_->delta, sample, map,
+                          input_->delta, sample, map - 2 );
+      }
+    }
+  }
 }
 
 
