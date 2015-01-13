@@ -73,8 +73,8 @@ public:
 
   virtual int patchsizex() = 0;
   virtual int patchsizey() = 0;
-protected:
   virtual void InitOptimalSettings() = 0;
+protected:
   unsigned int seed_ = 0;
   TrainerSettings optimal_settings_;
 };

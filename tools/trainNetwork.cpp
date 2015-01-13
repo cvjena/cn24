@@ -42,17 +42,24 @@ int main (int argc, char* argv[]) {
   std::string mode = "slow";
 
   if (argc < 4) {
-    LOGERROR << "USAGE: " << argv[0] << " <training tensor> <testing tensor> <net> [w]";
+    LOGERROR << "USAGE: " << argv[0] << " <training tensor> <testing tensor> <net config file> [w]";
     LOGEND;
     return -1;
   }
   
   Conv::System::Init();
 
-  Conv::Factory* factory = Conv::Factory::getNetFactory (argv[3][0], 49932);
-  if (factory == nullptr) {
-    FATAL ("Unknown net: " << argv[3]);
+  //Conv::Factory* factory = Conv::Factory::getNetFactory (argv[3][0], 49932);
+  std::ifstream file(argv[3],std::ios::in);
+  
+  if(!file.good()) {
+    FATAL("Cannot open net configuration file!");
   }
+  std::string fname (argv[3]);
+  fname = fname.substr(fname.rfind("/")+1);
+  
+  Conv::Factory* factory = new Conv::ConfigurableFactory(file, Conv::FCN);
+  factory->InitOptimalSettings();
   
   if(!strcmp(argv[2], "no_test")) {
     LOGINFO << "Disabling test";
@@ -117,7 +124,7 @@ int main (int argc, char* argv[]) {
     std::time_t t = std::time (nullptr);
     std::tm tm_ = *std::localtime (&t);
 
-    ss << "snap" << argv[3] << "_" << std::setfill ('0') << std::setw (2)
+    ss << "snap" << fname << "_" << std::setfill ('0') << std::setw (2)
        << tm_.tm_mday << "." << tm_.tm_mon << "_" << tm_.tm_hour << "."
        << tm_.tm_min << "_" << mode << "_" 
        << "_"
@@ -142,7 +149,7 @@ int main (int argc, char* argv[]) {
   std::time_t t = std::time (nullptr);
   std::tm tm_ = *std::localtime (&t);
 
-  ss << "n" << argv[2] << "_" << std::setfill ('0') << std::setw (2)
+  ss << "n" << fname << "_" << std::setfill ('0') << std::setw (2)
      << tm_.tm_mday << "." << tm_.tm_mon << "_" << tm_.tm_hour << "."
      << tm_.tm_min << "_" << mode << "_" << ".Tensor";
   std::ofstream outfile (ss.str(), std::ios::out | std::ios::binary);
@@ -151,7 +158,7 @@ int main (int argc, char* argv[]) {
   ss.str("");
   ss << "logs/n" << argv[2] << "_" << std::setfill ('0') << std::setw (2)
      << tm_.tm_mday << "." << tm_.tm_mon << "_" << tm_.tm_hour << "."
-     << tm_.tm_min << "_" << argv[3] << "_" << ".log";
+     << tm_.tm_min << "_" << fname << "_" << ".log";
 
   LOGINFO << "Last element: " << data_layer.current_element();
   outfile.close();

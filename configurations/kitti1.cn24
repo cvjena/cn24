@@ -1,0 +1,29 @@
+# Sample CNN for KITTI Dataset
+
+# Network configuration
+?convolutional kernels=12 size=7x7 llr=6
+?maxpooling size=2x2
+?relu
+
+?convolutional size=5x5 kernels=6 llr=1.6
+?relu
+
+?convolutional size=5x5 kernels=48
+?relu
+
+?flatten
+?spatialprior
+?fullyconnected neurons=192
+?relu
+
+?fullyconnected neurons=(o)
+?tanh
+
+# Learning settings
+l1=0.001
+l2=0.0005
+lr=0.02
+gamma=0.07
+momentum=0.85
+exponent=0.75
+iterations=50

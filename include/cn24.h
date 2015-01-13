@@ -56,5 +56,6 @@
 #include "cn24/net/Trainer.h"
 
 #include "cn24/factory/Factory.h"
+#include "cn24/factory/ConfigurableFactory.h"
 
 #endif

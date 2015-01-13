@@ -26,6 +26,11 @@ enum Task {
   SEMANTIC_SEGMENTATION
 };
 
+enum Method {
+  FCN,
+  PATCH
+};
+
 class Dataset
 {
 public:
