@@ -14,10 +14,6 @@ InputLayer::InputLayer (Tensor& data, Tensor& helper) {
     FATAL ("Dimensions don't match!");
   }
 
-  if (helper.height() != 1 || helper.maps() != 1) {
-    FATAL ("Helper is not flat!");
-  }
-
   // Create layer outputs that match the dimensions of the user's
   // data and helper Tensors
   data_ = new CombinedTensor (data.samples(), data.width(), data.height(),
@@ -46,10 +42,6 @@ InputLayer::InputLayer (Tensor& data, Tensor& label, Tensor& helper,
 
   if (data.samples() != weight.samples()) {
     FATAL ("Dimensions don't match!");
-  }
-
-  if (helper.height() != 1 || helper.maps() != 1) {
-    FATAL ("Helper is not flat!");
   }
 
   // Create layer outputs that match the dimensions of the user's
