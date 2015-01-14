@@ -1,0 +1,9 @@
+# KITTI dataset configuration
+
+testing=UM_road.Tensor
+training=UM_road.Tensor
+
+classes=1
+road
+
+localized_error=kitti

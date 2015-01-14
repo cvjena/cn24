@@ -5,9 +5,14 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 
+#include <fstream>
+
 #include "Config.h"
 #include "Dataset.h"
 #include "Init.h"
+
+#include "KITTIData.h"
+#include "ConfigParsing.h"
 
 namespace Conv {
 datum DefaultLocalizedErrorFunction (unsigned int x, unsigned int y) {
@@ -151,6 +156,55 @@ bool TensorStreamDataset::GetTestingSample ( Tensor& data_tensor, Tensor& label_
     success &= Tensor::CopySample (error_cache, 0, weight_tensor, sample);
     return success;
   } else return false;
+}
+
+TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration(std::istream& file) {
+  unsigned int classes = 0;
+  std::vector<std::string> class_names;
+  dataset_localized_error_function error_function = DefaultLocalizedErrorFunction;
+  std::string training_file;
+  std::string testing_file;
+  
+  file.clear();
+  file.seekg ( 0, std::ios::beg );
+  while ( ! file.eof() ) {
+    std::string line;
+    std::getline ( file,line );
+    
+    if(StartsWithIdentifier(line, "classes")) {
+      ParseCountIfPossible(line, "classes", classes);
+      if(classes != 0) {
+	for(int c = 0; c < classes; c++) {
+	  std::string class_name;
+	  std::getline(file,class_name);
+	  class_names.push_back(class_name);
+	}
+      }
+    }
+    if(StartsWithIdentifier(line, "localized_error")) {
+      std::string error_function_name;
+      ParseStringIfPossible(line,"localized_error", error_function_name);
+      if(error_function_name.compare("kitti") == 0) {
+	LOGDEBUG << "Loading dataset with KITTI error function";
+	error_function = KITTIData::LocalizedError;
+      } else if (error_function_name.compare("default")) {
+	LOGDEBUG << "Loading dataset with KITTI error function";
+	error_function = DefaultLocalizedErrorFunction;
+      }
+    }
+   
+    ParseStringIfPossible(line, "training", training_file);
+    ParseStringIfPossible(line, "testing", testing_file);
+  }
+  
+  LOGDEBUG << "Loading dataset with " << classes << " classes";
+  LOGDEBUG << "Training tensor: " << training_file;
+  LOGDEBUG << "Testing tensor: " << testing_file;
+  std::istream* training_stream = new std::ifstream(training_file, std::ios::in);
+  std::istream* testing_stream = new std::ifstream(testing_file, std::ios::in);
+  
+  return new TensorStreamDataset(*training_stream, *testing_stream, classes,
+				 class_names, error_function);
 }
 
 }

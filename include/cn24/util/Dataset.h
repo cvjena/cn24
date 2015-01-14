@@ -139,6 +139,8 @@ public:
   virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
   virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& weight_tensor,  unsigned int sample, unsigned int index);
   
+  static TensorStreamDataset* CreateFromConfiguration(std::istream& file);
+  
 private:
   // Stored data
   Tensor* data_ = nullptr;

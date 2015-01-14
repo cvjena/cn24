@@ -17,7 +17,7 @@
 ?relu
 
 ?fullyconnected neurons=(o)
-?tanh
+?output
 
 # Learning settings
 l1=0.001

@@ -18,106 +18,13 @@
 #include "UpscaleLayer.h"
 #include "SpatialPriorLayer.h"
 #include "ConcatLayer.h"
-
+#include "ConfigParsing.h"
+ 
 #include "ConfigurableFactory.h"
 
 namespace Conv {
 
-/*
- * Parsing utilities
- */
-bool StartsWithIdentifier ( std::string line, std::string identifier ) {
-  return ( line.compare ( 0, identifier.length(), identifier ) == 0 );
-}
 
-unsigned int ParseUInt ( std::string line, std::string identifier ) {
-  if ( line.compare ( 0, identifier.length(), identifier ) == 0 ) {
-    return std::atoi ( line.substr ( identifier.length() +1 ).c_str() );
-  } else {
-    return 0;
-  }
-}
-
-datum ParseDatum ( std::string line, std::string identifier ) {
-  if ( line.compare ( 0, identifier.length(), identifier ) == 0 ) {
-    return std::atof ( line.substr ( identifier.length() +1 ).c_str() );
-  } else {
-    return 0;
-  }
-}
-
-void ParseDatumIfPossible ( std::string line, std::string identifier, datum& value ) {
-  if ( StartsWithIdentifier ( line,identifier ) ) {
-    value = ParseDatum ( line,identifier );
-    LOGDEBUG << "Parsed " << identifier << ", value: " << value;
-  }
-}
-
-void ParseUIntIfPossible ( std::string line, std::string identifier, unsigned int& value ) {
-  if ( StartsWithIdentifier ( line,identifier ) ) {
-    value = ParseUInt ( line,identifier );
-    LOGDEBUG << "Parsed " << identifier << ", value: " << value;
-  }
-}
-
-void ParseKernelSizeIfPossible ( std::string line, std::string identifier, unsigned int& kx, unsigned int& ky ) {
-  std::size_t ilen = identifier.length() + 1;
-  std::size_t size_pos = line.find ( identifier + "=" );
-
-  if ( size_pos == std::string::npos )
-    return;
-
-  std::size_t x_pos = line.find ( "x",size_pos );
-
-  if ( x_pos == std::string::npos )
-    return;
-
-  std::size_t end_pos = line.find ( " ", x_pos );
-
-  if ( end_pos != std::string::npos )
-    line = line.substr ( 0, end_pos );
-
-  std::string size = line.substr ( size_pos + ilen );
-  std::string sizex = size.substr ( 0, x_pos - ( size_pos + ilen ) );
-  std::string sizey = size.substr ( 1 + x_pos - ( size_pos + ilen ) );
-
-  kx = std::atoi ( sizex.c_str() );
-  ky = std::atoi ( sizey.c_str() );
-}
-
-void ParseCountIfPossible ( std::string line, std::string identifier, unsigned int& k ) {
-  std::size_t ilen = identifier.length() + 1;
-  std::size_t size_pos = line.find ( identifier + "=" );
-
-  if ( size_pos == std::string::npos )
-    return;
-
-  std::size_t end_pos = line.find ( " ", size_pos );
-
-  if ( end_pos != std::string::npos )
-    line = line.substr ( 0, end_pos );
-
-  std::string size = line.substr ( size_pos + ilen );
-
-  k = std::atoi ( size.c_str() );
-}
-
-void ParseDatumParamIfPossible ( std::string line, std::string identifier, datum& k ) {
-  std::size_t ilen = identifier.length() + 1;
-  std::size_t size_pos = line.find ( identifier + "=" );
-
-  if ( size_pos == std::string::npos )
-    return;
-
-  std::size_t end_pos = line.find ( " ", size_pos );
-
-  if ( end_pos != std::string::npos )
-    line = line.substr ( 0, end_pos );
-
-  std::string size = line.substr ( size_pos + ilen );
-
-  k = std::atof ( size.c_str() );
-}
 
 ConfigurableFactory::ConfigurableFactory ( std::istream& file, Method method, const unsigned int seed ) : Factory ( seed ), file_ ( file ), method_ ( method ) {
   file_.clear();
@@ -204,11 +111,19 @@ int ConfigurableFactory::AddLayers ( Net& net, Connection data_layer_connection,
         line = "";
       }
     }
+    
+    if (line.compare("?output") == 0) {
+      if(output_classes == 1) {
+	line = "?tanh";
+      } else {
+	line = "?sigm";
+      }
+    }
 
     if ( line.compare ( 0,1,"?" ) == 0 ) {
       line=line.substr ( 1 );
       LOGDEBUG << "Parsing layer: " << line;
-
+      
       if ( StartsWithIdentifier ( line, "convolutional" ) ) {
         unsigned int kx = 1, ky = 1, k = 1;
         datum llr = 1;

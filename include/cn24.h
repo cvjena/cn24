@@ -25,6 +25,7 @@
 #include "cn24/util/KITTIData.h"
 #include "cn24/util/Segmentation.h"
 #include "cn24/util/Init.h"
+#include "cn24/util/ConfigParsing.h"
 
 #include "cn24/net/Layer.h"
 #include "cn24/net/InputLayer.h"

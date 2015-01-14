@@ -23,11 +23,6 @@
 #include <cn24.h>
 
 int main (int argc, char* argv[]) {
-  // TODO don't hardcode this!
-  std::vector<std::string> class_names = { "road" };
-  unsigned int class_count = 1;
-  //Conv::dataset_localized_error_function error_function = Conv::DefaultLocalizedErrorFunction;
-  Conv::dataset_localized_error_function error_function = Conv::KITTIData::LocalizedError;
   bool DO_TEST = true;
 #ifdef LAYERTIME
   const unsigned int BATCHSIZE = 1000;
@@ -41,8 +36,8 @@ int main (int argc, char* argv[]) {
   unsigned int EPOCHS = 120;
   std::string mode = "slow";
 
-  if (argc < 4) {
-    LOGERROR << "USAGE: " << argv[0] << " <training tensor> <testing tensor> <net config file> [w]";
+  if (argc < 3) {
+    LOGERROR << "USAGE: " << argv[0] << " <dataset config file> <net config file>";
     LOGEND;
     return -1;
   }
@@ -50,36 +45,31 @@ int main (int argc, char* argv[]) {
   Conv::System::Init();
 
   //Conv::Factory* factory = Conv::Factory::getNetFactory (argv[3][0], 49932);
-  std::ifstream file(argv[3],std::ios::in);
+  std::string net_config_fname (argv[2]);
+  std::string dataset_config_fname (argv[1]);
   
-  if(!file.good()) {
+  std::ifstream net_config_file(net_config_fname,std::ios::in);
+  std::ifstream dataset_config_file(dataset_config_fname,std::ios::in);
+  
+  if(!net_config_file.good()) {
     FATAL("Cannot open net configuration file!");
   }
-  std::string fname (argv[3]);
-  fname = fname.substr(fname.rfind("/")+1);
+  net_config_fname = net_config_fname.substr(net_config_fname.rfind("/")+1);
   
-  Conv::Factory* factory = new Conv::ConfigurableFactory(file, Conv::FCN);
+  Conv::Factory* factory = new Conv::ConfigurableFactory(net_config_file, Conv::FCN);
   factory->InitOptimalSettings();
-  
-  if(!strcmp(argv[2], "no_test")) {
-    LOGINFO << "Disabling test";
-    DO_TEST = false;
-  }
   
   Conv::TrainerSettings settings = factory->optimal_settings();
   settings.epoch_training_ratio = 1 * it_factor;
   settings.testing_ratio = 1 * it_factor;
 
-  std::ifstream training_stream (argv[1], std::ios::in | std::ios::binary);
-  std::ifstream testing_stream (argv[2], std::ios::in | std::ios::binary);
-  
-  Conv::TensorStreamDataset dataset(training_stream, testing_stream, class_count, class_names, error_function);
-  unsigned int CLASSES = dataset.GetClasses();
+  Conv::TensorStreamDataset* dataset = Conv::TensorStreamDataset::CreateFromConfiguration(dataset_config_file);
+  unsigned int CLASSES = dataset->GetClasses();
   
   /*
    * Assemble net
    */
-  Conv::DatasetInputLayer data_layer(dataset, BATCHSIZE, 983923);
+  Conv::DatasetInputLayer data_layer(*dataset, BATCHSIZE, 983923);
   Conv::Net net;
 
   int data_layer_id = net.AddLayer (&data_layer);
@@ -102,7 +92,7 @@ int main (int argc, char* argv[]) {
       Conv::Connection (data_layer_id, 3)
     });
   } else {
-    std::vector<std::string> class_names = dataset.GetClassNames();
+    std::vector<std::string> class_names = dataset->GetClassNames();
     Conv::ConfusionMatrixLayer* confusion_matrix_layer = new Conv::ConfusionMatrixLayer(class_names, CLASSES);
     net.AddLayer (confusion_matrix_layer, {
       Conv::Connection (output_layer_id),
@@ -124,7 +114,7 @@ int main (int argc, char* argv[]) {
     std::time_t t = std::time (nullptr);
     std::tm tm_ = *std::localtime (&t);
 
-    ss << "snap" << fname << "_" << std::setfill ('0') << std::setw (2)
+    ss << "snap" << net_config_fname << "_" << std::setfill ('0') << std::setw (2)
        << tm_.tm_mday << "." << tm_.tm_mon << "_" << tm_.tm_hour << "."
        << tm_.tm_min << "_" << mode << "_" 
        << "_"
@@ -149,16 +139,16 @@ int main (int argc, char* argv[]) {
   std::time_t t = std::time (nullptr);
   std::tm tm_ = *std::localtime (&t);
 
-  ss << "n" << fname << "_" << std::setfill ('0') << std::setw (2)
+  ss << "n" << net_config_fname << "_" << std::setfill ('0') << std::setw (2)
      << tm_.tm_mday << "." << tm_.tm_mon << "_" << tm_.tm_hour << "."
      << tm_.tm_min << "_" << mode << "_" << ".Tensor";
   std::ofstream outfile (ss.str(), std::ios::out | std::ios::binary);
   net.SerializeParameters (outfile);
   
   ss.str("");
-  ss << "logs/n" << argv[2] << "_" << std::setfill ('0') << std::setw (2)
+  ss << "logs/n" << dataset_config_fname << "_" << std::setfill ('0') << std::setw (2)
      << tm_.tm_mday << "." << tm_.tm_mon << "_" << tm_.tm_hour << "."
-     << tm_.tm_min << "_" << fname << "_" << ".log";
+     << tm_.tm_min << "_" << net_config_fname << "_" << ".log";
 
   LOGINFO << "Last element: " << data_layer.current_element();
   outfile.close();
