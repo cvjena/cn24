@@ -42,12 +42,12 @@ int main (int argc, char* argv[]) {
     return -1;
   }
   
-  Conv::System::Init();
-
-  //Conv::Factory* factory = Conv::Factory::getNetFactory (argv[3][0], 49932);
   std::string net_config_fname (argv[2]);
   std::string dataset_config_fname (argv[1]);
   
+  Conv::System::Init();
+
+  // Open network and dataset configuration files
   std::ifstream net_config_file(net_config_fname,std::ios::in);
   std::ifstream dataset_config_file(dataset_config_fname,std::ios::in);
   
@@ -56,8 +56,15 @@ int main (int argc, char* argv[]) {
   }
   net_config_fname = net_config_fname.substr(net_config_fname.rfind("/")+1);
   
+  if(!dataset_config_file.good()) {
+    FATAL("Cannot open dataset configuration file!");
+  }
+  dataset_config_fname = dataset_config_fname.substr(net_config_fname.rfind("/")+1);
+  
+  // Parse network configuration file
   Conv::Factory* factory = new Conv::ConfigurableFactory(net_config_file, Conv::FCN);
   factory->InitOptimalSettings();
+  LOGDEBUG << "Optimal settings: " << factory->optimal_settings();
   
   Conv::TrainerSettings settings = factory->optimal_settings();
   settings.epoch_training_ratio = 1 * it_factor;

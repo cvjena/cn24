@@ -4,12 +4,14 @@
  *
  * For licensing information, see the LICENSE file included with this project.
  */
-#include <cstdio>
-#include <cstring>
+
 #include "Config.h"
 #include "Log.h"
 
 #include "ConfigParsing.h"
+#include <cstdlib>
+
+#include <sstream>
 
 namespace Conv {
 bool StartsWithIdentifier ( std::string line, std::string identifier ) {
@@ -26,7 +28,12 @@ unsigned int ParseUInt ( std::string line, std::string identifier ) {
 
 datum ParseDatum ( std::string line, std::string identifier ) {
   if ( line.compare ( 0, identifier.length(), identifier ) == 0 ) {
-    return std::atof ( line.substr ( identifier.length() +1 ).c_str() );
+    std::stringstream ss;
+    ss << line.substr ( identifier.length() +1 );
+    datum d;
+    ss >> d;
+//    return std::strtof ( line.substr ( identifier.length() +1 ).c_str() ,nullptr);
+    return d;
   } else {
     return 0;
   }

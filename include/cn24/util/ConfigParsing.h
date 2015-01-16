@@ -5,8 +5,6 @@
  * For licensing information, see the LICENSE file included with this project.
  */
 
-#include <cstdio>
-#include <cstring>
 
 #include <string>
 

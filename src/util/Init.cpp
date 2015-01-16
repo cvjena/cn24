@@ -12,9 +12,11 @@
 #include <sstream>
 #endif
 
-#include <Init.h>
-#include <Config.h>
-#include <Log.h>
+#include "Init.h"
+#include "Config.h"
+#include "Log.h"
+
+#include <locale.h>
 
 #ifdef BUILD_GUI
 #include <gtk/gtk.h>
@@ -49,6 +51,7 @@ TensorViewer* System::viewer = nullptr;
 
 void System::Init() {
   LOGINFO << "CN24 built on " << BUILD_DATE;
+  LOGDEBUG << "Numeric locale set to " << setlocale(LC_NUMERIC, NULL);
 #ifdef BUILD_OPENCL
   
   // TODO make this configurable
