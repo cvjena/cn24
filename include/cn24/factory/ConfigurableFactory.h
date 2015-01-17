@@ -31,7 +31,7 @@ public:
   
   virtual int AddLayers(Net& net, Connection data_layer_connection) {
     LOGDEBUG << "Assuming one class only!";
-    AddLayers(net, data_layer_connection, 1);
+    return AddLayers(net, data_layer_connection, 1);
   }
   virtual int AddLayers(Net& net, Connection data_layer_connection, const unsigned int output_classes);
 
