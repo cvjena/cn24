@@ -5,14 +5,14 @@
 ?maxpooling size=2x2
 ?relu
 
-?convolutional size=5x5 kernels=12 llr=1.6
+?convolutional size=7x7 kernels=12 llr=1.6
 ?relu
 
 ?convolutional size=5x5 kernels=48
 ?relu
 
 ?flatten
-?fullyconnected neurons=96
+?fullyconnected neurons=192
 ?relu
 
 ?fullyconnected neurons=(o)
