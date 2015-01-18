@@ -3,9 +3,12 @@
  * copyright (C) 2015 Clemens-Alexander Brust (ikosa dot de at gmail dot com).
  *
  * For licensing information, see the LICENSE file included with this project.
- */  
+ */
 
 #include <fstream>
+#include <cstdlib>
+
+#include <sstream>
 
 #include "Config.h"
 #include "Dataset.h"
@@ -15,12 +18,22 @@
 #include "ConfigParsing.h"
 
 namespace Conv {
-datum DefaultLocalizedErrorFunction (unsigned int x, unsigned int y) {
+datum DefaultLocalizedErrorFunction ( unsigned int x, unsigned int y ) {
   return 1;
 }
-TensorStreamDataset::TensorStreamDataset ( std::istream& training_stream, std::istream& testing_stream, unsigned int classes, std::vector< std::string > class_names, dataset_localized_error_function error_function ) :
-  classes_ ( classes ), class_names_ ( class_names ) {
+TensorStreamDataset::TensorStreamDataset ( std::istream& training_stream,
+    std::istream& testing_stream,
+    unsigned int classes,
+    std::vector< std::string > class_names,
+    std::vector<unsigned int> class_colors,
+    dataset_localized_error_function error_function ) :
+  classes_ ( classes ), class_names_ ( class_names ), class_colors_ ( class_colors ) {
   LOGDEBUG << "Instance created.";
+  
+  if(classes != class_names.size() ||
+    classes != class_colors.size()) {
+    FATAL("Class count does not match class information count!");
+  }
 
   // Count tensors
   Tensor tensor;
@@ -67,9 +80,14 @@ TensorStreamDataset::TensorStreamDataset ( std::istream& training_stream, std::i
   testing_stream.seekg ( 0, std::ios::beg );
 
   // Allocate arrays that depend on the tensor count
-  data_ = new Tensor[tensors_];
-  labels_ = new Tensor[tensors_];
-
+  if(tensors_ > 0) {
+    data_ = new Tensor[tensors_];
+    labels_ = new Tensor[tensors_];
+  } else {
+    data_ = new Tensor[1];
+    labels_ = new Tensor[1];
+  }
+  
   // Read tensors
   unsigned int e = 0;
 
@@ -85,15 +103,16 @@ TensorStreamDataset::TensorStreamDataset ( std::istream& training_stream, std::i
 
   input_maps_ = data_[0].maps();
   label_maps_ = labels_[0].maps();
-  
+
   // Prepare error cache
-  error_cache.Resize(1, data_[0].width(), data_[0].height(), 1);
-  for(unsigned int y = 0; y < data_[0].height(); y++) {
-    for(unsigned int x = 0; x < data_[0].width(); x++) {
-      *error_cache.data_ptr(x,y) = error_function(x,y);
+  error_cache.Resize ( 1, data_[0].width(), data_[0].height(), 1 );
+
+  for ( unsigned int y = 0; y < data_[0].height(); y++ ) {
+    for ( unsigned int x = 0; x < data_[0].width(); x++ ) {
+      *error_cache.data_ptr ( x,y ) = error_function ( x,y );
     }
   }
-  
+
   // System::viewer->show(&error_cache);
 }
 
@@ -125,6 +144,10 @@ std::vector<std::string> TensorStreamDataset::GetClassNames() const {
   return class_names_;
 }
 
+std::vector<unsigned int> TensorStreamDataset::GetClassColors() const {
+  return class_colors_;
+}
+
 unsigned int TensorStreamDataset::GetTrainingSamples() const {
   return tensor_count_training_ / 2;
 }
@@ -138,73 +161,103 @@ bool TensorStreamDataset::SupportsTesting() const {
 }
 
 bool TensorStreamDataset::GetTrainingSample ( Tensor& data_tensor, Tensor& label_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index ) {
-  if ( index < tensor_count_training_ / 2) {
+  if ( index < tensor_count_training_ / 2 ) {
     bool success = true;
     success &= Tensor::CopySample ( data_[index], 0, data_tensor, sample );
     success &= Tensor::CopySample ( labels_[index], 0, label_tensor, sample );
-    success &= Tensor::CopySample (error_cache, 0, weight_tensor, sample);
+    success &= Tensor::CopySample ( error_cache, 0, weight_tensor, sample );
     return success;
   } else return false;
 }
 
 bool TensorStreamDataset::GetTestingSample ( Tensor& data_tensor, Tensor& label_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index ) {
-  if ( index < tensor_count_testing_ / 2) {
+  if ( index < tensor_count_testing_ / 2 ) {
     bool success = true;
-    unsigned int test_index = (tensor_count_training_ / 2) + index;
+    unsigned int test_index = ( tensor_count_training_ / 2 ) + index;
     success &= Tensor::CopySample ( data_[test_index], 0, data_tensor, sample );
     success &= Tensor::CopySample ( labels_[test_index], 0, label_tensor, sample );
-    success &= Tensor::CopySample (error_cache, 0, weight_tensor, sample);
+    success &= Tensor::CopySample ( error_cache, 0, weight_tensor, sample );
     return success;
   } else return false;
 }
 
-TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration(std::istream& file) {
+TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration ( std::istream& file , bool dont_load) {
   unsigned int classes = 0;
   std::vector<std::string> class_names;
+  std::vector<unsigned int> class_colors;
   dataset_localized_error_function error_function = DefaultLocalizedErrorFunction;
   std::string training_file;
   std::string testing_file;
-  
+
   file.clear();
   file.seekg ( 0, std::ios::beg );
+
   while ( ! file.eof() ) {
     std::string line;
     std::getline ( file,line );
+
+    if ( StartsWithIdentifier ( line, "classes" ) ) {
+      ParseCountIfPossible ( line, "classes", classes );
+
+      if ( classes != 0 ) {
+        for ( int c = 0; c < classes; c++ ) {
+          std::string class_name;
+          std::getline ( file,class_name );
+          class_names.push_back ( class_name );
+        }
+      }
+    }
     
-    if(StartsWithIdentifier(line, "classes")) {
-      ParseCountIfPossible(line, "classes", classes);
-      if(classes != 0) {
-	for(int c = 0; c < classes; c++) {
-	  std::string class_name;
-	  std::getline(file,class_name);
-	  class_names.push_back(class_name);
-	}
+    if ( StartsWithIdentifier( line, "colors") ) {
+      if ( classes != 0 ) {
+        for ( int c = 0; c < classes; c++ ) {
+          std::string color;
+          std::getline ( file,color );
+	  unsigned long color_val_l = std::strtoul(color.c_str(), nullptr, 16);
+	  if(color_val_l < 0x100000000L) {
+	    class_colors.push_back((unsigned int)color_val_l);
+	  } else {
+	    FATAL("Not a valid color!");
+	  }
+        }
       }
     }
-    if(StartsWithIdentifier(line, "localized_error")) {
+
+    if ( StartsWithIdentifier ( line, "localized_error" ) ) {
       std::string error_function_name;
-      ParseStringIfPossible(line,"localized_error", error_function_name);
-      if(error_function_name.compare("kitti") == 0) {
-	LOGDEBUG << "Loading dataset with KITTI error function";
-	error_function = KITTIData::LocalizedError;
-      } else if (error_function_name.compare("default")) {
-	LOGDEBUG << "Loading dataset with KITTI error function";
-	error_function = DefaultLocalizedErrorFunction;
+      ParseStringIfPossible ( line,"localized_error", error_function_name );
+
+      if ( error_function_name.compare ( "kitti" ) == 0 ) {
+        LOGDEBUG << "Loading dataset with KITTI error function";
+        error_function = KITTIData::LocalizedError;
+      } else if ( error_function_name.compare ( "default" ) ) {
+        LOGDEBUG << "Loading dataset with KITTI error function";
+        error_function = DefaultLocalizedErrorFunction;
       }
     }
-   
-    ParseStringIfPossible(line, "training", training_file);
-    ParseStringIfPossible(line, "testing", testing_file);
+
+    ParseStringIfPossible ( line, "training", training_file );
+    ParseStringIfPossible ( line, "testing", testing_file );
   }
-  
+
   LOGDEBUG << "Loading dataset with " << classes << " classes";
   LOGDEBUG << "Training tensor: " << training_file;
   LOGDEBUG << "Testing tensor: " << testing_file;
-  std::istream* training_stream = new std::ifstream(training_file, std::ios::in);
-  std::istream* testing_stream = new std::ifstream(testing_file, std::ios::in);
   
-  return new TensorStreamDataset(*training_stream, *testing_stream, classes,
-				 class_names, error_function);
+  if(dont_load) {
+    std::istream* training_stream = new std::istringstream();
+    std::istream* testing_stream = new std::istringstream();
+
+    return new TensorStreamDataset ( *training_stream, *testing_stream, classes,
+				    class_names, class_colors, error_function );
+  }
+  else {
+    std::istream* training_stream = new std::ifstream ( training_file, std::ios::in );
+    std::istream* testing_stream = new std::ifstream ( testing_file, std::ios::in );
+
+    return new TensorStreamDataset ( *training_stream, *testing_stream, classes,
+				    class_names, class_colors, error_function );
+  }
 }
 
 }

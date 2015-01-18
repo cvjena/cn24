@@ -14,6 +14,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cstdlib>
 
 #include <cn24.h>
 

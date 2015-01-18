@@ -70,6 +70,12 @@ public:
   virtual std::vector<std::string> GetClassNames() const = 0;
   
   /**
+   * @brief Gets the colors of the classes in this Dataset.
+   * The colors are unsigned ints of the format 0x00RRGGBB.
+   */
+  virtual std::vector<unsigned int> GetClassColors() const = 0;
+  
+  /**
    * @brief Gets the number of training samples in this Dataset.
    */
   virtual unsigned int GetTrainingSamples() const = 0;
@@ -110,6 +116,11 @@ public:
   virtual bool GetTestingSample ( Tensor& data_tensor, Tensor& label_tensor,
 				  Tensor& weight_tensor, 
 				   unsigned int sample, unsigned int index) = 0;
+				   
+  /**
+   * @brief Uses this Dataset's colors to colorize a net output
+   */
+  virtual void Colorize ( Tensor& net_output_tensor, Tensor& target_tensor);
 };
  
 /*
@@ -123,7 +134,12 @@ datum DefaultLocalizedErrorFunction (unsigned int x, unsigned int y);
 
 class TensorStreamDataset : public Dataset {
 public:
-  TensorStreamDataset(std::istream& training_stream, std::istream& testing_stream, unsigned int classes, std::vector<std::string> class_names, dataset_localized_error_function error_function = DefaultLocalizedErrorFunction);
+  TensorStreamDataset(std::istream& training_stream,
+    std::istream& testing_stream,
+    unsigned int classes,
+    std::vector<std::string> class_names,
+    std::vector<unsigned int> class_colors,
+    dataset_localized_error_function error_function = DefaultLocalizedErrorFunction);
   
   // Dataset implementations
   virtual Task GetTask() const;
@@ -133,13 +149,14 @@ public:
   virtual unsigned int GetLabelMaps() const;
   virtual unsigned int GetClasses() const;
   virtual std::vector< std::string > GetClassNames() const;
+  virtual std::vector< unsigned int > GetClassColors() const;
   virtual unsigned int GetTrainingSamples() const;
   virtual unsigned int GetTestingSamples() const;
   virtual bool SupportsTesting() const;
   virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
   virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& weight_tensor,  unsigned int sample, unsigned int index);
   
-  static TensorStreamDataset* CreateFromConfiguration(std::istream& file);
+  static TensorStreamDataset* CreateFromConfiguration(std::istream& file, bool dont_load = false);
   
 private:
   // Stored data
@@ -157,6 +174,7 @@ private:
   
   // Parameters
   std::vector<std::string> class_names_;
+  std::vector<unsigned int> class_colors_;
   unsigned int classes_;
 };
 }

@@ -14,124 +14,103 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include <sstream>
 
 #include <cn24.h>
 
 int main (int argc, char* argv[]) {
-  // TODO delete this program
-  unsigned int BATCHSIZE = 96;
-  unsigned int PATCHSIZEX = 32;
-  unsigned int PATCHSIZEY = 32;
-
-  if (argc < 4) {
-    LOGERROR << "USAGE: " << argv[0] << " <net> <param Tensor> <image>";
+  unsigned int BATCHSIZE = 1;
+  if (argc < 6) {
+    LOGERROR << "USAGE: " << argv[0] << "<dataset config file> <net config file> <net parameter tensor> <input image file> <output image file>";
     LOGEND;
     return -1;
   }
 
+  std::string output_image_fname (argv[5]);
+  if(output_image_fname.length() < 7 || output_image_fname.compare(output_image_fname.length()-6,6,"Tensor") != 0) {
+    LOGWARN << "NOTE: This utility writes binary tensor files!";
+  }
+  std::string input_image_fname (argv[4]);
+  std::string param_tensor_fname (argv[3]);
+  std::string net_config_fname (argv[2]);
+  std::string dataset_config_fname (argv[1]);
+  
+  Conv::System::Init();
+
+  // Open network and dataset configuration files
+  std::ofstream output_image_file(output_image_fname,std::ios::out|std::ios::binary);
+  std::ifstream input_image_file(input_image_fname,std::ios::in | std::ios::binary);
+  std::ifstream param_tensor_file(param_tensor_fname,std::ios::in | std::ios::binary);
+  std::ifstream net_config_file(net_config_fname,std::ios::in);
+  std::ifstream dataset_config_file(dataset_config_fname,std::ios::in);
+  
+  if(!output_image_file.good()) {
+    FATAL("Cannot open output tensor file!");
+  }
+  if(!param_tensor_file.good()) {
+    FATAL("Cannot open param tensor file!");
+  }
+  if(!net_config_file.good()) {
+    FATAL("Cannot open net configuration file!");
+  }
+  if(!dataset_config_file.good()) {
+    FATAL("Cannot open dataset configuration file!");
+  }
+  
+  // Parse network configuration file
+  Conv::Factory* factory = new Conv::ConfigurableFactory(net_config_file, Conv::FCN);
+  factory->InitOptimalSettings();
+  LOGDEBUG << "Optimal settings: " << factory->optimal_settings();
+  
+  Conv::TensorStreamDataset* dataset = Conv::TensorStreamDataset::CreateFromConfiguration(dataset_config_file, true);
+  unsigned int CLASSES = dataset->GetClasses();
+  
   // Load image
-  std::ifstream image_stream (argv[3], std::ios::binary | std::ios::in);
-  if (!image_stream.good()) {
-    FATAL ("Cannot open " << argv[3] << "!");
-    return -1;
-  }
-  
-  Conv::Factory* factory = Conv::Factory::getNetFactory (argv[1][0], 49932);
-  if (factory == nullptr) {
-    FATAL ("Unknown net: " << argv[1]);
-  }
-  
-  PATCHSIZEX = factory->patchsizex();
-  PATCHSIZEY = factory->patchsizey();
-  
-  std::string infilename(argv[3]);
-  auto slashpos = infilename.rfind('/');
-  if(slashpos == std::string::npos)
-    slashpos = 0;
-  else
-    slashpos++;
-  
-  std::string outfilename = "usenet/" + infilename.substr(slashpos) + ".data";
-  LOGDEBUG << "Writing to " << outfilename;
-
-  Conv::Tensor image_tensor;
-  Conv::PNGLoader::LoadFromStream (image_stream, image_tensor);
-
-  LOGDEBUG << "Loaded image: " << image_tensor << ", extracting...";
-
-  Conv::Tensor patch_tensor;
+  Conv::Tensor data_tensor;
   Conv::Tensor helper_tensor;
-  Conv::Segmentation::ExtractPatches (PATCHSIZEX, PATCHSIZEY, patch_tensor, helper_tensor, image_tensor, 0, true);
+#ifdef BUILD_PNG
+  if((input_image_fname.compare(input_image_fname.length() - 3, 3, "png") == 0)
+    || (input_image_fname.compare(input_image_fname.length() - 3, 3, "PNG") == 0)
+  ) {
+    Conv::PNGLoader::LoadFromStream(input_image_file, data_tensor);
+  }
+#endif
+#ifdef BUILD_JPG
+  if((input_image_fname.compare(input_image_fname.length() - 3, 3, "jpg") == 0)
+    || (input_image_fname.compare(input_image_fname.length() - 3, 3, "jpeg") == 0)
+    || (input_image_fname.compare(input_image_fname.length() - 3, 3, "JPG") == 0)
+    || (input_image_fname.compare(input_image_fname.length() - 3, 3, "JPEG") == 0)
+  ) {
+    input_image_file.close();
+    Conv::JPGLoader::LoadFromFile(input_image_fname, data_tensor);
+  }
+#endif
+  helper_tensor.Resize(1, data_tensor.width(), data_tensor.height(), 2);
   
-
-  unsigned int patches = patch_tensor.samples();
-  LOGDEBUG << "Calculating " << patches << " patches.";
-
-  Conv::Tensor data_tensor (BATCHSIZE, PATCHSIZEX,
-                            PATCHSIZEY, image_tensor.maps());
-  Conv::Tensor helper_data_tensor (BATCHSIZE, 2);
-
+  // Assemble net
   Conv::Net net;
-  Conv::InputLayer input_layer (data_tensor, helper_data_tensor);
-  int data_layer_id = net.AddLayer (&input_layer);
+  Conv::InputLayer input_layer(data_tensor, helper_tensor);
 
+  int data_layer_id = net.AddLayer(&input_layer);
   int output_layer_id =
-    factory->AddLayers (net, {Conv::Connection (data_layer_id) });
+    factory->AddLayers (net, Conv::Connection (data_layer_id), CLASSES);
 
-  Conv::Tensor* net_output_tensor = & (net.buffer (output_layer_id)->data);
-  Conv::Tensor output_tensor(1, image_tensor.width() * image_tensor.height());
+  LOGDEBUG << "Output layer id: " << output_layer_id;
 
-  /*
-   * Load net params
-   */
-  std::ifstream param_stream (argv[2], std::ios::in | std::ios::binary);
-  if (!param_stream.good()) {
-    FATAL ("Cannot open " << argv[2] << "!");
-    return -1;
-  }
-
-  net.DeserializeParameters (param_stream);
+  // net.InitializeWeights();
+  net.DeserializeParameters(param_tensor_file);
   
-  std::cout << "\n" << std::flush;
-
-  net.SetDropoutEnabled(false);
-
-  /*
-   * Run
-   */
-  unsigned int fiftieth = 0;
-  unsigned int tenth = 0;
-  for (unsigned int sample = 0; sample < patches; sample += BATCHSIZE) {
-    for (unsigned int s = 0; (s < BATCHSIZE) && ( (sample + s) < patches); s++) {
-      Conv::Tensor::CopySample (patch_tensor, sample + s,
-                                data_tensor, s);
-      Conv::Tensor::CopySample (helper_tensor, sample + s, helper_data_tensor, s);
-    }
-    net.FeedForward();
-    
-    // Copy
-    const Conv::datum* src = net_output_tensor->data_ptr_const();
-    Conv::datum* tgt = output_tensor.data_ptr(sample);
-    
-    std::size_t elements = sizeof(Conv::datum) * (
-      ((sample + BATCHSIZE) > patches) ? (patches - sample) : BATCHSIZE);
-    
-    std::memcpy(tgt, src, elements);
-    
-    //..
-    if(((50*sample)/patches) > fiftieth) {
-      fiftieth = (50*sample)/patches;
-      std::cout << "." << std::flush;
-    }
-    if(((10*sample)/patches) > tenth) {
-      tenth = (10*sample)/patches;
-      std::cout << tenth * 10 << "%" << std::flush;
-    }
-  }
-  std::ofstream output_img(outfilename, std::ios::out | std::ios::binary);
+  LOGINFO << "Classifying..." << std::flush;
+  net.FeedForward();
   
-  /*output_tensor.Reshape(1, image_tensor.width() - (PATCHSIZEX -1),
-    image_tensor.height() - (PATCHSIZEY - 1) );*/
-  output_tensor.Serialize(output_img, true);
-  output_img.close();
+  Conv::Tensor* net_output_tensor = &net.buffer(output_layer_id)->data;
+  Conv::Tensor image_output_tensor(1, net_output_tensor->width(), net_output_tensor->height(), 3);
+  
+  LOGINFO << "Colorizing..." << std::flush;
+  dataset->Colorize(*net_output_tensor, image_output_tensor);
+  image_output_tensor.Serialize(output_image_file);
+
+  LOGINFO << "DONE!";
+  LOGEND;
+  return 0;
 }

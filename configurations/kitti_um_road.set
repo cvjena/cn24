@@ -1,9 +1,16 @@
 # KITTI dataset configuration
+# First, the locations of the image data tensor streams
 
 testing=UM_road.Tensor
 training=UM_road.Tensor
 
+# For two-class problems where the classes are mutually exclusive,
+# you can specify a single class
 classes=1
 road
+
+# Note that for classes=1 you still have to specify a color
+colors
+0xFF0000
 
 localized_error=kitti

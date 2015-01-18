@@ -70,12 +70,11 @@ int main (int argc, char* argv[]) {
   settings.epoch_training_ratio = 1 * it_factor;
   settings.testing_ratio = 1 * it_factor;
 
+  // Load dataset
   Conv::TensorStreamDataset* dataset = Conv::TensorStreamDataset::CreateFromConfiguration(dataset_config_file);
   unsigned int CLASSES = dataset->GetClasses();
   
-  /*
-   * Assemble net
-   */
+  // Assemble net
   Conv::DatasetInputLayer data_layer(*dataset, BATCHSIZE, 983923);
   Conv::Net net;
 

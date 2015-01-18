@@ -74,10 +74,10 @@ void convertCategory (Conv::KITTIData& data, Conv::KITTICategory category) {
     }
     Conv::Tensor image;
     Conv::PNGLoader::LoadFromStream (image_stream, image);
-    for (unsigned int i = 0; i < image.elements(); i++) {
+/*    for (unsigned int i = 0; i < image.elements(); i++) {
       image[i] -= 0.5;
       image[i] *= 2.0;
-    }
+    }*/
     image.Serialize (tensor_stream);
     image_stream.close();
 
@@ -152,10 +152,10 @@ void convertCategoryStreamlined (Conv::KITTIData& data,
     Conv::Tensor image (1, resx, resy, 3);
     Conv::Tensor image_st (1, resx, resy, 3);
     Conv::PNGLoader::LoadFromStream (image_stream, image);
-    for (unsigned int i = 0; i < image.elements(); i++) {
+    /*for (unsigned int i = 0; i < image.elements(); i++) {
       image[i] -= 0.5;
       image[i] *= 2.0;
-    }
+    }*/
     for (unsigned int y = 0; y < resy; y++) {
       std::memcpy (image_st.data_ptr (0, y, 0), image.data_ptr (0, y, 0),
                    sizeof (Conv::datum) * resx);
