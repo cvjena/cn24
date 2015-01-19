@@ -8,12 +8,13 @@
 #ifdef BUILD_GUI
 
 #include <gtk/gtk.h>
+#include <string>
+#include <thread>
 #include "Config.h"
 #include "Log.h"
 
 #include "TensorViewer.h"
 
-#include <thread>
 
 namespace Conv {
 
@@ -59,7 +60,7 @@ void TensorViewer::copy ( Tensor* tensor, GdkPixbuf* targetb, unsigned int amap,
         guchar* target_row = &target[row_stride * y];
 
         for ( unsigned int x = 0; x < tensor->width(); x++ ) {
-          target_row[ ( 3*x ) + cmap] = MCHAR_FROM_DATUM ( factor * row[x] );
+          target_row[ ( 3*x ) + cmap] = UCHAR_FROM_DATUM ( factor * row[x] );
         }
       }
     }
@@ -70,7 +71,7 @@ void TensorViewer::copy ( Tensor* tensor, GdkPixbuf* targetb, unsigned int amap,
         guchar* target_row = &target[row_stride * y];
 
         for ( unsigned int x = 0; x < tensor->width(); x++ ) {
-          target_row[ ( 3*x ) + cmap] = MCHAR_FROM_DATUM ( factor * row[x] );
+          target_row[ ( 3*x ) + cmap] = tensor->maps() == 1 ? MCHAR_FROM_DATUM ( factor * row[x] ) : UCHAR_FROM_DATUM ( factor * row[x] );
         }
       }
     }

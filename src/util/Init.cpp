@@ -57,8 +57,8 @@ void System::Init() {
 
 #ifdef BUILD_OPENCL
 
-          // TODO make this configurable
-          unsigned int platform_number = 0;
+  // TODO make this configurable
+  unsigned int platform_number = 0;
   unsigned int device_number = 0;
 
   cl_uint platform_count = 0;
