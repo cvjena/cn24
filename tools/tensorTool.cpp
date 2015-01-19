@@ -23,7 +23,7 @@ void help();
 
 int main ( int argc, char* argv[] ) {
   if ( argc < 2 ) {
-    LOGERROR << "USAGE: " << argv[0] << " <tensor file> <tensor id in file>";
+    LOGERROR << "USAGE: " << argv[0] << " <tensor stream file> <tensor id in file>";
     LOGEND;
     return -1;
   }
@@ -33,7 +33,7 @@ int main ( int argc, char* argv[] ) {
   // Read tensor id from command line
   std::string s_tid;
 
-  if ( argc < 3 )
+  if ( argc > 2 )
     s_tid = argv[2];
   else
     s_tid = "0";
