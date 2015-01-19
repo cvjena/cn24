@@ -11,6 +11,6 @@ road
 
 # Note that for classes=1 you still have to specify a color
 colors
-0xFF0000
+0xFFFFFF
 
 localized_error=kitti
