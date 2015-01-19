@@ -8,7 +8,7 @@
  * \file testConvMNIST.cpp
  * \brief Builds a convolutional neural net for MNIST prediction
  *
- * \author Clemens-A. Brust(ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust(ikosa dot de at gmail dot com)
  */
 
 #include <iostream>

@@ -8,7 +8,7 @@
  * \file testLocalizedError.cpp
  * \brief Runs a localized error function and outputs the results.
  * 
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #include <iostream>

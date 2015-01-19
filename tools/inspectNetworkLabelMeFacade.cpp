@@ -8,7 +8,7 @@
  * \file inspectNetworkLabelMeFacade.cpp
  * \brief Application that uses a pretrained net to segment images.
  *
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #include <iostream>

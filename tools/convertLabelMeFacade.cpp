@@ -8,7 +8,7 @@
  * \file convertLabelMeFacade.cpp
  * \brief Program to convert the LabelMeFacade data to Tensor format.
  *
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #include <iostream>

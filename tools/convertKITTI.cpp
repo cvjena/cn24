@@ -10,7 +10,7 @@
  *
  * You can find the dataset at http://yann.lecun.com/exdb/mnist/
  *
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #include <iostream>

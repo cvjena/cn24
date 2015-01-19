@@ -8,7 +8,7 @@
  * \file testSimpleNetSplit.cpp
  * \brief Test application for a simple neural net with split data set.
  *
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #include <random>
