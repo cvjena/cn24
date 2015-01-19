@@ -23,7 +23,7 @@ int main (int argc, char* argv[]) {
   for (unsigned int x = 0; x < 1225; x++) {
     for (unsigned int y = 0; y < 369; y++) {
       Conv::datum* ptr = result.data_ptr(x,y);
-      const Conv::datum error = Conv::KITTIData::LocalizedError(x,y);
+      const Conv::datum error = Conv::KITTIData::LocalizedError(x,y,1226,370);
       *ptr = 0.06 * error;
       sum += error;
     }

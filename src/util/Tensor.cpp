@@ -3,7 +3,7 @@
  * copyright (C) 2015 Clemens-Alexander Brust (ikosa dot de at gmail dot com).
  *
  * For licensing information, see the LICENSE file included with this project.
- */  
+ */
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -35,7 +35,7 @@ Tensor::Tensor() {
 }
 
 Tensor::Tensor ( const std::string& filename ) {
-  LoadFromFile(filename);
+  LoadFromFile ( filename );
 }
 
 
@@ -250,8 +250,8 @@ void Tensor::Deserialize ( std::istream& input ) {
   uint64_t width = 0;
   uint64_t height = 0;
   uint64_t maps = 0;
-  
-  if(!input.good())
+
+  if ( !input.good() )
     LOGERROR << "Cannot deserialize from this stream!";
 
   input.read ( ( char* ) &samples, sizeof ( uint64_t ) / sizeof ( char ) );
@@ -273,6 +273,11 @@ bool Tensor::CopySample ( const Tensor& source, const std::size_t source_sample,
   if ( source.maps() != target.maps() )
     return false;
 
+  if ( source.width() != target.width() || source.height() != target.height() ) {
+    if ( target.width() < source.width() || target.height() < source.height() )
+      return false;
+  }
+
   bool result = true;
 
   for ( std::size_t map = 0; map < source.maps(); map++ ) {
@@ -292,23 +297,45 @@ bool Tensor::CopyMap ( const Tensor& source, const std::size_t source_sample,
     return false;
 
   // Check if image dimensions match
-  if ( source.width() != target.width() || source.height() != target.height() )
-    return false;
+  if ( source.width() != target.width() || source.height() != target.height() ) {
+    if ( target.width() < source.width() || target.height() < source.height() )
+      return false;
 
-  // Okay, good to go...
+    // Source image is smaller, okay..
+    for ( unsigned int y = 0; y < source.height(); y++ ) {
+      for ( unsigned int x = 0; x < source.width(); x++ ) {
+        *target.data_ptr ( x,y,target_map, target_sample ) =
+          *source.data_ptr ( x,y,source_map, source_sample );
+      }
 
-  // Get offsets
-  const datum* source_map_data = source.data_ptr_const ( 0, 0, source_map, source_sample );
-  datum* target_map_data = target.data_ptr ( 0, 0, target_map, target_sample );
+      for ( unsigned int x = source.width(); x < target.width(); x++ ) {
+        *target.data_ptr ( x,y,target_map,target_sample ) = 0;
+      }
+    }
 
-  // Count the number of elements to copy
-  std::size_t elements_to_copy = source.width() * source.height();
+    for ( unsigned int y = source.height(); y < target.height(); y++ ) {
+      for ( unsigned int x = 0; x < target.width(); x++ ) {
+        *target.data_ptr ( x,y,target_map,target_sample ) = 0;
+      }
+    }
+    return true;
+  } else {
 
-  // Copy the data
-  std::memcpy ( target_map_data, source_map_data,
-                sizeof ( datum ) * elements_to_copy / sizeof ( char ) );
+    // Okay, good to go...
 
-  return true;
+    // Get offsets
+    const datum* source_map_data = source.data_ptr_const ( 0, 0, source_map, source_sample );
+    datum* target_map_data = target.data_ptr ( 0, 0, target_map, target_sample );
+
+    // Count the number of elements to copy
+    std::size_t elements_to_copy = source.width() * source.height();
+
+    // Copy the data
+    std::memcpy ( target_map_data, source_map_data,
+                  sizeof ( datum ) * elements_to_copy / sizeof ( char ) );
+
+    return true;
+  }
 }
 
 void Tensor::DeleteIfPossible() {
@@ -471,36 +498,45 @@ std::size_t Tensor::AbsMaximum () {
 }
 
 void Tensor::LoadFromFile ( const std::string& filename ) {
-  #ifdef BUILD_PNG
-  if((filename.compare(filename.length() - 3, 3, "png") == 0)
-    || (filename.compare(filename.length() - 3, 3, "PNG") == 0)
-  ) {
-    std::ifstream input_image_file(filename, std::ios::in | std::ios::binary);
-    if(!input_image_file.good()) 
-      FATAL("Cannot load " << filename);
-    Conv::PNGLoader::LoadFromStream(input_image_file, *this);
+#ifdef BUILD_PNG
+
+  if ( ( filename.compare ( filename.length() - 3, 3, "png" ) == 0 )
+       || ( filename.compare ( filename.length() - 3, 3, "PNG" ) == 0 )
+     ) {
+    std::ifstream input_image_file ( filename, std::ios::in | std::ios::binary );
+
+    if ( !input_image_file.good() )
+      FATAL ( "Cannot load " << filename );
+
+    Conv::PNGLoader::LoadFromStream ( input_image_file, *this );
     return;
   }
+
 #endif
 #ifdef BUILD_JPG
-  if((filename.compare(filename.length() - 3, 3, "jpg") == 0)
-    || (filename.compare(filename.length() - 3, 3, "jpeg") == 0)
-    || (filename.compare(filename.length() - 3, 3, "JPG") == 0)
-    || (filename.compare(filename.length() - 3, 3, "JPEG") == 0)
-  ) {
-    Conv::JPGLoader::LoadFromFile(filename, *this);
+
+  if ( ( filename.compare ( filename.length() - 3, 3, "jpg" ) == 0 )
+       || ( filename.compare ( filename.length() - 3, 3, "jpeg" ) == 0 )
+       || ( filename.compare ( filename.length() - 3, 3, "JPG" ) == 0 )
+       || ( filename.compare ( filename.length() - 3, 3, "JPEG" ) == 0 )
+     ) {
+    Conv::JPGLoader::LoadFromFile ( filename, *this );
     return;
   }
+
 #endif
-  if(filename.compare(filename.length() - 3, 3, "Tensor") == 0) {
-    std::ifstream input_image_file(filename, std::ios::in | std::ios::binary);
-    if(!input_image_file.good()) 
-      FATAL("Cannot load " << filename);
-    Deserialize(input_image_file);
+
+  if ( filename.compare ( filename.length() - 3, 3, "Tensor" ) == 0 ) {
+    std::ifstream input_image_file ( filename, std::ios::in | std::ios::binary );
+
+    if ( !input_image_file.good() )
+      FATAL ( "Cannot load " << filename );
+
+    Deserialize ( input_image_file );
     return;
   }
-  
-  FATAL("File format not supported!");
+
+  FATAL ( "File format not supported!" );
 }
 
 

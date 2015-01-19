@@ -37,7 +37,7 @@ public:
   std::string assembleFileName (KITTICategory category, int number, std::string infix = "");
 
 
-  static datum LocalizedError(unsigned int x, unsigned int y);
+  static datum LocalizedError(unsigned int x, unsigned int y, unsigned int w, unsigned int h);
 
 private:
   std::string trainingImageFolder_;

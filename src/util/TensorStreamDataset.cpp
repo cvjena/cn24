@@ -18,7 +18,7 @@
 #include "ConfigParsing.h"
 
 namespace Conv {
-datum DefaultLocalizedErrorFunction ( unsigned int x, unsigned int y ) {
+datum DefaultLocalizedErrorFunction ( unsigned int x, unsigned int y, unsigned int w, unsigned int h ) {
   return 1;
 }
 TensorStreamDataset::TensorStreamDataset ( std::istream& training_stream,
@@ -27,12 +27,13 @@ TensorStreamDataset::TensorStreamDataset ( std::istream& training_stream,
     std::vector< std::string > class_names,
     std::vector<unsigned int> class_colors,
     dataset_localized_error_function error_function ) :
-  classes_ ( classes ), class_names_ ( class_names ), class_colors_ ( class_colors ) {
+  classes_ ( classes ), class_names_ ( class_names ), class_colors_ ( class_colors ),
+  error_function_ ( error_function ) {
   LOGDEBUG << "Instance created.";
-  
-  if(classes != class_names.size() ||
-    classes != class_colors.size()) {
-    FATAL("Class count does not match class information count!");
+
+  if ( classes != class_names.size() ||
+       classes != class_colors.size() ) {
+    FATAL ( "Class count does not match class information count!" );
   }
 
   // Count tensors
@@ -80,24 +81,40 @@ TensorStreamDataset::TensorStreamDataset ( std::istream& training_stream,
   testing_stream.seekg ( 0, std::ios::beg );
 
   // Allocate arrays that depend on the tensor count
-  if(tensors_ > 0) {
+  if ( tensors_ > 0 ) {
     data_ = new Tensor[tensors_];
     labels_ = new Tensor[tensors_];
   } else {
     data_ = new Tensor[1];
     labels_ = new Tensor[1];
   }
-  
+
   // Read tensors
   unsigned int e = 0;
+  max_width_ = 0;
+  max_height_ = 0;
 
   for ( unsigned int t = 0; t < ( tensor_count_training_ / 2 ); t++ ) {
     data_[t].Deserialize ( training_stream );
+
+    if ( data_[t].width() > max_width_ )
+      max_width_ = data_[t].width();
+
+    if ( data_[t].height() > max_height_ )
+      max_height_ = data_[t].height();
+
     labels_[t].Deserialize ( training_stream );
   }
 
   for ( unsigned int t = ( tensor_count_training_ / 2 ) ; t < tensors_; t++ ) {
     data_[t].Deserialize ( testing_stream );
+
+    if ( data_[t].width() > max_width_ )
+      max_width_ = data_[t].width();
+
+    if ( data_[t].height() > max_height_ )
+      max_height_ = data_[t].height();
+
     labels_[t].Deserialize ( testing_stream );
   }
 
@@ -105,11 +122,11 @@ TensorStreamDataset::TensorStreamDataset ( std::istream& training_stream,
   label_maps_ = labels_[0].maps();
 
   // Prepare error cache
-  error_cache.Resize ( 1, data_[0].width(), data_[0].height(), 1 );
+  error_cache.Resize ( 1, max_width_, max_height_, 1 );
 
-  for ( unsigned int y = 0; y < data_[0].height(); y++ ) {
-    for ( unsigned int x = 0; x < data_[0].width(); x++ ) {
-      *error_cache.data_ptr ( x,y ) = error_function ( x,y );
+  for ( unsigned int y = 0; y < max_height_; y++ ) {
+    for ( unsigned int x = 0; x < max_width_; x++ ) {
+      *error_cache.data_ptr ( x,y ) = error_function ( x,y,max_width_,max_height_ );
     }
   }
 
@@ -121,11 +138,11 @@ Task TensorStreamDataset::GetTask() const {
 }
 
 unsigned int TensorStreamDataset::GetWidth() const {
-  return data_[0].width();
+  return max_width_;
 }
 
 unsigned int TensorStreamDataset::GetHeight() const {
-  return data_[0].height();
+  return max_height_;
 }
 
 unsigned int TensorStreamDataset::GetInputMaps() const {
@@ -165,7 +182,19 @@ bool TensorStreamDataset::GetTrainingSample ( Tensor& data_tensor, Tensor& label
     bool success = true;
     success &= Tensor::CopySample ( data_[index], 0, data_tensor, sample );
     success &= Tensor::CopySample ( labels_[index], 0, label_tensor, sample );
-    success &= Tensor::CopySample ( error_cache, 0, weight_tensor, sample );
+
+    if ( data_[index].width() == GetWidth() && data_[index].height() == GetHeight() ) {
+      success &= Tensor::CopySample ( error_cache, 0, weight_tensor, sample );
+    } else {
+      // Reevaluate error function
+      weight_tensor.Clear(0.0, sample);
+      for ( unsigned int y = 0; y < data_[index].height(); y++ ) {
+        for ( unsigned int x = 0; x < data_[index].width(); x++ ) {
+          *weight_tensor.data_ptr ( x,y,0,sample ) = error_function_ ( x,y,data_[index].width(),data_[index].height());
+        }
+      }
+    }
+    
     return success;
   } else return false;
 }
@@ -176,12 +205,24 @@ bool TensorStreamDataset::GetTestingSample ( Tensor& data_tensor, Tensor& label_
     unsigned int test_index = ( tensor_count_training_ / 2 ) + index;
     success &= Tensor::CopySample ( data_[test_index], 0, data_tensor, sample );
     success &= Tensor::CopySample ( labels_[test_index], 0, label_tensor, sample );
-    success &= Tensor::CopySample ( error_cache, 0, weight_tensor, sample );
+
+    if ( data_[index].width() == GetWidth() && data_[index].height() == GetHeight() ) {
+      success &= Tensor::CopySample ( error_cache, 0, weight_tensor, sample );
+    } else {
+      // Reevaluate error function
+      weight_tensor.Clear(0.0, sample);
+      for ( unsigned int y = 0; y < data_[index].height(); y++ ) {
+        for ( unsigned int x = 0; x < data_[index].width(); x++ ) {
+          *weight_tensor.data_ptr ( x,y,0,sample ) = error_function_ ( x,y,data_[index].width(),data_[index].height());
+        }
+      }
+    }
+
     return success;
   } else return false;
 }
 
-TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration ( std::istream& file , bool dont_load) {
+TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration ( std::istream& file , bool dont_load ) {
   unsigned int classes = 0;
   std::vector<std::string> class_names;
   std::vector<unsigned int> class_colors;
@@ -207,18 +248,19 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration ( std::istream
         }
       }
     }
-    
-    if ( StartsWithIdentifier( line, "colors") ) {
+
+    if ( StartsWithIdentifier ( line, "colors" ) ) {
       if ( classes != 0 ) {
         for ( int c = 0; c < classes; c++ ) {
           std::string color;
           std::getline ( file,color );
-	  unsigned long color_val_l = std::strtoul(color.c_str(), nullptr, 16);
-	  if(color_val_l < 0x100000000L) {
-	    class_colors.push_back((unsigned int)color_val_l);
-	  } else {
-	    FATAL("Not a valid color!");
-	  }
+          unsigned long color_val_l = std::strtoul ( color.c_str(), nullptr, 16 );
+
+          if ( color_val_l < 0x100000000L ) {
+            class_colors.push_back ( ( unsigned int ) color_val_l );
+          } else {
+            FATAL ( "Not a valid color!" );
+          }
         }
       }
     }
@@ -243,20 +285,19 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration ( std::istream
   LOGDEBUG << "Loading dataset with " << classes << " classes";
   LOGDEBUG << "Training tensor: " << training_file;
   LOGDEBUG << "Testing tensor: " << testing_file;
-  
-  if(dont_load) {
+
+  if ( dont_load ) {
     std::istream* training_stream = new std::istringstream();
     std::istream* testing_stream = new std::istringstream();
 
     return new TensorStreamDataset ( *training_stream, *testing_stream, classes,
-				    class_names, class_colors, error_function );
-  }
-  else {
+                                     class_names, class_colors, error_function );
+  } else {
     std::istream* training_stream = new std::ifstream ( training_file, std::ios::in );
     std::istream* testing_stream = new std::ifstream ( testing_file, std::ios::in );
 
     return new TensorStreamDataset ( *training_stream, *testing_stream, classes,
-				    class_names, class_colors, error_function );
+                                     class_names, class_colors, error_function );
   }
 }
 

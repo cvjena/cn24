@@ -79,15 +79,18 @@ std::string KITTIData::assembleFileName (KITTICategory category, int number,
   return fileName;
 }
 
-datum KITTIData::LocalizedError (unsigned int x, unsigned int y) {
-  const int distance = std::abs(613-(int)x);
-  const datum xy_allowed = (distance >  (3 * ((int)y - 140))) ? 0.0 : 1.0;
-  const datum y_factor = (y > 190) ? 1.0 : 0.0;
+#define WSC(x) ((int)(((datum)x) * ((datum)w) / 1226.0))
+#define HSC(y) ((int)(((datum)y) * ((datum)h) / 370.0))
+datum KITTIData::LocalizedError (unsigned int x, unsigned int y, unsigned int w, unsigned int h) {
+  const int idistance = std::abs(WSC(613)-(int)x);
+  const int distance = WSC(idistance);
+  const datum xy_allowed = (distance >  (3 * ((int)y - HSC(140)))) ? 0.0 : 1.0;
+  const datum y_factor = (y > HSC(190)) ? 1.0 : 0.0;
   
   const datum shape_weight = (xy_allowed * y_factor);
   
-  const datum quotient = (y<=170) ? 7.0 :
-    fmax(1.0,fmin(7.0, 200.0/((datum)y - 170.0)));
+  const datum quotient = (y<=HSC(170)) ? 7.0 :
+    fmax(1.0,fmin(7.0, HSC(200.0)/((datum)y - HSC(170.0))));
     
   const datum error = 0.25 + ((pow(quotient,2.0)-0.25) * shape_weight);
   

@@ -40,12 +40,12 @@ public:
   virtual Task GetTask() const = 0;
   
   /**
-   * @brief Gets the width of the images in this Dataset.
+   * @brief Gets the width of the largest image in this Dataset.
    */
   virtual unsigned int GetWidth() const = 0;
   
   /**
-   * @brief Gets the height of the images in this Dataset.
+   * @brief Gets the height of the largest image in this Dataset.
    */
   virtual unsigned int GetHeight() const = 0;
   
@@ -129,8 +129,8 @@ public:
  * A localized error function weighs the network's error w.r.t x and y
  * coordinates.
  */
-typedef datum (*dataset_localized_error_function) (unsigned int, unsigned int);
-datum DefaultLocalizedErrorFunction (unsigned int x, unsigned int y);
+typedef datum (*dataset_localized_error_function) (unsigned int, unsigned int, unsigned int, unsigned int);
+datum DefaultLocalizedErrorFunction (unsigned int x, unsigned int y, unsigned int w, unsigned int h);
 
 class TensorStreamDataset : public Dataset {
 public:
@@ -172,10 +172,14 @@ private:
   unsigned int tensor_count_training_ = 0;
   unsigned int tensor_count_testing_ = 0;
   
+  unsigned int max_width_ = 0;
+  unsigned int max_height_ = 0;
+  
   // Parameters
   std::vector<std::string> class_names_;
   std::vector<unsigned int> class_colors_;
   unsigned int classes_;
+  dataset_localized_error_function error_function_;
 };
 }
 
