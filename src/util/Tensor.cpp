@@ -8,8 +8,12 @@
 #include <cstdint>
 #include <cstring>
 #include <iostream>
+#include <fstream>
 #include <limits>
 #include <cmath>
+#include <string>
+#include "PNGLoader.h"
+#include "JPGLoader.h"
 
 #ifdef BLAS_MKL
 #include <mkl_service.h>
@@ -29,6 +33,11 @@ namespace Conv {
 Tensor::Tensor() {
 
 }
+
+Tensor::Tensor ( const std::string& filename ) {
+  LoadFromFile(filename);
+}
+
 
 Tensor::Tensor ( const Tensor& tensor, bool intentional ) {
   // Match size of source Tensor
@@ -460,6 +469,40 @@ std::size_t Tensor::AbsMaximum () {
 
   return max_x;
 }
+
+void Tensor::LoadFromFile ( const std::string& filename ) {
+  #ifdef BUILD_PNG
+  if((filename.compare(filename.length() - 3, 3, "png") == 0)
+    || (filename.compare(filename.length() - 3, 3, "PNG") == 0)
+  ) {
+    std::ifstream input_image_file(filename, std::ios::in | std::ios::binary);
+    if(!input_image_file.good()) 
+      FATAL("Cannot load " << filename);
+    Conv::PNGLoader::LoadFromStream(input_image_file, *this);
+    return;
+  }
+#endif
+#ifdef BUILD_JPG
+  if((filename.compare(filename.length() - 3, 3, "jpg") == 0)
+    || (filename.compare(filename.length() - 3, 3, "jpeg") == 0)
+    || (filename.compare(filename.length() - 3, 3, "JPG") == 0)
+    || (filename.compare(filename.length() - 3, 3, "JPEG") == 0)
+  ) {
+    Conv::JPGLoader::LoadFromFile(filename, *this);
+    return;
+  }
+#endif
+  if(filename.compare(filename.length() - 3, 3, "Tensor") == 0) {
+    std::ifstream input_image_file(filename, std::ios::in | std::ios::binary);
+    if(!input_image_file.good()) 
+      FATAL("Cannot load " << filename);
+    Deserialize(input_image_file);
+    return;
+  }
+  
+  FATAL("File format not supported!");
+}
+
 
 
 std::ostream& operator<< ( std::ostream& output, const Tensor& tensor ) {

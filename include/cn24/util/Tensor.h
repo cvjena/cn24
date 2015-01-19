@@ -26,6 +26,7 @@
 #define CONV_TENSOR_H
 
 #include <cstddef>
+#include <string>
 #include <iostream>
 
 #ifdef BUILD_OPENCL
@@ -64,7 +65,14 @@ public:
    * \param tensor Tensor to move
    */
   Tensor (Tensor && tensor);
-
+  
+  /**
+   * \brief Loads the Tensor from a file
+   * 
+   * \param filename Full path of the file to load
+   */
+  explicit Tensor (const std::string& filename);
+  
   /**
    * \brief Constructs an empty Tensor of the specified size.
    *
@@ -156,6 +164,13 @@ public:
    * \param input The input stream
    */
   void Deserialize (std::istream& input);
+  
+  /**
+   * \brief Loads a file and resizes the Tensor to match its contents
+   * 
+   * \param filename Full path of the file to load
+   */
+  void LoadFromFile(const std::string& filename);
 
   /**
    * \brief Copy a complete sample from one Tensor to another.

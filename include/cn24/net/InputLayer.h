@@ -24,6 +24,7 @@ namespace Conv {
   
 class InputLayer: public Layer {
 public:
+  explicit InputLayer(Tensor& data);
   InputLayer(Tensor& data, Tensor& helper); 
   InputLayer(Tensor& data, Tensor& label, Tensor& helper, Tensor& weight); 
 

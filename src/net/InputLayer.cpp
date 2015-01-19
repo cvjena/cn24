@@ -3,82 +3,87 @@
  * copyright (C) 2015 Clemens-Alexander Brust (ikosa dot de at gmail dot com).
  *
  * For licensing information, see the LICENSE file included with this project.
- */  
+ */
 #include "InputLayer.h"
 
 namespace Conv {
 
-InputLayer::InputLayer (Tensor& data, Tensor& helper) {
+InputLayer::InputLayer ( Tensor& data ) : InputLayer ( data,
+      * ( new Tensor(data.samples(), data.width(), data.height(), 2) ) ) {
+
+}
+
+InputLayer::InputLayer ( Tensor& data, Tensor& helper ) {
   // Check if data and helper Tensor match
-  if (data.samples() != helper.samples()) {
-    FATAL ("Dimensions don't match!");
+  if ( data.samples() != helper.samples() ) {
+    FATAL ( "Dimensions don't match!" );
   }
 
   // Create layer outputs that match the dimensions of the user's
   // data and helper Tensors
-  data_ = new CombinedTensor (data.samples(), data.width(), data.height(),
-                              data.maps());
+  data_ = new CombinedTensor ( data.samples(), data.width(), data.height(),
+                               data.maps() );
 
-  helper_ = new CombinedTensor (helper.samples(), helper.width(),
-                                helper.height(), helper.maps());
+  helper_ = new CombinedTensor ( helper.samples(), helper.width(),
+                                 helper.height(), helper.maps() );
 
   // Save some memory...
-  data_->data.Shadow (data);
-  helper_->data.Shadow (helper);
+  data_->data.Shadow ( data );
+  helper_->data.Shadow ( helper );
 
   LOGDEBUG << "Instance created.";
 }
 
-InputLayer::InputLayer (Tensor& data, Tensor& label, Tensor& helper,
-                        Tensor& weight) {
+InputLayer::InputLayer ( Tensor& data, Tensor& label, Tensor& helper,
+                         Tensor& weight ) {
   // Check if data and helper Tensor match
-  if (data.samples() != helper.samples()) {
-    FATAL ("Dimensions don't match!");
+  if ( data.samples() != helper.samples() ) {
+    FATAL ( "Dimensions don't match!" );
   }
 
-  if (data.samples() != label.samples()) {
-    FATAL ("Dimensions don't match!");
+  if ( data.samples() != label.samples() ) {
+    FATAL ( "Dimensions don't match!" );
   }
 
-  if (data.samples() != weight.samples()) {
-    FATAL ("Dimensions don't match!");
+  if ( data.samples() != weight.samples() ) {
+    FATAL ( "Dimensions don't match!" );
   }
 
   // Create layer outputs that match the dimensions of the user's
   // data and helper Tensors
-  data_ = new CombinedTensor (data.samples(), data.width(), data.height(),
-                              data.maps());
+  data_ = new CombinedTensor ( data.samples(), data.width(), data.height(),
+                               data.maps() );
 
-  label_ = new CombinedTensor (label.samples(), label.width(), label.height(),
-                               label.maps());
+  label_ = new CombinedTensor ( label.samples(), label.width(), label.height(),
+                                label.maps() );
 
-  helper_ = new CombinedTensor (helper.samples(), helper.width(),
-                                helper.height(), helper.maps());
+  helper_ = new CombinedTensor ( helper.samples(), helper.width(),
+                                 helper.height(), helper.maps() );
 
-  weight_ = new CombinedTensor (weight.samples(), weight.width(),
-                                weight.height(), weight.maps());
+  weight_ = new CombinedTensor ( weight.samples(), weight.width(),
+                                 weight.height(), weight.maps() );
 
 
 
   // Save some memory...
-  data_->data.Shadow (data);
-  label_->data.Shadow (label);
-  helper_->data.Shadow (helper);
-  weight_->data.Shadow (weight);
+  data_->data.Shadow ( data );
+  label_->data.Shadow ( label );
+  helper_->data.Shadow ( helper );
+  weight_->data.Shadow ( weight );
 
   LOGDEBUG << "Instance created.";
 }
 
-bool InputLayer::Connect (const std::vector< CombinedTensor* >& inputs,
-                          const std::vector< CombinedTensor* >& outputs) {
+bool InputLayer::Connect ( const std::vector< CombinedTensor* >& inputs,
+                           const std::vector< CombinedTensor* >& outputs ) {
   // Check if inputs were accidentally supplied
-  if (inputs.size() != 0) {
+  if ( inputs.size() != 0 ) {
     LOGERROR << "Input layer cannot have inputs!";
     return false;
   }
 
   // Check the number of output nodes
-  if (outputs.size() != 4 && outputs.size() != 3) {
+  if ( outputs.size() != 4 && outputs.size() != 3 ) {
     LOGERROR << "Wrong number of output nodes!";
     return false;
   }
@@ -86,16 +91,18 @@ bool InputLayer::Connect (const std::vector< CombinedTensor* >& inputs,
   CombinedTensor* output_data = outputs[0];
   CombinedTensor* output_labels = outputs[1];
   CombinedTensor* output_helper = outputs[2];
-  if (outputs.size() > 3) {
+
+  if ( outputs.size() > 3 ) {
     CombinedTensor* output_weight = outputs[3];
-    if (output_weight == nullptr) {
+
+    if ( output_weight == nullptr ) {
       LOGERROR << "Null pointer output node supplied!";
       return false;
     }
   }
 
-  if (output_data == nullptr || output_labels == nullptr ||
-      output_helper == nullptr) {
+  if ( output_data == nullptr || output_labels == nullptr ||
+       output_helper == nullptr ) {
     LOGERROR << "Null pointer output node supplied!";
     return false;
   }
@@ -115,7 +122,7 @@ bool InputLayer::Connect (const std::vector< CombinedTensor* >& inputs,
       output_helper->data.height() == helper_->data.height() &&
       output_helper->data.maps() == helper_->data.maps();*/
 
-  if (!valid) {
+  if ( !valid ) {
     LOGERROR << "Output nodes failed validation!";
     return false;
   } else {
@@ -123,25 +130,29 @@ bool InputLayer::Connect (const std::vector< CombinedTensor* >& inputs,
   }
 }
 
-bool InputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inputs,
-                                std::vector< CombinedTensor* >& outputs) {
+bool InputLayer::CreateOutputs ( const std::vector< CombinedTensor* >& inputs,
+                                 std::vector< CombinedTensor* >& outputs ) {
   // Check if inputs were accidentally supplied
-  if (inputs.size() != 0) {
+  if ( inputs.size() != 0 ) {
     LOGERROR << "Input layer cannot have inputs!";
     return false;
   }
 
   // Tell the network about our outputs
-  outputs.push_back (data_);
-  if (label_ != nullptr) {
-    outputs.push_back (label_);
+  outputs.push_back ( data_ );
+
+  if ( label_ != nullptr ) {
+    outputs.push_back ( label_ );
   } else {
-    outputs.push_back (new CombinedTensor (data_->data.samples()));
+    outputs.push_back ( new CombinedTensor ( data_->data.samples() ) );
   }
-  outputs.push_back (helper_);
-  if (weight_ != nullptr) {
-    outputs.push_back (weight_);
+
+  outputs.push_back ( helper_ );
+
+  if ( weight_ != nullptr ) {
+    outputs.push_back ( weight_ );
   }
+
   return true;
 }
 
