@@ -13,11 +13,11 @@
 #include "Config.h"
 #include "Log.h"
 #include "Tensor.h"
-#include "PNGLoader.h"
+#include "PNGUtil.h"
 
 namespace Conv {
 
-bool PNGLoader::LoadFromStream (std::istream& stream, Tensor& tensor) {
+bool PNGUtil::LoadFromStream (std::istream& stream, Tensor& tensor) {
 #ifndef BUILD_PNG
   LOGERROR << "PNG is not supported by this build!";
   return false;
@@ -119,9 +119,22 @@ bool PNGLoader::LoadFromStream (std::istream& stream, Tensor& tensor) {
 #endif
 }
 
+bool PNGUtil::WriteToStream (std::ostream& stream, Tensor& tensor) {
+  if(tensor.samples() != 1) {
+    LOGERROR << "Cannot write PNGs with more than 1 sample!";
+    return false;
+  }
+  if(tensor.maps() != 3) {
+    LOGERROR << "Cannot write PNGs with channels != 3";
+    return false;
+  }
+  
+  return false;
+}
+
 #ifdef BUILD_PNG
 
-bool PNGLoader::CheckSignature (std::istream& stream) {
+bool PNGUtil::CheckSignature (std::istream& stream) {
   // Allocate 8 bytes for the PNG signature
   png_byte signature[8];
 
@@ -143,7 +156,7 @@ bool PNGLoader::CheckSignature (std::istream& stream) {
   return comparison_result == 0;
 }
 
-void PNGLoader::ReadFromStream (png_structp png_handle, png_bytep data,
+void PNGUtil::ReadFromStream (png_structp png_handle, png_bytep data,
                                 png_size_t length) {
   // We need our stream back
   png_voidp stream_ptr = png_get_io_ptr (png_handle);

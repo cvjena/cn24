@@ -27,9 +27,6 @@ int main (int argc, char* argv[]) {
 
   // Capture command line arguments
   std::string output_image_fname (argv[5]);
-  if(output_image_fname.length() < 7 || output_image_fname.compare(output_image_fname.length()-6,6,"Tensor") != 0) {
-    LOGWARN << "NOTE: This utility writes binary tensor files!";
-  }
   std::string input_image_fname (argv[4]);
   std::string param_tensor_fname (argv[3]);
   std::string net_config_fname (argv[2]);
@@ -39,14 +36,10 @@ int main (int argc, char* argv[]) {
   Conv::System::Init();
 
   // Open network and dataset configuration files
-  std::ofstream output_image_file(output_image_fname,std::ios::out|std::ios::binary);
   std::ifstream param_tensor_file(param_tensor_fname,std::ios::in | std::ios::binary);
   std::ifstream net_config_file(net_config_fname,std::ios::in);
   std::ifstream dataset_config_file(dataset_config_fname,std::ios::in);
   
-  if(!output_image_file.good()) {
-    FATAL("Cannot open output tensor file!");
-  }
   if(!param_tensor_file.good()) {
     FATAL("Cannot open param tensor file!");
   }
@@ -85,7 +78,7 @@ int main (int argc, char* argv[]) {
   
   LOGINFO << "Colorizing..." << std::flush;
   dataset->Colorize(*net_output_tensor, image_output_tensor);
-  image_output_tensor.Serialize(output_image_file);
+  image_output_tensor.WriteToFile(output_image_fname);
 
   LOGINFO << "DONE!";
   LOGEND;

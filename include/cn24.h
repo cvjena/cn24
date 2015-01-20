@@ -19,7 +19,7 @@
 #include "cn24/util/Tensor.h"
 #include "cn24/util/TensorViewer.h"
 #include "cn24/util/CombinedTensor.h"
-#include "cn24/util/PNGLoader.h"
+#include "cn24/util/PNGUtil.h"
 #include "cn24/util/JPGLoader.h"
 #include "cn24/util/Log.h"
 #include "cn24/util/KITTIData.h"

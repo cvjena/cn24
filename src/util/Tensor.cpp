@@ -12,7 +12,7 @@
 #include <limits>
 #include <cmath>
 #include <string>
-#include "PNGLoader.h"
+#include "PNGUtil.h"
 #include "JPGLoader.h"
 
 #ifdef BLAS_MKL
@@ -508,7 +508,7 @@ void Tensor::LoadFromFile ( const std::string& filename ) {
     if ( !input_image_file.good() )
       FATAL ( "Cannot load " << filename );
 
-    Conv::PNGLoader::LoadFromStream ( input_image_file, *this );
+    Conv::PNGUtil::LoadFromStream ( input_image_file, *this );
     return;
   }
 
@@ -533,6 +533,48 @@ void Tensor::LoadFromFile ( const std::string& filename ) {
       FATAL ( "Cannot load " << filename );
 
     Deserialize ( input_image_file );
+    return;
+  }
+
+  FATAL ( "File format not supported!" );
+}
+
+void Tensor::WriteToFile ( const std::string& filename ) {
+#ifdef BUILD_PNG
+  if ( ( filename.compare ( filename.length() - 3, 3, "png" ) == 0 )
+       || ( filename.compare ( filename.length() - 3, 3, "PNG" ) == 0 )
+     ) {
+    std::ofstream output_image_file (filename, std::ios::out | std::ios::binary);
+
+    if ( !output_image_file.good() )
+      FATAL ( "Cannot write " << filename );
+
+    // Write png
+    Conv::PNGUtil::WriteToStream(output_image_file, *this);
+    return;
+  }
+
+#endif
+#ifdef BUILD_JPG
+
+  if ( ( filename.compare ( filename.length() - 3, 3, "jpg" ) == 0 )
+       || ( filename.compare ( filename.length() - 3, 3, "jpeg" ) == 0 )
+       || ( filename.compare ( filename.length() - 3, 3, "JPG" ) == 0 )
+       || ( filename.compare ( filename.length() - 3, 3, "JPEG" ) == 0 )
+     ) {
+    FATAL ( "File format not supported!" );
+    return;
+  }
+
+#endif
+
+  if ( filename.compare ( filename.length() - 3, 3, "Tensor" ) == 0 ) {
+    std::ofstream output_image_file (filename, std::ios::out | std::ios::binary);
+
+    if ( !output_image_file.good() )
+      FATAL ( "Cannot write " << filename );
+
+    Serialize(output_image_file);
     return;
   }
 

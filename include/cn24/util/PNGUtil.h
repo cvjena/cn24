@@ -5,16 +5,16 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file PNGLoader.h
- * \class PNGLoader
+ * \file PNGUtil.h
+ * \class PNGUtil
  * \brief Loads PNG files into a Tensor.
  *
  * \author Clemens-A. Brust (ikosa.de@gmail.com)
  *
  */
 
-#ifndef CONV_PNGLOADER_H
-#define CONV_PNGLOADER_H
+#ifndef CONV_PNGUTIL_H
+#define CONV_PNGUTIL_H
 
 #include <iostream>
 
@@ -26,7 +26,7 @@
 
 namespace Conv {
 
-class PNGLoader {
+class PNGUtil {
 public:
   /**
    * \brief Loads a PNG file from an input stream into a Tensor.
@@ -37,6 +37,16 @@ public:
    * \returns True on sucess, false otherwise
    */
   static bool LoadFromStream (std::istream& stream, Tensor& tensor); 
+  
+  /**
+   * \brief Writes a Tensor to an output stream in PNG format.
+   * 
+   * \param stream Output stream to write to
+   * \param tensor Tensor to read the data from (must be 1 sample,
+   * 	3 maps)
+   * \returns True on success, false otherwise
+   */
+  static bool WriteToStream (std::ostream& stream, Tensor& tensor);
 #ifdef BUILD_PNG
 private:
   /** 
