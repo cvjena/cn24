@@ -13,7 +13,7 @@
 #include <cmath>
 #include <string>
 #include "PNGUtil.h"
-#include "JPGLoader.h"
+#include "JPGUtil.h"
 
 #ifdef BLAS_MKL
 #include <mkl_service.h>
@@ -520,7 +520,7 @@ void Tensor::LoadFromFile ( const std::string& filename ) {
        || ( filename.compare ( filename.length() - 3, 3, "JPG" ) == 0 )
        || ( filename.compare ( filename.length() - 3, 3, "JPEG" ) == 0 )
      ) {
-    Conv::JPGLoader::LoadFromFile ( filename, *this );
+    Conv::JPGUtil::LoadFromFile ( filename, *this );
     return;
   }
 
@@ -562,7 +562,7 @@ void Tensor::WriteToFile ( const std::string& filename ) {
        || ( filename.compare ( filename.length() - 3, 3, "JPG" ) == 0 )
        || ( filename.compare ( filename.length() - 3, 3, "JPEG" ) == 0 )
      ) {
-    FATAL ( "File format not supported!" );
+    Conv::JPGUtil::WriteToFile(filename, *this);
     return;
   }
 

@@ -16,11 +16,11 @@
 #include "Config.h"
 #include "Log.h"
 #include "Tensor.h"
-#include "JPGLoader.h"
+#include "JPGUtil.h"
 
 namespace Conv {
 
-bool JPGLoader::LoadFromFile (const std::string& file, Tensor& tensor) {
+bool JPGUtil::LoadFromFile (const std::string& file, Tensor& tensor) {
 #ifndef BUILD_JPG
   LOGERROR << "JPG is not supported by this build!";
   return false;
@@ -74,9 +74,55 @@ bool JPGLoader::LoadFromFile (const std::string& file, Tensor& tensor) {
 #endif
 }
 
+bool JPGUtil::WriteToFile ( const std::string& file, Tensor& tensor ) {
+#ifndef BUILD_JPG
+  LOGERROR << "JPG is not supported by this build!";
+  return false;
+#else
+  FILE* out_file = fopen(file.c_str(), "wb");
+  if(out_file == NULL) {
+    LOGERROR << "Cannot open " << file;
+    return false;
+  }
+  
+  jpeg_compress_struct cinfo;
+  jpeg_error_mgr jerr;
+  
+  cinfo.err = jpeg_std_error(&jerr);
+  jpeg_create_compress(&cinfo);
+  jpeg_stdio_dest(&cinfo, out_file);
+  
+  cinfo.image_width = tensor.width();
+  cinfo.image_height = tensor.height();
+  cinfo.input_components = 3;
+  cinfo.in_color_space = JCS_RGB;
+  
+  jpeg_set_defaults(&cinfo);
+  jpeg_set_quality(&cinfo, 95, true);
+  jpeg_start_compress(&cinfo, true);
+  
+  
+  JSAMPROW row_pointer = new JSAMPLE[3*tensor.width()];
+  // Write scanlines
+  while(cinfo.next_scanline < tensor.height()) {
+    // Copy scanline
+    for(unsigned int x = 0; x < tensor.width(); x++) {
+      row_pointer[3 * x + 0] = UCHAR_FROM_DATUM(*tensor.data_ptr(x,cinfo.next_scanline,0,0));
+      row_pointer[3 * x + 1] = UCHAR_FROM_DATUM(*tensor.data_ptr(x,cinfo.next_scanline,1,0));
+      row_pointer[3 * x + 2] = UCHAR_FROM_DATUM(*tensor.data_ptr(x,cinfo.next_scanline,2,0));
+    }
+    jpeg_write_scanlines(&cinfo, &row_pointer, 1);
+  }
+  
+  jpeg_finish_compress(&cinfo);
+  fclose(out_file);
+#endif
+}
+
+
 #ifdef BUILD_JPG
 
-bool JPGLoader::CheckSignature (std::istream& stream) {
+bool JPGUtil::CheckSignature (std::istream& stream) {
   return true;
 }
 

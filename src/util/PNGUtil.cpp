@@ -123,6 +123,10 @@ bool PNGUtil::LoadFromStream ( std::istream& stream, Tensor& tensor ) {
 }
 
 bool PNGUtil::WriteToStream ( std::ostream& stream, Tensor& tensor ) {
+#ifndef BUILD_PNG
+  LOGERROR << "PNG is not supported by this build!";
+  return false;
+#else
   if ( tensor.samples() != 1 ) {
     LOGERROR << "Cannot write PNGs with more than 1 sample!";
     return false;
@@ -191,8 +195,8 @@ bool PNGUtil::WriteToStream ( std::ostream& stream, Tensor& tensor ) {
   png_write_image(png_handle, row_pointers);
 
   png_write_end ( png_handle, NULL );
-  // Open file
-  return false;
+  return true;
+#endif
 }
 
 #ifdef BUILD_PNG
