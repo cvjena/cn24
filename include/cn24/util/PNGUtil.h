@@ -60,8 +60,13 @@ private:
   /**
    * \brief This function is needed because libPNG doesn't support streams.
    */
-  static void ReadFromStream (png_structp png_handle, png_bytep data,
+  static void PNGReadFromStream (png_structp png_handle, png_bytep data,
                               png_size_t length);
+  
+  /**
+   * \brief This function is needed because libPNG doesn't support streams.
+   */
+  static void PNGWriteToStream (png_structp png_handle, png_bytep data, png_size_t length);
 
 #endif
 };
