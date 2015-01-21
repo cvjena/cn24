@@ -318,6 +318,7 @@ bool Tensor::CopyMap ( const Tensor& source, const std::size_t source_sample,
         *target.data_ptr ( x,y,target_map,target_sample ) = 0;
       }
     }
+
     return true;
   } else {
 
@@ -497,6 +498,23 @@ std::size_t Tensor::AbsMaximum () {
   return max_x;
 }
 
+std::size_t Tensor::PixelMaximum ( std::size_t x, std::size_t y, std::size_t sample ) {
+  unsigned int maxclass = 0;
+  datum maxvalue = std::numeric_limits<datum>::min();
+
+  for ( unsigned int c = 0; c < maps_; c++ ) {
+    const datum value = *data_ptr_const ( x,y,c,sample );
+
+    if ( value > maxvalue ) {
+      maxvalue = value;
+      maxclass = c;
+    }
+  }
+  
+  return maxclass;
+}
+
+
 void Tensor::LoadFromFile ( const std::string& filename ) {
 #ifdef BUILD_PNG
 
@@ -541,16 +559,17 @@ void Tensor::LoadFromFile ( const std::string& filename ) {
 
 void Tensor::WriteToFile ( const std::string& filename ) {
 #ifdef BUILD_PNG
+
   if ( ( filename.compare ( filename.length() - 3, 3, "png" ) == 0 )
        || ( filename.compare ( filename.length() - 3, 3, "PNG" ) == 0 )
      ) {
-    std::ofstream output_image_file (filename, std::ios::out | std::ios::binary);
+    std::ofstream output_image_file ( filename, std::ios::out | std::ios::binary );
 
     if ( !output_image_file.good() )
       FATAL ( "Cannot write " << filename );
 
     // Write png
-    Conv::PNGUtil::WriteToStream(output_image_file, *this);
+    Conv::PNGUtil::WriteToStream ( output_image_file, *this );
     return;
   }
 
@@ -562,19 +581,19 @@ void Tensor::WriteToFile ( const std::string& filename ) {
        || ( filename.compare ( filename.length() - 3, 3, "JPG" ) == 0 )
        || ( filename.compare ( filename.length() - 3, 3, "JPEG" ) == 0 )
      ) {
-    Conv::JPGUtil::WriteToFile(filename, *this);
+    Conv::JPGUtil::WriteToFile ( filename, *this );
     return;
   }
 
 #endif
 
   if ( filename.compare ( filename.length() - 3, 3, "Tensor" ) == 0 ) {
-    std::ofstream output_image_file (filename, std::ios::out | std::ios::binary);
+    std::ofstream output_image_file ( filename, std::ios::out | std::ios::binary );
 
     if ( !output_image_file.good() )
       FATAL ( "Cannot write " << filename );
 
-    Serialize(output_image_file);
+    Serialize ( output_image_file );
     return;
   }
 

@@ -15,6 +15,8 @@
 #include <omp.h>
 #endif
 
+#include <limits>
+
 namespace Conv {
 
 void Dataset::Colorize(Tensor& net_output_tensor, Tensor& target_tensor) {
@@ -44,6 +46,30 @@ void Dataset::Colorize(Tensor& net_output_tensor, Tensor& target_tensor) {
     
   } else {
     LOGWARN << "This code path is not yet implemented!";
+    for(unsigned sample = 0; sample < net_output_tensor.samples(); sample++) {
+       for(unsigned int y = 0; y < net_output_tensor.height(); y++) {
+	for(unsigned int x = 0; x < net_output_tensor.width(); x++) {
+	  unsigned int maxclass = 0;
+	  datum maxvalue = std::numeric_limits<datum>::min();
+	  for(unsigned int c = 0; c < GetClasses(); c++) {
+	    const datum value = *net_output_tensor.data_ptr_const(x,y,c,sample);
+	    if(value > maxvalue) {
+	      maxvalue = value;
+	      maxclass = c;
+	    }
+	  }
+	  
+	  const unsigned int foreground_color = GetClassColors()[maxclass];
+	  const datum r = DATUM_FROM_UCHAR((foreground_color >> 16) & 0xFF),
+	  g = DATUM_FROM_UCHAR((foreground_color >> 8) & 0xFF),
+	  b = DATUM_FROM_UCHAR(foreground_color & 0xFF);
+	  
+	  *target_tensor.data_ptr(x,y,0,sample) = r * maxvalue;
+	  *target_tensor.data_ptr(x,y,1,sample) = g * maxvalue;
+	  *target_tensor.data_ptr(x,y,2,sample) = b * maxvalue;
+	}
+      }     
+    }
   }
 }
 

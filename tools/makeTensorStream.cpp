@@ -44,6 +44,18 @@ int main ( int argc, char** argv ) {
   Conv::TensorStreamDataset* dataset = Conv::TensorStreamDataset::CreateFromConfiguration ( dataset_config_file, true );
   unsigned int CLASSES = dataset->GetClasses();
 
+  // Save colors
+  Conv::datum* cr = new Conv::datum[dataset->GetClasses()];
+  Conv::datum* cg = new Conv::datum[dataset->GetClasses()];
+  Conv::datum* cb = new Conv::datum[dataset->GetClasses()];
+
+  for ( unsigned int c = 0; c < dataset->GetClasses(); c++ ) {
+    const unsigned int class_color = dataset->GetClassColors() [c];
+    cr[c] = DATUM_FROM_UCHAR ( ( class_color >> 16 ) & 0xFF );
+    cg[c] = DATUM_FROM_UCHAR ( ( class_color >> 8 ) & 0xFF );
+    cb[c] = DATUM_FROM_UCHAR ( class_color & 0xFF );
+  }
+
   // Open file lists
   std::ifstream image_list_file ( image_list_fname, std::ios::in );
 
@@ -106,18 +118,41 @@ int main ( int argc, char** argv ) {
             lg = lr;
             lb = lr;
           } else {
-	    FATAL("Unsupported input channel count!");
-	  }
+            FATAL ( "Unsupported input channel count!" );
+          }
 
           const Conv::datum class1_diff = std::sqrt ( ( lr - fr ) * ( lr - fr )
                                           + ( lg - fg ) * ( lg - fg )
-                                          + ( lb - fb ) * ( lb - fb ) ) / std::sqrt(3.0);
+                                          + ( lb - fb ) * ( lb - fb ) ) / std::sqrt ( 3.0 );
           const Conv::datum val = 1.0 - 2.0 * class1_diff;
           *label_tensor.data_ptr ( x,y,0,0 ) = val;
         }
       }
     } else {
-      FATAL ( "This code path is not yet implemented!" );
+      label_tensor.Clear ( 0.0 );
+
+      for ( unsigned int y = 0; y < label_rgb_tensor.height(); y++ ) {
+        for ( unsigned int x = 0; x < label_rgb_tensor.width(); x++ ) {
+          Conv::datum lr, lg, lb;
+
+          if ( label_rgb_tensor.maps() == 3 ) {
+            lr = *label_rgb_tensor.data_ptr_const ( x,y,0,0 );
+            lg = *label_rgb_tensor.data_ptr_const ( x,y,1,0 );
+            lb = *label_rgb_tensor.data_ptr_const ( x,y,2,0 );
+          } else if ( label_rgb_tensor.maps() == 1 ) {
+            lr = *label_rgb_tensor.data_ptr_const ( x,y,0,0 );
+            lg = lr;
+            lb = lr;
+          } else {
+            FATAL ( "Unsupported input channel count!" );
+          }
+
+          for ( unsigned int c = 0; c < dataset->GetClasses(); c++ ) {
+	    if(lr == cr[c] && lg == cg[c] && lb == cb[c])
+	      *label_tensor.data_ptr ( x,y,c,0 ) = 1.0;
+          }
+        }
+      }
     }
 
     image_tensor.Serialize ( output_file );

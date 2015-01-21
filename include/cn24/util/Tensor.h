@@ -220,6 +220,11 @@ public:
    * \brief Gets the element number of the absolute maximum in the Tensor.
    */
   std::size_t AbsMaximum();
+  
+  /**
+   * \brief Gets the map with the highest value at the specified position
+   */
+  std::size_t PixelMaximum(std::size_t x, std::size_t y, std::size_t sample);
 
   /**
    * \brief Get a const pointer to the data

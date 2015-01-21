@@ -24,7 +24,7 @@ namespace Conv {
 
 class ConfusionMatrixLayer: public Layer {
 public:
-  explicit ConfusionMatrixLayer(std::vector<std::string>& names,
+  explicit ConfusionMatrixLayer(std::vector<std::string> names,
                                 const unsigned int classes);
   ~ConfusionMatrixLayer();
   void Print (std::string prefix, bool training);
@@ -45,7 +45,7 @@ public:
 
 private:
   unsigned int classes_;
-  std::vector<std::string>& names_;
+  std::vector<std::string> names_;
   bool disabled_ = false;
   
   CombinedTensor* first_ = nullptr;

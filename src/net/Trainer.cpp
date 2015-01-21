@@ -216,7 +216,13 @@ void Trainer::Epoch() {
     net_.binary_stat_layer()->Print ( epochname.str(), true );
     net_.binary_stat_layer()->Reset();
   }
-
+  
+  if ( net_.confusion_matrix_layer() != nullptr ) {
+    std::stringstream epochname;
+    epochname << "Testing  - Epoch " << epoch_ << " -";
+    net_.confusion_matrix_layer()->Print ( epochname.str(), false );
+    net_.confusion_matrix_layer()->Reset();
+  }
 
   delete[] stat_sum;
 

@@ -67,11 +67,11 @@ ConfigurableFactory::ConfigurableFactory ( std::istream& file, Method method, co
 }
 
 Layer* ConfigurableFactory::CreateLossLayer ( const unsigned int output_classes ) {
-  if ( output_classes == 1 ) {
+  //if ( output_classes == 1 ) {
     return new ErrorLayer();
-  } else {
+  /*} else {
     return new MultiClassErrorLayer ( output_classes );
-  }
+  }*/
 }
 
 int ConfigurableFactory::AddLayers ( Net& net, Connection data_layer_connection, const unsigned int output_classes ) {
