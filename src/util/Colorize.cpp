@@ -45,7 +45,6 @@ void Dataset::Colorize(Tensor& net_output_tensor, Tensor& target_tensor) {
     }
     
   } else {
-    LOGWARN << "This code path is not yet implemented!";
     for(unsigned sample = 0; sample < net_output_tensor.samples(); sample++) {
        for(unsigned int y = 0; y < net_output_tensor.height(); y++) {
 	for(unsigned int x = 0; x < net_output_tensor.width(); x++) {
