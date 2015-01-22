@@ -101,8 +101,8 @@ bool ConvolutionLayer::Connect (const CombinedTensor* input,
   output_width_ = output->data.width();
   output_height_ = output->data.height();
 
-  LOGDEBUG << "Local learning rate setting was " << local_lr_;
-  local_lr_ /= (datum)(output_width_ * output_height_);
+  /*LOGDEBUG << "Local learning rate setting was " << local_lr_;
+  local_lr_ /= (datum)(output_width_ * output_height_);*/
   LOGDEBUG << "Local learning rate is now " << local_lr_;
 #ifdef BUILD_BLAS
   // Create im2col output buffer

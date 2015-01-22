@@ -80,8 +80,15 @@ int ConfigurableFactory::AddLayers ( Net& net, Connection data_layer_connection,
   file_.seekg ( 0, std::ios::beg );
   int last_layer_output = data_layer_connection.output;
   int last_layer_id = data_layer_connection.net;
+  datum llr_factor = 1.0;
 
   if ( method_ == FCN ) {
+    Tensor* const net_output = &net.buffer(data_layer_connection.net, data_layer_connection.output)->data;
+    datum net_output_size_x = net_output->width();
+    datum net_output_size_y = net_output->height();
+    llr_factor /= net_output_size_x;
+    llr_factor /= net_output_size_y;
+    LOGINFO << "Local learning rate factor is: " << llr_factor;
     last_layer_id = net.AddLayer ( new ResizeLayer ( receptive_field_x_, receptive_field_y_ ), { data_layer_connection } );
     last_layer_output = 0;
   }
@@ -132,7 +139,7 @@ int ConfigurableFactory::AddLayers ( Net& net, Connection data_layer_connection,
         ParseDatumParamIfPossible ( line,"llr", llr );
 
         ConvolutionLayer* cl = new ConvolutionLayer ( kx, ky, k, rand() );
-        cl->SetLocalLearningRate ( llr );
+        cl->SetLocalLearningRate ( llr * llr_factor);
 
         if ( first_layer )
           cl->SetBackpropagationEnabled ( false );
@@ -203,7 +210,7 @@ int ConfigurableFactory::AddLayers ( Net& net, Connection data_layer_connection,
         ParseCountIfPossible ( line, "neurons", n );
 
         FullyConnectedLayer* fc = new FullyConnectedLayer ( n, rand() );
-        fc->SetLocalLearningRate ( llr );
+        fc->SetLocalLearningRate ( llr * llr_factor);
 
         if ( first_layer )
           fc->SetBackpropagationEnabled ( false );
