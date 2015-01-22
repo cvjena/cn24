@@ -117,6 +117,11 @@ TensorStreamDataset::TensorStreamDataset ( std::istream& training_stream,
 
     labels_[t].Deserialize ( testing_stream );
   }
+  
+  if(max_width_ & 1)
+    max_width_++;
+  if(max_height_ & 1)
+    max_height_++;
 
   input_maps_ = data_[0].maps();
   label_maps_ = labels_[0].maps();
