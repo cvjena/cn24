@@ -3,7 +3,7 @@
  * copyright (C) 2015 Clemens-Alexander Brust (ikosa dot de at gmail dot com).
  *
  * For licensing information, see the LICENSE file included with this project.
- */  
+ */
 #include <cmath>
 
 #include "Log.h"
@@ -20,10 +20,10 @@ ErrorLayer::ErrorLayer() {
 #endif
 }
 
-bool ErrorLayer::CreateOutputs (const std::vector< CombinedTensor* >& inputs,
-                                std::vector< CombinedTensor* >& outputs) {
+bool ErrorLayer::CreateOutputs ( const std::vector< CombinedTensor* >& inputs,
+                                 std::vector< CombinedTensor* >& outputs ) {
   // Validate input node count
-  if (inputs.size() != 3) {
+  if ( inputs.size() != 3 ) {
     LOGERROR << "Need exactly 3 inputs to calculate loss function!";
     return false;
   }
@@ -33,34 +33,34 @@ bool ErrorLayer::CreateOutputs (const std::vector< CombinedTensor* >& inputs,
   CombinedTensor* third = inputs[2];
 
   // Check for null pointers
-  if (first == nullptr || second == nullptr || third == nullptr) {
+  if ( first == nullptr || second == nullptr || third == nullptr ) {
     LOGERROR << "Null pointer node supplied";
     return false;
   }
 
-  if (first->data.samples() != second->data.samples()) {
+  if ( first->data.samples() != second->data.samples() ) {
     LOGERROR << "Inputs need the same number of samples!";
     return false;
   }
 
-  if (first->data.elements() != second->data.elements()) {
+  if ( first->data.elements() != second->data.elements() ) {
     LOGERROR << "Inputs need the same number of elements!";
     return false;
   }
 
-  if (first->data.samples() != third->data.samples()) {
+  if ( first->data.samples() != third->data.samples() ) {
     LOGERROR << "Inputs need the same number of samples!";
     return false;
   }
-  
+
   // Needs no outputs
   return true;
 }
 
-bool ErrorLayer::Connect (const std::vector< CombinedTensor* >& inputs,
-                          const std::vector< CombinedTensor* >& outputs) {
+bool ErrorLayer::Connect ( const std::vector< CombinedTensor* >& inputs,
+                           const std::vector< CombinedTensor* >& outputs ) {
   // Needs exactly three inputs to calculate the difference
-  if (inputs.size() != 3) 
+  if ( inputs.size() != 3 )
     return false;
 
   // Also, the two inputs have to have the same number of samples and elements!
@@ -74,7 +74,7 @@ bool ErrorLayer::Connect (const std::vector< CombinedTensor* >& inputs,
                first->data.samples() == third->data.samples() &&
                outputs.size() == 0;
 
-  if (valid) {
+  if ( valid ) {
     first_ = first;
     second_ = second;
     third_ = third;
@@ -88,8 +88,32 @@ void ErrorLayer::FeedForward() {
   // CalculateLossFunction() is called before BackPropagate().
   // We don't precalculate the loss because it is not calculated for every
   // batch.
-#pragma omp parallel for default(shared)
-  for (std::size_t i = 0; i < first_->data.elements(); i++) {
+  //pragma omp parallel for default(shared)
+  for ( unsigned int sample = 0; sample < first_->data.samples(); sample++ ) {
+    for ( unsigned int map = 0; map < first_->data.maps(); map++ ) {
+      for ( unsigned int y = 0; y < first_->data.height(); y++ ) {
+        for ( unsigned int x = 0; x < first_->data.width(); x++ ) {
+          const datum first =
+            *first_->data.data_ptr_const ( x, y, map, sample );
+          const datum second =
+            *second_->data.data_ptr_const ( x, y, map, sample );
+
+          const datum diff = first - second;
+
+#ifdef ERROR_LAYER_IGNORE_WEIGHTS
+          const datum weight = 1.0;
+#else
+          const datum weight =
+            *third_->data.data_ptr_const ( x,y,0,sample );
+#endif
+	  *first_->delta.data_ptr(x,y,map,sample) = diff * weight;
+        }
+      }
+    }
+  }
+
+
+/*  for ( std::size_t i = 0; i < first_->data.elements(); i++ ) {
     const datum first = first_->data.data_ptr_const() [i];
     const datum second = second_->data.data_ptr_const() [i];
     const datum diff = first_->data.data_ptr_const() [i] -
@@ -101,7 +125,7 @@ void ErrorLayer::FeedForward() {
 #endif
     first_->delta.data_ptr() [i] = diff * weight;
   }
-
+*/
 }
 
 void ErrorLayer::BackPropagate() {
@@ -113,9 +137,9 @@ datum ErrorLayer::CalculateLossFunction() {
   datum error = 0;
 
   // Add up the squared error
-  for (std::size_t i = 0; i < first_->data.elements(); i++) {
+  for ( std::size_t i = 0; i < first_->data.elements(); i++ ) {
     const datum diff = first_->delta.data_ptr_const() [i];
-    error += (diff * diff);
+    error += ( diff * diff );
   }
 
   return error / first_->data.elements();
