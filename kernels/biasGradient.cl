@@ -74,7 +74,7 @@ __kernel void BIAS_GRADIENT_PART2 ( __global float* bias_buffer,
         sum += bias_buffer_val;
     }
 
-    sum *= ( 2.0f * local_lr );
+    sum *= ( local_lr );
 
     db[output_map] = sum;
 }

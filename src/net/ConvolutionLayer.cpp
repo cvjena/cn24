@@ -385,8 +385,8 @@ void ConvolutionLayer::BackPropagate() {
     error |= clSetKernelArg (System::k_crossCorrelation, 0, sizeof (cl_mem), &input_->data.cl_data_ptr_);
     error |= clSetKernelArg (System::k_crossCorrelation, 1, sizeof (cl_mem), &output_->delta.cl_data_ptr_);
     error |= clSetKernelArg (System::k_crossCorrelation, 2, sizeof (cl_mem), &delta_buffer_.cl_data_ptr_);
-    error |= clSetKernelArg (System::k_crossCorrelation, 3, sizeof (unsigned int), &input_width_);
-    error |= clSetKernelArg (System::k_crossCorrelation, 4, sizeof (unsigned int), &input_height_);
+    error |= clSetKernelArg (System::k_crossCorrelation, 3, sizeof (unsigned int), &input_height_);
+    error |= clSetKernelArg (System::k_crossCorrelation, 4, sizeof (unsigned int), &input_width_);
     error |= clSetKernelArg (System::k_crossCorrelation, 5, sizeof (unsigned int), &input_maps_);
     error |= clSetKernelArg (System::k_crossCorrelation, 6, sizeof (unsigned int), &output_width_);
     error |= clSetKernelArg (System::k_crossCorrelation, 7, sizeof (unsigned int), &output_height_);
@@ -568,7 +568,7 @@ void ConvolutionLayer::BackPropagate() {
           for (unsigned int dox = 0; dox < output_width_; dox++) {
             const datum doval =
               *output_->delta.data_ptr_const (dox, doy, omap, sample);
-            bias_->delta[omap] += doval * 2.0f;
+            bias_->delta[omap] += doval; //* 2.0f;
           }
         }
 //      }

@@ -104,7 +104,7 @@ void UpscaleLayer::BackPropagate() {
             }
           }
 
-          *input_->delta.data_ptr ( ix,iy,map,sample ) = sum / (datum)(region_width_ * region_height_);
+          *input_->delta.data_ptr ( ix,iy,map,sample ) = sum; // (datum)(region_width_ * region_height_);
         }
       }
     }

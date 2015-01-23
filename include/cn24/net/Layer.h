@@ -23,8 +23,10 @@
 namespace Conv {
 
   class Trainer;
+  class GradientTester;
 class Layer {
   friend class Trainer;
+  friend class GradientTester;
 public:
   /**
    * \brief Creates a CombinedTensor vector given an input.

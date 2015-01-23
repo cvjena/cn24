@@ -134,15 +134,15 @@ void ErrorLayer::BackPropagate() {
 }
 
 datum ErrorLayer::CalculateLossFunction() {
-  datum error = 0;
+  long double error = 0;
 
   // Add up the squared error
   for ( std::size_t i = 0; i < first_->data.elements(); i++ ) {
     const datum diff = first_->delta.data_ptr_const() [i];
-    error += ( diff * diff );
+    error += (long double)( diff * diff );
   }
 
-  return error / first_->data.elements();
+  return error / (first_->data.samples() * 2.0);
 }
 
 

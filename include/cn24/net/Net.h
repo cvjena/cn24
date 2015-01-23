@@ -31,6 +31,7 @@
 namespace Conv {
 
 class Trainer;
+class GradientTester;
 
 struct Connection {
 public:
@@ -42,6 +43,7 @@ public:
 
 class Net {
   friend class Trainer;
+  friend class GradientTester;
 public:
   /**
    * \brief Adds a layer to the network.
