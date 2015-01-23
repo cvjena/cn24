@@ -468,7 +468,7 @@ void Tensor::MoveToCPU ( bool no_copy ) {
 #endif
 
 std::size_t Tensor::Maximum ( std::size_t sample ) {
-  datum max_y = std::numeric_limits<datum>::min();
+  datum max_y = std::numeric_limits<datum>::lowest();
   std::size_t max_x = 0;
 
   for ( std::size_t x = 0; x < width_ * height_ * maps_; x++ ) {
@@ -500,7 +500,7 @@ std::size_t Tensor::AbsMaximum () {
 
 std::size_t Tensor::PixelMaximum ( std::size_t x, std::size_t y, std::size_t sample ) {
   unsigned int maxclass = 0;
-  datum maxvalue = std::numeric_limits<datum>::min();
+  datum maxvalue = std::numeric_limits<datum>::lowest();
 
   for ( unsigned int c = 0; c < maps_; c++ ) {
     const datum value = *data_ptr_const ( x,y,c,sample );
