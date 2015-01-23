@@ -9,7 +9,7 @@
  * \class InputLayer
  * \brief A simple layer that always outputs the same Tensor.
  * 
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_INPUTLAYER_H

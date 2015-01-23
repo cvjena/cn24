@@ -9,7 +9,7 @@
  * \class SimpleLayer
  * \brief Abstract class representing a simple layer (1 input, 1 output).
  *
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  *
  */
 

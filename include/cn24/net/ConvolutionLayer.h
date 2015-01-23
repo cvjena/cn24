@@ -9,7 +9,7 @@
  * \class ConvolutionLayer
  * \brief Represents a layer that learns convolution kernels.
  * 
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_CONVOLUTIONLAYER_H

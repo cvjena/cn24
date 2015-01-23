@@ -9,7 +9,7 @@
  * \class SupportsDropoutLayer
  * \brief Interface for layers that support weight changing for dropout purposes.
  * 
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_SUPPORTSDROPOUTLAYER_H

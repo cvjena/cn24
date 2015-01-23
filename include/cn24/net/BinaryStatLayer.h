@@ -9,7 +9,7 @@
  * \class BinaryStatLayer
  * \brief Class that calculates various binary classification statistics.
  * 
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_BINARYSTATLAYER_H

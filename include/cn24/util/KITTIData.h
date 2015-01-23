@@ -7,7 +7,7 @@
 /**
  * \file KITTIData.h
  * \brief Helper class for fast KITTI data access
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_KITTIDATA_H

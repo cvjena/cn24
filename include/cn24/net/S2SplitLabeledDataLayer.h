@@ -10,7 +10,7 @@
  * \brief This layer outputs labeled data with cross-validation for semantic
  * segmentation.
  *
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_S2SPLITLABELEDDATALAYER_H

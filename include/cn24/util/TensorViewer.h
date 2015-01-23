@@ -10,7 +10,7 @@
  * \class TensorViewer
  * \brief A GTK+ interface to view Tensors.
  *
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  *
  */
 

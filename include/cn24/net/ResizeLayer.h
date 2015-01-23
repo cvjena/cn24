@@ -10,7 +10,7 @@
  * Layer that adds a border around an image so that it has its original
  * size after convolutions.
  * 
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_RESIZELAYER_H

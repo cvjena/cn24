@@ -9,7 +9,7 @@
  * \class LayerOutput
  * \brief Combination of Tensors to represent errors and outputs of Layers.
  *
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_COMBINEDTENSOR_H

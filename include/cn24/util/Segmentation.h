@@ -9,7 +9,7 @@
  * \class Segmentation
  * \brief Utility functions for segmentation.
  *
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_SEGMENTATION_H

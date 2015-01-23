@@ -9,7 +9,7 @@
  * \class Layer
  * \brief Abstract class representing a layer in the neural network.
  *
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  *
  */
 

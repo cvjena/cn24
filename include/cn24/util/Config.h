@@ -8,7 +8,7 @@
  * \file Config.h
  * \brief Contains configuration macros.
  * 
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_CONFIG_H

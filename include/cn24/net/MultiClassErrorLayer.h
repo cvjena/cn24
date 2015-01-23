@@ -9,7 +9,7 @@
  * \class MultiClassErrorLayer
  * \brief This Layer calculates the sum of the quadratic errors from training.
  * 
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_MULTICLASSERRORLAYER_H

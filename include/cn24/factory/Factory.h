@@ -9,7 +9,7 @@
  * \class Factory
  * \brief Interface for net factories.
  *
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_FACTORY_H

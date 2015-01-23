@@ -10,7 +10,7 @@
  * \class UpscaleLayer
  * \brief Layer that scales samples up after MaxPooling downscaled them.
  * 
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_UPSCALELAYER_H

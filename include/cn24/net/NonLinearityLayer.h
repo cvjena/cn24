@@ -9,7 +9,7 @@
  * \class NonLinearityLayer
  * \brief This layer introduces a non-linearity (activation function)
  *
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_NONLINEARITYLAYER_H
