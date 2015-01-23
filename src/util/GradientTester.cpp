@@ -12,7 +12,7 @@
 namespace Conv {
   
 void GradientTester::TestGradient ( Net& net ) {
-  const datum epsilon = 0.001;
+  const double epsilon = 0.001;
   LOGDEBUG << "Testing gradient. FeedForward...";
   net.FeedForward();
   LOGDEBUG << "Testing gradient. BackPropagate...";
@@ -35,18 +35,31 @@ void GradientTester::TestGradient ( Net& net ) {
 	param->delta.MoveToCPU();
 #endif
 	const datum old_param = param->data(e);
-	param->data[e] += epsilon;
-	const datum delta = epsilon * param->delta[e];
-	net.FeedForward();
-	const datum new_loss = net.lossfunction_layer()->CalculateLossFunction();
-	const datum actual_delta = new_loss - initial_loss;
 	
-	const datum ratio = actual_delta / delta;
-	if(ratio > 1.01 || ratio < 0.99) {
-	  if(passed && (ratio > 1.1 || ratio < 0.9))
-	    LOGWARN << "delta expected: " << delta << ",actual: " << actual_delta << ",ratio: " << ratio;
-	  passed = false;
+	param->data[e] = old_param + epsilon;
+	net.FeedForward();
+	const double plus_loss = net.lossfunction_layer()->CalculateLossFunction();
+	
+#ifdef BUILD_OPENCL
+	param->data.MoveToCPU();
+#endif
+	param->data[e] = old_param - epsilon;
+	net.FeedForward();
+	const double minus_loss = net.lossfunction_layer()->CalculateLossFunction();
+	
+	const double delta = param->delta[e];
+	const double actual_delta = (plus_loss - minus_loss) / (2.0 * epsilon);
+	
+	const double ratio = actual_delta / delta;
+	if(ratio > 1.02 || ratio < 0.98) {
+	  if(ratio > 1.1 || ratio < 0.9) {
+	    if(passed)
+	      LOGWARN << "delta calculated: " << delta << ",actual: " << actual_delta << ",ratio: " << ratio;
+	    passed = false;
+	    std::cout << "!" << std::flush;
+	  } else {
 	  std::cout << "#" << std::flush;
+	  }
 	}
 	else {
 	  std::cout << "." << std::flush;
