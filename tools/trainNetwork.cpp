@@ -30,7 +30,7 @@ int main ( int argc, char* argv[] ) {
   unsigned int TEST_EVERY = 1;
   const Conv::datum it_factor = 0.01;
 #else
-  unsigned int BATCHSIZE = 2;
+  unsigned int BATCHSIZE = 1;
   unsigned int TEST_EVERY = 5;
   const Conv::datum it_factor = 1;
 #endif
@@ -45,7 +45,6 @@ int main ( int argc, char* argv[] ) {
 
   if ( argc > 3 && std::string ( argv[3] ).compare ( "gradient_check" ) == 0 ) {
     GRADIENT_CHECK = true;
-    BATCHSIZE = 1;
   }
 
   std::string net_config_fname ( argv[2] );
@@ -92,7 +91,8 @@ int main ( int argc, char* argv[] ) {
     Conv::Tensor* weight_tensor = new Conv::Tensor ( BATCHSIZE,dataset->GetWidth(),dataset->GetHeight(),1 );
     Conv::Tensor* label_tensor = new Conv::Tensor ( BATCHSIZE,dataset->GetWidth(),dataset->GetHeight(),dataset->GetLabelMaps() );
     Conv::Tensor* helper_tensor = new Conv::Tensor ( BATCHSIZE,dataset->GetWidth(),dataset->GetHeight(),2 );
-    dataset->GetTrainingSample ( *data_tensor, *label_tensor, *weight_tensor, 0, 0 );
+    for(unsigned int b = 0; b < BATCHSIZE; b++)
+      dataset->GetTestingSample ( *data_tensor, *label_tensor, *weight_tensor, b, b );
     Conv::InputLayer* input_layer = new Conv::InputLayer ( *data_tensor, *label_tensor, *helper_tensor, *weight_tensor );
     data_layer_id = net.AddLayer ( input_layer );
   } else {

@@ -221,12 +221,12 @@ void ReLULayer::BackPropagate () {
 #pragma omp parallel for default(shared)
   for (std::size_t element = 0; element < input_->data.elements (); element++) {
     const datum output_delta = output_->delta.data_ptr_const ()[element];
-    const datum output_data = output_->data.data_ptr_const ()[element];
+    const datum input_data = input_->data.data_ptr_const ()[element];
 
     // There is more than one way to do this. max(0,x) is not differentiable
     // at x=0 so we have to make a choice. It doesn't affect the learning in
     // any meaningful way.
-    const datum input_delta = output_delta * (output_data > 0 ? 1 : 0);
+    const datum input_delta = (input_data > 0 ? output_delta : 0);
     input_->delta.data_ptr ()[element] = input_delta;
   }
 }

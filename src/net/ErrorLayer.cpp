@@ -142,7 +142,7 @@ datum ErrorLayer::CalculateLossFunction() {
     error += (long double)( diff * diff );
   }
 
-  return error / (first_->data.samples() * 2.0);
+  return error / 2.0;
 }
 
 
