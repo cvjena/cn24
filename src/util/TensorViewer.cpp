@@ -3,13 +3,15 @@
  * copyright (C) 2015 Clemens-Alexander Brust (ikosa dot de at gmail dot com).
  *
  * For licensing information, see the LICENSE file included with this project.
- */  
+ */
 
 #ifdef BUILD_GUI
 
 #include <gtk/gtk.h>
 #include <string>
 #include <thread>
+#include <algorithm>
+#include <sstream>
 #include "Config.h"
 #include "Log.h"
 
@@ -25,7 +27,9 @@ TensorViewer::TensorViewer () {
 void TensorViewer::show ( Tensor* tensor, const std::string& title, bool autoclose,unsigned int map, unsigned int sample ) {
   GtkWidget* window;
   window = gtk_window_new ( GTK_WINDOW_TOPLEVEL );
-  gtk_window_set_title ( GTK_WINDOW ( window ), title.c_str() );
+  std::stringstream ss;
+  ss << title << ": map " << map << "/" << tensor->maps() <<  " ,sample " << sample << "/" << tensor->samples();
+  gtk_window_set_title ( GTK_WINDOW ( window ), ss.str().c_str() );
   g_signal_connect ( window, "destroy", G_CALLBACK ( gtk_main_quit ), NULL );
 
   GdkPixbuf* pixel_buffer = gdk_pixbuf_new ( GDK_COLORSPACE_RGB, gtk_false(), 8, tensor->width(), tensor->height() );
@@ -38,7 +42,7 @@ void TensorViewer::show ( Tensor* tensor, const std::string& title, bool autoclo
     std::this_thread::sleep_for ( std::chrono::milliseconds ( 300 ) );
 
     if ( autoclose ) {
-      gtk_window_close(GTK_WINDOW(window));
+      gtk_window_close ( GTK_WINDOW ( window ) );
       gtk_main_quit();
     }
   };
@@ -71,7 +75,9 @@ void TensorViewer::copy ( Tensor* tensor, GdkPixbuf* targetb, unsigned int amap,
         guchar* target_row = &target[row_stride * y];
 
         for ( unsigned int x = 0; x < tensor->width(); x++ ) {
-          target_row[ ( 3*x ) + cmap] = tensor->maps() == 1 ? MCHAR_FROM_DATUM ( factor * row[x] ) : UCHAR_FROM_DATUM ( factor * row[x] );
+          const datum value = std::max ( std::min ( factor * row[x],1.0f ),-1.0f );
+          target_row[ ( 3*x ) + cmap] =
+            UCHAR_FROM_DATUM ( ( ( value < 0 && cmap == 0 ) || ( value >= 0 && cmap == 1 ) ) ? value : 0 );
         }
       }
     }
@@ -83,6 +89,6 @@ void TensorViewer::copy ( Tensor* tensor, GdkPixbuf* targetb, unsigned int amap,
 
 #else
 namespace Conv {
-  static int TensorViewerDummy = 0;
+static int TensorViewerDummy = 0;
 }
 #endif
