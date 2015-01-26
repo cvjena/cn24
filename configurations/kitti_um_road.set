@@ -1,8 +1,8 @@
 # KITTI dataset configuration
 # First, the locations of the image data tensor streams
 
-testing=UM_road.Tensor
-training=UM_road.Tensor
+testing=UM_ROAD_TEST.Tensor
+training=UM_ROAD_TRAIN.Tensor
 
 # For two-class problems where the classes are mutually exclusive,
 # you can specify a single class
