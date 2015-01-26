@@ -33,6 +33,7 @@ int main ( int argc, char* argv[] ) {
   unsigned int BATCHSIZE = 1;
   unsigned int TEST_EVERY = 5;
   const Conv::datum it_factor = 1;
+  const Conv::datum loss_sampling_p = 0.5;
 #endif
   unsigned int EPOCHS = 120;
   std::string mode = "slow";
@@ -96,7 +97,7 @@ int main ( int argc, char* argv[] ) {
     Conv::InputLayer* input_layer = new Conv::InputLayer ( *data_tensor, *label_tensor, *helper_tensor, *weight_tensor );
     data_layer_id = net.AddLayer ( input_layer );
   } else {
-    data_layer = new Conv::DatasetInputLayer ( *dataset, BATCHSIZE, 983923 );
+    data_layer = new Conv::DatasetInputLayer ( *dataset, BATCHSIZE, loss_sampling_p ,983923 );
     data_layer_id = net.AddLayer ( data_layer );
   }
 

@@ -31,8 +31,9 @@ namespace Conv {
 
 class DatasetInputLayer : public Layer, public TrainingLayer {
 public:
-  DatasetInputLayer(Dataset& dataset, const unsigned int batch_size = 1,
-		    const unsigned int seed = 0
+	DatasetInputLayer(Dataset& dataset, const unsigned int batch_size = 1,
+			const datum loss_sampling_p = 1.0,
+      const unsigned int seed = 0
 		    );
   
   // Implementations for Layer
@@ -49,6 +50,9 @@ public:
   unsigned int GetSamplesInTestingSet();
   unsigned int GetBatchSize();
 
+  inline datum GetLossSamplingProbability() {
+    return loss_sampling_p_;
+  }
   inline unsigned int current_element() {
     return current_element_;
   }
@@ -78,9 +82,12 @@ private:
   
   bool testing_ = false;
 
+  datum loss_sampling_p_ = 1.0;
+
   // Random seed
   int seed_;
   std::mt19937 generator_;
+  std::uniform_real_distribution<datum> dist_;
 
   // Array containing a random permutation of the training samples
   std::vector<unsigned int> perm_;

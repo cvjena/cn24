@@ -195,15 +195,18 @@ void Trainer::Epoch() {
   auto t_end = std::chrono::system_clock::now();
   std::chrono::duration<double> t_diff = t_end - t_begin;
   LOGINFO << "Training, sps: " <<
-          ( datum ) ( training_layer_->GetBatchSize() * iterations )
+          ( datum ) ( training_layer_->GetBatchSize()
+          * training_layer_->GetLossSamplingProbability() * iterations )
           / ( datum ) t_diff.count();
 
   LOGINFO << "Training, tps: " <<
           1000000.0f * ( datum ) t_diff.count() /
-          ( datum ) ( training_layer_->GetBatchSize() * iterations ) << " us";
+          ( datum ) ( training_layer_->GetBatchSize()
+          * training_layer_->GetLossSamplingProbability() * iterations ) << " us";
 
   // Display training epoch_error
-  LOGDEBUG << "Training, lps: " << epoch_error / ( datum ) (iterations * batchsize);
+  LOGDEBUG << "Training, lps: " << epoch_error / ( datum ) (iterations * batchsize
+    * training_layer_->GetLossSamplingProbability());
 
   for ( unsigned int s = 0; s < stat_count; s++ ) {
     LOGTRESULT << "Training, " << net_.stat_layers() [s]->stat_name() <<

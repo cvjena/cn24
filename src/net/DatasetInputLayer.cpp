@@ -23,9 +23,11 @@ namespace Conv {
 
 DatasetInputLayer::DatasetInputLayer ( Dataset& dataset,
                                        const unsigned int batch_size,
+                                       const datum loss_sampling_p,
                                        const unsigned int seed ) :
   dataset_ ( dataset ), batch_size_ ( batch_size ),
-  seed_ ( seed ), generator_ ( seed ) {
+  loss_sampling_p_(loss_sampling_p),
+  seed_ ( seed ), generator_ ( seed ), dist_(0.0, 1.0) {
   LOGDEBUG << "Instance created.";
 
   label_maps_ = dataset_.GetLabelMaps();
@@ -34,6 +36,8 @@ DatasetInputLayer::DatasetInputLayer ( Dataset& dataset,
   if (seed == 0) {
     LOGWARN << "Random seed is zero";
   }
+
+  LOGDEBUG << "Using loss sampling probability: " << loss_sampling_p_;
   
   elements_training_ = dataset_.GetTrainingSamples();
   elements_testing_ = dataset_.GetTestingSamples();
@@ -147,6 +151,16 @@ void DatasetInputLayer::FeedForward() {
     
     if(!success) {
       FATAL("Cannot load samples from Dataset!");
+    }
+
+    if (!testing_) {
+      // Perform loss sampling
+      const unsigned int elements_per_sample = localized_error_output_->data.elements() / localized_error_output_->data.samples();
+      const unsigned int start_element = localized_error_output_->data.elements() * sample;
+      for (unsigned int e = 0; e < elements_per_sample; e++) {
+        if (dist_(generator_) > loss_sampling_p_)
+          localized_error_output_->data[start_element + e] = 0;
+      }
     }
 
     // Copy localized error

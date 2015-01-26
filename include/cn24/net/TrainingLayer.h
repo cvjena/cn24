@@ -41,6 +41,12 @@ public:
    * \brief Gets the size of a batch.
    */
   virtual unsigned int GetBatchSize() = 0;
+
+
+  /**
+   * \brief Gets the probability for loss sampling
+   */
+  virtual datum GetLossSamplingProbability() = 0;
   
 };
 
