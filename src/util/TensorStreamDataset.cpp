@@ -298,8 +298,8 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration ( std::istream
     return new TensorStreamDataset ( *training_stream, *testing_stream, classes,
                                      class_names, class_colors, error_function );
   } else {
-    std::istream* training_stream = new std::ifstream ( training_file, std::ios::in );
-    std::istream* testing_stream = new std::ifstream ( testing_file, std::ios::in );
+    std::istream* training_stream = new std::ifstream ( training_file, std::ios::in | std::ios::binary );
+    std::istream* testing_stream = new std::ifstream ( testing_file, std::ios::in | std::ios::binary );
 
     return new TensorStreamDataset ( *training_stream, *testing_stream, classes,
                                      class_names, class_colors, error_function );
