@@ -156,7 +156,7 @@ void DatasetInputLayer::FeedForward() {
     if (!testing_) {
       // Perform loss sampling
       const unsigned int elements_per_sample = localized_error_output_->data.elements() / localized_error_output_->data.samples();
-      const unsigned int start_element = localized_error_output_->data.elements() * sample;
+      const unsigned int start_element = elements_per_sample * sample;
       for (unsigned int e = 0; e < elements_per_sample; e++) {
         if (dist_(generator_) > loss_sampling_p_)
           localized_error_output_->data[start_element + e] = 0;
