@@ -30,10 +30,10 @@ int main ( int argc, char* argv[] ) {
   unsigned int TEST_EVERY = 1;
   const Conv::datum it_factor = 0.01;
 #else
-  unsigned int BATCHSIZE = 1;
+  unsigned int BATCHSIZE = 4;
   unsigned int TEST_EVERY = 5;
   const Conv::datum it_factor = 1;
-  const Conv::datum loss_sampling_p = 0.5;
+  const Conv::datum loss_sampling_p = 0.25;
 #endif
   unsigned int EPOCHS = 120;
   std::string mode = "slow";
