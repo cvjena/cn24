@@ -5,7 +5,7 @@
 ?maxpooling size=2x2
 ?relu
 
-?convolutional size=5x5 kernels=6
+?convolutional size=5x5 kernels=24
 ?relu
 
 ?convolutional size=5x5 kernels=48
@@ -20,8 +20,8 @@
 ?output
 
 # Learning settings
-l1=0.0001
-l2=0.00005
+l1=0.001
+l2=0.0005
 lr=0.01
 gamma=0.01
 momentum=0.9
