@@ -47,6 +47,8 @@ TensorStreamDataset::TensorStreamDataset ( std::istream& training_stream,
 
     // LOGDEBUG << "Tensor " << tensor_count_training_ << ": " << tensor;
     tensor_count_training_++;
+
+    training_stream.peek();
   }
 
   LOGDEBUG << tensor_count_training_  / 2 << " training tensors";
@@ -64,6 +66,8 @@ TensorStreamDataset::TensorStreamDataset ( std::istream& training_stream,
 
     // LOGDEBUG << "Tensor " << tensor_count_testing_ << ": " << tensor;
     tensor_count_testing_++;
+
+    testing_stream.peek();
   }
 
   LOGDEBUG << tensor_count_testing_ / 2 << " testing tensors";
