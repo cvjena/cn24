@@ -102,8 +102,10 @@ public:
    * \brief Reads the parameters from a Tensor file.
    * 
    * \param input Stream to read the Tensors from
+   * \param last_layer The id of the last layer to load parameters into,
+   *   for fine-tuning. Set to zero for all layers.
    */
-  void DeserializeParameters(std::istream& input);
+  void DeserializeParameters(std::istream& input, unsigned int last_layer = 0);
   
   /**
    * \brief Gets the training layer.

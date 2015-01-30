@@ -291,11 +291,17 @@ void Net::SerializeParameters (std::ostream& output) {
   }
 }
 
-void Net::DeserializeParameters (std::istream& input) {
-  for (unsigned int l = 0; l < layers_.size(); l++) {
+void Net::DeserializeParameters (std::istream& input, unsigned int last_layer) {
+  if (last_layer == 0 || last_layer >= layers_.size())
+    last_layer = layers_.size() - 1;
+  for (unsigned int l = 0; l <= last_layer; l++) {
     Layer* layer = layers_[l];
     for (unsigned int p = 0; p < layer->parameters().size(); p++) {
+      if (!input.good() || input.eof())
+        break;
       layer->parameters() [p]->data.Deserialize (input);
+      LOGINFO << "Loaded parameters for layer " << l << " parameter set " << p << ": " << layer->parameters()[p]->data;
+      input.peek();
     }
   }
 }
