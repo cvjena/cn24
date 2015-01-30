@@ -53,6 +53,22 @@ void ParseStringIfPossible ( std::string line, std::string identifier, std::stri
   }
 }
 
+void ParseStringParamIfPossible(std::string line, std::string identifier, std::string& s) {
+  std::size_t ilen = identifier.length() + 1;
+  std::size_t size_pos = line.find ( identifier + "=" );
+
+  if ( size_pos == std::string::npos )
+    return;
+
+  std::size_t end_pos = line.find ( " ", size_pos );
+
+  if ( end_pos != std::string::npos )
+    line = line.substr ( 0, end_pos );
+
+  std::string sub = line.substr ( size_pos + ilen );
+  s = sub;
+}
+
 
 void ParseDatumIfPossible ( std::string line, std::string identifier, datum& value ) {
   if ( StartsWithIdentifier ( line,identifier ) ) {

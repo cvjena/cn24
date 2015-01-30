@@ -19,6 +19,7 @@ bool StartsWithIdentifier ( std::string line, std::string identifier );
 unsigned int ParseUInt ( std::string line, std::string identifier );
 datum ParseDatum ( std::string line, std::string identifier );
 std::string ParseString ( std::string line, std::string identifier );
+void ParseStringParamIfPossible(std::string line, std::string identifier, std::string& s);
 void ParseStringIfPossible( std::string line, std::string identifier, std::string& value );
 void ParseDatumIfPossible ( std::string line, std::string identifier, datum& value );
 void ParseUIntIfPossible ( std::string line, std::string identifier, unsigned int& value ) ;
