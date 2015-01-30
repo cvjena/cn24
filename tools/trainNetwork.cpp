@@ -4,12 +4,12 @@
  *
  * For licensing information, see the LICENSE file included with this project.
  */
-/**
- * \file trainNetwork.cpp
- * \brief Trains a convolutional neural net for prediction.
- *
- * \author Clemens-Alexander Brust(ikosa dot de at gmail dot com)
- */
+ /**
+  * \file trainNetwork.cpp
+  * \brief Trains a convolutional neural net for prediction.
+  *
+  * \author Clemens-Alexander Brust(ikosa dot de at gmail dot com)
+  */
 
 #include <iostream>
 #include <fstream>
@@ -22,7 +22,9 @@
 
 #include <cn24.h>
 
-int main ( int argc, char* argv[] ) {
+bool parseCommand(Conv::Net& net, Conv::Trainer trainer, std::string& command);
+
+int main(int argc, char* argv[]) {
   bool DO_TEST = true;
   bool GRADIENT_CHECK = false;
 #ifdef LAYERTIME
@@ -31,46 +33,43 @@ int main ( int argc, char* argv[] ) {
   const Conv::datum it_factor = 0.01;
 #else
   unsigned int BATCHSIZE = 4;
-  unsigned int TEST_EVERY = 5;
   const Conv::datum it_factor = 1;
   const Conv::datum loss_sampling_p = 0.25;
 #endif
-  unsigned int EPOCHS = 120;
-  std::string mode = "slow";
 
-  if ( argc < 3 ) {
+  if (argc < 3) {
     LOGERROR << "USAGE: " << argv[0] << " <dataset config file> <net config file>";
     LOGEND;
     return -1;
   }
 
-  if ( argc > 3 && std::string ( argv[3] ).compare ( "gradient_check" ) == 0 ) {
+  if (argc > 3 && std::string(argv[3]).compare("gradient_check") == 0) {
     GRADIENT_CHECK = true;
   }
 
-  std::string net_config_fname ( argv[2] );
-  std::string dataset_config_fname ( argv[1] );
+  std::string net_config_fname(argv[2]);
+  std::string dataset_config_fname(argv[1]);
 
   Conv::System::Init();
 
   // Open network and dataset configuration files
-  std::ifstream net_config_file ( net_config_fname,std::ios::in );
-  std::ifstream dataset_config_file ( dataset_config_fname,std::ios::in );
+  std::ifstream net_config_file(net_config_fname, std::ios::in);
+  std::ifstream dataset_config_file(dataset_config_fname, std::ios::in);
 
-  if ( !net_config_file.good() ) {
-    FATAL ( "Cannot open net configuration file!" );
+  if (!net_config_file.good()) {
+    FATAL("Cannot open net configuration file!");
   }
 
-  net_config_fname = net_config_fname.substr ( net_config_fname.rfind ( "/" ) +1 );
+  net_config_fname = net_config_fname.substr(net_config_fname.rfind("/") + 1);
 
-  if ( !dataset_config_file.good() ) {
-    FATAL ( "Cannot open dataset configuration file!" );
+  if (!dataset_config_file.good()) {
+    FATAL("Cannot open dataset configuration file!");
   }
 
-  dataset_config_fname = dataset_config_fname.substr ( net_config_fname.rfind ( "/" ) +1 );
+  dataset_config_fname = dataset_config_fname.substr(net_config_fname.rfind("/") + 1);
 
   // Parse network configuration file
-  Conv::Factory* factory = new Conv::ConfigurableFactory ( net_config_file, Conv::FCN );
+  Conv::Factory* factory = new Conv::ConfigurableFactory(net_config_file, Conv::FCN);
   factory->InitOptimalSettings();
   LOGDEBUG << "Optimal settings: " << factory->optimal_settings();
 
@@ -79,7 +78,7 @@ int main ( int argc, char* argv[] ) {
   settings.testing_ratio = 1 * it_factor;
 
   // Load dataset
-  Conv::TensorStreamDataset* dataset = Conv::TensorStreamDataset::CreateFromConfiguration ( dataset_config_file );
+  Conv::TensorStreamDataset* dataset = Conv::TensorStreamDataset::CreateFromConfiguration(dataset_config_file);
   unsigned int CLASSES = dataset->GetClasses();
 
   // Assemble net
@@ -87,53 +86,70 @@ int main ( int argc, char* argv[] ) {
   int data_layer_id = 0;
 
   Conv::DatasetInputLayer* data_layer = nullptr;
-  if ( GRADIENT_CHECK ) {
-    Conv::Tensor* data_tensor = new Conv::Tensor ( BATCHSIZE,dataset->GetWidth(),dataset->GetHeight(),dataset->GetInputMaps() );
-    Conv::Tensor* weight_tensor = new Conv::Tensor ( BATCHSIZE,dataset->GetWidth(),dataset->GetHeight(),1 );
-    Conv::Tensor* label_tensor = new Conv::Tensor ( BATCHSIZE,dataset->GetWidth(),dataset->GetHeight(),dataset->GetLabelMaps() );
-    Conv::Tensor* helper_tensor = new Conv::Tensor ( BATCHSIZE,dataset->GetWidth(),dataset->GetHeight(),2 );
-    for(unsigned int b = 0; b < BATCHSIZE; b++)
-      dataset->GetTestingSample ( *data_tensor, *label_tensor, *weight_tensor, b, b );
-    Conv::InputLayer* input_layer = new Conv::InputLayer ( *data_tensor, *label_tensor, *helper_tensor, *weight_tensor );
-    data_layer_id = net.AddLayer ( input_layer );
-  } else {
-    data_layer = new Conv::DatasetInputLayer ( *dataset, BATCHSIZE, loss_sampling_p ,983923 );
-    data_layer_id = net.AddLayer ( data_layer );
+  if (GRADIENT_CHECK) {
+    Conv::Tensor* data_tensor = new Conv::Tensor(BATCHSIZE, dataset->GetWidth(), dataset->GetHeight(), dataset->GetInputMaps());
+    Conv::Tensor* weight_tensor = new Conv::Tensor(BATCHSIZE, dataset->GetWidth(), dataset->GetHeight(), 1);
+    Conv::Tensor* label_tensor = new Conv::Tensor(BATCHSIZE, dataset->GetWidth(), dataset->GetHeight(), dataset->GetLabelMaps());
+    Conv::Tensor* helper_tensor = new Conv::Tensor(BATCHSIZE, dataset->GetWidth(), dataset->GetHeight(), 2);
+    for (unsigned int b = 0; b < BATCHSIZE; b++)
+      dataset->GetTestingSample(*data_tensor, *label_tensor, *weight_tensor, b, b);
+    Conv::InputLayer* input_layer = new Conv::InputLayer(*data_tensor, *label_tensor, *helper_tensor, *weight_tensor);
+    data_layer_id = net.AddLayer(input_layer);
+  }
+  else {
+    data_layer = new Conv::DatasetInputLayer(*dataset, BATCHSIZE, loss_sampling_p, 983923);
+    data_layer_id = net.AddLayer(data_layer);
   }
 
   int output_layer_id =
-    factory->AddLayers ( net, Conv::Connection ( data_layer_id ), CLASSES );
+    factory->AddLayers(net, Conv::Connection(data_layer_id), CLASSES);
 
   LOGDEBUG << "Output layer id: " << output_layer_id;
 
-  net.AddLayer ( factory->CreateLossLayer ( CLASSES ), {
-    Conv::Connection ( output_layer_id ),
-    Conv::Connection ( data_layer_id, 1 ),
-    Conv::Connection ( data_layer_id, 3 ),
-  } );
+  net.AddLayer(factory->CreateLossLayer(CLASSES), {
+    Conv::Connection(output_layer_id),
+    Conv::Connection(data_layer_id, 1),
+    Conv::Connection(data_layer_id, 3),
+  });
 
-  if ( CLASSES == 1 ) {
-    Conv::BinaryStatLayer* binary_stat_layer = new Conv::BinaryStatLayer ( 13,-1,1 );
-    net.AddLayer ( binary_stat_layer, {
-      Conv::Connection ( output_layer_id ),
-      Conv::Connection ( data_layer_id, 1 ),
-      Conv::Connection ( data_layer_id, 3 )
-    } );
-  } else {
+  // Add appropriate statistics layer
+  if (CLASSES == 1) {
+    Conv::BinaryStatLayer* binary_stat_layer = new Conv::BinaryStatLayer(13, -1, 1);
+    net.AddLayer(binary_stat_layer, {
+      Conv::Connection(output_layer_id),
+      Conv::Connection(data_layer_id, 1),
+      Conv::Connection(data_layer_id, 3)
+    });
+  }
+  else {
     std::vector<std::string> class_names = dataset->GetClassNames();
-    Conv::ConfusionMatrixLayer* confusion_matrix_layer = new Conv::ConfusionMatrixLayer ( class_names, CLASSES );
-    net.AddLayer ( confusion_matrix_layer, {
-      Conv::Connection ( output_layer_id ),
-      Conv::Connection ( data_layer_id, 1 ),
-      Conv::Connection ( data_layer_id, 3 )
-    } );
+    Conv::ConfusionMatrixLayer* confusion_matrix_layer = new Conv::ConfusionMatrixLayer(class_names, CLASSES);
+    net.AddLayer(confusion_matrix_layer, {
+      Conv::Connection(output_layer_id),
+      Conv::Connection(data_layer_id, 1),
+      Conv::Connection(data_layer_id, 3)
+    });
   }
 
+  // Initialize net with random weights
   net.InitializeWeights();
 
-  if ( GRADIENT_CHECK ) {
-    Conv::GradientTester::TestGradient ( net );
-  } else {
+  if (GRADIENT_CHECK) {
+    Conv::GradientTester::TestGradient(net);
+  }
+  else {
+    Conv::Trainer trainer(net, settings);
+    while (true) {
+      std::cout << "\n > " << std::flush;
+      std::string command;
+      std::getline(std::cin, command);
+      if (!parseCommand(net, trainer, command))
+        break;
+    }
+  }
+
+  /*
+  {
     Conv::Trainer trainer ( net, settings );
     for (unsigned int i = 0; i < EPOCHS / TEST_EVERY; i++) {
       trainer.Train (TEST_EVERY);
@@ -184,8 +200,45 @@ int main ( int argc, char* argv[] ) {
     LOGINFO << "Last element: " << data_layer->current_element();
     outfile.close();
   }
+  */
 
   LOGINFO << "DONE!";
   LOGEND;
   return 0;
+}
+
+
+bool parseCommand(Conv::Net& net, Conv::Trainer trainer, std::string& command) {
+  if (command.compare("q") == 0 || command.compare("quit") == 0) {
+    return false;
+  }
+  else if (command.compare(0, 5, "train") == 0) {
+    unsigned int epochs = 1;
+    Conv::ParseCountIfPossible(command, "epochs", epochs);
+    trainer.Train(epochs);
+  }
+  else if (command.compare(0, 4, "test") == 0) {
+    trainer.Test();
+  }
+  else if (command.compare(0, 4, "load") == 0) {
+    std::string param_file_name;
+    unsigned int last_layer = 0;
+    Conv::ParseStringParamIfPossible(command, "file", param_file_name);
+    Conv::ParseCountIfPossible(command, "last_layer", last_layer);
+    if (param_file_name.length() == 0) {
+      LOGERROR << "Filename needed!";
+    }
+    else {
+      std::ifstream param_file(param_file_name, std::ios::in | std::ios::binary);
+      if (param_file.good()) {
+        net.DeserializeParameters(param_file, last_layer);
+      }
+      else {
+        LOGERROR << "Cannot open " << param_file_name;
+      }
+      param_file.close();
+    }
+  }
+
+  return true;
 }
