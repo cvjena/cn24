@@ -30,6 +30,8 @@ int main(int argc, char* argv[]) {
   unsigned int tensors_in_file = 0;
   for (; !file_in.eof(); tensors_in_file++) {
     tensor.Deserialize(file_in);
+    file_in.peek();
+    LOGINFO << "Tensor loaded: " << tensor;
   }
 
   // Compare the number of tensors in the stream to the specified output number
@@ -56,7 +58,10 @@ int main(int argc, char* argv[]) {
 
     std::ofstream file_out(std::string(argv[1]), std::ios::out | std::ios::binary);
     for (unsigned int t = 0; t < t_count; t++)
+    {
       tensors[t].Serialize(file_out);
+      LOGINFO << "Serializing tensor " << t << ": " << tensors[t];
+    }
 
     file_out.close();
 
