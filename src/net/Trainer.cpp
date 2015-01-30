@@ -129,6 +129,8 @@ datum Trainer::Test() {
     net_.confusion_matrix_layer()->Reset();
   }
 
+  training_layer_->SetTestingMode ( false );
+
   delete[] stat_sum;
   return loss_sum / ( datum ) iterations;
 }
