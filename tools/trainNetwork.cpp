@@ -23,6 +23,7 @@
 #include <cn24.h>
 
 bool parseCommand(Conv::Net& net, Conv::Trainer trainer, std::string& command);
+void help();
 
 int main(int argc, char* argv[]) {
   bool DO_TEST = true;
@@ -139,6 +140,7 @@ int main(int argc, char* argv[]) {
   }
   else {
     Conv::Trainer trainer(net, settings);
+    LOGINFO << "Enter \"help\" for information on how to use this program";
     while (true) {
       std::cout << "\n > " << std::flush;
       std::string command;
@@ -239,6 +241,39 @@ bool parseCommand(Conv::Net& net, Conv::Trainer trainer, std::string& command) {
       param_file.close();
     }
   }
+  else if (command.compare(0, 4, "save") == 0) {
+    std::string param_file_name;
+    Conv::ParseStringParamIfPossible(command, "file", param_file_name);
+    if (param_file_name.length() == 0) {
+      LOGERROR << "Filename needed!";
+    }
+    else {
+      std::ofstream param_file(param_file_name, std::ios::out | std::ios::binary);
+      if (param_file.good()) {
+        net.SerializeParameters(param_file);
+      }
+      else {
+        LOGERROR << "Cannot open " << param_file_name;
+      }
+      param_file.close();
+    }
+  }
+  else if (command.compare(0, 4, "help") == 0) {
+    help();
+  }
 
   return true;
+}
+
+void help() {
+  std::cout << "You can use the following commands:\n";
+  std::cout
+    << "  train [epochs=<n>]\n"
+    << "    Train the network for n epochs (default: 1)\n\n"
+    << "  test\n"
+    << "    Test the network\n\n"
+    << "  load file=<path> [last_layer=<l>]\n"
+    << "    Load parameters from a file for all layers up to l (default: all layers)\n\n"
+    << "  save file=<path>\n"
+    << "    Save parameters to a file\n";
 }
