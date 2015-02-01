@@ -29,9 +29,7 @@
 #include <string>
 #include <iostream>
 
-#ifdef BUILD_OPENCL
-#include <CL/cl.h>
-#endif
+#include <Init.h>
 
 #include "Log.h"
 #include "Config.h"

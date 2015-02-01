@@ -8,7 +8,6 @@
 #include <cmath>
 
 #ifdef BUILD_OPENCL
-#include <CL/cl.h>
 #include "Init.h"
 #endif
 

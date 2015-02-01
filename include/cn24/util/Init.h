@@ -17,7 +17,12 @@
 #include "TensorViewer.h"
 
 #ifdef BUILD_OPENCL
+#ifdef __APPLE__
+#include <cl.h>
+#else
 #include <CL/cl.h>
+#endif
+
 #include <string>
 #endif
 

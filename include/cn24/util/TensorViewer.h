@@ -18,12 +18,11 @@
 #define CN24_TENSORVIEWER_H
 #ifdef BUILD_GUI
 
-#include "Tensor.h"
 #include <string>
 #include <gtk/gtk.h>
 
 namespace Conv {
-
+class Tensor;
 class TensorViewer {
 public:
   TensorViewer();
@@ -35,8 +34,10 @@ private:
 
 // We show this if GTK+ is not enabled in the build system
 #else
-#include "Tensor.h"
+#include "Log.h"
+
 namespace Conv {
+class Tensor;
 class TensorViewer {
 public:
   TensorViewer() { LOGDEBUG << "Not showing TensorViewer"; };

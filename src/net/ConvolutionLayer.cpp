@@ -7,7 +7,6 @@
 #include <cstring>
 
 #ifdef BUILD_OPENCL_CONV
-#include <CL/cl.h>
 #include <iomanip>
 #endif
 

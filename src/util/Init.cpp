@@ -5,7 +5,6 @@
  * For licensing information, see the LICENSE file included with this project.
  */
 #ifdef BUILD_OPENCL
-#include <CL/cl.h>
 #include <string>
 #include <iostream>
 #include <fstream>

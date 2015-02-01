@@ -19,10 +19,6 @@
 #include <mkl_service.h>
 #endif
 
-#ifdef BUILD_OPENCL
-#include <CL/cl.h>
-#endif
-
 #include "Config.h"
 #include "Log.h"
 #include "Tensor.h"

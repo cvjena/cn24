@@ -16,10 +16,7 @@
 #include <cmath>
 
 #ifdef BUILD_OPENCL
-
-#include <CL/cl.h>
 #include "Init.h"
-
 #endif
 
 #include "NonLinearityLayer.h"
