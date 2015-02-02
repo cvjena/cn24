@@ -220,7 +220,11 @@ bool parseCommand(Conv::Net& net, Conv::Trainer trainer, std::string& command) {
     trainer.Train(epochs);
   }
   else if (command.compare(0, 4, "test") == 0) {
+    unsigned int layerview = 0;
+    Conv::ParseCountIfPossible(command, "view", layerview);
+    net.SetLayerViewEnabled(layerview == 1);
     trainer.Test();
+    net.SetLayerViewEnabled(false);
   }
   else if (command.compare(0, 4, "load") == 0) {
     std::string param_file_name;

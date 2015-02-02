@@ -7,6 +7,8 @@
 #include "Log.h"
 #include "Init.h"
 
+#include "TensorViewer.h"
+
 #include <sstream>
 
 #include "Net.h"
