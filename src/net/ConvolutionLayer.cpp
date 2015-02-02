@@ -582,6 +582,9 @@ void ConvolutionLayer::OnLayerConnect (Layer* next_layer) {
 
   const datum range = sqrt (6) / sqrt (next_layer_gain + this_layer_gain);
 
+#ifdef BUILD_OPENCL
+  weights_->data.MoveToCPU();
+#endif
   std::uniform_real_distribution<datum> dist_weights (-range , range);
   for (std::size_t i = 0; i < weights_->data.elements(); i++) {
     weights_->data[i] = dist_weights (rand_);
