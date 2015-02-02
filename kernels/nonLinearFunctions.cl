@@ -41,7 +41,7 @@ __kernel void NL_SIGM_FWD ( __global float* X,
                       )
 {
     uint element = get_global_id ( 0 );
-    Y[element] =  1.0 / ( 1.0 + exp( - X[element] ));
+    Y[element] =  1.0f / ( 1.0f + exp( - X[element] ));
 }
 
 __kernel void NL_SIGM_BWD ( __global float* dX,
