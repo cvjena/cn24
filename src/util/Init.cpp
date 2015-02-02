@@ -21,6 +21,8 @@
 #include <gtk/gtk.h>
 #endif
 
+#include "TensorViewer.h"
+
 namespace Conv {
 
 #ifdef BUILD_OPENCL

@@ -14,8 +14,6 @@
 #ifndef CONV_INIT_H
 #define CONV_INIT_H
 
-#include "TensorViewer.h"
-
 #ifdef BUILD_OPENCL
 #ifdef __APPLE__
 #include <cl.h>
@@ -27,6 +25,7 @@
 #endif
 
 namespace Conv {
+class TensorViewer;
 class System {
 public:
   static void Init();

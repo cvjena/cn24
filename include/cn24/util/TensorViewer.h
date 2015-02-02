@@ -18,6 +18,7 @@
 #define CN24_TENSORVIEWER_H
 #ifdef BUILD_GUI
 
+#include "Config.h"
 #include <string>
 #include <gtk/gtk.h>
 

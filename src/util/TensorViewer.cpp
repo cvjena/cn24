@@ -14,6 +14,7 @@
 #include <sstream>
 #include "Config.h"
 #include "Log.h"
+#include "Tensor.h"
 
 #include "TensorViewer.h"
 
