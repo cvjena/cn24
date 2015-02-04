@@ -39,6 +39,7 @@ typedef u_int32_t duint;
 #endif
 #endif
 #define DATUM_FROM_UCHAR(x) ((Conv::datum)(0.003921569f * ((unsigned char)x)))
+#define DATUM_FROM_USHORT(x) ((Conv::datum)(0.0000152590219f * ((unsigned short)x)))
 #define UCHAR_FROM_DATUM(x) ((unsigned char) (255.0f * ((Conv::datum)x) ) )
 #define MCHAR_FROM_DATUM(x) ((unsigned char) (127.0f + 127.0f * ((Conv::datum)x) ) )
 

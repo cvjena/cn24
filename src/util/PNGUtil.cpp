@@ -64,8 +64,8 @@ bool PNGUtil::LoadFromStream ( std::istream& stream, Tensor& tensor ) {
   png_uint_32 image_colors = png_get_color_type ( png_handle, png_info_handle );
 
   // Check header data for correct format
-  if ( image_depth != 8 ) {
-    LOGERROR << "Only 8 bits per channel are supported! This image has "
+  if ( image_depth != 8 && image_depth != 16 ) {
+    LOGERROR << "Only 8/16 bits per channel are supported! This image has "
              << image_depth;
     png_destroy_read_struct ( &png_handle, &png_info_handle, 0 );
     return false;
@@ -77,46 +77,92 @@ bool PNGUtil::LoadFromStream ( std::istream& stream, Tensor& tensor ) {
   }
 
 
-  // Allocate memory for row pointers
-  png_bytep* row_pointers = new png_bytep[image_height];
+  if(image_depth == 8) {
+    // Allocate memory for row pointers
+    png_bytep* row_pointers = new png_bytep[image_height];
 
-  // Allocate memory for image
-  png_byte* image_data = new png_byte[image_height * image_width *
-                                      image_channels];
+    // Allocate memory for image
+    png_byte* image_data = new png_byte[image_height * image_width *
+                                        image_channels];
 
-  // Set row pointers
-  const png_uint_32 row_stride = image_width * image_channels;
+    // Set row pointers
+    const png_uint_32 row_stride = image_width * image_channels;
 
-  for ( png_uint_32 row = 0; row < image_height; row++ ) {
-    row_pointers[row] = &image_data[row * row_stride];
-  }
+    for ( png_uint_32 row = 0; row < image_height; row++ ) {
+      row_pointers[row] = &image_data[row * row_stride];
+    }
 
-  png_read_image ( png_handle, row_pointers );
+    png_read_image ( png_handle, row_pointers );
 
-  delete[] row_pointers;
-  png_destroy_read_struct ( &png_handle, &png_info_handle, 0 );
+    delete[] row_pointers;
+    png_destroy_read_struct ( &png_handle, &png_info_handle, 0 );
 
-  // Read image into Tensor
-  tensor.Resize ( 1, image_width, image_height, image_channels );
-  datum* target = tensor.data_ptr();
+    // Read image into Tensor
+    tensor.Resize ( 1, image_width, image_height, image_channels );
+    datum* target = tensor.data_ptr();
 
-  // We need to realign the color data because our tensor channels are separate
-  // Also we need to convert from unsigned char to our custom datum type
-  for ( std::size_t channel = 0; channel < image_channels; channel++ ) {
-    for ( std::size_t y = 0; y < image_height; y++ ) {
-      std::size_t rc_offset = tensor.Offset ( 0, y, channel, 0 );
+    // We need to realign the color data because our tensor channels are separate
+    // Also we need to convert from unsigned char to our custom datum type
+    for ( std::size_t channel = 0; channel < image_channels; channel++ ) {
+      for ( std::size_t y = 0; y < image_height; y++ ) {
+        std::size_t rc_offset = tensor.Offset ( 0, y, channel, 0 );
 
-      for ( std::size_t x = 0; x < image_width; x++ ) {
-        png_byte pixel = image_data[ ( image_width * image_channels * y ) +
-                                     ( image_channels * x ) + channel];
-        const datum v = DATUM_FROM_UCHAR ( pixel );
-        target[rc_offset + x] = v;
+        for ( std::size_t x = 0; x < image_width; x++ ) {
+          png_byte pixel = image_data[ ( image_width * image_channels * y ) +
+                                       ( image_channels * x ) + channel];
+          const datum v = DATUM_FROM_UCHAR ( pixel );
+          target[rc_offset + x] = v;
+        }
       }
     }
-  }
 
-  // Free image data
-  delete[] image_data;
+    // Free image data
+    delete[] image_data;
+
+  } else if (image_depth == 16) {
+    // Allocate memory for row pointers
+    png_uint_16pp row_pointers = new png_uint_16*[image_height];
+
+    // Allocate memory for image
+    png_uint_16* image_data = new png_uint_16[image_height * image_width *
+                                        image_channels];
+
+    // Set row pointers
+    const png_uint_32 row_stride = image_width * image_channels;
+
+    for ( png_uint_32 row = 0; row < image_height; row++ ) {
+      row_pointers[row] = &image_data[row * row_stride];
+    }
+
+    png_read_image ( png_handle, (png_bytepp)row_pointers );
+
+    delete[] row_pointers;
+    png_destroy_read_struct ( &png_handle, &png_info_handle, 0 );
+
+    // Read image into Tensor
+    tensor.Resize ( 1, image_width, image_height, image_channels );
+    datum* target = tensor.data_ptr();
+
+    // We need to realign the color data because our tensor channels are separate
+    // Also we need to convert from unsigned char to our custom datum type
+    for ( std::size_t channel = 0; channel < image_channels; channel++ ) {
+      for ( std::size_t y = 0; y < image_height; y++ ) {
+        std::size_t rc_offset = tensor.Offset ( 0, y, channel, 0 );
+
+        for ( std::size_t x = 0; x < image_width; x++ ) {
+          png_uint_16 pixel = image_data[ ( image_width * image_channels * y ) +
+                                       ( image_channels * x ) + channel];
+          pixel = (pixel >> 8) | (pixel << 8);
+          const datum v = DATUM_FROM_USHORT ( pixel );
+          target[rc_offset + x] = v;
+        }
+      }
+    }
+
+    // Free image data
+    delete[] image_data;
+
+  }
 
   return true;
 #endif
