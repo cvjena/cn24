@@ -89,6 +89,7 @@ add_library(cn24 ${CN24_SOURCES} ${CN24_HEADERS})
 # And now for some dependencies
 set(CN24_BUILD_PNG OFF CACHE BOOL "Build CN24 with libpng support")
 if(CN24_BUILD_PNG)
+  set(CMAKE_FIND_FRAMEWORK "LAST")
   find_package(PNG REQUIRED)
   include_directories(${PNG_INCLUDE_DIR})
   set(CN24_LIBS ${CN24_LIBS} ${PNG_LIBRARY})
