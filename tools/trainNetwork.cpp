@@ -22,7 +22,7 @@
 
 #include <cn24.h>
 
-bool parseCommand(Conv::Net& net, Conv::Trainer trainer, std::string& command);
+bool parseCommand(Conv::Net& net, Conv::Trainer& trainer, std::string& command);
 void help();
 
 int main(int argc, char* argv[]) {
@@ -210,7 +210,7 @@ int main(int argc, char* argv[]) {
 }
 
 
-bool parseCommand(Conv::Net& net, Conv::Trainer trainer, std::string& command) {
+bool parseCommand(Conv::Net& net, Conv::Trainer& trainer, std::string& command) {
   if (command.compare("q") == 0 || command.compare("quit") == 0) {
     return false;
   }
