@@ -46,6 +46,9 @@ private:
   
   int receptive_field_x_ = 0;
   int receptive_field_y_ = 0;
+
+  int patch_field_x_ = 0;
+  int patch_field_y_ = 0;
   
   std::istream& file_;
   

@@ -33,6 +33,9 @@ ConfigurableFactory::ConfigurableFactory ( std::istream& file, Method method, co
   receptive_field_x_ = 0;
   receptive_field_y_ = 0;
 
+  patch_field_x_ = 0;
+  patch_field_y_ = 0;
+
   // Calculate patch size / receptive field size
   while ( ! file_.eof() ) {
     std::string line;
@@ -64,6 +67,8 @@ ConfigurableFactory::ConfigurableFactory ( std::istream& file, Method method, co
     receptive_field_x_ += factorx;
     receptive_field_y_ += factory;
   }
+  patch_field_x_ = receptive_field_x_ + factorx;
+  patch_field_y_ = receptive_field_y_ + factory;
 }
 
 Layer* ConfigurableFactory::CreateLossLayer ( const unsigned int output_classes ) {
@@ -80,6 +85,8 @@ int ConfigurableFactory::AddLayers ( Net& net, Connection data_layer_connection,
   file_.seekg ( 0, std::ios::beg );
   int last_layer_output = data_layer_connection.output;
   int last_layer_id = data_layer_connection.net;
+  int current_receptive_field_x = patch_field_x_;
+  int current_receptive_field_y = patch_field_y_;
   datum llr_factor = 1.0;
 
   if ( method_ == FCN ) {
@@ -88,7 +95,9 @@ int ConfigurableFactory::AddLayers ( Net& net, Connection data_layer_connection,
     datum net_output_size_y = net_output->height();
     llr_factor /= net_output_size_x;
     llr_factor /= net_output_size_y;
-    LOGINFO << "Local learning rate factor is: " << llr_factor;
+    llr_factor /= patch_field_x_;
+    llr_factor /= patch_field_y_;
+    LOGINFO << "Local learning rate factor is (initially): " << llr_factor;
     last_layer_id = net.AddLayer ( new ResizeLayer ( receptive_field_x_, receptive_field_y_ ), { data_layer_connection } );
     last_layer_output = 0;
   }
@@ -139,7 +148,16 @@ int ConfigurableFactory::AddLayers ( Net& net, Connection data_layer_connection,
         ParseDatumParamIfPossible ( line,"llr", llr );
 
         ConvolutionLayer* cl = new ConvolutionLayer ( kx, ky, k, rand() );
-        cl->SetLocalLearningRate ( llr * llr_factor);
+        if(method_ == FCN) {
+          LOGDEBUG << "LLR factor: " << llr_factor << ", RFX: " << current_receptive_field_x;
+          cl->SetLocalLearningRate ( llr * llr_factor * (datum)current_receptive_field_x * (datum)current_receptive_field_y);
+#ifdef CN24_EMULATE_PATCH_LEARNING
+          current_receptive_field_x -= (kx - 1);
+          current_receptive_field_y -= (ky - 1);
+#endif
+        } else {
+          cl->SetLocalLearningRate ( llr * llr_factor);
+        }
 
         if ( first_layer )
           cl->SetBackpropagationEnabled ( false );
@@ -148,11 +166,20 @@ int ConfigurableFactory::AddLayers ( Net& net, Connection data_layer_connection,
         { Connection ( last_layer_id, last_layer_output ) } );
         last_layer_output = 0;
         first_layer = false;
+
       }
 
       if ( StartsWithIdentifier ( line, "maxpooling" ) ) {
         unsigned int kx = 1, ky = 1;
         ParseKernelSizeIfPossible ( line, "size", kx, ky );
+
+        if(method_ == FCN) {
+#ifdef CN24_EMULATE_PATCH_LEARNING
+          current_receptive_field_x /= kx;
+          current_receptive_field_y /= ky;
+          llr_factor *= (datum)(kx * ky);
+#endif
+        }
 
         MaxPoolingLayer* mp = new MaxPoolingLayer ( kx, ky );
         last_layer_id = net.AddLayer ( mp ,
