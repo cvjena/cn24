@@ -153,13 +153,22 @@ void DatasetInputLayer::FeedForward() {
       FATAL("Cannot load samples from Dataset!");
     }
 
-    if (!testing_) {
+    if (!testing_ && !force_no_weight) {
       // Perform loss sampling
-      const unsigned int elements_per_sample = localized_error_output_->data.elements() / localized_error_output_->data.samples();
-      const unsigned int start_element = elements_per_sample * sample;
-      for (unsigned int e = 0; e < elements_per_sample; e++) {
-        if (dist_(generator_) > loss_sampling_p_)
-          localized_error_output_->data[start_element + e] = 0;
+#ifdef BUILD_OPENCL
+      localized_error_output_->data.MoveToGPU();
+#endif
+      const unsigned int block_size = 12;
+      for (unsigned int y = 0; y < localized_error_output_->data.height(); y+=block_size) {
+        for (unsigned int x = 0; x < localized_error_output_->data.width(); x+=block_size) {
+          if (dist_(generator_) > loss_sampling_p_) {
+            for (unsigned int iy = y; iy < y+block_size && iy < localized_error_output_->data.height(); iy++) {
+              for (unsigned int ix = x; ix < x+block_size && ix < localized_error_output_->data.width(); ix++) {
+                *localized_error_output_->data.data_ptr(ix,iy,0,sample) = 0;
+              }
+            }
+          }
+        }
       }
     }
 
