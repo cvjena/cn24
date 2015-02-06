@@ -95,8 +95,10 @@ int ConfigurableFactory::AddLayers ( Net& net, Connection data_layer_connection,
     datum net_output_size_y = net_output->height();
     llr_factor /= net_output_size_x;
     llr_factor /= net_output_size_y;
+#ifdef CN24_EMULATE_PATCH_LEARNING
     llr_factor /= patch_field_x_;
     llr_factor /= patch_field_y_;
+#endif
     LOGINFO << "Local learning rate factor is (initially): " << llr_factor;
     last_layer_id = net.AddLayer ( new ResizeLayer ( receptive_field_x_, receptive_field_y_ ), { data_layer_connection } );
     last_layer_output = 0;
