@@ -23,36 +23,6 @@
 
 namespace Conv {
 
-#define FACTORY(x,px,py) class x##Factory : public Factory { \
-  public:\
-    x##Factory(const unsigned int seed = 0) : Factory(seed) { \
-      InitOptimalSettings();\
-    }; \
-    int AddLayers(Net& net, Connection data_layer_connection); \
-  Layer* CreateLossLayer(const unsigned int output_classes) {\
-  return new ErrorLayer();\
-}\
-    void InitOptimalSettings(); \
-    int patchsizex() { return px; }\
-    int patchsizey() { return py; }\
-  };
-  
-#define MFACTORY(x,px,py,ll) class x##Factory : public Factory { \
-  public:\
-    x##Factory(const unsigned int seed = 0) : Factory(seed) { \
-      InitOptimalSettings();\
-    }; \
-    int AddLayers(Net& net, Connection data_layer_connection, \
-      const unsigned int output_classes); \
-  Layer* CreateLossLayer(const unsigned int output_classes) {\
-  return new ll (output_classes);\
-}\
-    void InitOptimalSettings(); \
-    int patchsizex() { return px; }\
-    int patchsizey() { return py; }\
-  };
- 
-  
 class Factory {
 public:
   Factory (const unsigned int seed = 0) : seed_ (seed) { }
@@ -69,8 +39,6 @@ public:
   virtual Layer* CreateLossLayer(const unsigned int output_classes) = 0;
   TrainerSettings optimal_settings() const { return optimal_settings_; }
   
-  static Factory* getNetFactory(char net_id, const unsigned int seed = 0);
-
   virtual int patchsizex() = 0;
   virtual int patchsizey() = 0;
   virtual void InitOptimalSettings() = 0;
@@ -79,14 +47,6 @@ protected:
   TrainerSettings optimal_settings_;
 };
 
-FACTORY (CNetA,24,24)
-MFACTORY (CNetM,24,24,CrossEntropyErrorLayer)
-MFACTORY (CNetN,24,24,MultiClassErrorLayer)
-MFACTORY (CNetO,24,24,MultiClassErrorLayer)
-MFACTORY (CNetP,28,28,MultiClassErrorLayer)
-MFACTORY (CNetQ,28,28,MultiClassErrorLayer)
-MFACTORY (CNetR,28,28,CrossEntropyErrorLayer)
-MFACTORY (CNetS,44,44,MultiClassErrorLayer)
 }
 
 #endif
