@@ -231,8 +231,19 @@ bool parseCommand(Conv::Net& net, Conv::Trainer& trainer, std::string& command) 
       param_file.close();
     }
   }
+  else if (command.compare(0, 9, "set epoch") == 0) {
+    unsigned int epoch = 0;
+    Conv::ParseCountIfPossible(command, "epoch", epoch);
+    LOGINFO << "Setting current epoch to " << epoch;
+  }
+  else if(command.compare(0, 5, "reset") == 0) {
+    LOGINFO << "Resetting parameters";
+    net.InitializeWeights();
+  }
   else if (command.compare(0, 4, "help") == 0) {
     help();
+  } else {
+    LOGWARN << "Unknown command: " << command;
   }
 
   return true;
@@ -245,6 +256,10 @@ void help() {
     << "    Train the network for n epochs (default: 1)\n\n"
     << "  test\n"
     << "    Test the network\n\n"
+    << "  set epoch=<epoch>\n"
+    << "    Sets the current epoch\n\n"
+    << "  reset\n"
+    << "    Reinitializes the nets parameters\n\n"
     << "  load file=<path> [last_layer=<l>]\n"
     << "    Load parameters from a file for all layers up to l (default: all layers)\n\n"
     << "  save file=<path>\n"
