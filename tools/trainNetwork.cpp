@@ -28,6 +28,7 @@ void help();
 int main(int argc, char* argv[]) {
   bool DO_TEST = true;
   bool GRADIENT_CHECK = false;
+  bool FROM_SCRIPT = false;
 #ifdef LAYERTIME
   const unsigned int BATCHSIZE = 1000;
   unsigned int TEST_EVERY = 1;
@@ -39,13 +40,17 @@ int main(int argc, char* argv[]) {
 #endif
 
   if (argc < 3) {
-    LOGERROR << "USAGE: " << argv[0] << " <dataset config file> <net config file>";
+    LOGERROR << "USAGE: " << argv[0] << " <dataset config file> <net config file> {[script file]|gradient_check}";
     LOGEND;
     return -1;
   }
 
+  std::string script_fname;
   if (argc > 3 && std::string(argv[3]).compare("gradient_check") == 0) {
     GRADIENT_CHECK = true;
+  } else if(argc > 3) {
+    FROM_SCRIPT = true;
+    script_fname = argv[3];
   }
 
   std::string net_config_fname(argv[2]);
@@ -140,13 +145,27 @@ int main(int argc, char* argv[]) {
   }
   else {
     Conv::Trainer trainer(net, settings);
-    LOGINFO << "Enter \"help\" for information on how to use this program";
-    while (true) {
-      std::cout << "\n > " << std::flush;
-      std::string command;
-      std::getline(std::cin, command);
-      if (!parseCommand(net, trainer, command))
-        break;
+    if(FROM_SCRIPT) {
+      LOGINFO << "Executing script: " << script_fname;
+      std::ifstream script_file(script_fname, std::ios::in);
+      if(!script_file.good()) {
+        FATAL("Cannot open " << script_fname);
+      }
+      while (true) {
+        std::string command;
+        std::getline(script_file, command);
+        if (!parseCommand(net, trainer, command) || script_file.eof())
+          break;
+      }
+    } else {
+      LOGINFO << "Enter \"help\" for information on how to use this program";
+      while (true) {
+        std::cout << "\n > " << std::flush;
+        std::string command;
+        std::getline(std::cin, command);
+        if (!parseCommand(net, trainer, command))
+          break;
+      }
     }
   }
 
