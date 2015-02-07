@@ -5,14 +5,13 @@
 ?maxpooling size=2x2
 ?relu
 
-?convolutional size=5x5 kernels=24
+?convolutional size=5x5 kernels=6
 ?relu
 
 ?convolutional size=5x5 kernels=48
 ?relu
 
 ?flatten
-?spatialprior
 ?fullyconnected neurons=192
 ?relu
 
@@ -22,8 +21,8 @@
 # Learning settings
 l1=0.001
 l2=0.0005
-lr=0.01
-gamma=0.01
+lr=0.0001
+gamma=0.003
 momentum=0.9
 exponent=0.75
-iterations=100
+iterations=500
