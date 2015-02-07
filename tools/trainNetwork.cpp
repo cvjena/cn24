@@ -169,60 +169,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  /*
-  {
-    Conv::Trainer trainer ( net, settings );
-    for (unsigned int i = 0; i < EPOCHS / TEST_EVERY; i++) {
-      trainer.Train (TEST_EVERY);
-    #ifdef LAYERTIME
-      net.PrintAndResetLayerTime(settings.iterations * settings.epoch_training_ratio * BATCHSIZE);
-    #endif
-
-      std::stringstream ss;
-      std::time_t t = std::time (nullptr);
-      std::tm tm_ = *std::localtime (&t);
-
-      ss << "snap" << net_config_fname << "_" << std::setfill ('0') << std::setw (2)
-         << tm_.tm_mday << "." << tm_.tm_mon << "_" << tm_.tm_hour << "."
-         << tm_.tm_min << "_" << mode << "_"
-         << "_"
-         << (i+1) * TEST_EVERY << ".Tensor";
-      std::ofstream outfile ("snapshots/" + ss.str(), std::ios::out | std::ios::binary);
-      net.SerializeParameters (outfile);
-      LOGDEBUG << "Serialized to " << ss.str();
-
-      if (DO_TEST) {
-        net.SetLayerViewEnabled(true);
-        trainer.Test();
-        net.SetLayerViewEnabled(false);
-    #ifdef LAYERTIME
-        net.PrintAndResetLayerTime(settings.iterations * settings.testing_ratio * BATCHSIZE);
-    #endif
-      } else {
-        LOGDEBUG << "Skipping test...";
-      }
-    }
-
-    std::stringstream ss;
-    std::time_t t = std::time (nullptr);
-    std::tm tm_ = *std::localtime (&t);
-
-    ss << "n" << net_config_fname << "_" << std::setfill ('0') << std::setw (2)
-       << tm_.tm_mday << "." << tm_.tm_mon << "_" << tm_.tm_hour << "."
-       << tm_.tm_min << "_" << mode << "_" << ".Tensor";
-    std::ofstream outfile (ss.str(), std::ios::out | std::ios::binary);
-    net.SerializeParameters (outfile);
-
-    ss.str("");
-    ss << "logs/n" << dataset_config_fname << "_" << std::setfill ('0') << std::setw (2)
-       << tm_.tm_mday << "." << tm_.tm_mon << "_" << tm_.tm_hour << "."
-       << tm_.tm_min << "_" << net_config_fname << "_" << ".log";
-
-    LOGINFO << "Last element: " << data_layer->current_element();
-    outfile.close();
-  }
-  */
-
   LOGINFO << "DONE!";
   LOGEND;
   return 0;
