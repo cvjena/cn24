@@ -183,6 +183,7 @@ bool parseCommand(Conv::Net& net, Conv::Trainer& trainer, std::string& command) 
     unsigned int epochs = 1;
     Conv::ParseCountIfPossible(command, "epochs", epochs);
     trainer.Train(epochs);
+    LOGINFO << "Training complete.";
   }
   else if (command.compare(0, 4, "test") == 0) {
     unsigned int layerview = 0;
@@ -190,6 +191,7 @@ bool parseCommand(Conv::Net& net, Conv::Trainer& trainer, std::string& command) 
     net.SetLayerViewEnabled(layerview == 1);
     trainer.Test();
     net.SetLayerViewEnabled(false);
+    LOGINFO << "Testing complete.";
   }
   else if (command.compare(0, 4, "load") == 0) {
     std::string param_file_name;
@@ -203,6 +205,7 @@ bool parseCommand(Conv::Net& net, Conv::Trainer& trainer, std::string& command) 
       std::ifstream param_file(param_file_name, std::ios::in | std::ios::binary);
       if (param_file.good()) {
         net.DeserializeParameters(param_file, last_layer);
+        LOGINFO << "Loaded parameters from " << param_file_name;
       }
       else {
         LOGERROR << "Cannot open " << param_file_name;
@@ -220,6 +223,7 @@ bool parseCommand(Conv::Net& net, Conv::Trainer& trainer, std::string& command) 
       std::ofstream param_file(param_file_name, std::ios::out | std::ios::binary);
       if (param_file.good()) {
         net.SerializeParameters(param_file);
+        LOGINFO << "Written parameters to " << param_file_name;
       }
       else {
         LOGERROR << "Cannot open " << param_file_name;
