@@ -108,7 +108,7 @@ datum Trainer::Test() {
           1000000.0f * ( datum ) t_diff.count() /
           ( datum ) ( training_layer_->GetBatchSize() * iterations ) << " us";
 
-  LOGDEBUG << "Testing, loss: " << loss_sum / ( datum ) iterations;
+  LOGDEBUG << "Testing, lps: " << loss_sum / ( datum ) (iterations * batchsize);
 
   for ( unsigned int s = 0; s < stat_count; s++ ) {
     LOGRESULT << "Testing, " << net_.stat_layers() [s]->stat_name() <<
