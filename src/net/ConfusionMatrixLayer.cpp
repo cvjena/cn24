@@ -15,6 +15,12 @@ ConfusionMatrixLayer::ConfusionMatrixLayer (
   std::vector<std::string> names, const unsigned int classes ) :
   classes_ ( classes ), names_ ( names ) {
   LOGDEBUG << "Instance created, " << classes << " classes.";
+  for(unsigned int n = 0; n < names_.size(); n++) {
+    if(names_[n].length() > 11) {
+      std::string original = names_[n];
+      names_[n] = original.substr(0,8) + "...";
+    }
+  }
 }
 
 bool ConfusionMatrixLayer::CreateOutputs (
@@ -128,7 +134,7 @@ void ConfusionMatrixLayer::Print ( std::string prefix, bool training ) {
     caption << std::setw ( 12 ) << names_[c];
   }
 
-  LOGRESULT << caption.str() << LOGRESULTEND;
+  (training?LOGTRESULT:LOGRESULT) << caption.str() << LOGRESULTEND;
   caption.str ( "" );
 
 
@@ -140,12 +146,12 @@ void ConfusionMatrixLayer::Print ( std::string prefix, bool training ) {
       caption << std::setw ( 12 ) << static_cast<long> ( result );
     }
 
-    LOGRESULT << caption.str() << LOGRESULTEND;
+    (training?LOGTRESULT:LOGRESULT) << caption.str() << LOGRESULTEND;
     caption.str ( "" );
   }
 
 
-  LOGRESULT << prefix << " Overall recognition rate (not normalized): "
+  (training?LOGTRESULT:LOGRESULT) << prefix << " Overall recognition rate (not normalized): "
             << 100.0L * right_ / total_ << "%";
 
   long double ccount = 0;
@@ -158,7 +164,7 @@ void ConfusionMatrixLayer::Print ( std::string prefix, bool training ) {
     }
   }
 
-  LOGRESULT << prefix << " Average recognition rate (normalized)    : "
+  (training?LOGTRESULT:LOGRESULT) << prefix << " Average recognition rate (normalized)    : "
             << 100.0 * sum / ccount << "%" << LOGRESULTEND;
 
 

@@ -222,8 +222,8 @@ void Trainer::Epoch() {
   
   if ( net_.confusion_matrix_layer() != nullptr ) {
     std::stringstream epochname;
-    epochname << "Testing  - Epoch " << epoch_ << " -";
-    net_.confusion_matrix_layer()->Print ( epochname.str(), false );
+    epochname << "Training - Epoch " << epoch_ << " -";
+    net_.confusion_matrix_layer()->Print ( epochname.str(), true );
     net_.confusion_matrix_layer()->Reset();
   }
 
