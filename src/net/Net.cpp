@@ -139,15 +139,6 @@ int Net::AddLayer (Layer* layer, const std::vector< Connection >& connections) {
              stat_layer->stat_name();
   }
 
-  // Check if layer is a dropout layer
-  if (dynamic_cast<DropoutLayer*> (layer) != NULL) {
-    // If it is, add to vector
-    DropoutLayer* dropout_layer = dynamic_cast<DropoutLayer*> (layer);
-    dropout_layers_.push_back (dropout_layer);
-
-    LOGDEBUG << "Layer " << layer_id << " added as dropout layer.";
-  }
-
   // Return the layer number
   return layer_id;
 }

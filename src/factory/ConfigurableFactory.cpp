@@ -7,17 +7,13 @@
 #include <cstdio>
 
 #include "ErrorLayer.h"
-#include "MultiClassErrorLayer.h"
 
 #include "ConvolutionLayer.h"
 #include "ResizeLayer.h"
 #include "MaxPoolingLayer.h"
-#include "FlattenLayer.h"
-#include "FullyConnectedLayer.h"
 #include "NonLinearityLayer.h"
 #include "UpscaleLayer.h"
 #include "SpatialPriorLayer.h"
-#include "ConcatLayer.h"
 #include "ConfigParsing.h"
  
 #include "ConfigurableFactory.h"
@@ -72,11 +68,7 @@ ConfigurableFactory::ConfigurableFactory ( std::istream& file, Method method, co
 }
 
 Layer* ConfigurableFactory::CreateLossLayer ( const unsigned int output_classes ) {
-  //if ( output_classes == 1 ) {
     return new ErrorLayer();
-  /*} else {
-    return new MultiClassErrorLayer ( output_classes );
-  }*/
 }
 
 int ConfigurableFactory::AddLayers ( Net& net, Connection data_layer_connection, const unsigned int output_classes ) {
@@ -189,13 +181,6 @@ int ConfigurableFactory::AddLayers ( Net& net, Connection data_layer_connection,
         last_layer_output = 0;
       }
 
-      if ( StartsWithIdentifier ( line, "flatten" ) ) {
-        FlattenLayer* f = new FlattenLayer();
-        last_layer_id = net.AddLayer ( f ,
-        { Connection ( last_layer_id, last_layer_output ) } );
-        last_layer_output = 0;
-      }
-
       if ( StartsWithIdentifier ( line, "sigm" ) ) {
         SigmoidLayer* l = new SigmoidLayer();
         last_layer_id = net.AddLayer ( l ,
@@ -223,32 +208,7 @@ int ConfigurableFactory::AddLayers ( Net& net, Connection data_layer_connection,
           last_layer_id = net.AddLayer ( l ,
           { Connection ( last_layer_id, last_layer_output ) } );
           last_layer_output = 0;
-        } else if (method_ == PATCH) {
-          ConcatLayer* cl = new ConcatLayer();
-          last_layer_id = net.AddLayer ( cl, {
-            Connection ( last_layer_id ),
-            Connection ( data_layer_connection.net, 2 )
-          } );
-	  last_layer_output = 0;
-        }
-      }
-
-      if ( StartsWithIdentifier ( line, "fullyconnected" ) ) {
-        unsigned int n = 1;
-        datum llr = 1;
-        ParseCountIfPossible ( line, "neurons", n );
-
-        FullyConnectedLayer* fc = new FullyConnectedLayer ( n, rand() );
-        fc->SetLocalLearningRate ( llr * llr_factor);
-
-        if ( first_layer )
-          fc->SetBackpropagationEnabled ( false );
-
-        last_layer_id = net.AddLayer ( fc ,
-        { Connection ( last_layer_id, last_layer_output ) } );
-        last_layer_output = 0;
-        first_layer = false;
-        LOGDEBUG << "Fully connected layer";
+        } 
       }
     }
   }

@@ -57,13 +57,11 @@ Trainer::Trainer ( Conv::Net& net, TrainerSettings settings ) :
 }
 
 void Trainer::Train ( unsigned int epochs ) {
-  net_.SetDropoutEnabled ( true );
   net_.SetTestOnlyStatDisabled ( false );
 
   for ( unsigned int e = 0; e < epochs; e++ )
     Epoch();
 
-  net_.SetDropoutEnabled ( false );
   net_.SetTestOnlyStatDisabled ( false );
 }
 

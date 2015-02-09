@@ -19,7 +19,6 @@
 
 #include "Layer.h"
 #include "SimpleLayer.h"
-#include "SupportsDropoutLayer.h"
 
 #ifdef BUILD_OPENCL
 #define BUILD_OPENCL_CONV
@@ -27,7 +26,7 @@
 
 namespace Conv {
 
-class ConvolutionLayer : public SimpleLayer, public SupportsDropoutLayer {
+class ConvolutionLayer : public SimpleLayer {
 public:
   /**
    * \brief Constructs a ConvolutionLayer.
@@ -90,6 +89,8 @@ private:
 #endif
   
   std::mt19937 rand_;
+
+  datum weight_factor_ = 1.0;
 };
 
 }

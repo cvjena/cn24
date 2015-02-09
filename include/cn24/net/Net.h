@@ -21,7 +21,6 @@
 #include <chrono>
 
 #include "Layer.h"
-#include "DropoutLayer.h"
 #include "LossFunctionLayer.h"
 #include "TrainingLayer.h"
 #include "StatLayer.h"
@@ -167,15 +166,6 @@ public:
   }
   
   /**
-   * \brief Enables or disables dropout in the net
-   */
-  inline void SetDropoutEnabled(const bool do_dropout) {
-    for(unsigned int i = 0; i < dropout_layers_.size(); i++) {
-      dropout_layers_[i]->SetDropoutEnabled(do_dropout);
-    }
-  }
-  
-  /**
    * \brief Enables or disables the binary stat layer
    */
   inline void SetTestOnlyStatDisabled(const bool disabled = false) {
@@ -227,7 +217,6 @@ private:
   ConfusionMatrixLayer* confusion_matrix_layer_ = nullptr;
   std::vector<StatLayer*> stat_layers_;
   std::vector<Layer*> layers_;
-  std::vector<DropoutLayer*> dropout_layers_;
   std::vector<std::vector<CombinedTensor*>> buffers_;
   std::vector<std::vector<CombinedTensor*>> inputs_;
   std::vector<std::pair<Layer*, Layer*>> weight_connections_;

@@ -29,10 +29,6 @@ class ConfigurableFactory : public Factory {
 public:
   explicit ConfigurableFactory(std::istream& file, Method method, const unsigned seed = 0);
   
-  virtual int AddLayers(Net& net, Connection data_layer_connection) {
-    LOGDEBUG << "Assuming one class only!";
-    return AddLayers(net, data_layer_connection, 1);
-  }
   virtual int AddLayers(Net& net, Connection data_layer_connection, const unsigned int output_classes);
 
   virtual int patchsizex() { return receptive_field_x_; }
