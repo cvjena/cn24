@@ -167,7 +167,29 @@ void ConfusionMatrixLayer::Print ( std::string prefix, bool training ) {
   (training?LOGTRESULT:LOGRESULT) << prefix << " Average recognition rate (normalized)    : "
             << 100.0 * sum / ccount << "%" << LOGRESULTEND;
 
+  long double IU_sum = 0;
+  for(unsigned int t = 0; t < classes_; t++) {
+    // Calculate IU measure for class T
+    long double unionn = 0;
+    for(unsigned int c = 0; c < classes_; c++) {
+      if(c!=t) {
+        unionn += matrix_[ ( t * classes_ ) + c];
+        unionn += matrix_[ ( c * classes_ ) + t];
+      }
+    }
+    unionn += matrix_[ ( t * classes_) + t];
+    long double IU = (unionn > 0.0) ? (matrix_[ ( t * classes_) + t] / unionn) : 0.0;
+    IU_sum += IU;
+    caption << std::setw(12) << names_[t];
+    caption << " IU: ";
+    caption << std::setw(12) << IU * 100.0;
+    caption << "%";
+    (training?LOGTRESULT:LOGRESULT) << prefix << caption.str() << LOGRESULTEND;
+    caption.str ( "" );
+  }
 
+  (training?LOGTRESULT:LOGRESULT) << prefix << " Average intersection over union          : "
+            << 100.0 * IU_sum / (long double)classes_ << "%" << LOGRESULTEND;
 }
 
 void ConfusionMatrixLayer::PrintCSV ( std::ostream& output ) {
