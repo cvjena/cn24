@@ -140,7 +140,7 @@ if(CN24_BUILD_OPENCL)
   add_definitions("-DBUILD_OPENCL")
 endif()
 
-set(CN24_BUILD_OPENMP ON CACHE BOOL "Build CN24 with OpenMP support if possible")
+set(CN24_BUILD_OPENMP OFF CACHE BOOL "Build CN24 with OpenMP support if possible")
 if(CN24_BUILD_OPENMP)
   if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
     message(WARNING "OpenMP 3.0 is not supported by Visual Studio!")
