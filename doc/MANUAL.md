@@ -1,4 +1,4 @@
-# Importing datasets
+# Importing Datasets
 To use your dataset with CN24, you need to prepare two things:
 
 ## 1. Dataset configuration
@@ -63,7 +63,7 @@ makeTensorStream dataset.set image_filename images/ label_filenames labels/ DATA
 This will create a file "DATASET\_TRAIN.Tensor" in the working directory.
 Repeat this procedure for your validation data.
 
-_Note:_ If you compile CN24 with the *CN24_BUILD_GTK* CMake build option,
+_Note:_ If you compile CN24 with the *CN24_BUILD_GUI* CMake build option,
 you can use the _tensorTool_ utility to view the Tensor Streams. This
 allows you verify the import.
 
