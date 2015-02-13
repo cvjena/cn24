@@ -5,11 +5,11 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file Trainer.h
- * \class Trainer
- * \brief Trains a Net.
+ * @file Trainer.h
+ * @class Trainer
+ * @brief Trains a Net.
  *
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_TRAINER_H
@@ -37,10 +37,36 @@ public:
 
 class Trainer {
 public:
-  explicit Trainer (Net& net, TrainerSettings settings);
+  /**
+	* @brief Creates a Trainer for the specified Net
+	*
+	* @param net The Net to train
+	* @param settings The settings to use in training
+	*/
+  Trainer (Net& net, TrainerSettings settings);
+
+  /**
+	* @brief Train the net for the specified number of epochs
+	*
+	* @param epochs The number of epochs to train
+	*/
   void Train (unsigned int epochs);
+
+  /**
+	* @brief Test the net by running every test sample through the net
+	*/
   datum Test();
+
+  /**
+	* @brief Train the net for exactly one epoch
+	*/
   void Epoch();
+
+  /**
+	* @brief Set the current epoch
+	*
+	* @param epoch The new epoch number
+	*/
   inline void SetEpoch (unsigned int epoch) {
     epoch_ = epoch;
   }
@@ -69,7 +95,7 @@ private:
 
 
 /**
- * \brief Prints settings to the ostream, may be helpful.
+ * @brief Prints settings to the ostream, may be helpful.
  */
 std::ostream& operator<< (std::ostream& output, const TrainerSettings settings);
 

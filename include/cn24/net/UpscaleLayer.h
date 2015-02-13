@@ -6,11 +6,11 @@
  */  
 
 /**
- * \file UpscaleLayer.h
- * \class UpscaleLayer
- * \brief Layer that scales samples up after MaxPooling downscaled them.
+ * @file UpscaleLayer.h
+ * @class UpscaleLayer
+ * @brief Layer that scales samples up after MaxPooling downscaled them.
  * 
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_UPSCALELAYER_H
@@ -25,6 +25,12 @@ namespace Conv {
   
 class UpscaleLayer : public SimpleLayer {
 public:
+  /**
+	* @brief Create an UpscaleLayer with the specified borders
+	*
+	* @param region_width The horizontal border size
+	* @param region_height The vertical border size
+	*/
   UpscaleLayer(const unsigned int region_width,
 	       const unsigned int region_height);
   

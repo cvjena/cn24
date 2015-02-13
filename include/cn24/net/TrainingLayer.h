@@ -5,11 +5,11 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file TrainingLayer.h
- * \class TrainingLayer
- * \brief Layer that supports switching between training and testing.
+ * @file TrainingLayer.h
+ * @class TrainingLayer
+ * @brief Layer that supports switching between training and testing.
  * 
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  *
  */
 
@@ -21,30 +21,29 @@ namespace Conv {
 class TrainingLayer {
 public:
   /**
-   * \brief Set testing or training mode.
+   * @brief Set testing or training mode.
    *
-   * \param mode True sets testing mode, false sets training mode
+   * @param mode True sets testing mode, false sets training mode
    */
   virtual void SetTestingMode(bool testing) = 0;
   
   /**
-   * \brief Gets number of samples in training set.
+   * @brief Gets number of samples in training set.
    */
   virtual unsigned int GetSamplesInTrainingSet() = 0;
   
   /**
-   * \brief Gets number of samples in testing set.
+   * @brief Gets number of samples in testing set.
    */
   virtual unsigned int GetSamplesInTestingSet() = 0;
   
   /**
-   * \brief Gets the size of a batch.
+   * @brief Gets the size of a batch.
    */
   virtual unsigned int GetBatchSize() = 0;
 
-
   /**
-   * \brief Gets the probability for loss sampling
+   * @brief Gets the probability for loss sampling
    */
   virtual datum GetLossSamplingProbability() = 0;
   
