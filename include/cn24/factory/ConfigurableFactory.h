@@ -1,4 +1,3 @@
-
 /*
  * This file is part of the CN24 semantic segmentation software,
  * copyright (C) 2015 Clemens-Alexander Brust (ikosa dot de at gmail dot com).
@@ -8,7 +7,7 @@
 /**
  * \file ConfigurableFactory.h
  * \class ConfigurableFactory
- * \brief This class can parse network configuration files.
+ * \brief This class can parse network configuration files and construct network layers.
  *
  * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
@@ -18,14 +17,14 @@
 
 #include <iostream>
 
+#include "Trainer.h"
+#include "Net.h"
 #include "Dataset.h"
 #include "Log.h"
 
-#include "Factory.h"
-
 namespace Conv {
 
-class ConfigurableFactory : public Factory {
+class ConfigurableFactory {
 public:
   /**
 	* @brief Builds a ConfigurableFactory using an input stream and a random seed
@@ -69,6 +68,12 @@ public:
 	* @brief Read the optimal training settings from the configuration file
 	*/
   virtual void InitOptimalSettings();
+
+
+  /**
+	* @returns The optimal training settings for this configuration
+	*/
+  TrainerSettings optimal_settings() const { return optimal_settings_; }
 private:
   Method method_;
   
@@ -83,6 +88,8 @@ private:
   int factorx = 1;
   int factory = 1;
 
+  unsigned int seed_ = 0;
+  TrainerSettings optimal_settings_;
 };
   
 }

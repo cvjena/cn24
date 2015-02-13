@@ -23,7 +23,7 @@ namespace Conv {
 
 
 ConfigurableFactory::ConfigurableFactory ( std::istream& file, const unsigned int seed ) :
-		  Factory ( seed ), file_ ( file ), method_ ( FCN ) {
+		  seed_ ( seed ), file_ ( file ), method_ ( FCN ) {
   file_.clear();
   file_.seekg ( 0, std::ios::beg );
 

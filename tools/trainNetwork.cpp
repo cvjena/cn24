@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
   dataset_config_fname = dataset_config_fname.substr(net_config_fname.rfind("/") + 1);
 
   // Parse network configuration file
-  Conv::Factory* factory = new Conv::ConfigurableFactory(net_config_file, 8347734);
+  Conv::ConfigurableFactory* factory = new Conv::ConfigurableFactory(net_config_file, 8347734);
   factory->InitOptimalSettings();
   LOGDEBUG << "Optimal settings: " << factory->optimal_settings();
 
