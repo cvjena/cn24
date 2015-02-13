@@ -5,11 +5,11 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file ErrorLayer.h
- * \class ErrorLayer
- * \brief This Layer calculates the sum of the quadratic errors from training.
+ * @file ErrorLayer.h
+ * @class ErrorLayer
+ * @brief This Layer calculates the sum of the quadratic errors from training.
  * 
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_ERRORLAYER_H
@@ -20,15 +20,12 @@
 #include "Layer.h"
 #include "LossFunctionLayer.h"
 
-// TODO refactor ErrorLayer and StatLayer into ComparisonLayer
 namespace Conv {
   
 class ErrorLayer : public Layer, public LossFunctionLayer {
 public:
   /**
-   * \brief Constructs an ErrorLayer.
-   * 
-   * This has no options
+   * @brief Constructs an ErrorLayer.
    */
   ErrorLayer();
   

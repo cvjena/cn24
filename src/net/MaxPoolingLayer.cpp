@@ -11,6 +11,10 @@
 
 #include "MaxPoolingLayer.h"
 
+#ifdef BUILD_OPENCL
+#define BUILD_OPENCL_MAX
+#endif
+
 namespace Conv {
 
 MaxPoolingLayer::MaxPoolingLayer (const unsigned int region_width,
@@ -218,6 +222,15 @@ void MaxPoolingLayer::BackPropagate() {
   
   return;
   
+#endif
+}
+
+
+bool MaxPoolingLayer::IsOpenCLAware() {
+#ifdef BUILD_OPENCL_MAX
+  return true;
+#else
+  return false;
 #endif
 }
 

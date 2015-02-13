@@ -5,11 +5,11 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file MaxPoolingLayer.h
- * \class MaxPoolingLayer
- * \brief Layer that sends the maximum of a specified region to the next.
+ * @file MaxPoolingLayer.h
+ * @class MaxPoolingLayer
+ * @brief Layer that sends the maximum of a specified region to the next.
  * 
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_MAXPOOLINGLAYER_H
@@ -18,19 +18,16 @@
 #include "Tensor.h"
 #include "SimpleLayer.h"
 
-#ifdef BUILD_OPENCL
-#define BUILD_OPENCL_MAX
-#endif
 
 namespace Conv {
   
 class MaxPoolingLayer : public SimpleLayer {
 public:
   /**
-   * \brief Constructs a max-pooling Layer.
+   * @brief Constructs a max-pooling Layer.
    * 
-   * \param region_width Width of the pooling regions
-   * \param region_height Height of the pooling regions
+   * @param region_width Width of the pooling regions
+   * @param region_height Height of the pooling regions
    */
   MaxPoolingLayer(const unsigned int region_width,
                   const unsigned int region_height);
@@ -45,11 +42,7 @@ public:
     return gain / (region_width_ * region_height_);
   }
   
-  
-#ifdef BUILD_OPENCL_MAX
-  bool IsOpenCLAware() { return true; }
-#endif
-  
+  bool IsOpenCLAware();
 private:
   // Settings
   unsigned int region_width_ = 0;

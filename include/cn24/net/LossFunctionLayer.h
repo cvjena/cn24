@@ -5,11 +5,11 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file LossFunctionLayer.h
- * \class LossFunctionLayer
- * \brief This interface connects the Trainer with an abstract loss function.
+ * @file LossFunctionLayer.h
+ * @class LossFunctionLayer
+ * @brief This interface connects the Trainer with an abstract loss function.
  * 
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_LOSSFUNCTIONLAYER_H
@@ -22,7 +22,7 @@ namespace Conv {
 class LossFunctionLayer {
 public:
   /**
-   * \brief Calculate the loss function after a complete forward pass.
+   * @brief Calculate the loss function after a complete forward pass.
    */
   virtual datum CalculateLossFunction() = 0;
 };
