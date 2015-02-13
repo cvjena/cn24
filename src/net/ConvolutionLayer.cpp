@@ -6,6 +6,10 @@
  */  
 #include <cstring>
 
+#ifdef BUILD_OPENCL
+#define BUILD_OPENCL_CONV
+#endif
+
 #ifdef BUILD_OPENCL_CONV
 #include <iomanip>
 #endif
@@ -658,7 +662,13 @@ void ConvolutionLayer::col2imbp() {
   }
 }
 
-
+bool ConvolutionLayer::IsOpenCLAware() {
+#ifdef BUILD_OPENCL_CONV
+  return true;
+#else
+  return false;
+#endif
+}
 
 }
 

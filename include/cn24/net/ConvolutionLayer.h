@@ -5,11 +5,11 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file ConvolutionLayer.h
- * \class ConvolutionLayer
- * \brief Represents a layer that learns convolution kernels.
+ * @file ConvolutionLayer.h
+ * @class ConvolutionLayer
+ * @brief Represents a layer that learns convolution kernels.
  * 
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_CONVOLUTIONLAYER_H
@@ -20,21 +20,17 @@
 #include "Layer.h"
 #include "SimpleLayer.h"
 
-#ifdef BUILD_OPENCL
-#define BUILD_OPENCL_CONV
-#endif
-
 namespace Conv {
 
 class ConvolutionLayer : public SimpleLayer {
 public:
   /**
-   * \brief Constructs a ConvolutionLayer.
+   * @brief Constructs a ConvolutionLayer.
    * 
-   * \param kwidth Width of the kernels
-   * \param kheight Height of the kernels
-   * \param output_maps Number of output feature maps
-   * \param seed Random seed for weight generation
+   * @param kwidth Width of the kernels
+   * @param kheight Height of the kernels
+   * @param output_maps Number of output feature maps
+   * @param seed Random seed for weight generation
    */
   ConvolutionLayer(const unsigned int kwidth, const unsigned int kheight,
                    const unsigned int output_maps, const int seed = 0);
@@ -52,9 +48,7 @@ public:
     return kernel_width_ * kernel_height_ * input_maps_;
   }
   
-#ifdef BUILD_OPENCL_CONV
-  bool IsOpenCLAware() { return true; }
-#endif
+  bool IsOpenCLAware();
 private:
   void im2colff();
   void col2imff();
@@ -83,10 +77,8 @@ private:
   
   CombinedTensor* weights_ = nullptr;
   CombinedTensor* bias_ = nullptr;
-#ifdef BUILD_OPENCL_CONV
   Tensor delta_buffer_;
   Tensor bias_buffer_;
-#endif
   
   std::mt19937 rand_;
 
