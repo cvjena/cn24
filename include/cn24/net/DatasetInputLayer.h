@@ -5,11 +5,11 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file DatasetInputLayer.h
- * \class DatasetInputLayer
- * \brief This layer outputs labeled data from a Dataset.
+ * @file DatasetInputLayer.h
+ * @class DatasetInputLayer
+ * @brief This layer outputs labeled data from a Dataset.
  *
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_DATASETINPUTLAYER_H
@@ -31,7 +31,15 @@ namespace Conv {
 
 class DatasetInputLayer : public Layer, public TrainingLayer {
 public:
-	DatasetInputLayer(Dataset& dataset, const unsigned int batch_size = 1,
+  /**
+	* @brief Constructs a DatasetInputLayer
+	*
+	* @param dataset The dataset to read images from
+	* @param batch_size The parallel minibatch size 
+	* @param loss_sampling_p p value for spatial loss sampling
+	* @param seed The random seed to use for sample selection and loss sampling
+	*/
+  DatasetInputLayer(Dataset& dataset, const unsigned int batch_size = 1,
 			const datum loss_sampling_p = 1.0,
       const unsigned int seed = 0
 		    );
@@ -57,10 +65,7 @@ public:
     return current_element_;
   }
 
-#ifdef BUILD_OPENCL
-  bool IsOpenCLAware() { return true; }
-#endif
-
+  bool IsOpenCLAware();
 private:
   Dataset& dataset_;
   

@@ -214,5 +214,13 @@ void DatasetInputLayer::SetTestingMode ( bool testing ) {
   testing_ = testing;
 }
 
+bool DatasetInputLayer::IsOpenCLAware() {
+#ifdef BUILD_OPENCL
+  return true;
+#else
+  return false;
+#endif
+}
+
 
 }
