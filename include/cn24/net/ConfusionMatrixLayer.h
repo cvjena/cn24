@@ -5,11 +5,11 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file ConfusionMatrixLayer.h
- * \class ConfusionMatrixLayer
- * \brief Represents a layer that calculates a confusion matrix
+ * @file ConfusionMatrixLayer.h
+ * @class ConfusionMatrixLayer
+ * @brief Represents a layer that calculates a confusion matrix
  *
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_CONFUSIONMATRIXLAYER_H
@@ -24,11 +24,26 @@ namespace Conv {
 
 class ConfusionMatrixLayer: public Layer {
 public:
+  /**
+	* @brief Creates a ConfusionMatrixLayer
+	*
+	* @param names The names of the classes (for display)
+	* @param classes The number of classes
+	*/
   explicit ConfusionMatrixLayer(std::vector<std::string> names,
                                 const unsigned int classes);
-  ~ConfusionMatrixLayer();
+
+  /**
+	* @brief Prints the current statistics
+	*
+	* @param prefix This is printed before every line ouf output
+	* @param training Whether the net is currently training. Affects output color
+	*/
   void Print (std::string prefix, bool training);
-  void PrintCSV (std::ostream& output);
+
+  /**
+	* @brief Reset all counters
+	*/
   void Reset();
 
   // Implementations for Layer
@@ -39,10 +54,16 @@ public:
   void FeedForward();
   void BackPropagate();
 
+  /**
+	* @brief Disables or enables the collection of statistics
+	*
+	* @param disabled If the collection should be disabled
+	*/
   inline void SetDisabled (bool disabled = false) {
     disabled_ = disabled;
   }
 
+  ~ConfusionMatrixLayer();
 private:
   unsigned int classes_;
   std::vector<std::string> names_;

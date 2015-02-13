@@ -192,37 +192,6 @@ void ConfusionMatrixLayer::Print ( std::string prefix, bool training ) {
             << 100.0 * IU_sum / (long double)classes_ << "%" << LOGRESULTEND;
 }
 
-void ConfusionMatrixLayer::PrintCSV ( std::ostream& output ) {
-  // Output CSV formatted data
-  std::stringstream csv_caption;
-  csv_caption << "classified,";
-
-  for ( unsigned int c = 0; c < classes_; c++ ) {
-    csv_caption << names_[c];
-
-    if ( ( c+1 ) < classes_ )
-      csv_caption << ",";
-  }
-
-  output << csv_caption.str() << std::endl;
-  std::stringstream csv_line;
-
-  for ( unsigned int t = 0; t < classes_; t++ ) {
-    csv_line << names_[t] << ",";
-
-    for ( unsigned int c = 0; c < classes_; c++ ) {
-      long double result = matrix_[ ( t * classes_ ) + c];
-      csv_line << static_cast<long> ( result );
-
-      if ( ( c+1 ) < classes_ )
-        csv_line << ",";
-    }
-
-    output << csv_line.str() << std::endl;
-    csv_line.str ( "" );
-  }
-}
-
 ConfusionMatrixLayer::~ConfusionMatrixLayer() {
   if ( matrix_ != nullptr )
     delete[] matrix_;

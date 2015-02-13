@@ -5,11 +5,11 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file ConfigurableFactory.h
- * \class ConfigurableFactory
- * \brief This class can parse network configuration files and construct network layers.
+ * @file ConfigurableFactory.h
+ * @class ConfigurableFactory
+ * @brief This class can parse network configuration files and construct network layers.
  *
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_CONFIGURABLEFACTORY_H
