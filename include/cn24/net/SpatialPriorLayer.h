@@ -5,11 +5,11 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file SpatialPriorLayer.h
- * \class SpatialPriorLayer
+ * @file SpatialPriorLayer.h
+ * @class SpatialPriorLayer
  * This class adds two feature maps that contain the normalized pixel
  * coordinates.
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_SPATIALPRIORLAYER_H
@@ -22,7 +22,7 @@ namespace Conv {
 class SpatialPriorLayer : public SimpleLayer {
 public:  
   /**
-   * \brief Constructs a SpatialPriorLayer.
+   * @brief Constructs a SpatialPriorLayer.
    */
   SpatialPriorLayer();
   

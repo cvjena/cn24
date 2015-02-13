@@ -299,6 +299,21 @@ void Net::DeserializeParameters (std::istream& input, unsigned int last_layer) {
   }
 }
 
-
+void Net::PrintAndResetLayerTime(datum samples) {
+#ifdef LAYERTIME
+    std::cout << std::endl << "LAYERTIME (" << samples << ")" << std::endl;
+    datum tps_sum = 0.0;
+    for(unsigned int l = 0; l < layers_.size(); l++) {
+      std::cout << "forward " << l << "," << std::fixed << std::setprecision(9) << 1000000.0 * forward_durations_[l].count() / samples << "\n";
+      std::cout << "backwrd " << l << "," << std::fixed << std::setprecision(9) << 1000000.0 * backward_durations_[l].count() / samples << "\n";
+      tps_sum += 1000000.0 * forward_durations_[l].count() / samples;
+      tps_sum += 1000000.0 * backward_durations_[l].count() / samples;
+	   forward_durations_[l] = std::chrono::duration<double>::zero();
+	   backward_durations_[l] = std::chrono::duration<double>::zero();
+    }
+    
+    std::cout << "Total tps in net: " << tps_sum << " us" << std::endl;
+#endif
+  }
 
 }

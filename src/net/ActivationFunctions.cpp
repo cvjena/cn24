@@ -23,6 +23,22 @@
 
 namespace Conv {
 
+bool SigmoidLayer::IsOpenCLAware() {
+#ifdef BUILD_OPENCL
+  return true;
+#else
+  return false;
+#endif
+}
+
+bool TanhLayer::IsOpenCLAware() {
+#ifdef BUILD_OPENCL
+  return true;
+#else
+  return false;
+#endif
+}
+
 void SigmoidLayer::FeedForward () {
 #ifdef BUILD_OPENCL
   cl_uint error = 0;

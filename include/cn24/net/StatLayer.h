@@ -5,11 +5,11 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file StatLayer.h
- * \class StatLayer
- * \brief Layer that calculates a statistical measure on the output
+ * @file StatLayer.h
+ * @class StatLayer
+ * @brief Layer that calculates a statistical measure on the output
  * 
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_STATLAYER_H
@@ -31,7 +31,7 @@ class StatLayer: public Layer {
 public:
   StatLayer();
   /*
-   * \brief Calculate the statistic
+   * @brief Calculate the statistic
    */
   virtual datum CalculateStat() = 0;
   virtual std::string stat_name() = 0;

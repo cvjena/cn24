@@ -5,11 +5,11 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file NonLinearityLayer.h
- * \class NonLinearityLayer
- * \brief This layer introduces a non-linearity (activation function)
+ * @file NonLinearityLayer.h
+ * @class NonLinearityLayer
+ * @brief This layer introduces a non-linearity (activation function)
  *
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_NONLINEARITYLAYER_H
@@ -23,19 +23,20 @@ namespace Conv {
 // This macro is a class declaration for a typical nonlinearity layer
 #define NL_LAYER(name) class name##Layer : public NonLinearityLayer {\
 public: \
-  name##Layer() { LOGDEBUG << "Instance created, nl: " << #name; } \
-  void FeedForward(); \
-  void BackPropagate(); \
+name##Layer() { LOGDEBUG << "Instance created, nl: " << #name; } \
+void FeedForward(); \
+void BackPropagate(); \
+bool IsOpenCLAware(); \
 };
 
-
-#define NL_LAYER_OPENCL(name) class name##Layer : public NonLinearityLayer {\
+#define NL_LAYER_NOCL(name) class name##Layer : public NonLinearityLayer {\
 public: \
-  name##Layer() { LOGDEBUG << "Instance created, nl: " << #name; } \
-  void FeedForward(); \
-  void BackPropagate(); \
-  bool IsOpenCLAware() { return true; } \
+name##Layer() { LOGDEBUG << "Instance created, nl: " << #name; } \
+void FeedForward(); \
+void BackPropagate(); \
+bool IsOpenCLAware() { return false; } \
 };
+
 
 class NonLinearityLayer : public SimpleLayer {
 public:
@@ -47,18 +48,13 @@ public:
   bool Connect (const CombinedTensor* input, CombinedTensor* output);
   virtual void FeedForward() = 0;
   virtual void BackPropagate() = 0;
+
 };
 
-
-#ifdef BUILD_OPENCL
-NL_LAYER_OPENCL(Tanh)
-NL_LAYER_OPENCL(Sigmoid)
-#else
 NL_LAYER(Tanh)
 NL_LAYER(Sigmoid)
-#endif
-NL_LAYER(ReLU)
-NL_LAYER(Softmax)
+NL_LAYER_NOCL(ReLU)
+NL_LAYER_NOCL(Softmax)
 }
 
 #endif

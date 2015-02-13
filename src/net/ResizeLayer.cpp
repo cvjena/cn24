@@ -96,4 +96,12 @@ void ResizeLayer::BackPropagate() {
   // Nothing to do here
 }
 
+bool ResizeLayer::IsOpenCLAware() {
+#ifdef BUILD_OPENCL
+  return true; 
+#else
+  return false; 
+#endif
+}
+
 }

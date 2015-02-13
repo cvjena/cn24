@@ -5,12 +5,12 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file ResizeLayer.h
- * \class ResizeLayer
+ * @file ResizeLayer.h
+ * @class ResizeLayer
  * Layer that adds a border around an image so that it has its original
  * size after convolutions.
  * 
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_RESIZELAYER_H
@@ -23,9 +23,9 @@ namespace Conv {
 class ResizeLayer : public SimpleLayer {
 public:  
   /**
-   * \brief Constructs a ResizeLayer with the specified border size.
-   * \param borderx Size of the complete horizontal border
-   * \param bordery Size of the complete vertical border
+   * @brief Constructs a ResizeLayer with the specified border size.
+   * @param borderx Size of the complete horizontal border
+   * @param bordery Size of the complete vertical border
    */
   ResizeLayer(const unsigned int borderx, const unsigned int bordery);
   
@@ -34,10 +34,7 @@ public:
   bool Connect (const CombinedTensor* input, CombinedTensor* output);
   void FeedForward();
   void BackPropagate();
-#ifdef BUILD_OPENCL
-  bool IsOpenCLAware() { return true; }
-#endif
-
+  bool IsOpenCLAware();
 private:
   unsigned int borderx_;
   unsigned int bordery_;
