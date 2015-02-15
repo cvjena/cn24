@@ -7,8 +7,7 @@
 #include <limits>
 
 #include "Log.h"
-#include "Init.h"
-
+#include "CLHelper.h"
 #include "MaxPoolingLayer.h"
 
 #ifdef BUILD_OPENCL
@@ -99,30 +98,30 @@ void MaxPoolingLayer::FeedForward() {
   maximum_mask_.MoveToGPU(true);
   
   cl_uint error = 0;
-  error |= clSetKernelArg (System::k_maximumForward, 0, sizeof (cl_mem), &input_->data.cl_data_ptr_);
-  error |= clSetKernelArg (System::k_maximumForward, 1, sizeof (cl_mem), &maximum_mask_.cl_data_ptr_);
-  error |= clSetKernelArg (System::k_maximumForward, 2, sizeof (cl_mem), &output_->data.cl_data_ptr_);
-  error |= clSetKernelArg (System::k_maximumForward, 3, sizeof (unsigned int), &input_width_);
-  error |= clSetKernelArg (System::k_maximumForward, 4, sizeof (unsigned int), &input_height_);
-  error |= clSetKernelArg (System::k_maximumForward, 5, sizeof (unsigned int), &maps_);
-  error |= clSetKernelArg (System::k_maximumForward, 6, sizeof (unsigned int), &output_width_);
-  error |= clSetKernelArg (System::k_maximumForward, 7, sizeof (unsigned int), &output_height_);
-  error |= clSetKernelArg (System::k_maximumForward, 8, sizeof (unsigned int), &region_width_);
-  error |= clSetKernelArg (System::k_maximumForward, 9, sizeof (unsigned int), &region_height_);
+  error |= clSetKernelArg (CLHelper::k_maximumForward, 0, sizeof (cl_mem), &input_->data.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_maximumForward, 1, sizeof (cl_mem), &maximum_mask_.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_maximumForward, 2, sizeof (cl_mem), &output_->data.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_maximumForward, 3, sizeof (unsigned int), &input_width_);
+  error |= clSetKernelArg (CLHelper::k_maximumForward, 4, sizeof (unsigned int), &input_height_);
+  error |= clSetKernelArg (CLHelper::k_maximumForward, 5, sizeof (unsigned int), &maps_);
+  error |= clSetKernelArg (CLHelper::k_maximumForward, 6, sizeof (unsigned int), &output_width_);
+  error |= clSetKernelArg (CLHelper::k_maximumForward, 7, sizeof (unsigned int), &output_height_);
+  error |= clSetKernelArg (CLHelper::k_maximumForward, 8, sizeof (unsigned int), &region_width_);
+  error |= clSetKernelArg (CLHelper::k_maximumForward, 9, sizeof (unsigned int), &region_height_);
   if (error != CL_SUCCESS) {
     FATAL ("Error setting kernel args: " << (signed int) error);
   }
 
   size_t global_work_size[] = { output_width_, output_height_, maps_* input_->data.samples() };
 
-  error = clEnqueueNDRangeKernel (System::queue, System::k_maximumForward, 3, NULL,
+  error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_maximumForward, 3, NULL,
                                   global_work_size, NULL, 0, NULL, NULL);
   if (error != CL_SUCCESS) {
     FATAL ("Error enqueueing kernel: " << (signed int) error);
   }
 
 #ifdef BRUTAL_FINISH
-  error = clFinish (System::queue);
+  error = clFinish (CLHelper::queue);
   if (error != CL_SUCCESS) {
     FATAL ("Error finishing command queue: " << (signed int) error);
   }
@@ -174,30 +173,30 @@ void MaxPoolingLayer::BackPropagate() {
   maximum_mask_.MoveToGPU();
   
   cl_uint error = 0;
-  error |= clSetKernelArg (System::k_maximumBackward, 0, sizeof (cl_mem), &input_->delta.cl_data_ptr_);
-  error |= clSetKernelArg (System::k_maximumBackward, 1, sizeof (cl_mem), &maximum_mask_.cl_data_ptr_);
-  error |= clSetKernelArg (System::k_maximumBackward, 2, sizeof (cl_mem), &output_->delta.cl_data_ptr_);
-  error |= clSetKernelArg (System::k_maximumBackward, 3, sizeof (unsigned int), &input_width_);
-  error |= clSetKernelArg (System::k_maximumBackward, 4, sizeof (unsigned int), &input_height_);
-  error |= clSetKernelArg (System::k_maximumBackward, 5, sizeof (unsigned int), &maps_);
-  error |= clSetKernelArg (System::k_maximumBackward, 6, sizeof (unsigned int), &output_width_);
-  error |= clSetKernelArg (System::k_maximumBackward, 7, sizeof (unsigned int), &output_height_);
-  error |= clSetKernelArg (System::k_maximumBackward, 8, sizeof (unsigned int), &region_width_);
-  error |= clSetKernelArg (System::k_maximumBackward, 9, sizeof (unsigned int), &region_height_);
+  error |= clSetKernelArg (CLHelper::k_maximumBackward, 0, sizeof (cl_mem), &input_->delta.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_maximumBackward, 1, sizeof (cl_mem), &maximum_mask_.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_maximumBackward, 2, sizeof (cl_mem), &output_->delta.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_maximumBackward, 3, sizeof (unsigned int), &input_width_);
+  error |= clSetKernelArg (CLHelper::k_maximumBackward, 4, sizeof (unsigned int), &input_height_);
+  error |= clSetKernelArg (CLHelper::k_maximumBackward, 5, sizeof (unsigned int), &maps_);
+  error |= clSetKernelArg (CLHelper::k_maximumBackward, 6, sizeof (unsigned int), &output_width_);
+  error |= clSetKernelArg (CLHelper::k_maximumBackward, 7, sizeof (unsigned int), &output_height_);
+  error |= clSetKernelArg (CLHelper::k_maximumBackward, 8, sizeof (unsigned int), &region_width_);
+  error |= clSetKernelArg (CLHelper::k_maximumBackward, 9, sizeof (unsigned int), &region_height_);
   if (error != CL_SUCCESS) {
     FATAL ("Error setting kernel args: " << (signed int) error);
   }
 
   size_t global_work_size[] = { input_width_, input_height_, maps_* input_->data.samples() };
 
-  error = clEnqueueNDRangeKernel (System::queue, System::k_maximumBackward, 3, NULL,
+  error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_maximumBackward, 3, NULL,
                                   global_work_size, NULL, 0, NULL, NULL);
   if (error != CL_SUCCESS) {
     FATAL ("Error enqueueing kernel: " << (signed int) error);
   }
 
 #ifdef BRUTAL_FINISH
-  error = clFinish (System::queue);
+  error = clFinish (CLHelper::queue);
   if (error != CL_SUCCESS) {
     FATAL ("Error finishing command queue: " << (signed int) error);
   }

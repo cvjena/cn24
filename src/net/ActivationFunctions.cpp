@@ -15,10 +15,8 @@
 
 #include <cmath>
 
-#ifdef BUILD_OPENCL
-#include "Init.h"
-#endif
 
+#include "CLHelper.h"
 #include "NonLinearityLayer.h"
 
 namespace Conv {
@@ -45,8 +43,8 @@ void SigmoidLayer::FeedForward () {
   input_->data.MoveToGPU ();
   output_->data.MoveToGPU ();
 
-  error |= clSetKernelArg (System::k_nlSigm, 0, sizeof (cl_mem), &input_->data.cl_data_ptr_);
-  error |= clSetKernelArg (System::k_nlSigm, 1, sizeof (cl_mem), &output_->data.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_nlSigm, 0, sizeof (cl_mem), &input_->data.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_nlSigm, 1, sizeof (cl_mem), &output_->data.cl_data_ptr_);
 
   if (error != CL_SUCCESS) {
     FATAL("Error setting kernel args: " << (signed int) error);
@@ -54,14 +52,14 @@ void SigmoidLayer::FeedForward () {
 
   size_t global_work_size[] = {input_->data.elements ()};
 
-  error = clEnqueueNDRangeKernel (System::queue, System::k_nlSigm, 1, NULL,
+  error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_nlSigm, 1, NULL,
       global_work_size, NULL, 0, NULL, NULL);
   if (error != CL_SUCCESS) {
     FATAL("Error enqueueing kernel: " << (signed int) error);
   }
 
 #ifdef BRUTAL_FINISH
-  error = clFinish (System::queue);
+  error = clFinish (CLHelper::queue);
   if (error != CL_SUCCESS) {
     FATAL("Error finishing command queue: " << (signed int) error);
   }
@@ -87,9 +85,9 @@ void SigmoidLayer::BackPropagate () {
   output_->data.MoveToGPU ();
   output_->delta.MoveToGPU ();
   
-  error |= clSetKernelArg (System::k_nlSigmBackward, 0, sizeof (cl_mem), &input_->delta.cl_data_ptr_);
-  error |= clSetKernelArg (System::k_nlSigmBackward, 1, sizeof (cl_mem), &output_->data.cl_data_ptr_);
-  error |= clSetKernelArg (System::k_nlSigmBackward, 2, sizeof (cl_mem), &output_->delta.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_nlSigmBackward, 0, sizeof (cl_mem), &input_->delta.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_nlSigmBackward, 1, sizeof (cl_mem), &output_->data.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_nlSigmBackward, 2, sizeof (cl_mem), &output_->delta.cl_data_ptr_);
 
   if (error != CL_SUCCESS) {
     FATAL("Error setting kernel args: " << (signed int) error);
@@ -97,14 +95,14 @@ void SigmoidLayer::BackPropagate () {
 
   size_t global_work_size[] = {input_->data.elements ()};
 
-  error = clEnqueueNDRangeKernel (System::queue, System::k_nlSigmBackward, 1, NULL,
+  error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_nlSigmBackward, 1, NULL,
       global_work_size, NULL, 0, NULL, NULL);
   if (error != CL_SUCCESS) {
     FATAL("Error enqueueing kernel: " << (signed int) error);
   }
 
 #ifdef BRUTAL_FINISH
-  error = clFinish (System::queue);
+  error = clFinish (CLHelper::queue);
   if (error != CL_SUCCESS) {
     FATAL("Error finishing command queue: " << (signed int) error);
   }
@@ -137,8 +135,8 @@ void TanhLayer::FeedForward () {
   input_->data.MoveToGPU ();
   output_->data.MoveToGPU ();
 
-  error |= clSetKernelArg (System::k_nlTanh, 0, sizeof (cl_mem), &input_->data.cl_data_ptr_);
-  error |= clSetKernelArg (System::k_nlTanh, 1, sizeof (cl_mem), &output_->data.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_nlTanh, 0, sizeof (cl_mem), &input_->data.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_nlTanh, 1, sizeof (cl_mem), &output_->data.cl_data_ptr_);
 
   if (error != CL_SUCCESS) {
     FATAL("Error setting kernel args: " << (signed int) error);
@@ -146,14 +144,14 @@ void TanhLayer::FeedForward () {
 
   size_t global_work_size[] = {input_->data.elements ()};
 
-  error = clEnqueueNDRangeKernel (System::queue, System::k_nlTanh, 1, NULL,
+  error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_nlTanh, 1, NULL,
       global_work_size, NULL, 0, NULL, NULL);
   if (error != CL_SUCCESS) {
     FATAL("Error enqueueing kernel: " << (signed int) error);
   }
 
 #ifdef BRUTAL_FINISH
-  error = clFinish (System::queue);
+  error = clFinish (CLHelper::queue);
   if (error != CL_SUCCESS) {
     FATAL("Error finishing command queue: " << (signed int) error);
   }
@@ -179,9 +177,9 @@ void TanhLayer::BackPropagate () {
   output_->data.MoveToGPU ();
   output_->delta.MoveToGPU ();
   
-  error |= clSetKernelArg (System::k_nlTanhBackward, 0, sizeof (cl_mem), &input_->delta.cl_data_ptr_);
-  error |= clSetKernelArg (System::k_nlTanhBackward, 1, sizeof (cl_mem), &output_->data.cl_data_ptr_);
-  error |= clSetKernelArg (System::k_nlTanhBackward, 2, sizeof (cl_mem), &output_->delta.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_nlTanhBackward, 0, sizeof (cl_mem), &input_->delta.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_nlTanhBackward, 1, sizeof (cl_mem), &output_->data.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_nlTanhBackward, 2, sizeof (cl_mem), &output_->delta.cl_data_ptr_);
 
   if (error != CL_SUCCESS) {
     FATAL("Error setting kernel args: " << (signed int) error);
@@ -189,14 +187,14 @@ void TanhLayer::BackPropagate () {
 
   size_t global_work_size[] = {input_->data.elements ()};
 
-  error = clEnqueueNDRangeKernel (System::queue, System::k_nlTanhBackward, 1, NULL,
+  error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_nlTanhBackward, 1, NULL,
       global_work_size, NULL, 0, NULL, NULL);
   if (error != CL_SUCCESS) {
     FATAL("Error enqueueing kernel: " << (signed int) error);
   }
 
 #ifdef BRUTAL_FINISH
-  error = clFinish (System::queue);
+  error = clFinish (CLHelper::queue);
   if (error != CL_SUCCESS) {
     FATAL("Error finishing command queue: " << (signed int) error);
   }

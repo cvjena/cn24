@@ -5,8 +5,7 @@ project(CN24 C CXX)
 set(CN24_SRC "${CN24_SOURCE_DIR}/src")
 set(CN24_INC "${CN24_SOURCE_DIR}/include" "${CN24_SOURCE_DIR}/include/cn24"
 "${CN24_SOURCE_DIR}/include/cn24/util" "${CN24_SOURCE_DIR}/include/cn24/net"
-"${CN24_SOURCE_DIR}/include/cn24/factory" "${CN24_SOURCE_DIR}/include/external"
-"${CN24_SOURCE_DIR}/include/external/felzenszwalb")
+"${CN24_SOURCE_DIR}/include/cn24/factory" "${CN24_SOURCE_DIR}/include/private")
 set(CN24_TOO "${CN24_SOURCE_DIR}/tools")
 set(CN24_BSH "${CN24_SOURCE_DIR}/scripts")
 set(CN24_KER "${CN24_SOURCE_DIR}/kernels")

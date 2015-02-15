@@ -5,17 +5,18 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file LayerOutput.h
- * \class LayerOutput
- * \brief Combination of Tensors to represent errors and outputs of Layers.
+ * @file LayerOutput.h
+ * @class LayerOutput
+ * @brief Combination of Tensors to represent errors and outputs of Layers.
  *
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_COMBINEDTENSOR_H
 #define CONV_COMBINEDTENSOR_H
 
 #include <cstddef>
+
 #include "Tensor.h"
 
 namespace Conv {
@@ -23,7 +24,7 @@ namespace Conv {
 class CombinedTensor {
 public:
   /**
-   * \brief Constructs a CombinedTensor with two Tensors of the specified size.
+   * @brief Constructs a CombinedTensor with two Tensors of the specified size.
    * 
    * This is useful for storing data and gradients or differences in the same
    * place.
@@ -32,7 +33,7 @@ public:
    * Code can expect the delta and data Tensors to have the same shape.
    * Code must _not_ reshape only one of the Tensors.
    *
-   * \see Tensor.h for size parameter documentation
+   * @see Tensor.h for size parameter documentation
    */
   explicit CombinedTensor (const std::size_t samples,
                            const std::size_t width = 1,

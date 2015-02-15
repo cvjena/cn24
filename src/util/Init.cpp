@@ -12,6 +12,7 @@
 #endif
 
 #include "Init.h"
+#include "CLHelper.h"
 #include "Config.h"
 #include "Log.h"
 
@@ -26,29 +27,29 @@
 namespace Conv {
 
 #ifdef BUILD_OPENCL
-cl_context System::context = 0;
-cl_command_queue System::queue = 0;
-cl_device_id System::device = 0;
+cl_context CLHelper::context = 0;
+cl_command_queue CLHelper::queue = 0;
+cl_device_id CLHelper::device = 0;
 
-cl_kernel System::k_crossCorrelation = 0;
-cl_kernel System::k_fullConvolution = 0;
-cl_kernel System::k_biasedConvolution = 0;
-cl_kernel System::k_biasedMatrixVector = 0;
-cl_kernel System::k_biasedMatrixVectorGrad = 0;
-cl_kernel System::k_biasedMatrixVectorBackward = 0;
-cl_kernel System::k_biasGradientPart1 = 0;
-cl_kernel System::k_biasGradientPart2 = 0;
-cl_kernel System::k_matrixMatrix = 0;
-cl_kernel System::k_foldWeights = 0;
-cl_kernel System::k_maximumForward = 0;
-cl_kernel System::k_maximumBackward = 0;
-cl_kernel System::k_nlTanh = 0;
-cl_kernel System::k_nlTanhBackward = 0;
-cl_kernel System::k_nlSigm = 0;
-cl_kernel System::k_nlSigmBackward = 0;
+cl_kernel CLHelper::k_crossCorrelation = 0;
+cl_kernel CLHelper::k_fullConvolution = 0;
+cl_kernel CLHelper::k_biasedConvolution = 0;
+cl_kernel CLHelper::k_biasedMatrixVector = 0;
+cl_kernel CLHelper::k_biasedMatrixVectorGrad = 0;
+cl_kernel CLHelper::k_biasedMatrixVectorBackward = 0;
+cl_kernel CLHelper::k_biasGradientPart1 = 0;
+cl_kernel CLHelper::k_biasGradientPart2 = 0;
+cl_kernel CLHelper::k_matrixMatrix = 0;
+cl_kernel CLHelper::k_foldWeights = 0;
+cl_kernel CLHelper::k_maximumForward = 0;
+cl_kernel CLHelper::k_maximumBackward = 0;
+cl_kernel CLHelper::k_nlTanh = 0;
+cl_kernel CLHelper::k_nlTanhBackward = 0;
+cl_kernel CLHelper::k_nlSigm = 0;
+cl_kernel CLHelper::k_nlSigmBackward = 0;
 #endif
 
-TensorViewer* System::viewer = nullptr;
+TensorViewer* CLHelper::viewer = nullptr;
 
 void System::Init() {
   LOGINFO << "CN24 built on " << BUILD_DATE;
@@ -56,8 +57,11 @@ void System::Init() {
   LOGINFO << "For licensing information, see the LICENSE"
           << " file included with this project.";
 
-#ifdef BUILD_OPENCL
+  CLHelper::Init();
+}
 
+void CLHelper::Init() {
+#ifdef BUILD_OPENCL
   // TODO make this configurable
   unsigned int platform_number = 0;
   unsigned int device_number = 0;
@@ -246,7 +250,7 @@ void System::Init() {
 }
 
 #ifdef BUILD_OPENCL
-cl_program System::CreateProgram ( const char* file_name ) {
+cl_program CLHelper::CreateProgram ( const char* file_name ) {
   cl_int error = 0;
   cl_program program = 0;
 

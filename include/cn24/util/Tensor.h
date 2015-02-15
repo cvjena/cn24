@@ -5,9 +5,9 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file Tensor.h
- * \class Tensor
- * \brief Represents vectors, matrices, 3-D and 4-D tensors.
+ * @file Tensor.h
+ * @class Tensor
+ * @brief Represents vectors, matrices, 3-D and 4-D tensors.
  *
  * This class stores the data in the following hierarchy:
  *  1. Samples
@@ -28,8 +28,6 @@
 #include <cstddef>
 #include <string>
 #include <iostream>
-
-#include <Init.h>
 
 #include "Log.h"
 #include "Config.h"
@@ -316,7 +314,6 @@ private:
   std::size_t width_ = 0;
   std::size_t elements_ = 0;
   
-#ifdef BUILD_OPENCL
 public:
   /**
    * \brief Moves the data to the CPU's memory if it isn't there already.
@@ -333,14 +330,13 @@ public:
   /**
    * \brief Pointer to the memory in the GPU's memory
    */
-  cl_mem cl_data_ptr_ = 0;
+  void* cl_data_ptr_ = 0;
   
 private:
   /**
    * \brief If this is true, the data is currently in the GPU's memory
    */
   bool cl_gpu_ = false;
-#endif
 };
 
 

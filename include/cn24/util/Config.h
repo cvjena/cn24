@@ -5,22 +5,19 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file Config.h
- * \brief Contains configuration macros.
+ * @file Config.h
+ * @brief Contains configuration macros.
  * 
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_CONFIG_H
 #define CONV_CONFIG_H
 
-
 #include <sys/types.h>
 #include <cstdint>
 
 namespace Conv {
-  
-//define BRUTAL_FINISH
   
 /**
  * This makes the networks data type configurable without using
@@ -46,6 +43,7 @@ typedef u_int32_t duint;
 }
 
 #ifdef BUILD_BLAS
+
 /**
  * Here we include our favorite BLAS library and define important functions
  * so that they are independent of the type

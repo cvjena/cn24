@@ -12,6 +12,7 @@
 #include <limits>
 #include <cmath>
 #include <string>
+
 #include "PNGUtil.h"
 #include "JPGUtil.h"
 
@@ -22,7 +23,7 @@
 #include "Config.h"
 #include "Log.h"
 #include "Tensor.h"
-#include <Init.h>
+#include "CLHelper.h"
 
 namespace Conv {
 
@@ -346,7 +347,7 @@ void Tensor::DeleteIfPossible() {
 #ifdef BUILD_OPENCL
 
       if ( cl_data_ptr_ != 0 ) {
-        clReleaseMemObject ( cl_data_ptr_ );
+        clReleaseMemObject ( (cl_mem)cl_data_ptr_ );
         cl_data_ptr_ = 0;
       }
 
@@ -376,7 +377,7 @@ void Tensor::MoveToGPU ( bool no_copy ) {
       // Error variable
       cl_int error_ret = 0;
 
-      cl_data_ptr_ = clCreateBuffer ( System::context, CL_MEM_READ_WRITE,
+      cl_data_ptr_ = clCreateBuffer ( CLHelper::context, CL_MEM_READ_WRITE,
                                       elements_ * sizeof ( datum ), NULL, &error_ret );
 
       if ( cl_data_ptr_ == NULL || error_ret != CL_SUCCESS ) {
@@ -390,7 +391,7 @@ void Tensor::MoveToGPU ( bool no_copy ) {
       // Write to GPU
       cl_int error_ret = 0;
 #ifdef BRUTAL_FINISH
-      error_ret = clFinish ( System::queue );
+      error_ret = clFinish ( CLHelper::queue );
 
       if ( error_ret != CL_SUCCESS ) {
         FATAL ( "Error finishing command queue (1): " << error_ret );
@@ -398,7 +399,7 @@ void Tensor::MoveToGPU ( bool no_copy ) {
 
 #endif
 
-      error_ret = clEnqueueWriteBuffer ( System::queue, cl_data_ptr_, CL_TRUE,
+      error_ret = clEnqueueWriteBuffer ( CLHelper::queue, (cl_mem)cl_data_ptr_, CL_TRUE,
                                          0, elements_ * sizeof ( datum ), data_ptr_, 0, NULL, NULL );
 
       if ( error_ret != CL_SUCCESS ) {
@@ -406,7 +407,7 @@ void Tensor::MoveToGPU ( bool no_copy ) {
       }
 
 #ifdef BRUTAL_FINISH
-      error_ret = clFinish ( System::queue );
+      error_ret = clFinish ( CLHelper::queue );
 
       if ( error_ret != CL_SUCCESS ) {
         FATAL ( "Error finishing command queue (2): " << error_ret );
@@ -432,14 +433,14 @@ void Tensor::MoveToCPU ( bool no_copy ) {
       }
 
       cl_int error_ret = 0;
-      error_ret = clFinish ( System::queue );
+      error_ret = clFinish ( CLHelper::queue );
 
       if ( error_ret != CL_SUCCESS ) {
         FATAL ( "Error finishing command queue (1): " << error_ret );
       }
 
       // Read from GPU
-      error_ret = clEnqueueReadBuffer ( System::queue, cl_data_ptr_, CL_TRUE, 0,
+      error_ret = clEnqueueReadBuffer ( CLHelper::queue, (cl_mem)cl_data_ptr_, CL_TRUE, 0,
                                         elements_ * sizeof ( datum ), data_ptr_, 0, NULL, NULL );
 
       if ( error_ret != CL_SUCCESS ) {
@@ -447,7 +448,7 @@ void Tensor::MoveToCPU ( bool no_copy ) {
       }
 
 #ifdef BRUTAL_FINISH
-      error_ret = clFinish ( System::queue );
+      error_ret = clFinish ( CLHelper::queue );
 
       if ( error_ret != CL_SUCCESS ) {
         FATAL ( "Error finishing command queue (2): " << error_ret );
@@ -460,6 +461,8 @@ void Tensor::MoveToCPU ( bool no_copy ) {
     cl_gpu_ = false;
   }
 }
+
+#else
 
 #endif
 

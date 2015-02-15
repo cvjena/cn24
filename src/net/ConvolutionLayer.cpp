@@ -16,7 +16,7 @@
 
 #include "Config.h"
 #include "Log.h"
-#include "Init.h"
+#include "CLHelper.h"
 
 #include "ConvolutionLayer.h"
 
@@ -162,19 +162,19 @@ void ConvolutionLayer::FeedForward() {
   weights_->data.MoveToGPU();
   bias_->data.MoveToGPU();
   output_->data.MoveToGPU (true);
-  error |= clSetKernelArg (System::k_biasedConvolution, 0, sizeof (cl_mem), &input_->data.cl_data_ptr_);
-  error |= clSetKernelArg (System::k_biasedConvolution, 1, sizeof (cl_mem), &weights_->data.cl_data_ptr_);
-  error |= clSetKernelArg (System::k_biasedConvolution, 2, sizeof (cl_mem), &bias_->data.cl_data_ptr_);
-  error |= clSetKernelArg (System::k_biasedConvolution, 3, sizeof (cl_mem), &output_->data.cl_data_ptr_);
-  error |= clSetKernelArg (System::k_biasedConvolution, 4, sizeof (unsigned int), &input_width_);
-  error |= clSetKernelArg (System::k_biasedConvolution, 5, sizeof (unsigned int), &input_height_);
-  error |= clSetKernelArg (System::k_biasedConvolution, 6, sizeof (unsigned int), &input_maps_);
-  error |= clSetKernelArg (System::k_biasedConvolution, 7, sizeof (unsigned int), &kernel_width_);
-  error |= clSetKernelArg (System::k_biasedConvolution, 8, sizeof (unsigned int), &kernel_height_);
-  error |= clSetKernelArg (System::k_biasedConvolution, 9, sizeof (unsigned int), &output_width_);
-  error |= clSetKernelArg (System::k_biasedConvolution, 10, sizeof (unsigned int), &output_height_);
-  error |= clSetKernelArg (System::k_biasedConvolution, 11, sizeof (unsigned int), &output_maps_);
-  error |= clSetKernelArg (System::k_biasedConvolution, 12, sizeof (datum), &weight_factor_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 0, sizeof (cl_mem), &input_->data.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 1, sizeof (cl_mem), &weights_->data.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 2, sizeof (cl_mem), &bias_->data.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 3, sizeof (cl_mem), &output_->data.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 4, sizeof (unsigned int), &input_width_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 5, sizeof (unsigned int), &input_height_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 6, sizeof (unsigned int), &input_maps_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 7, sizeof (unsigned int), &kernel_width_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 8, sizeof (unsigned int), &kernel_height_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 9, sizeof (unsigned int), &output_width_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 10, sizeof (unsigned int), &output_height_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 11, sizeof (unsigned int), &output_maps_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 12, sizeof (datum), &weight_factor_);
 
   if (error != CL_SUCCESS) {
     FATAL ("Error setting kernel args: " << (signed int) error);
@@ -182,14 +182,14 @@ void ConvolutionLayer::FeedForward() {
 
   size_t global_work_size[] = { output_width_, output_height_, output_maps_* input_->data.samples() };
 
-  error = clEnqueueNDRangeKernel (System::queue, System::k_biasedConvolution, 3, NULL,
+  error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_biasedConvolution, 3, NULL,
                                   global_work_size, NULL, 0, NULL, NULL);
   if (error != CL_SUCCESS) {
     FATAL ("Error enqueueing kernel: " << (signed int) error);
   }
 
 #ifdef BRUTAL_FINISH
-  error = clFinish (System::queue);
+  error = clFinish (CLHelper::queue);
   if (error != CL_SUCCESS) {
     FATAL ("Error finishing command queue: " << (signed int) error);
   }
@@ -279,17 +279,17 @@ void ConvolutionLayer::BackPropagate() {
     input_->delta.MoveToGPU (true);
     weights_->data.MoveToGPU();
 
-    error |= clSetKernelArg (System::k_fullConvolution, 0, sizeof (cl_mem), &output_->delta.cl_data_ptr_);
-    error |= clSetKernelArg (System::k_fullConvolution, 1, sizeof (cl_mem), &weights_->data.cl_data_ptr_);
-    error |= clSetKernelArg (System::k_fullConvolution, 2, sizeof (cl_mem), &input_->delta.cl_data_ptr_);
-    error |= clSetKernelArg (System::k_fullConvolution, 3, sizeof (unsigned int), &input_width_);
-    error |= clSetKernelArg (System::k_fullConvolution, 4, sizeof (unsigned int), &input_height_);
-    error |= clSetKernelArg (System::k_fullConvolution, 5, sizeof (unsigned int), &input_maps_);
-    error |= clSetKernelArg (System::k_fullConvolution, 6, sizeof (unsigned int), &kernel_width_);
-    error |= clSetKernelArg (System::k_fullConvolution, 7, sizeof (unsigned int), &kernel_height_);
-    error |= clSetKernelArg (System::k_fullConvolution, 8, sizeof (unsigned int), &output_width_);
-    error |= clSetKernelArg (System::k_fullConvolution, 9, sizeof (unsigned int), &output_height_);
-    error |= clSetKernelArg (System::k_fullConvolution, 10, sizeof (unsigned int), &output_maps_);
+    error |= clSetKernelArg (CLHelper::k_fullConvolution, 0, sizeof (cl_mem), &output_->delta.cl_data_ptr_);
+    error |= clSetKernelArg (CLHelper::k_fullConvolution, 1, sizeof (cl_mem), &weights_->data.cl_data_ptr_);
+    error |= clSetKernelArg (CLHelper::k_fullConvolution, 2, sizeof (cl_mem), &input_->delta.cl_data_ptr_);
+    error |= clSetKernelArg (CLHelper::k_fullConvolution, 3, sizeof (unsigned int), &input_width_);
+    error |= clSetKernelArg (CLHelper::k_fullConvolution, 4, sizeof (unsigned int), &input_height_);
+    error |= clSetKernelArg (CLHelper::k_fullConvolution, 5, sizeof (unsigned int), &input_maps_);
+    error |= clSetKernelArg (CLHelper::k_fullConvolution, 6, sizeof (unsigned int), &kernel_width_);
+    error |= clSetKernelArg (CLHelper::k_fullConvolution, 7, sizeof (unsigned int), &kernel_height_);
+    error |= clSetKernelArg (CLHelper::k_fullConvolution, 8, sizeof (unsigned int), &output_width_);
+    error |= clSetKernelArg (CLHelper::k_fullConvolution, 9, sizeof (unsigned int), &output_height_);
+    error |= clSetKernelArg (CLHelper::k_fullConvolution, 10, sizeof (unsigned int), &output_maps_);
 
     if (error != CL_SUCCESS) {
       FATAL ("Error setting kernel args: " << (signed int) error);
@@ -297,14 +297,14 @@ void ConvolutionLayer::BackPropagate() {
 
     size_t global_work_size[] = { input_width_, input_height_, input_maps_* input_->data.samples() };
 
-    error = clEnqueueNDRangeKernel (System::queue, System::k_fullConvolution, 3, NULL,
+    error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_fullConvolution, 3, NULL,
                                     global_work_size, NULL, 0, NULL, NULL);
     if (error != CL_SUCCESS) {
       FATAL ("Error enqueueing kernel: " << (signed int) error);
     }
 
 #ifdef BRUTAL_FINISH
-    error = clFinish (System::queue);
+    error = clFinish (CLHelper::queue);
     if (error != CL_SUCCESS) {
       FATAL ("Error finishing command queue: " << (signed int) error);
     }
@@ -385,19 +385,19 @@ void ConvolutionLayer::BackPropagate() {
     delta_buffer_.MoveToGPU(true);
     output_->delta.MoveToGPU();
     const unsigned int samples = input_->data.samples();
-    error |= clSetKernelArg (System::k_crossCorrelation, 0, sizeof (cl_mem), &input_->data.cl_data_ptr_);
-    error |= clSetKernelArg (System::k_crossCorrelation, 1, sizeof (cl_mem), &output_->delta.cl_data_ptr_);
-    error |= clSetKernelArg (System::k_crossCorrelation, 2, sizeof (cl_mem), &delta_buffer_.cl_data_ptr_);
-    error |= clSetKernelArg (System::k_crossCorrelation, 3, sizeof (unsigned int), &input_height_);
-    error |= clSetKernelArg (System::k_crossCorrelation, 4, sizeof (unsigned int), &input_width_);
-    error |= clSetKernelArg (System::k_crossCorrelation, 5, sizeof (unsigned int), &input_maps_);
-    error |= clSetKernelArg (System::k_crossCorrelation, 6, sizeof (unsigned int), &output_width_);
-    error |= clSetKernelArg (System::k_crossCorrelation, 7, sizeof (unsigned int), &output_height_);
-    error |= clSetKernelArg (System::k_crossCorrelation, 8, sizeof (unsigned int), &output_maps_);
-    error |= clSetKernelArg (System::k_crossCorrelation, 9, sizeof (unsigned int), &kernel_width_);
-    error |= clSetKernelArg (System::k_crossCorrelation, 10, sizeof (unsigned int), &kernel_height_);
-    error |= clSetKernelArg (System::k_crossCorrelation, 11, sizeof (unsigned int), &samples);
-    error |= clSetKernelArg (System::k_crossCorrelation, 12, sizeof (datum), &one);
+    error |= clSetKernelArg (CLHelper::k_crossCorrelation, 0, sizeof (cl_mem), &input_->data.cl_data_ptr_);
+    error |= clSetKernelArg (CLHelper::k_crossCorrelation, 1, sizeof (cl_mem), &output_->delta.cl_data_ptr_);
+    error |= clSetKernelArg (CLHelper::k_crossCorrelation, 2, sizeof (cl_mem), &delta_buffer_.cl_data_ptr_);
+    error |= clSetKernelArg (CLHelper::k_crossCorrelation, 3, sizeof (unsigned int), &input_height_);
+    error |= clSetKernelArg (CLHelper::k_crossCorrelation, 4, sizeof (unsigned int), &input_width_);
+    error |= clSetKernelArg (CLHelper::k_crossCorrelation, 5, sizeof (unsigned int), &input_maps_);
+    error |= clSetKernelArg (CLHelper::k_crossCorrelation, 6, sizeof (unsigned int), &output_width_);
+    error |= clSetKernelArg (CLHelper::k_crossCorrelation, 7, sizeof (unsigned int), &output_height_);
+    error |= clSetKernelArg (CLHelper::k_crossCorrelation, 8, sizeof (unsigned int), &output_maps_);
+    error |= clSetKernelArg (CLHelper::k_crossCorrelation, 9, sizeof (unsigned int), &kernel_width_);
+    error |= clSetKernelArg (CLHelper::k_crossCorrelation, 10, sizeof (unsigned int), &kernel_height_);
+    error |= clSetKernelArg (CLHelper::k_crossCorrelation, 11, sizeof (unsigned int), &samples);
+    error |= clSetKernelArg (CLHelper::k_crossCorrelation, 12, sizeof (datum), &one);
 
     if (error != CL_SUCCESS) {
       FATAL ("Error setting kernel args: " << (signed int) error);
@@ -405,14 +405,14 @@ void ConvolutionLayer::BackPropagate() {
 
     size_t global_work_size[] = { kernel_width_, kernel_height_, input_maps_* output_maps_ * samples};
 
-    error = clEnqueueNDRangeKernel (System::queue, System::k_crossCorrelation, 3, NULL,
+    error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_crossCorrelation, 3, NULL,
                                     global_work_size, NULL, 0, NULL, NULL);
     if (error != CL_SUCCESS) {
       FATAL ("Error enqueueing kernel: " << (signed int) error);
     }
 
 #ifdef BRUTAL_FINISH
-    error = clFinish (System::queue);
+    error = clFinish (CLHelper::queue);
     if (error != CL_SUCCESS) {
       FATAL ("Error finishing command queue: " << (signed int) error);
     }
@@ -427,13 +427,13 @@ void ConvolutionLayer::BackPropagate() {
     delta_buffer_.MoveToGPU();
 
     const unsigned int samples = input_->data.samples();
-    error |= clSetKernelArg (System::k_foldWeights, 0, sizeof (cl_mem), &delta_buffer_.cl_data_ptr_);
-    error |= clSetKernelArg (System::k_foldWeights, 1, sizeof (cl_mem), &weights_->delta.cl_data_ptr_);
-    error |= clSetKernelArg (System::k_foldWeights, 2, sizeof (unsigned int), &input_maps_);
-    error |= clSetKernelArg (System::k_foldWeights, 3, sizeof (unsigned int), &output_maps_);
-    error |= clSetKernelArg (System::k_foldWeights, 4, sizeof (unsigned int), &kernel_width_);
-    error |= clSetKernelArg (System::k_foldWeights, 5, sizeof (unsigned int), &kernel_height_);
-    error |= clSetKernelArg (System::k_foldWeights, 6, sizeof (unsigned int), &samples);
+    error |= clSetKernelArg (CLHelper::k_foldWeights, 0, sizeof (cl_mem), &delta_buffer_.cl_data_ptr_);
+    error |= clSetKernelArg (CLHelper::k_foldWeights, 1, sizeof (cl_mem), &weights_->delta.cl_data_ptr_);
+    error |= clSetKernelArg (CLHelper::k_foldWeights, 2, sizeof (unsigned int), &input_maps_);
+    error |= clSetKernelArg (CLHelper::k_foldWeights, 3, sizeof (unsigned int), &output_maps_);
+    error |= clSetKernelArg (CLHelper::k_foldWeights, 4, sizeof (unsigned int), &kernel_width_);
+    error |= clSetKernelArg (CLHelper::k_foldWeights, 5, sizeof (unsigned int), &kernel_height_);
+    error |= clSetKernelArg (CLHelper::k_foldWeights, 6, sizeof (unsigned int), &samples);
 
     if (error != CL_SUCCESS) {
       FATAL ("Error setting kernel args: " << (signed int) error);
@@ -441,14 +441,14 @@ void ConvolutionLayer::BackPropagate() {
 
     size_t global_work_size[] = { kernel_width_, kernel_height_, input_maps_ * output_maps_};
 
-    error = clEnqueueNDRangeKernel (System::queue, System::k_foldWeights, 3, NULL,
+    error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_foldWeights, 3, NULL,
                                     global_work_size, NULL, 0, NULL, NULL);
     if (error != CL_SUCCESS) {
       FATAL ("Error enqueueing kernel: " << (signed int) error);
     }
 
 #ifdef BRUTAL_FINISH
-    error = clFinish (System::queue);
+    error = clFinish (CLHelper::queue);
     if (error != CL_SUCCESS) {
       FATAL ("Error finishing command queue: " << (signed int) error);
     }
@@ -502,11 +502,11 @@ void ConvolutionLayer::BackPropagate() {
     bias_buffer_.MoveToGPU(true);
     output_->delta.MoveToGPU();
     const unsigned int samples = input_->data.samples();
-    error |= clSetKernelArg (System::k_biasGradientPart1, 0, sizeof (cl_mem), &output_->delta.cl_data_ptr_);
-    error |= clSetKernelArg (System::k_biasGradientPart1, 1, sizeof (cl_mem), &bias_buffer_.cl_data_ptr_);
-    error |= clSetKernelArg (System::k_biasGradientPart1, 2, sizeof (unsigned int), &output_width_);
-    error |= clSetKernelArg (System::k_biasGradientPart1, 3, sizeof (unsigned int), &output_height_);
-    error |= clSetKernelArg (System::k_biasGradientPart1, 4, sizeof (unsigned int), &output_maps_);
+    error |= clSetKernelArg (CLHelper::k_biasGradientPart1, 0, sizeof (cl_mem), &output_->delta.cl_data_ptr_);
+    error |= clSetKernelArg (CLHelper::k_biasGradientPart1, 1, sizeof (cl_mem), &bias_buffer_.cl_data_ptr_);
+    error |= clSetKernelArg (CLHelper::k_biasGradientPart1, 2, sizeof (unsigned int), &output_width_);
+    error |= clSetKernelArg (CLHelper::k_biasGradientPart1, 3, sizeof (unsigned int), &output_height_);
+    error |= clSetKernelArg (CLHelper::k_biasGradientPart1, 4, sizeof (unsigned int), &output_maps_);
 
     if (error != CL_SUCCESS) {
       FATAL ("Error setting kernel args: " << (signed int) error);
@@ -514,14 +514,14 @@ void ConvolutionLayer::BackPropagate() {
 
     size_t global_work_size[] = { output_maps_, samples };
 
-    error = clEnqueueNDRangeKernel (System::queue, System::k_biasGradientPart1, 2, NULL,
+    error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_biasGradientPart1, 2, NULL,
                                     global_work_size, NULL, 0, NULL, NULL);
     if (error != CL_SUCCESS) {
       FATAL ("Error enqueueing kernel: " << (signed int) error);
     }
 
 #ifdef BRUTAL_FINISH
-    error = clFinish (System::queue);
+    error = clFinish (CLHelper::queue);
     if (error != CL_SUCCESS) {
       FATAL ("Error finishing command queue: " << (signed int) error);
     }
@@ -534,11 +534,11 @@ void ConvolutionLayer::BackPropagate() {
     
     bias_->delta.MoveToGPU(true);
     const unsigned int samples = input_->data.samples();
-    error |= clSetKernelArg (System::k_biasGradientPart2, 0, sizeof (cl_mem), &bias_buffer_.cl_data_ptr_);
-    error |= clSetKernelArg (System::k_biasGradientPart2, 1, sizeof (cl_mem), &bias_->delta.cl_data_ptr_);
-    error |= clSetKernelArg (System::k_biasGradientPart2, 2, sizeof (unsigned int), &output_maps_);
-    error |= clSetKernelArg (System::k_biasGradientPart2, 3, sizeof (unsigned int), &samples);
-    error |= clSetKernelArg (System::k_biasGradientPart2, 4, sizeof (datum), &one);
+    error |= clSetKernelArg (CLHelper::k_biasGradientPart2, 0, sizeof (cl_mem), &bias_buffer_.cl_data_ptr_);
+    error |= clSetKernelArg (CLHelper::k_biasGradientPart2, 1, sizeof (cl_mem), &bias_->delta.cl_data_ptr_);
+    error |= clSetKernelArg (CLHelper::k_biasGradientPart2, 2, sizeof (unsigned int), &output_maps_);
+    error |= clSetKernelArg (CLHelper::k_biasGradientPart2, 3, sizeof (unsigned int), &samples);
+    error |= clSetKernelArg (CLHelper::k_biasGradientPart2, 4, sizeof (datum), &one);
 
     if (error != CL_SUCCESS) {
       FATAL ("Error setting kernel args: " << (signed int) error);
@@ -546,14 +546,14 @@ void ConvolutionLayer::BackPropagate() {
 
     size_t global_work_size[] = { output_maps_ };
 
-    error = clEnqueueNDRangeKernel (System::queue, System::k_biasGradientPart2, 1, NULL,
+    error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_biasGradientPart2, 1, NULL,
                                     global_work_size, NULL, 0, NULL, NULL);
     if (error != CL_SUCCESS) {
       FATAL ("Error enqueueing kernel: " << (signed int) error);
     }
 
 #ifdef BRUTAL_FINISH
-    error = clFinish (System::queue);
+    error = clFinish (CLHelper::queue);
     if (error != CL_SUCCESS) {
       FATAL ("Error finishing command queue: " << (signed int) error);
     }

@@ -14,6 +14,8 @@
 #include <random>
 #include <cn24.h>
 
+#include "CLHelper.h"
+
 #ifdef BUILD_OPENCL
 int main() {
   
