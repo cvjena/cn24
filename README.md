@@ -1,36 +1,13 @@
-# How to build CN24
-First, make sure you have all the required dependencies. Then, clone the
-CN24 repository:
+## Welcome to the CN24 GitHub repository!
 
-```bash
-git clone https://github.com/cvjena/cn24.git
-```
+CN24 is a complete scene parsing framework using fully convolutional networks. It supports a wide variety of
+platforms (Linux, Mac OS X and Windows) and libraries (OpenCL, Intel MKL, AMD ACML...) while providing dependecy-free
+reference implementations.
 
-Create a build directory and run CMake:
+To get started, clone this repository and visit the [wiki](https://github.com/cvjena/cn24/wiki)!
 
-```bash
-mkdir build
-cmake path/to/cn24
-```
-
-Run your preferred build tool, for example:
-```
-make
-```
-
-That's it, you're done!
-
-# Dependencies
-CN24 uses the CMake cross-platform build system. You need at least version
-2.8 to generate the build files.
-The following compilers are supported for building CN24:
-* GCC >= 4.8
-* Clang >= 3.5
-* Visual Studio >= 2013
-
-Older versions will probably work as long as they support the C++11 features
-used by CN24. All other dependencies are optional. Optional dependencies include:
-* _libjpeg_ and _libpng_ to read .jpg and .png files
-* _Intel MKL_, _AMD ACML_ or _ATLAS_ for faster calculations
-* _OpenCL_ for GPU acceleration
-* _GTK+ 3_ for GUI utilities
+### Licensing
+CN24 is available under a 3-clause BSD license. See [LICENSE](LICENSE) for details.
+If you use CN24 for research, please cite our paper
+[Convolutional Patch Networks with Spatial Prior for Road Detection and
+Urban Scene Understanding](http://hera.inf-cv.uni-jena.de:6680/pdf/Brust15:CPN.pdf).
