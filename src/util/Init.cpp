@@ -59,7 +59,9 @@ void System::Init() {
 
   CLHelper::Init();
 #ifdef BUILD_GUI
-  gtk_init ( nullptr, nullptr );
+  if(!gtk_init_check ( nullptr, nullptr )) {
+    LOGWARN << "Could not initialize GTK!";
+  }
 #endif
   viewer = new TensorViewer();
 }
