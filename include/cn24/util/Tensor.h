@@ -18,7 +18,7 @@
  * Note that this does not match the order in which the parameters
  * appear in the constructor and the Resize function.
  *
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  *
  */
 

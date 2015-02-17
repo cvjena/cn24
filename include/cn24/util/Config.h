@@ -42,48 +42,6 @@ typedef u_int32_t duint;
 
 }
 
-#ifdef BUILD_BLAS
-
-/**
- * Here we include our favorite BLAS library and define important functions
- * so that they are independent of the type
- */
-#ifdef BLAS_ATLAS
-extern "C" {
-#include <cblas.h>
-}
-
-#define GEMM cblas_sgemm
-
-#endif
-
-#ifdef BLAS_ACML
-extern "C" {
-#include <cblas.h>
-}
-
-#define GEMM cblas_sgemm
-
-#endif
-
-#ifdef BLAS_MKL
-
-extern "C" {
-#include <mkl_cblas.h>
-}
-
-#define GEMM cblas_sgemm
-
-#endif
-
-
-#else
-
-#include "Log.h"
-
-#define GEMM(...) { FATAL("GEMM function called without BLAS support!"); }
-
-#endif
 
 
 #endif

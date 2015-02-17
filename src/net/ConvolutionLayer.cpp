@@ -17,6 +17,7 @@
 #include "Config.h"
 #include "Log.h"
 #include "CLHelper.h"
+#include "MKLHelper.h"
 
 #include "ConvolutionLayer.h"
 
