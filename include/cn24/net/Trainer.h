@@ -24,15 +24,15 @@ namespace Conv {
 
 struct TrainerSettings {
 public:
-  datum learning_rate = 0.8;
+  datum learning_rate = 0.0001;
   datum l1_weight = 0.001;
-  datum l2_weight = 0.001;
+  datum l2_weight = 0.0005;
   datum exponent = 0.75;
-  datum gamma = 0.0001;
-  datum momentum = 0.0;
+  datum gamma = 0.0003;
+  datum momentum = 0.9;
   datum epoch_training_ratio = 1.0;
   datum testing_ratio = 1.0;
-  unsigned int iterations = 0;
+  unsigned int iterations = 500;
 };
 
 class Trainer {
