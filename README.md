@@ -1,7 +1,7 @@
 ## Welcome to the CN24 GitHub repository!
 
 CN24 is a complete scene parsing framework using fully convolutional networks. It supports a wide variety of
-platforms (Linux, Mac OS X and Windows) and libraries (OpenCL, Intel MKL, AMD ACML...) while providing dependecy-free
+platforms (Linux, Mac OS X and Windows) and libraries (OpenCL, Intel MKL, AMD ACML...) while providing dependency-free
 reference implementations.
 
 To get started, clone this repository and visit the [wiki](https://github.com/cvjena/cn24/wiki)!
