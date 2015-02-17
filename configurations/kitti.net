@@ -11,7 +11,6 @@
 ?convolutional size=5x5 kernels=48
 ?relu
 
-?flatten
 ?fullyconnected neurons=192
 ?relu
 
