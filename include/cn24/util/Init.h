@@ -19,6 +19,7 @@ class TensorViewer;
 class System {
 public:
   static void Init();
+  static TensorViewer* viewer;
 };
 }
 

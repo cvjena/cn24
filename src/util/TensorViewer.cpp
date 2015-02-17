@@ -67,7 +67,7 @@ void TensorViewer::show ( Tensor* tensor, const std::string& title, bool autoclo
   g_signal_connect ( window, "destroy", G_CALLBACK ( gtk_main_quit ), NULL );
 
   GdkPixbuf* pixel_buffer = gdk_pixbuf_new ( GDK_COLORSPACE_RGB, gtk_false(), 8, tensor->width(), tensor->height() );
-  copy ( tensor, pixel_buffer, map, sample, 1 );
+  copyTV ( tensor, pixel_buffer, map, sample, 1 );
   gtk_container_add ( GTK_CONTAINER ( window ), gtk_image_new_from_pixbuf ( pixel_buffer ) );
 
   gtk_widget_show_all ( window );

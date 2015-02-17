@@ -49,7 +49,7 @@ cl_kernel CLHelper::k_nlSigm = 0;
 cl_kernel CLHelper::k_nlSigmBackward = 0;
 #endif
 
-TensorViewer* CLHelper::viewer = nullptr;
+TensorViewer* System::viewer = nullptr;
 
 void System::Init() {
   LOGINFO << "CN24 built on " << BUILD_DATE;
@@ -58,6 +58,10 @@ void System::Init() {
           << " file included with this project.";
 
   CLHelper::Init();
+#ifdef BUILD_GUI
+  gtk_init ( nullptr, nullptr );
+#endif
+  viewer = new TensorViewer();
 }
 
 void CLHelper::Init() {
@@ -243,10 +247,6 @@ void CLHelper::Init() {
 
 #endif
 
-#ifdef BUILD_GUI
-  gtk_init ( nullptr, nullptr );
-#endif
-  viewer = new TensorViewer();
 }
 
 #ifdef BUILD_OPENCL

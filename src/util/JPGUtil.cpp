@@ -116,6 +116,7 @@ bool JPGUtil::WriteToFile ( const std::string& file, Tensor& tensor ) {
   
   jpeg_finish_compress(&cinfo);
   fclose(out_file);
+  return true;
 #endif
 }
 

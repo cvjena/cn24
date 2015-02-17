@@ -52,7 +52,6 @@ public:
   static cl_kernel k_nlSigm;
   static cl_kernel k_nlSigmBackward;
 #endif
-  static TensorViewer* viewer;
 };
   
 }
