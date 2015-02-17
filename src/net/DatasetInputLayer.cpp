@@ -6,8 +6,8 @@
  */  
 
 /**
-* \file DatasetInputLayer.cpp
-* \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+* @file DatasetInputLayer.cpp
+* @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
 */
 
 

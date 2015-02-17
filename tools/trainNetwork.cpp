@@ -5,10 +5,10 @@
  * For licensing information, see the LICENSE file included with this project.
  */
  /**
-  * \file trainNetwork.cpp
-  * \brief Trains a convolutional neural net for prediction.
+  * @file trainNetwork.cpp
+  * @brief Trains a convolutional neural net for prediction.
   *
-  * \author Clemens-Alexander Brust(ikosa dot de at gmail dot com)
+  * @author Clemens-Alexander Brust(ikosa dot de at gmail dot com)
   */
 
 #include <iostream>
@@ -21,6 +21,7 @@
 #include <cstring>
 
 #include <cn24.h>
+#include <private/ConfigParsing.h>
 
 bool parseCommand(Conv::Net& net, Conv::Trainer& trainer, std::string& command);
 void help();

@@ -5,10 +5,10 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file Log.h
- * \brief Contains logging macros.
+ * @file Log.h
+ * @brief Contains logging macros.
  *
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_LOG_H

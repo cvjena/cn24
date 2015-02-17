@@ -5,11 +5,11 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file Segmentation.h
- * \class Segmentation
- * \brief Utility functions for segmentation.
+ * @file Segmentation.h
+ * @class Segmentation
+ * @brief Utility functions for segmentation.
  *
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_SEGMENTATION_H

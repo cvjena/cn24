@@ -5,10 +5,10 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file classifyImage.cpp
- * \brief Application that uses a pretrained net to segment images.
+ * @file classifyImage.cpp
+ * @brief Application that uses a pretrained net to segment images.
  *
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #include <iostream>

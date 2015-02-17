@@ -5,12 +5,12 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
-* \file ActivationFunctions.cpp
-* \brief This file contains implementations for all the NonLinearityLayers.
-* \see NonLinearityLayer.h for declarations, specifically the NL_LAYER
+* @file ActivationFunctions.cpp
+* @brief This file contains implementations for all the NonLinearityLayers.
+* @see NonLinearityLayer.h for declarations, specifically the NL_LAYER
 *      macros.
 *
-* \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+* @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
 */
 
 #include <cmath>

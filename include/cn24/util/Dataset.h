@@ -5,10 +5,10 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file Dataset.h
- * \brief Represents a dataset for different tasks
+ * @file Dataset.h
+ * @brief Represents a dataset for different tasks
  *
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_DATASET_H
@@ -124,7 +124,7 @@ public:
 };
  
 /*
- * \brief This type is used for function pointers to a localized error function.
+ * @brief This type is used for function pointers to a localized error function.
  *
  * A localized error function weighs the network's error w.r.t x and y
  * coordinates.

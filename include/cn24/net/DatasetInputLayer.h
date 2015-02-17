@@ -101,7 +101,7 @@ private:
   unsigned int current_element_testing_ = 0;
   
   /**
-   * \brief Clears the permutation vector and generates a new one.
+   * @brief Clears the permutation vector and generates a new one.
    */
   void RedoPermutation();
 };

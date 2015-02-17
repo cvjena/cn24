@@ -5,10 +5,10 @@
  * For licensing information, see the LICENSE file included with this project.
  */
 /**
- * \file makeTensorStream.cpp
- * \brief Tool to import datasets
+ * @file makeTensorStream.cpp
+ * @brief Tool to import datasets
  *
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #include <iostream>

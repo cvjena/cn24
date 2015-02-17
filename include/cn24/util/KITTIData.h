@@ -5,9 +5,9 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file KITTIData.h
- * \brief Helper class for fast KITTI data access
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @file KITTIData.h
+ * @brief Helper class for fast KITTI data access
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_KITTIDATA_H

@@ -5,10 +5,10 @@
  * For licensing information, see the LICENSE file included with this project.
  */
 /**
- * \file tensorTool.cpp
- * \brief Tool to view and edit Tensor contents
+ * @file tensorTool.cpp
+ * @brief Tool to view and edit Tensor contents
  *
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #include <iostream>
@@ -17,6 +17,7 @@
 #include <cstdlib>
 
 #include <cn24.h>
+#include <private/Segmentation.h>
 
 bool parseCommand ( Conv::Tensor& tensor, std::string filename );
 void help();

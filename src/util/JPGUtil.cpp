@@ -121,12 +121,8 @@ bool JPGUtil::WriteToFile ( const std::string& file, Tensor& tensor ) {
 }
 
 
-#ifdef BUILD_JPG
-
 bool JPGUtil::CheckSignature (std::istream& stream) {
   return true;
 }
-
-#endif
 
 }

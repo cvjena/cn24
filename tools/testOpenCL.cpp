@@ -5,10 +5,10 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file testOpenCL.cpp
- * \brief Small test application for the OpenCL library
+ * @file testOpenCL.cpp
+ * @brief Small test application for the OpenCL library
  * 
- * \author Clemens-A. Brust (ikosa.de@gmail.com)
+ * @author Clemens-A. Brust (ikosa.de@gmail.com)
  */
 
 #include <random>

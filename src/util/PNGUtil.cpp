@@ -17,6 +17,29 @@
 
 namespace Conv {
 
+/*
+ * PNG-specific declarations should not be in public headers, so they are here
+ */
+
+/** 
+ * @brief Check if the provided stream contains a valid PNG file.
+ *
+ * @param stream Input stream to read from
+ * @returns True if the file is a valid PNG file, false otherwise
+ */
+bool CheckSignature (std::istream& stream);
+
+/**
+ * @brief This function is needed because libPNG doesn't support streams.
+ */
+void PNGReadFromStream (png_structp png_handle, png_bytep data,
+                            png_size_t length);
+
+/**
+ * @brief This function is needed because libPNG doesn't support streams.
+ */
+void PNGWriteToStream (png_structp png_handle, png_bytep data, png_size_t length);
+
 bool PNGUtil::LoadFromStream ( std::istream& stream, Tensor& tensor ) {
 #ifndef BUILD_PNG
   LOGERROR << "PNG is not supported by this build!";
@@ -247,7 +270,7 @@ bool PNGUtil::WriteToStream ( std::ostream& stream, Tensor& tensor ) {
 
 #ifdef BUILD_PNG
 
-bool PNGUtil::CheckSignature ( std::istream& stream ) {
+bool CheckSignature ( std::istream& stream ) {
   // Allocate 8 bytes for the PNG signature
   png_byte signature[8];
 
@@ -269,7 +292,7 @@ bool PNGUtil::CheckSignature ( std::istream& stream ) {
   return comparison_result == 0;
 }
 
-void PNGUtil::PNGReadFromStream ( png_structp png_handle, png_bytep data,
+void PNGReadFromStream ( png_structp png_handle, png_bytep data,
                                   png_size_t length ) {
   // We need our stream back
   png_voidp stream_ptr = png_get_io_ptr ( png_handle );
@@ -278,7 +301,7 @@ void PNGUtil::PNGReadFromStream ( png_structp png_handle, png_bytep data,
   ( ( std::istream* ) stream_ptr ) -> read ( ( char* ) data, length );
 }
 
-void PNGUtil::PNGWriteToStream ( png_structp png_handle, png_bytep data,
+void PNGWriteToStream ( png_structp png_handle, png_bytep data,
                                  png_size_t length ) {
   // We need our stream back
   png_voidp stream_ptr = png_get_io_ptr ( png_handle );

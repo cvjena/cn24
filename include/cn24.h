@@ -5,10 +5,10 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * \file cn24.h
- * \brief Includes all the other headers.
+ * @file cn24.h
+ * @brief Includes all the other headers.
  * 
- * \author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
+ * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
 #ifndef CONV_CN24_H
@@ -23,9 +23,7 @@
 #include "cn24/util/JPGUtil.h"
 #include "cn24/util/Log.h"
 #include "cn24/util/KITTIData.h"
-#include "cn24/util/Segmentation.h"
 #include "cn24/util/Init.h"
-#include "cn24/util/ConfigParsing.h"
 #include "cn24/util/GradientTester.h"
 
 #include "cn24/net/Layer.h"
