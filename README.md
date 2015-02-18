@@ -1,6 +1,6 @@
 ## Welcome to the CN24 GitHub repository!
 
-CN24 is a complete scene parsing framework using fully convolutional networks. It supports a wide variety of
+CN24 is a complete semantic segmentation framework using fully convolutional networks. It supports a wide variety of
 platforms (Linux, Mac OS X and Windows) and libraries (OpenCL, Intel MKL, AMD ACML...) while providing dependency-free
 reference implementations.
 
