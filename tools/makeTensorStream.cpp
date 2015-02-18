@@ -31,7 +31,11 @@ int main ( int argc, char** argv ) {
   std::string image_list_fname ( argv[2] );
   std::string dataset_config_fname ( argv[1] );
 
-  //Conv::System::Init();
+  if(image_directory.back() != '/')
+    image_directory += "/";
+
+  if(label_directory.back() != '/')
+    label_directory += "/";
 
   // Open dataset configuration files
   std::ifstream dataset_config_file ( dataset_config_fname,std::ios::in );
