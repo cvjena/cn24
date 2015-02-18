@@ -57,7 +57,19 @@ int main (int argc, char* argv[]) {
   unsigned int CLASSES = dataset->GetClasses();
   
   // Load image
-  Conv::Tensor data_tensor(input_image_fname);
+  Conv::Tensor original_data_tensor(input_image_fname);
+  
+  // Rescale image
+  unsigned int width = original_data_tensor.width();
+  unsigned int height = original_data_tensor.height();
+  if(width & 1)
+    width++;
+  if(height & 1)
+    height++;
+  
+  Conv::Tensor data_tensor(1, width, height, original_data_tensor.maps());
+  data_tensor.Clear();
+  Conv::Tensor::CopySample(original_data_tensor, 0, data_tensor, 0);
 
   // Assemble net
   Conv::Net net;
@@ -78,7 +90,15 @@ int main (int argc, char* argv[]) {
   
   LOGINFO << "Colorizing..." << std::flush;
   dataset->Colorize(*net_output_tensor, image_output_tensor);
-  image_output_tensor.WriteToFile(output_image_fname);
+  
+  // Recrop image down
+  Conv::Tensor small(1, original_data_tensor.width(), original_data_tensor.height(), 3);
+  for(unsigned int m = 0; m < 3; m++)
+    for(unsigned int y = 0; y < small.height(); y++)
+      for(unsigned int x = 0; x < small.width(); x++)
+        *small.data_ptr(x,y,m,0) = *image_output_tensor.data_ptr_const(x,y,m,0);
+
+  small.WriteToFile(output_image_fname);
 
   LOGINFO << "DONE!";
   LOGEND;
