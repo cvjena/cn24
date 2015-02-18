@@ -1,0 +1,12 @@
+train epochs=5
+test
+save file=epoch_5.Tensor
+train epochs=15
+test
+save file=epoch_20.Tensor
+train epochs=20
+test
+save file=epoch_40.Tensor
+train epochs=40
+test
+save file=epoch_80.Tensor
