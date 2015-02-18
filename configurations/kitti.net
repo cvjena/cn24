@@ -25,3 +25,5 @@ gamma=0.003
 momentum=0.9
 exponent=0.75
 iterations=500
+sbatchsize=2
+pbatchsize=2
