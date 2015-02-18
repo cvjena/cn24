@@ -31,11 +31,9 @@ int main(int argc, char* argv[]) {
   bool GRADIENT_CHECK = false;
   bool FROM_SCRIPT = false;
 #ifdef LAYERTIME
-  const unsigned int BATCHSIZE = 1000;
   unsigned int TEST_EVERY = 1;
   const Conv::datum it_factor = 0.01;
 #else
-  unsigned int BATCHSIZE = 4;
   const Conv::datum it_factor = 1;
   const Conv::datum loss_sampling_p = 0.25;
 #endif
@@ -79,6 +77,7 @@ int main(int argc, char* argv[]) {
   Conv::ConfigurableFactory* factory = new Conv::ConfigurableFactory(net_config_file, 8347734);
   factory->InitOptimalSettings();
   LOGDEBUG << "Optimal settings: " << factory->optimal_settings();
+  unsigned int BATCHSIZE = factory->optimal_settings().pbatchsize;
 
   Conv::TrainerSettings settings = factory->optimal_settings();
   settings.epoch_training_ratio = 1 * it_factor;

@@ -32,6 +32,8 @@ public:
   datum momentum = 0.9;
   datum epoch_training_ratio = 1.0;
   datum testing_ratio = 1.0;
+  unsigned int pbatchsize = 1;
+  unsigned int sbatchsize = 1;
   unsigned int iterations = 500;
 };
 
@@ -83,6 +85,7 @@ private:
   Net& net_;
   std::vector<CombinedTensor*> parameters_;
   std::vector<Tensor*> last_deltas_;
+  std::vector<Tensor*> accumulated_gradients_;
   TrainingLayer* training_layer_;
   LossFunctionLayer* lossfunction_layer_;
 

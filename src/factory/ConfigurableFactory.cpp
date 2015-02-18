@@ -239,6 +239,8 @@ void ConfigurableFactory::InitOptimalSettings() {
     ParseDatumIfPossible ( line, "momentum", optimal_settings_.momentum );
     ParseDatumIfPossible ( line, "exponent", optimal_settings_.exponent );
     ParseUIntIfPossible ( line, "iterations", optimal_settings_.iterations );
+    ParseUIntIfPossible ( line, "sbatchsize", optimal_settings_.sbatchsize );
+    ParseUIntIfPossible ( line, "pbatchsize", optimal_settings_.pbatchsize );
   }
 }
 
