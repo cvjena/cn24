@@ -98,7 +98,7 @@ bool JPGUtil::WriteToFile ( const std::string& file, Tensor& tensor ) {
   cinfo.in_color_space = JCS_RGB;
   
   jpeg_set_defaults(&cinfo);
-  jpeg_set_quality(&cinfo, 95, true);
+  jpeg_set_quality(&cinfo, 100, true);
   jpeg_start_compress(&cinfo, true);
   
   
