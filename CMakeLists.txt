@@ -28,6 +28,11 @@ macro (currentdate RESULT)
     endif (WIN32)
 endmacro (currentdate)
 
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lc++")
+endif()
+
 if(CMAKE_COMPILER_IS_GNUCXX)
   # We need C++11
   execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion
