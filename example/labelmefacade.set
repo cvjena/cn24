@@ -1,0 +1,32 @@
+# KITTI dataset configuration
+# First, the locations of the image data tensor streams
+
+testing=FOLD2.Tensor
+training=FOLD1.Tensor
+
+# For two-class problems where the classes are mutually exclusive,
+# you can specify a single class
+classes=9
+various
+building
+car
+door
+pavement
+road
+sky
+vegetation
+window
+
+# Note that for classes=1 you still have to specify a color
+colors
+0x000000
+0x800000
+0x800080
+0x808000
+0x808080
+0x804000
+0x008080
+0x008000
+0x000080
+
+localized_error=default
