@@ -27,11 +27,9 @@ bool parseCommand(Conv::Net& net, Conv::Trainer& trainer, std::string& command);
 void help();
 
 int main(int argc, char* argv[]) {
-  bool DO_TEST = true;
   bool GRADIENT_CHECK = false;
   bool FROM_SCRIPT = false;
 #ifdef LAYERTIME
-  unsigned int TEST_EVERY = 1;
   const Conv::datum it_factor = 0.01;
 #else
   const Conv::datum it_factor = 1;
@@ -235,6 +233,7 @@ bool parseCommand(Conv::Net& net, Conv::Trainer& trainer, std::string& command) 
     unsigned int epoch = 0;
     Conv::ParseCountIfPossible(command, "epoch", epoch);
     LOGINFO << "Setting current epoch to " << epoch;
+    trainer.SetEpoch(epoch);
   }
   else if(command.compare(0, 5, "reset") == 0) {
     LOGINFO << "Resetting parameters";
