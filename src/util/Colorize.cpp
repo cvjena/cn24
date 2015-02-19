@@ -63,9 +63,9 @@ void Dataset::Colorize(Tensor& net_output_tensor, Tensor& target_tensor) {
 	  g = DATUM_FROM_UCHAR((foreground_color >> 8) & 0xFF),
 	  b = DATUM_FROM_UCHAR(foreground_color & 0xFF);
 	  
-	  *target_tensor.data_ptr(x,y,0,sample) = r * maxvalue;
-	  *target_tensor.data_ptr(x,y,1,sample) = g * maxvalue;
-	  *target_tensor.data_ptr(x,y,2,sample) = b * maxvalue;
+	  *target_tensor.data_ptr(x,y,0,sample) = r; // * maxvalue;
+	  *target_tensor.data_ptr(x,y,1,sample) = g; // * maxvalue;
+	  *target_tensor.data_ptr(x,y,2,sample) = b; // * maxvalue;
 	}
       }     
     }
