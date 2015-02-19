@@ -32,13 +32,17 @@ bool CheckSignature (std::istream& stream);
 /**
  * @brief This function is needed because libPNG doesn't support streams.
  */
+#ifdef BUILD_PNG
 void PNGReadFromStream (png_structp png_handle, png_bytep data,
                             png_size_t length);
+#endif
 
 /**
  * @brief This function is needed because libPNG doesn't support streams.
  */
+#ifdef BUILD_PNG
 void PNGWriteToStream (png_structp png_handle, png_bytep data, png_size_t length);
+#endif
 
 bool PNGUtil::LoadFromStream ( std::istream& stream, Tensor& tensor ) {
 #ifndef BUILD_PNG
