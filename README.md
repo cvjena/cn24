@@ -5,6 +5,10 @@ platforms (Linux, Mac OS X and Windows) and libraries (OpenCL, Intel MKL, AMD AC
 reference implementations.
 
 To get started, clone this repository and visit the [wiki](https://github.com/cvjena/cn24/wiki)!
+For an ever faster introduction, check out one of these examples:
+
+* [Road Detection Example](https://github.com/cvjena/cn24/wiki/Road-Detection-Example)
+* [Urban Scene Understanding Example](https://github.com/cvjena/cn24/wiki/Urban-Scene-Understanding-Example)
 
 ### Licensing
 CN24 is available under a 3-clause BSD license. See [LICENSE](LICENSE) for details.
