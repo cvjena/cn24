@@ -16,7 +16,7 @@ To get started, clone this repository and visit the [wiki](https://github.com/cv
 * [Urban Scene Understanding Example](https://github.com/cvjena/cn24/wiki/Urban-Scene-Understanding-Example)
 * [Road Detection Example](https://github.com/cvjena/cn24/wiki/Road-Detection-Example)
 
-The repository contained pre-trained networks for these two applications, which are ready to use.
+The repository contains pre-trained networks for these two applications, which are ready to use.
 
 ### Licensing
 CN24 is available under a 3-clause BSD license. See [LICENSE](LICENSE) for details.
