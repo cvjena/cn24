@@ -23,6 +23,7 @@
 #endif
 
 #ifdef BUILD_WIN32
+#include <Windows.h>
 #else
 #ifdef BUILD_OSX 
 #include <mach-o/dyld.h>
@@ -84,10 +85,25 @@ void System::Init() {
 void System::GetExecutablePath(std::string& binary_path) {
 #ifdef BUILD_WIN32
   binary_path = "";
+  TCHAR path[16384];
+  DWORD return_value = GetModuleFileName(NULL, path, 16384);
+  if (return_value > 0 && return_value < 16384) {
+    DWORD last_error = GetLastError();
+    if (last_error != ERROR_SUCCESS) {
+      LOGWARN << "Could not get executable path, may be unable to locate kernels!";
+    }
+    binary_path = std::string(path);
+    std::size_t last_slash = binary_path.rfind("\\");
+    // last_slash should never be npos because this is supposed to be a path
+    binary_path = binary_path.substr(0, last_slash + 1);
+  }
+  else {
+    LOGWARN << "Could not get executable path, may be unable to locate kernels!";
+  }
 #else
 #ifdef BUILD_OSX 
   binary_path = "";
-  char path[1024];
+  char path[16384];
   uint32_t size = sizeof(path);
   if (_NSGetExecutablePath(path, &size) == 0) {
     binary_path = std::string(path);
@@ -314,7 +330,7 @@ cl_program CLHelper::CreateProgram ( const char* file_name ) {
   std::string binary_path;
   System::GetExecutablePath(binary_path);
 #ifdef _MSC_VER
-  std::string full_path = binary_path + "../" + std::string(file_name);
+  std::string full_path = binary_path + "..\\" + std::string(file_name);
   std::ifstream kernel_file ( full_path, std::ios::in );
 #else
   std::string full_path = binary_path + std::string(file_name);
