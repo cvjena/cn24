@@ -58,6 +58,7 @@ int main() {
 #else
 
 int main() {
+  Conv::System::Init();
   LOGERROR << "OpenCL not built in!";
   LOGEND;
   return -1;
