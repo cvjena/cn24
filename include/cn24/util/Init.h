@@ -14,11 +14,14 @@
 #ifndef CONV_INIT_H
 #define CONV_INIT_H
 
+#include <string>
+
 namespace Conv {
 class TensorViewer;
 class System {
 public:
   static void Init();
+  static void GetExecutablePath(std::string& binary_path);
   static TensorViewer* viewer;
 };
 }
