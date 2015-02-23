@@ -22,6 +22,16 @@
 #include <gtk/gtk.h>
 #endif
 
+#ifdef BUILD_WIN32
+#else
+#ifdef BUILD_OSX 
+#else
+#ifdef BUILD_LINUX
+#include <unistd.h>
+#endif
+#endif
+#endif
+
 #include "TensorViewer.h"
 
 namespace Conv {
@@ -257,14 +267,41 @@ cl_program CLHelper::CreateProgram ( const char* file_name ) {
   cl_program program = 0;
 
   LOGDEBUG << "Compiling " << file_name;
-#ifdef _MSC_VER
-  std::ifstream kernel_file ( "../" + std::string ( file_name ), std::ios::in );
+#ifdef BUILD_WIN32
+  std::string binary_path = "";
 #else
-  std::ifstream kernel_file ( file_name, std::ios::in );
+#ifdef BUILD_OSX 
+  std::string binary_path = "";
+#else
+#ifdef BUILD_LINUX
+  char buffer[16384];
+  ssize_t path_length = ::readlink("/proc/self/exe", buffer, sizeof(buffer)-1);
+  std::string binary_path = "";
+  if(path_length != -1) {
+    buffer[path_length] = '\0';
+    binary_path = std::string(buffer);
+    std::size_t last_slash = binary_path.rfind("/");
+    // last_slash should never be npos because this is supposed to be a path
+    binary_path = binary_path.substr(0, last_slash+1);
+  } else {
+    LOGWARN << "Could not get executable path, may be unable to locate kernels!";
+  }
+#else
+  std::string binary_path = "";
+#endif
+#endif
+#endif
+  
+#ifdef _MSC_VER
+  std::string full_path = binary_path + "../" + std::string(file_name);
+  std::ifstream kernel_file ( full_path, std::ios::in );
+#else
+  std::string full_path = binary_path + std::string(file_name);
+  std::ifstream kernel_file ( full_path, std::ios::in );
 #endif
 
   if ( !kernel_file.good() ) {
-    FATAL ( "Cannot open kernel: " << file_name );
+    FATAL ( "Cannot open kernel: " << full_path );
   }
 
   std::ostringstream oss;
