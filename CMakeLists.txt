@@ -78,6 +78,21 @@ endif()
 currentdate(CN24_DATE)
 add_definitions("-DBUILD_DATE=\"${CN24_DATE}\"")
 
+# Tell CN24 the operating system
+if(WIN32)
+  add_definitions("-DBUILD_WIN32")
+else()
+  if(APPLE)
+    add_definitions("-DBUILD_OSX")
+  else()
+    if(UNIX)
+      add_definitions("-DBUILD_LINUX")
+    else()
+      message(STATUS "Unsupported OS, good luck!")
+    endif()
+  endif()
+endif()
+
 # The library comes first
 # Recurse over files
 file(GLOB_RECURSE CN24_SOURCES ${CN24_SRC}/*.cpp)

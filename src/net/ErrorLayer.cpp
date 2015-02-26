@@ -103,7 +103,7 @@ void ErrorLayer::FeedForward() {
 #ifdef ERROR_LAYER_IGNORE_WEIGHTS
           const datum weight = 1.0;
 #else
-          const datum weight =
+		  const datum weight =
             *third_->data.data_ptr_const ( x,y,0,sample );
 #endif
 	  *first_->delta.data_ptr(x,y,map,sample) = diff * weight;
@@ -137,9 +137,27 @@ datum ErrorLayer::CalculateLossFunction() {
   long double error = 0;
 
   // Add up the squared error
-  for ( std::size_t i = 0; i < first_->data.elements(); i++ ) {
-    const datum diff = first_->delta.data_ptr_const() [i];
-    error += (long double)( diff * diff );
+  for (unsigned int sample = 0; sample < first_->data.samples(); sample++) {
+	  for (unsigned int map = 0; map < first_->data.maps(); map++) {
+		  for (unsigned int y = 0; y < first_->data.height(); y++) {
+			  for (unsigned int x = 0; x < first_->data.width(); x++) {
+				  const datum first =
+					  *first_->data.data_ptr_const(x, y, map, sample);
+				  const datum second =
+					  *second_->data.data_ptr_const(x, y, map, sample);
+
+				  const datum diff = first - second;
+
+#ifdef ERROR_LAYER_IGNORE_WEIGHTS
+				  const datum weight = 1.0;
+#else
+				  const datum weight = 
+					*third_->data.data_ptr_const ( x,y,0,sample );
+#endif
+				  error += ((long double)diff) * ((long double)diff) * ((long double)weight);
+			  }
+		  }
+	  }
   }
 
   return error / 2.0;

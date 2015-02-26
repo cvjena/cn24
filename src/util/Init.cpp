@@ -22,6 +22,18 @@
 #include <gtk/gtk.h>
 #endif
 
+#ifdef BUILD_WIN32
+#include <Windows.h>
+#else
+#ifdef BUILD_OSX 
+#include <mach-o/dyld.h>
+#else
+#ifdef BUILD_LINUX
+#include <unistd.h>
+#endif
+#endif
+#endif
+
 #include "TensorViewer.h"
 
 namespace Conv {
@@ -56,6 +68,10 @@ void System::Init() {
   LOGINFO << "Copyright (C) 2015 Clemens-Alexander Brust";
   LOGINFO << "For licensing information, see the LICENSE"
           << " file included with this project.";
+          
+  std::string binary_path;
+  GetExecutablePath(binary_path);
+  LOGDEBUG << "Executable path: " << binary_path;
 
   CLHelper::Init();
 #ifdef BUILD_GUI
@@ -64,6 +80,59 @@ void System::Init() {
   }
 #endif
   viewer = new TensorViewer();
+}
+
+void System::GetExecutablePath(std::string& binary_path) {
+#ifdef BUILD_WIN32
+  binary_path = "";
+  TCHAR path[16384];
+  DWORD return_value = GetModuleFileName(NULL, path, 16384);
+  if (return_value > 0 && return_value < 16384) {
+    DWORD last_error = GetLastError();
+    if (last_error != ERROR_SUCCESS) {
+      LOGWARN << "Could not get executable path, may be unable to locate kernels!";
+    }
+    binary_path = std::string(path);
+    std::size_t last_slash = binary_path.rfind("\\");
+    // last_slash should never be npos because this is supposed to be a path
+    binary_path = binary_path.substr(0, last_slash + 1);
+  }
+  else {
+    LOGWARN << "Could not get executable path, may be unable to locate kernels!";
+  }
+#else
+#ifdef BUILD_OSX 
+  binary_path = "";
+  char path[16384];
+  uint32_t size = sizeof(path);
+  if (_NSGetExecutablePath(path, &size) == 0) {
+    binary_path = std::string(path);
+    std::size_t last_slash = binary_path.rfind("/");
+    // last_slash should never be npos because this is supposed to be a path
+    binary_path = binary_path.substr(0, last_slash+1);
+  }
+  else {
+    LOGWARN << "Could not get executable path, may be unable to locate kernels!";
+  }
+#else
+#ifdef BUILD_LINUX
+  char buffer[16384];
+  ssize_t path_length = ::readlink("/proc/self/exe", buffer, sizeof(buffer)-1);
+  binary_path = "";
+  if(path_length != -1) {
+    buffer[path_length] = '\0';
+    binary_path = std::string(buffer);
+    std::size_t last_slash = binary_path.rfind("/");
+    // last_slash should never be npos because this is supposed to be a path
+    binary_path = binary_path.substr(0, last_slash+1);
+  } else {
+    LOGWARN << "Could not get executable path, may be unable to locate kernels!";
+  }
+#else
+  binary_path = "";
+#endif
+#endif
+#endif
 }
 
 void CLHelper::Init() {
@@ -257,14 +326,19 @@ cl_program CLHelper::CreateProgram ( const char* file_name ) {
   cl_program program = 0;
 
   LOGDEBUG << "Compiling " << file_name;
+
+  std::string binary_path;
+  System::GetExecutablePath(binary_path);
 #ifdef _MSC_VER
-  std::ifstream kernel_file ( "../" + std::string ( file_name ), std::ios::in );
+  std::string full_path = binary_path + "..\\" + std::string(file_name);
+  std::ifstream kernel_file ( full_path, std::ios::in );
 #else
-  std::ifstream kernel_file ( file_name, std::ios::in );
+  std::string full_path = binary_path + std::string(file_name);
+  std::ifstream kernel_file ( full_path, std::ios::in );
 #endif
 
   if ( !kernel_file.good() ) {
-    FATAL ( "Cannot open kernel: " << file_name );
+    FATAL ( "Cannot open kernel: " << full_path );
   }
 
   std::ostringstream oss;
