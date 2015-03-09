@@ -22,7 +22,7 @@ namespace Conv {
 
 
 
-ConfigurableFactory::ConfigurableFactory ( std::istream& file, const unsigned int seed ) :
+ConfigurableFactory::ConfigurableFactory ( std::istream& file, const unsigned int seed, bool is_training_factory ) :
 		  seed_ ( seed ), file_ ( file ), method_ ( FCN ) {
   file_.clear();
   file_.seekg ( 0, std::ios::beg );
@@ -37,6 +37,15 @@ ConfigurableFactory::ConfigurableFactory ( std::istream& file, const unsigned in
   while ( ! file_.eof() ) {
     std::string line;
     std::getline ( file_,line );
+    
+    std::string method;
+    ParseStringParamIfPossible(line, "method", method);
+    if(method.compare(0,5,"patch") == 0) {
+      if(is_training_factory) {
+        method_ = PATCH;
+        LOGINFO << "Setting method to PATCH";
+      }
+    }
 
     if ( line.compare ( 0,1,"?" ) == 0 ) {
       line=line.substr ( 1 );

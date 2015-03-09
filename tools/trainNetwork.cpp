@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
   dataset_config_fname = dataset_config_fname.substr(net_config_fname.rfind("/") + 1);
 
   // Parse network configuration file
-  Conv::ConfigurableFactory* factory = new Conv::ConfigurableFactory(net_config_file, 8347734);
+  Conv::ConfigurableFactory* factory = new Conv::ConfigurableFactory(net_config_file, 8347734, hybrid);
   factory->InitOptimalSettings();
   LOGDEBUG << "Optimal settings: " << factory->optimal_settings();
   unsigned int BATCHSIZE = factory->optimal_settings().pbatchsize;
@@ -83,7 +83,12 @@ int main(int argc, char* argv[]) {
   settings.testing_ratio = 1 * it_factor;
 
   // Load dataset
-  Conv::TensorStreamDataset* dataset = Conv::TensorStreamDataset::CreateFromConfiguration(dataset_config_file, false, hybrid ? Conv::LOAD_TRAINING_ONLY : Conv::LOAD_BOTH);
+  Conv::TensorStreamDataset* dataset = nullptr;
+  if(hybrid) {
+    dataset = Conv::TensorStreamDataset::CreateFromConfiguration(dataset_config_file, false, hybrid ? Conv::LOAD_TRAINING_ONLY : Conv::LOAD_BOTH);
+  } else {
+    dataset = Conv::TensorStreamDataset::CreateFromConfiguration(dataset_config_file, false, hybrid ? Conv::LOAD_TRAINING_ONLY : Conv::LOAD_BOTH);
+  }
   unsigned int CLASSES = dataset->GetClasses();
 
   // Assemble net
@@ -158,12 +163,13 @@ int main(int argc, char* argv[]) {
       tdata_layer = new Conv::DatasetInputLayer(*testing_dataset, BATCHSIZE, loss_sampling_p, 983923);
       tdata_layer_id = testing_net->AddLayer(tdata_layer);
 
+      Conv::ConfigurableFactory* tfactory = new Conv::ConfigurableFactory(net_config_file, 8347734);
       int toutput_layer_id =
-        factory->AddLayers(*testing_net, Conv::Connection(tdata_layer_id), CLASSES);
+        tfactory->AddLayers(*testing_net, Conv::Connection(tdata_layer_id), CLASSES);
 
       LOGDEBUG << "Output layer id: " << toutput_layer_id;
 
-      testing_net->AddLayer(factory->CreateLossLayer(CLASSES), {
+      testing_net->AddLayer(tfactory->CreateLossLayer(CLASSES), {
         Conv::Connection(toutput_layer_id),
         Conv::Connection(tdata_layer_id, 1),
         Conv::Connection(tdata_layer_id, 3),
@@ -201,7 +207,7 @@ int main(int argc, char* argv[]) {
         testing_ct->delta.Shadow(training_ct->delta);
       }
           
-      testing_trainer = new Conv::Trainer(*testing_net, factory->optimal_settings());
+      testing_trainer = new Conv::Trainer(*testing_net, tfactory->optimal_settings());
     } else {
       testing_net = &net;
       testing_trainer = &trainer;
