@@ -75,7 +75,12 @@ public:
   /**
 	* @returns The optimal training settings for this configuration
 	*/
-  TrainerSettings optimal_settings() const { return optimal_settings_; }
+  TrainerSettings optimal_settings() const { return optimal_settings_; } 
+  
+  /**
+   * @returns The current method for this net
+   */
+  Method method() const { return method_; }
 private:
   Method method_;
   

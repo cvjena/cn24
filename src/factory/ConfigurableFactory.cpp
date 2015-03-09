@@ -119,13 +119,13 @@ int ConfigurableFactory::AddLayers ( Net& net, Connection data_layer_connection,
       line.replace ( line.find ( "(o)" ), 3, buf );
     }
 
-    if ( method_ == FCN ) {
       // Replace fully connected layers
       if ( line.find ( "fullyconnected" ) != std::string::npos ) {
         line.replace ( line.find ( "fullyconnected" ), 14, "convolutional size=1x1" );
         line.replace ( line.find ( "neurons=" ), 8, "kernels=" );
       }
 
+    if ( method_ == FCN ) {
       // Remove flatten layers
       if ( line.find ( "flatten" ) != std::string::npos ) {
         line = "";

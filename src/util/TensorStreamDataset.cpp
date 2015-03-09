@@ -18,9 +18,7 @@
 #include "ConfigParsing.h"
 
 namespace Conv {
-datum DefaultLocalizedErrorFunction (unsigned int x, unsigned int y, unsigned int w, unsigned int h) {
-  return 1;
-}
+
 TensorStreamDataset::TensorStreamDataset (std::istream& training_stream,
     std::istream& testing_stream,
     unsigned int classes,

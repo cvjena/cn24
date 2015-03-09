@@ -7,7 +7,7 @@
 
 #include <fstream>
 #include <cstdlib>
-
+#include <cstring>
 #include <sstream>
 
 #include "Config.h"
@@ -15,6 +15,7 @@
 #include "Init.h"
 
 #include "KITTIData.h"
+#include "TensorViewer.h"
 #include "ConfigParsing.h"
 
 namespace Conv {
@@ -26,8 +27,11 @@ TensorStreamPatchDataset::TensorStreamPatchDataset (std::istream& training_strea
     unsigned int classes,
     std::vector< std::string > class_names,
     std::vector<unsigned int> class_colors,
+    unsigned int patchsize_x,
+    unsigned int patchsize_y,
     dataset_localized_error_function error_function) :
   classes_ (classes), class_names_ (class_names), class_colors_ (class_colors),
+  patchsize_x_ (patchsize_x), patchsize_y_ (patchsize_y),
   error_function_ (error_function) {
   LOGDEBUG << "Instance created.";
 
@@ -88,24 +92,28 @@ TensorStreamPatchDataset::TensorStreamPatchDataset (std::istream& training_strea
   if (tensors_ > 0) {
     data_ = new Tensor[tensors_];
     labels_ = new Tensor[tensors_];
+    last_sample_ = new unsigned int [tensors_];
   } else {
     data_ = new Tensor[1];
     labels_ = new Tensor[1];
+    last_sample_ = new unsigned int [1];
   }
 
   // Read tensors
   unsigned int e = 0;
-  max_width_ = 0;
-  max_height_ = 0;
 
   for (unsigned int t = 0; t < (tensor_count_training_ / 2); t++) {
     data_[t].Deserialize (training_stream);
 
-    if (data_[t].width() > max_width_)
-      max_width_ = data_[t].width();
+    unsigned int inner_width = data_[t].width() - (patchsize_x_ - 1);
+    unsigned int inner_height = data_[t].height() - (patchsize_y_ - 1);
 
-    if (data_[t].height() > max_height_)
-      max_height_ = data_[t].height();
+    if (t == 0)
+      last_sample_[t] = inner_width * inner_height;
+    else
+      last_sample_[t] = last_sample_[t - 1] + (inner_width * inner_height);
+
+    sample_count_training_ += inner_width * inner_height;
 
     labels_[t].Deserialize (training_stream);
   }
@@ -113,34 +121,21 @@ TensorStreamPatchDataset::TensorStreamPatchDataset (std::istream& training_strea
   for (unsigned int t = (tensor_count_training_ / 2) ; t < tensors_; t++) {
     data_[t].Deserialize (testing_stream);
 
-    if (data_[t].width() > max_width_)
-      max_width_ = data_[t].width();
+    unsigned int inner_width = data_[t].width() - (patchsize_x_ - 1);
+    unsigned int inner_height = data_[t].height() - (patchsize_y_ - 1);
 
-    if (data_[t].height() > max_height_)
-      max_height_ = data_[t].height();
+    if (t == 0)
+      last_sample_[t] = inner_width * inner_height;
+    else
+      last_sample_[t] = last_sample_[t - 1] + (inner_width * inner_height);
+
+    sample_count_testing_ += inner_width * inner_height;
 
     labels_[t].Deserialize (testing_stream);
   }
 
-  if (max_width_ & 1)
-    max_width_++;
-
-  if (max_height_ & 1)
-    max_height_++;
-
   input_maps_ = data_[0].maps();
   label_maps_ = labels_[0].maps();
-
-  // Prepare error cache
-  error_cache.Resize (1, max_width_, max_height_, 1);
-
-  for (unsigned int y = 0; y < max_height_; y++) {
-    for (unsigned int x = 0; x < max_width_; x++) {
-      *error_cache.data_ptr (x, y) = error_function (x, y, max_width_, max_height_);
-    }
-  }
-
-  // System::viewer->show(&error_cache);
 }
 
 Task TensorStreamPatchDataset::GetTask() const {
@@ -148,11 +143,11 @@ Task TensorStreamPatchDataset::GetTask() const {
 }
 
 unsigned int TensorStreamPatchDataset::GetWidth() const {
-  return max_width_;
+  return patchsize_x_;
 }
 
 unsigned int TensorStreamPatchDataset::GetHeight() const {
-  return max_height_;
+  return patchsize_y_;
 }
 
 unsigned int TensorStreamPatchDataset::GetInputMaps() const {
@@ -176,11 +171,11 @@ std::vector<unsigned int> TensorStreamPatchDataset::GetClassColors() const {
 }
 
 unsigned int TensorStreamPatchDataset::GetTrainingSamples() const {
-  return tensor_count_training_ / 2;
+  return sample_count_training_;
 }
 
 unsigned int TensorStreamPatchDataset::GetTestingSamples() const {
-  return tensor_count_testing_ / 2;
+  return sample_count_testing_;
 }
 
 bool TensorStreamPatchDataset::SupportsTesting() const {
@@ -188,23 +183,44 @@ bool TensorStreamPatchDataset::SupportsTesting() const {
 }
 
 bool TensorStreamPatchDataset::GetTrainingSample (Tensor& data_tensor, Tensor& label_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
-  if (index < tensor_count_training_ / 2) {
+  if (index < sample_count_training_) {
     bool success = true;
-    success &= Tensor::CopySample (data_[index], 0, data_tensor, sample);
-    success &= Tensor::CopySample (labels_[index], 0, label_tensor, sample);
 
-    if (data_[index].width() == GetWidth() && data_[index].height() == GetHeight()) {
-      success &= Tensor::CopySample (error_cache, 0, weight_tensor, sample);
-    } else {
-      // Reevaluate error function
-      weight_tensor.Clear (0.0, sample);
+    // Find patch
+    unsigned int t = 0;
 
-      for (unsigned int y = 0; y < data_[index].height(); y++) {
-        for (unsigned int x = 0; x < data_[index].width(); x++) {
-          *weight_tensor.data_ptr (x, y, 0, sample) = error_function_ (x, y, data_[index].width(), data_[index].height());
-        }
+    while ( (t < tensors_) && (index >= last_sample_[t]))
+      t++;
+
+    if (index >= last_sample_[t])
+      return false;
+
+    unsigned int first_sample = last_sample_[t] - data_[t].width() * data_[t].height();
+    unsigned int sample_offset = index - first_sample;
+
+    // Find x and y coords
+    unsigned int row = sample_offset / (data_[t].width() - (patchsize_x_ - 1));
+    unsigned int col = sample_offset - (row * (data_[t].width() - (patchsize_x_ - 1)));
+
+    // Copy patch
+    for (unsigned int map = 0; map < input_maps_; map++) {
+      for (unsigned int y = 0; y < patchsize_y_; y++) {
+        const datum* row_ptr = data_[t].data_ptr_const (col, row + y, map, 0);
+        datum* target_row_ptr = data_tensor.data_ptr (0, y, map, sample);
+        std::memcpy (target_row_ptr, row_ptr, patchsize_x_ * sizeof(datum) / sizeof (char));
       }
     }
+    
+    // System::viewer->show(&data_tensor, "Data", true, 0, sample);
+
+    // Copy label
+    for (unsigned int map = 0; map < label_maps_; map++) {
+      *label_tensor.data_ptr (0, 0, map, sample) =
+        *labels_[t].data_ptr_const (col + (patchsize_x_ / 2), row + (patchsize_y_ / 2), map, 0);
+    }
+
+    // Copy error
+    *weight_tensor.data_ptr (0, 0, 0, sample) = error_function_ (col, row, data_[t].width(), data_[t].height());
 
     return success;
   } else return false;
@@ -234,7 +250,7 @@ bool TensorStreamPatchDataset::GetTestingSample (Tensor& data_tensor, Tensor& la
   } else return false;
 }
 
-TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std::istream& file , bool dont_load, DatasetLoadSelection selection) {
+TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std::istream& file , bool dont_load, DatasetLoadSelection selection, unsigned int patchsize_x, unsigned int patchsize_y) {
   unsigned int classes = 0;
   std::vector<std::string> class_names;
   std::vector<unsigned int> class_colors;
@@ -314,7 +330,8 @@ TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std
   }
 
   return new TensorStreamPatchDataset (*training_stream, *testing_stream, classes,
-                                  class_names, class_colors, error_function);
+                                       class_names, class_colors, patchsize_x,
+                                       patchsize_y, error_function);
 }
 
 }

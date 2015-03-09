@@ -40,6 +40,11 @@ public:
   virtual Task GetTask() const = 0;
   
   /**
+   * @brief Gets the method this Dataset is designed for.
+   */
+  virtual Method GetMethod() const = 0;
+  
+  /**
    * @brief Gets the width of the largest image in this Dataset.
    */
   virtual unsigned int GetWidth() const = 0;
@@ -145,10 +150,13 @@ class TensorStreamPatchDataset : public Dataset {
     unsigned int classes,
     std::vector<std::string> class_names,
     std::vector<unsigned int> class_colors,
+    unsigned int patchsize_x,
+    unsigned int patchsize_y,
     dataset_localized_error_function error_function = DefaultLocalizedErrorFunction);
   
   // Dataset implementations
   virtual Task GetTask() const;
+  virtual Method GetMethod() const { return PATCH; }
   virtual unsigned int GetWidth() const;
   virtual unsigned int GetHeight() const;
   virtual unsigned int GetInputMaps() const;
@@ -162,7 +170,7 @@ class TensorStreamPatchDataset : public Dataset {
   virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
   virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& weight_tensor,  unsigned int sample, unsigned int index);
   
-  static TensorStreamPatchDataset* CreateFromConfiguration(std::istream& file, bool dont_load = false, DatasetLoadSelection selection = LOAD_BOTH);
+  static TensorStreamPatchDataset* CreateFromConfiguration(std::istream& file, bool dont_load, DatasetLoadSelection selection, unsigned int patchsize_x, unsigned int patchsize_y);
   
 private:
   // Stored data
@@ -174,12 +182,16 @@ private:
   unsigned int input_maps_ = 0;
   unsigned int label_maps_ = 0;
   unsigned int tensors_ = 0;
-  
   unsigned int tensor_count_training_ = 0;
   unsigned int tensor_count_testing_ = 0;
   
-  unsigned int max_width_ = 0;
-  unsigned int max_height_ = 0;
+  unsigned int sample_count_training_ = 0;
+  unsigned int sample_count_testing_ = 0;
+  
+  unsigned int* last_sample_ = nullptr;
+  
+  unsigned int patchsize_x_ = 0;
+  unsigned int patchsize_y_ = 0;
   
   // Parameters
   std::vector<std::string> class_names_;
@@ -199,6 +211,7 @@ public:
   
   // Dataset implementations
   virtual Task GetTask() const;
+  virtual Method GetMethod() const { return FCN; }
   virtual unsigned int GetWidth() const;
   virtual unsigned int GetHeight() const;
   virtual unsigned int GetInputMaps() const;
