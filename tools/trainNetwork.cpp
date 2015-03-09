@@ -23,12 +23,13 @@
 #include <cn24.h>
 #include <private/ConfigParsing.h>
 
-bool parseCommand(Conv::Net& net, Conv::Trainer& trainer, std::string& command);
+bool parseCommand(Conv::Net& net, Conv::Net& testing_net, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, bool hybrid, std::string& command);
 void help();
 
 int main(int argc, char* argv[]) {
   bool GRADIENT_CHECK = false;
   bool FROM_SCRIPT = false;
+  const bool hybrid = true;
 #ifdef LAYERTIME
   const Conv::datum it_factor = 0.01;
 #else
@@ -82,7 +83,7 @@ int main(int argc, char* argv[]) {
   settings.testing_ratio = 1 * it_factor;
 
   // Load dataset
-  Conv::TensorStreamDataset* dataset = Conv::TensorStreamDataset::CreateFromConfiguration(dataset_config_file);
+  Conv::TensorStreamDataset* dataset = Conv::TensorStreamDataset::CreateFromConfiguration(dataset_config_file, false, hybrid ? Conv::LOAD_TRAINING_ONLY : Conv::LOAD_BOTH);
   unsigned int CLASSES = dataset->GetClasses();
 
   // Assemble net
@@ -143,6 +144,70 @@ int main(int argc, char* argv[]) {
   }
   else {
     Conv::Trainer trainer(net, settings);
+    
+    Conv::Net* testing_net;
+    Conv::Trainer* testing_trainer;
+    if(hybrid) {
+      // Assemble testing net
+      Conv::TensorStreamDataset* testing_dataset = Conv::TensorStreamDataset::CreateFromConfiguration(dataset_config_file, false, Conv::LOAD_TESTING_ONLY);
+      testing_net = new Conv::Net();
+      
+      int tdata_layer_id = 0;
+
+      Conv::DatasetInputLayer* tdata_layer = nullptr;
+      tdata_layer = new Conv::DatasetInputLayer(*testing_dataset, BATCHSIZE, loss_sampling_p, 983923);
+      tdata_layer_id = testing_net->AddLayer(tdata_layer);
+
+      int toutput_layer_id =
+        factory->AddLayers(*testing_net, Conv::Connection(tdata_layer_id), CLASSES);
+
+      LOGDEBUG << "Output layer id: " << toutput_layer_id;
+
+      testing_net->AddLayer(factory->CreateLossLayer(CLASSES), {
+        Conv::Connection(toutput_layer_id),
+        Conv::Connection(tdata_layer_id, 1),
+        Conv::Connection(tdata_layer_id, 3),
+      });
+
+      // Add appropriate statistics layer
+      if (CLASSES == 1) {
+        Conv::BinaryStatLayer* tbinary_stat_layer = new Conv::BinaryStatLayer(13, -1, 1);
+        testing_net->AddLayer(tbinary_stat_layer, {
+          Conv::Connection(toutput_layer_id),
+          Conv::Connection(tdata_layer_id, 1),
+          Conv::Connection(tdata_layer_id, 3)
+        });
+      }
+      else {
+        std::vector<std::string> class_names = dataset->GetClassNames();
+        Conv::ConfusionMatrixLayer* tconfusion_matrix_layer = new Conv::ConfusionMatrixLayer(class_names, CLASSES);
+        testing_net->AddLayer(tconfusion_matrix_layer, {
+          Conv::Connection(toutput_layer_id),
+          Conv::Connection(tdata_layer_id, 1),
+          Conv::Connection(tdata_layer_id, 3)
+        });
+      }
+
+      // Shadow training net weights
+      std::vector<Conv::CombinedTensor*> training_params;
+      std::vector<Conv::CombinedTensor*> testing_params;
+      net.GetParameters(training_params);
+      testing_net->GetParameters(testing_params);
+      
+      for(unsigned int p = 0; p < training_params.size(); p++) {
+        Conv::CombinedTensor* training_ct = training_params[p];
+        Conv::CombinedTensor* testing_ct = testing_params[p];
+        testing_ct->data.Shadow(training_ct->data);
+        testing_ct->delta.Shadow(training_ct->delta);
+      }
+          
+      testing_trainer = new Conv::Trainer(*testing_net, factory->optimal_settings());
+    } else {
+      testing_net = &net;
+      testing_trainer = &trainer;
+    }
+    
+    
     if(FROM_SCRIPT) {
       LOGINFO << "Executing script: " << script_fname;
       std::ifstream script_file(script_fname, std::ios::in);
@@ -152,7 +217,7 @@ int main(int argc, char* argv[]) {
       while (true) {
         std::string command;
         std::getline(script_file, command);
-        if (!parseCommand(net, trainer, command) || script_file.eof())
+        if (!parseCommand(net, *testing_net, trainer, *testing_trainer, hybrid, command) || script_file.eof())
           break;
       }
     } else {
@@ -161,7 +226,7 @@ int main(int argc, char* argv[]) {
         std::cout << "\n > " << std::flush;
         std::string command;
         std::getline(std::cin, command);
-        if (!parseCommand(net, trainer, command))
+        if (!parseCommand(net, *testing_net, trainer, *testing_trainer, hybrid, command))
           break;
       }
     }
@@ -173,7 +238,7 @@ int main(int argc, char* argv[]) {
 }
 
 
-bool parseCommand(Conv::Net& net, Conv::Trainer& trainer, std::string& command) {
+bool parseCommand(Conv::Net& net, Conv::Net& testing_net, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, bool hybrid, std::string& command) {
   if (command.compare("q") == 0 || command.compare("quit") == 0) {
     return false;
   }
@@ -186,9 +251,9 @@ bool parseCommand(Conv::Net& net, Conv::Trainer& trainer, std::string& command) 
   else if (command.compare(0, 4, "test") == 0) {
     unsigned int layerview = 0;
     Conv::ParseCountIfPossible(command, "view", layerview);
-    net.SetLayerViewEnabled(layerview == 1);
-    trainer.Test();
-    net.SetLayerViewEnabled(false);
+    testing_net.SetLayerViewEnabled(layerview == 1);
+    testing_trainer.Test();
+    testing_net.SetLayerViewEnabled(false);
     LOGINFO << "Testing complete.";
   }
   else if (command.compare(0, 4, "load") == 0) {
@@ -204,6 +269,21 @@ bool parseCommand(Conv::Net& net, Conv::Trainer& trainer, std::string& command) 
       if (param_file.good()) {
         net.DeserializeParameters(param_file, last_layer);
         LOGINFO << "Loaded parameters from " << param_file_name;
+        if(hybrid) {
+          LOGDEBUG << "Reshadowing tensors...";
+          // Shadow training net weights
+          std::vector<Conv::CombinedTensor*> training_params;
+          std::vector<Conv::CombinedTensor*> testing_params;
+          net.GetParameters(training_params);
+          testing_net.GetParameters(testing_params);
+          
+          for(unsigned int p = 0; p < training_params.size(); p++) {
+            Conv::CombinedTensor* training_ct = training_params[p];
+            Conv::CombinedTensor* testing_ct = testing_params[p];
+            testing_ct->data.Shadow(training_ct->data);
+            testing_ct->delta.Shadow(training_ct->delta);
+          } 
+        }
       }
       else {
         LOGERROR << "Cannot open " << param_file_name;

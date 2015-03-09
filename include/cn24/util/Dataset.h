@@ -132,6 +132,12 @@ public:
 typedef datum (*dataset_localized_error_function) (unsigned int, unsigned int, unsigned int, unsigned int);
 datum DefaultLocalizedErrorFunction (unsigned int x, unsigned int y, unsigned int w, unsigned int h);
 
+enum DatasetLoadSelection {
+  LOAD_TRAINING_ONLY,
+  LOAD_TESTING_ONLY,
+  LOAD_BOTH
+};
+
 class TensorStreamDataset : public Dataset {
 public:
   TensorStreamDataset(std::istream& training_stream,
@@ -156,7 +162,7 @@ public:
   virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
   virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& weight_tensor,  unsigned int sample, unsigned int index);
   
-  static TensorStreamDataset* CreateFromConfiguration(std::istream& file, bool dont_load = false);
+  static TensorStreamDataset* CreateFromConfiguration(std::istream& file, bool dont_load = false, DatasetLoadSelection selection = LOAD_BOTH);
   
 private:
   // Stored data
