@@ -287,9 +287,9 @@ void Trainer::ApplyGradients (datum lr) {
         const datum last_delta = (*last_deltas_[dp]) (w);
         const datum delta = llr *
                             (w_gradient / (datum) (training_layer_->GetBatchSize() * settings_.sbatchsize)) +
-                            lr * (settings_.l2_weight * l2_gradient +
-                                  settings_.l1_weight * l1_gradient)
-                            ;
+                            llr * (settings_.l2_weight * l2_gradient +
+                                  settings_.l1_weight * l1_gradient) / ((datum) (training_layer_->GetBatchSize() * settings_.sbatchsize));
+                            
         const datum step = delta + settings_.momentum * last_delta;
         param->data[w] -= step;
 
