@@ -195,7 +195,10 @@ bool TensorStreamPatchDataset::GetTrainingSample (Tensor& data_tensor, Tensor& l
     if (index >= last_sample_[t])
       return false;
 
-    unsigned int first_sample = last_sample_[t] - data_[t].width() * data_[t].height();
+    unsigned int inner_width = data_[t].width() - (patchsize_x_ - 1);
+    unsigned int inner_height = data_[t].height() - (patchsize_y_ - 1);
+    
+    unsigned int first_sample = last_sample_[t] - inner_width * inner_height;
     unsigned int sample_offset = index - first_sample;
 
     // Find x and y coords
@@ -211,8 +214,6 @@ bool TensorStreamPatchDataset::GetTrainingSample (Tensor& data_tensor, Tensor& l
       }
     }
     
-    // System::viewer->show(&data_tensor, "Data", true, 0, sample);
-
     // Copy label
     for (unsigned int map = 0; map < label_maps_; map++) {
       *label_tensor.data_ptr (0, 0, map, sample) =
@@ -227,27 +228,8 @@ bool TensorStreamPatchDataset::GetTrainingSample (Tensor& data_tensor, Tensor& l
 }
 
 bool TensorStreamPatchDataset::GetTestingSample (Tensor& data_tensor, Tensor& label_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
-  if (index < tensor_count_testing_ / 2) {
-    bool success = true;
-    unsigned int test_index = (tensor_count_training_ / 2) + index;
-    success &= Tensor::CopySample (data_[test_index], 0, data_tensor, sample);
-    success &= Tensor::CopySample (labels_[test_index], 0, label_tensor, sample);
-
-    if (data_[test_index].width() == GetWidth() && data_[test_index].height() == GetHeight()) {
-      success &= Tensor::CopySample (error_cache, 0, weight_tensor, sample);
-    } else {
-      // Reevaluate error function
-      weight_tensor.Clear (0.0, sample);
-
-      for (unsigned int y = 0; y < data_[test_index].height(); y++) {
-        for (unsigned int x = 0; x < data_[test_index].width(); x++) {
-          *weight_tensor.data_ptr (x, y, 0, sample) = error_function_ (x, y, data_[test_index].width(), data_[test_index].height());
-        }
-      }
-    }
-
-    return success;
-  } else return false;
+  LOGERROR << "Patch testing is NIY, please use FCN for testing.";
+  return false;
 }
 
 TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std::istream& file , bool dont_load, DatasetLoadSelection selection, unsigned int patchsize_x, unsigned int patchsize_y) {
