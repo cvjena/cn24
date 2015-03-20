@@ -51,7 +51,7 @@ int main (int argc, char* argv[]) {
   }
   
   // Parse network configuration file
-  Conv::ConfigurableFactory* factory = new Conv::ConfigurableFactory(net_config_file, 238238);
+  Conv::ConfigurableFactory* factory = new Conv::ConfigurableFactory(net_config_file, 238238, false);
   // Parse dataset configuration file
   Conv::TensorStreamDataset* dataset = Conv::TensorStreamDataset::CreateFromConfiguration(dataset_config_file, true);
   unsigned int CLASSES = dataset->GetClasses();

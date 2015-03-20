@@ -346,12 +346,12 @@ void Tensor::DeleteIfPossible() {
       delete[] data_ptr_;
 #endif
 #ifdef BUILD_OPENCL
-
       if ( cl_data_ptr_ != 0 ) {
         clReleaseMemObject ( (cl_mem)cl_data_ptr_ );
         cl_data_ptr_ = 0;
       }
-
+      
+      cl_gpu_ = false;
 #endif
     }
 
