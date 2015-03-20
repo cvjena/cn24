@@ -29,12 +29,11 @@ void help();
 int main (int argc, char* argv[]) {
   bool GRADIENT_CHECK = false;
   bool FROM_SCRIPT = false;
-  const bool hybrid = true;
 #ifdef LAYERTIME
   const Conv::datum it_factor = 0.01;
 #else
   const Conv::datum it_factor = 1;
-  const Conv::datum loss_sampling_p = hybrid ? 1 : 0.25;
+  const Conv::datum loss_sampling_p = 0.25;
 #endif
 
   if (argc < 3) {
@@ -74,10 +73,15 @@ int main (int argc, char* argv[]) {
   dataset_config_fname = dataset_config_fname.substr (net_config_fname.rfind ("/") + 1);
 
   // Parse network configuration file
-  Conv::ConfigurableFactory* factory = new Conv::ConfigurableFactory (net_config_file, 8347734, hybrid);
+  Conv::ConfigurableFactory* factory = new Conv::ConfigurableFactory (net_config_file, 8347734, true);
   factory->InitOptimalSettings();
   LOGDEBUG << "Optimal settings: " << factory->optimal_settings();
+  
+  // Extract important settings from parsed configuration
+  const bool patchwise_training = (factory->method() == Conv::PATCH);
   unsigned int BATCHSIZE = factory->optimal_settings().pbatchsize;
+  
+  LOGINFO << "Using " << (patchwise_training ? "hybrid patchwise" : "fully convolutional") << " training";
 
   Conv::TrainerSettings settings = factory->optimal_settings();
   settings.epoch_training_ratio = 1 * it_factor;
@@ -86,11 +90,11 @@ int main (int argc, char* argv[]) {
   // Load dataset
   Conv::Dataset* dataset = nullptr;
 
-  if (hybrid && factory->method() == Conv::PATCH) {
-    dataset = Conv::TensorStreamPatchDataset::CreateFromConfiguration (dataset_config_file, false, hybrid ? Conv::LOAD_TRAINING_ONLY : Conv::LOAD_BOTH,
+  if (patchwise_training) {
+    dataset = Conv::TensorStreamPatchDataset::CreateFromConfiguration (dataset_config_file, false, patchwise_training ? Conv::LOAD_TRAINING_ONLY : Conv::LOAD_BOTH,
               factory->patchsizex(), factory->patchsizey());
   } else {
-    dataset = Conv::TensorStreamDataset::CreateFromConfiguration (dataset_config_file, false, hybrid ? Conv::LOAD_TRAINING_ONLY : Conv::LOAD_BOTH);
+    dataset = Conv::TensorStreamDataset::CreateFromConfiguration (dataset_config_file, false, Conv::LOAD_BOTH);
   }
 
   unsigned int CLASSES = dataset->GetClasses();
@@ -113,7 +117,7 @@ int main (int argc, char* argv[]) {
     Conv::InputLayer* input_layer = new Conv::InputLayer (*data_tensor, *label_tensor, *helper_tensor, *weight_tensor);
     data_layer_id = net.AddLayer (input_layer);
   } else {
-    data_layer = new Conv::DatasetInputLayer (*dataset, BATCHSIZE, loss_sampling_p, 983923);
+    data_layer = new Conv::DatasetInputLayer (*dataset, BATCHSIZE, patchwise_training ? 1.0 : loss_sampling_p, 983923);
     data_layer_id = net.AddLayer (data_layer);
   }
 
@@ -157,8 +161,10 @@ int main (int argc, char* argv[]) {
     Conv::Net* testing_net;
     Conv::Trainer* testing_trainer;
 
-    if (hybrid) {
+    if (patchwise_training) {
+      // This overrides the batch size for testing in this scope
       unsigned int BATCHSIZE = 1;
+      
       // Assemble testing net
       Conv::TensorStreamDataset* testing_dataset = Conv::TensorStreamDataset::CreateFromConfiguration (dataset_config_file, false, Conv::LOAD_TESTING_ONLY);
       testing_net = new Conv::Net();
@@ -166,7 +172,7 @@ int main (int argc, char* argv[]) {
       int tdata_layer_id = 0;
 
       Conv::DatasetInputLayer* tdata_layer = nullptr;
-      tdata_layer = new Conv::DatasetInputLayer (*testing_dataset, BATCHSIZE, loss_sampling_p, 983923);
+      tdata_layer = new Conv::DatasetInputLayer (*testing_dataset, BATCHSIZE, 1.0, 983923);
       tdata_layer_id = testing_net->AddLayer (tdata_layer);
 
       Conv::ConfigurableFactory* tfactory = new Conv::ConfigurableFactory (net_config_file, 8347734);
@@ -234,7 +240,7 @@ int main (int argc, char* argv[]) {
         std::string command;
         std::getline (script_file, command);
 
-        if (!parseCommand (net, *testing_net, trainer, *testing_trainer, hybrid, command) || script_file.eof())
+        if (!parseCommand (net, *testing_net, trainer, *testing_trainer, patchwise_training, command) || script_file.eof())
           break;
       }
     } else {
@@ -245,7 +251,7 @@ int main (int argc, char* argv[]) {
         std::string command;
         std::getline (std::cin, command);
 
-        if (!parseCommand (net, *testing_net, trainer, *testing_trainer, hybrid, command))
+        if (!parseCommand (net, *testing_net, trainer, *testing_trainer, patchwise_training, command))
           break;
       }
     }
