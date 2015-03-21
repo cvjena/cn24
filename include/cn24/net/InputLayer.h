@@ -53,7 +53,8 @@ public:
   virtual bool CreateOutputs (const std::vector< CombinedTensor* >& inputs,
                               std::vector< CombinedTensor* >& outputs);
   virtual bool Connect (const std::vector< CombinedTensor* >& inputs,
-                        const std::vector< CombinedTensor* >& outputs);
+                        const std::vector< CombinedTensor* >& outputs,
+                        const Net* net );
   virtual void FeedForward() { }
   virtual void BackPropagate() { }
   

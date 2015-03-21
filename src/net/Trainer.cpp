@@ -62,6 +62,7 @@ Trainer::Trainer (Conv::Net& net, TrainerSettings settings) :
 
 void Trainer::Train (unsigned int epochs) {
   net_.SetTestOnlyStatDisabled (false);
+  net_.SetIsTesting(false);
 
   for (unsigned int e = 0; e < epochs; e++)
     Epoch();
@@ -85,6 +86,7 @@ datum Trainer::Test() {
                                 settings_.testing_ratio);
 
   training_layer_->SetTestingMode (true);
+  net_.SetIsTesting(true);
 
   LOGDEBUG << "Testing, iterations: " << iterations <<
            ", batch size: " << batchsize;
@@ -132,6 +134,7 @@ datum Trainer::Test() {
   }
 
   training_layer_->SetTestingMode (false);
+  net_.SetIsTesting(false);
 
   delete[] stat_sum;
   return loss_sum / (datum) iterations;

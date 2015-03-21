@@ -23,6 +23,7 @@
 
 namespace Conv {
 
+  class Net;
   class Trainer;
   class GradientTester;
 class Layer {
@@ -48,8 +49,9 @@ public:
    * @param outputs The outputs to the layer
    */
   virtual bool Connect (const std::vector<CombinedTensor*>& inputs,
-                        const std::vector<CombinedTensor*>& outputs) = 0;
-
+                        const std::vector<CombinedTensor*>& outputs,
+                        const Net* net) = 0;
+                        
   /**
    * @brief Performs a forward pass
    */
