@@ -122,10 +122,19 @@ TensorStreamDataset::TensorStreamDataset (std::istream& training_stream,
 
   if (max_width_ & 1)
     max_width_++;
-
   if (max_height_ & 1)
     max_height_++;
+  
+  if (max_width_ & 2)
+    max_width_+=2;
+  if (max_height_ & 2)
+    max_height_+=2;
 
+  if (max_width_ & 4)
+    max_width_+=4;
+  if (max_height_ & 4)
+    max_height_+=4;
+  
   input_maps_ = data_[0].maps();
   label_maps_ = labels_[0].maps();
 
