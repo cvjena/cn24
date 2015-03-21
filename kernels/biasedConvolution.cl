@@ -77,8 +77,8 @@ __kernel void BIASED_CONVOLUTION ( __global __read_only float* X,
           }
       }
 
-      sum *= weight_factor;
       sum += b[kernel_id];
+      sum *= weight_factor;
     }
 
     const uint Y_begin_sample = output_width * output_height * sk_id;

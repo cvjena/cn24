@@ -226,7 +226,22 @@ void ConvolutionLayer::FeedForward() {
 
 #endif
 
-#else
+#else // No OpenCL
+
+  // Very simple dropout FF implementation
+  // This could be optimized a _lot_
+  unsigned int sk_id = 0;
+  for(unsigned int s = 0; s < input_->data.samples(); s++) {
+    for(unsigned int m = 0; m < output_maps_; m++) {
+      datum* target_map = output_->data.data_ptr(0,0,m,s);
+      for(unsigned int e = 0; e < output_width_ * output_height_; e++) {
+        if(dropout_mask_[sk_id] == 0.0)
+          target_map[e] = 0.0;
+      }
+    }
+    sk_id++;
+  }
+
 #ifdef BUILD_BLAS
   im2colff();
 
@@ -303,6 +318,22 @@ void ConvolutionLayer::BackPropagate() {
 #endif
 #endif
 
+#ifdef BUILD_OPENCL_CONV
+  output_->delta.MoveToCPU();
+#endif
+  // Very simple dropout backprop implementation
+  // This could be optimized a _lot_
+  unsigned int sk_id = 0;
+  for(unsigned int s = 0; s < input_->data.samples(); s++) {
+    for(unsigned int m = 0; m < output_maps_; m++) {
+      datum* target_map = output_->delta.data_ptr(0,0,m,s);
+      if(dropout_mask_[sk_id] == 0.0)
+        for(unsigned int e = 0; e < output_width_ * output_height_; e++) {
+          target_map[e] = 0.0;
+        }
+    }
+    sk_id++;
+  }
 
   /*
    * 1. Backpropagation
