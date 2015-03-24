@@ -221,7 +221,9 @@ bool TensorStreamPatchDataset::GetTrainingSample (Tensor& data_tensor, Tensor& l
     }
 
     // Copy error
-    *weight_tensor.data_ptr (0, 0, 0, sample) = error_function_ (col, row, data_[t].width(), data_[t].height());
+    *weight_tensor.data_ptr (0, 0, 0, sample) =
+      error_function_ (col + (patchsize_x_ / 2), row + (patchsize_y_ / 2),
+      data_[t].width(), data_[t].height());
 
     return success;
   } else return false;
