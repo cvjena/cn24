@@ -90,6 +90,9 @@ private:
   std::vector<Tensor*> accumulated_gradients_;
   TrainingLayer* training_layer_;
   LossFunctionLayer* lossfunction_layer_;
+  
+  // Sample count
+  unsigned int sample_count_ = 0;
 
   // Learning options
   TrainerSettings settings_;

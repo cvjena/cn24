@@ -58,6 +58,8 @@ public:
   unsigned int GetSamplesInTrainingSet();
   unsigned int GetSamplesInTestingSet();
   unsigned int GetBatchSize();
+  unsigned int GetLabelWidth();
+  unsigned int GetLabelHeight();
 
   inline datum GetLossSamplingProbability() {
     return loss_sampling_p_;

@@ -94,7 +94,7 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
   datum llr_factor = 1.0;
 
   if (method_ == FCN) {
-    Tensor* const net_output = &net.buffer (data_layer_connection.net, data_layer_connection.output)->data;
+    /*Tensor* const net_output = &net.buffer (data_layer_connection.net, data_layer_connection.output)->data;
     datum net_output_size_x = net_output->width();
     datum net_output_size_y = net_output->height();
     llr_factor /= net_output_size_x;
@@ -103,7 +103,7 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
     llr_factor /= patch_field_x_;
     llr_factor /= patch_field_y_;
 #endif
-    LOGINFO << "Local learning rate factor is (initially): " << llr_factor;
+    LOGINFO << "Local learning rate factor is (initially): " << llr_factor;*/
     last_layer_id = net.AddLayer (new ResizeLayer (receptive_field_x_, receptive_field_y_), { data_layer_connection });
     last_layer_output = 0;
   }
@@ -158,16 +158,16 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
 
         ConvolutionLayer* cl = new ConvolutionLayer (kx, ky, k, rand(), dropout_fraction);
 
-        if (method_ == FCN) {
+        // if (method_ == FCN) {
           LOGDEBUG << "LLR factor: " << llr_factor << ", RFX: " << current_receptive_field_x;
-          cl->SetLocalLearningRate (llr * llr_factor * (datum) current_receptive_field_x * (datum) current_receptive_field_y);
+        /*  cl->SetLocalLearningRate (llr * llr_factor * (datum) current_receptive_field_x * (datum) current_receptive_field_y);
 #ifdef CN24_EMULATE_PATCH_LEARNING
           current_receptive_field_x -= (kx - 1);
           current_receptive_field_y -= (ky - 1);
 #endif
-        } else {
+        } else { */
           cl->SetLocalLearningRate (llr * llr_factor);
-        }
+        /* } */
 
         if (first_layer)
           cl->SetBackpropagationEnabled (false);
@@ -183,13 +183,13 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
         unsigned int kx = 1, ky = 1;
         ParseKernelSizeIfPossible (line, "size", kx, ky);
 
-        if (method_ == FCN) {
+        /*if (method_ == FCN) {
 #ifdef CN24_EMULATE_PATCH_LEARNING
           current_receptive_field_x /= kx;
           current_receptive_field_y /= ky;
           llr_factor *= (datum) (kx * ky);
 #endif
-        }
+        }*/
 
         MaxPoolingLayer* mp = new MaxPoolingLayer (kx, ky);
         last_layer_id = net.AddLayer (mp ,
