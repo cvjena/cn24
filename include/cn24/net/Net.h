@@ -34,6 +34,7 @@ class GradientTester;
 
 struct Connection {
 public:
+  Connection () : net(0), output(0) {}
   Connection (const int net, const int output = 0) :
     net (net), output (output) { }
   int net;

@@ -32,6 +32,8 @@ ConfigurableFactory::ConfigurableFactory (std::istream& file, const unsigned int
 
   patch_field_x_ = 0;
   patch_field_y_ = 0;
+  
+  bool ignore_layers = false;
 
   // Calculate patch size / receptive field size
   while (! file_.eof()) {
@@ -47,8 +49,24 @@ ConfigurableFactory::ConfigurableFactory (std::istream& file, const unsigned int
         LOGINFO << "Setting method to PATCH";
       }
     }
+    
+    if (line.compare (0, 6, "manual") == 0) {
+      unsigned int rfx = 0, rfy = 0, fx = 0, fy = 0;
+      ParseCountIfPossible(line, "rfx", rfx);
+      ParseCountIfPossible(line, "rfy", rfy);
+      ParseCountIfPossible(line, "factorx", fx);
+      ParseCountIfPossible(line, "factory", fy);
+      if(rfx > 0 && rfy > 0) {
+        LOGINFO << "Using manual receptive field method";
+        receptive_field_x_ = rfx;
+        receptive_field_y_ = rfy;
+        factorx = fx;
+        factory = fy;
+        ignore_layers = true;
+      }
+    }
 
-    if (line.compare (0, 1, "?") == 0) {
+    if (line.compare (0, 1, "?") == 0 && !ignore_layers) {
       line = line.substr (1);
 
       if (StartsWithIdentifier (line, "convolutional")) {
@@ -92,6 +110,11 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
   int current_receptive_field_x = patch_field_x_;
   int current_receptive_field_y = patch_field_y_;
   datum llr_factor = 1.0;
+  
+  Connection stack_a[64];
+  Connection stack_b[64];
+  int stack_a_pos = -1;
+  int stack_b_pos = -1;
 
   if (method_ == FCN) {
     /*Tensor* const net_output = &net.buffer (data_layer_connection.net, data_layer_connection.output)->data;
@@ -114,6 +137,10 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
     std::string line;
     std::getline (file_, line);
 
+    /*
+     * PREPROCESSING
+     */
+    
     // Replace number of output neurons
     if (line.find ("(o)") != std::string::npos) {
       char buf[64];
@@ -133,7 +160,7 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
         line = "";
       }
     }
-
+    
     if (line.compare ("?output") == 0) {
       if (output_classes == 1) {
         line = "?tanh";
@@ -141,7 +168,33 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
         line = "?sigm";
       }
     }
+    
+    /*
+     * STACK OPERATIONS
+     */
+    if (line.compare("pusha") == 0) {
+      stack_a[++stack_a_pos].net = last_layer_id;
+      stack_a[stack_a_pos].output = last_layer_output;
+    }
 
+    if (line.compare("pushb") == 0) {
+      stack_b[++stack_b_pos].net = last_layer_id;
+      stack_b[stack_b_pos].output = last_layer_output;
+    }
+    
+    if (line.compare("popa") == 0) {
+      last_layer_id = stack_a[stack_a_pos].net;
+      last_layer_output = stack_a[stack_a_pos--].output;
+    }
+    
+    if (line.compare("popb") == 0) {
+      last_layer_id = stack_b[stack_b_pos].net;
+      last_layer_output = stack_b[stack_b_pos--].output;
+    }
+    
+    /*
+     * PARSING
+     */
     if (line.compare (0, 1, "?") == 0) {
       line = line.substr (1);
       LOGDEBUG << "Parsing layer: " << line;
