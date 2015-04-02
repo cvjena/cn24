@@ -365,7 +365,7 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
 
 
 		graph_output << "node" << loss_layer_id << " [shape=record, label=\"" <<
-			"{Spatial Prior Layer | <o0> Output}" << "\"];\n";
+			"{Loss Layer | <o0> Output}" << "\"];\n";
 
 		graph_output << "node" <<  last_layer_id << ":o" << last_layer_output
 			<< " -> node" << loss_layer_id << ";\n";
