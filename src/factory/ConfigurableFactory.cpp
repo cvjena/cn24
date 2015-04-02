@@ -101,12 +101,17 @@ Layer* ConfigurableFactory::CreateLossLayer (const unsigned int output_classes) 
   return new ErrorLayer();
 }
 
-int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, const unsigned int output_classes) {
+int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, const unsigned int output_classes, std::ostream& graph_output) {
   std::mt19937 rand (seed_);
   file_.clear();
   file_.seekg (0, std::ios::beg);
   int last_layer_output = data_layer_connection.output;
   int last_layer_id = data_layer_connection.net;
+
+	graph_output << "node" << last_layer_id << " [shape=record, label=\"" << 
+		"{Dataset Input | {<o0> Data | <o1> Label | <o2> Helper | <o3> Weight}}"
+		<< "\"];\n";
+
   int current_receptive_field_x = patch_field_x_;
   int current_receptive_field_y = patch_field_y_;
   datum llr_factor = 1.0;
@@ -127,8 +132,16 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
     llr_factor /= patch_field_y_;
 #endif
     LOGINFO << "Local learning rate factor is (initially): " << llr_factor;*/
+
+		int input_layer_id = last_layer_id;
+		int input_layer_output = last_layer_output;
     last_layer_id = net.AddLayer (new ResizeLayer (receptive_field_x_, receptive_field_y_), { data_layer_connection });
     last_layer_output = 0;
+
+		graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
+			"{Resize Layer (+" << receptive_field_x_ << "x" << receptive_field_y_ << ") | <o0> Output}" << "\"];\n";
+		graph_output << "node" << input_layer_id << ":o" << input_layer_output
+			<< " -> node" << last_layer_id << ";\n";
   }
 
   bool first_layer = true;
@@ -224,12 +237,17 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
 
         if (first_layer)
           cl->SetBackpropagationEnabled (false);
-
+				int input_layer_id = last_layer_id;
+				int input_layer_output = last_layer_output;
         last_layer_id = net.AddLayer (cl ,
         { Connection (last_layer_id, last_layer_output) });
         last_layer_output = 0;
         first_layer = false;
 
+				graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
+					"{Convolutional Layer | <o0> Output}" << "\"];\n";
+				graph_output << "node" << input_layer_id << ":o" << input_layer_output
+					<< " -> node" << last_layer_id << ";\n";
       }
 
       if (StartsWithIdentifier (line, "maxpooling")) {
@@ -244,49 +262,97 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
 #endif
         }*/
 
+				int input_layer_id = last_layer_id;
+				int input_layer_output = last_layer_output;
+
         MaxPoolingLayer* mp = new MaxPoolingLayer (kx, ky);
         last_layer_id = net.AddLayer (mp ,
         { Connection (last_layer_id, last_layer_output) });
         last_layer_output = 0;
+
+				graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
+					"{Max-Pooling Layer (" << kx << "x" << ky << ") | <o0> Output}" << "\"];\n";
+				graph_output << "node" << input_layer_id << ":o" << input_layer_output
+					<< " -> node" << last_layer_id << ";\n";
       }
 
       if (StartsWithIdentifier (line, "sigm")) {
+				int input_layer_id = last_layer_id;
+				int input_layer_output = last_layer_output;
+
         SigmoidLayer* l = new SigmoidLayer();
         last_layer_id = net.AddLayer (l ,
         { Connection (last_layer_id, last_layer_output) });
         last_layer_output = 0;
+
+				graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
+					"{Sigmoid Layer | <o0> Output}" << "\"];\n";
+				graph_output << "node" << input_layer_id << ":o" << input_layer_output
+					<< " -> node" << last_layer_id << ";\n";
       }
 
       if (StartsWithIdentifier (line, "relu")) {
+				int input_layer_id = last_layer_id;
+				int input_layer_output = last_layer_output;
+
         ReLULayer* l = new ReLULayer();
         last_layer_id = net.AddLayer (l ,
         { Connection (last_layer_id, last_layer_output) });
         last_layer_output = 0;
+
+				graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
+					"{Sigmoid Layer | <o0> Output}" << "\"];\n";
+				graph_output << "node" << input_layer_id << ":o" << input_layer_output
+					<< " -> node" << last_layer_id << ";\n";
       }
 
       if (StartsWithIdentifier (line, "tanh")) {
+				int input_layer_id = last_layer_id;
+				int input_layer_output = last_layer_output;
+
         TanhLayer* l = new TanhLayer();
         last_layer_id = net.AddLayer (l ,
         { Connection (last_layer_id, last_layer_output) });
         last_layer_output = 0;
+
+				graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
+					"{Tanh Layer | <o0> Output}" << "\"];\n";
+				graph_output << "node" << input_layer_id << ":o" << input_layer_output
+					<< " -> node" << last_layer_id << ";\n";
       }
 
       if (StartsWithIdentifier (line, "spatialprior")) {
         if (method_ == FCN) {
+					int input_layer_id = last_layer_id;
+					int input_layer_output = last_layer_output;
+
           SpatialPriorLayer* l = new SpatialPriorLayer();
           last_layer_id = net.AddLayer (l ,
           { Connection (last_layer_id, last_layer_output) });
           last_layer_output = 0;
+
+					graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
+						"{Spatial Prior Layer | <o0> Output}" << "\"];\n";
+					graph_output << "node" << input_layer_id << ":o" << input_layer_output
+						<< " -> node" << last_layer_id << ";\n";
         }
       }
     }
   }
 
   if (method_ == FCN && (factorx != 1 || factory != 1)) {
+		int input_layer_id = last_layer_id;
+		int input_layer_output = last_layer_output;
+
     last_layer_id = net.AddLayer (new UpscaleLayer (factorx, factory),
     { Connection (last_layer_id, last_layer_output) });
     last_layer_output = 0;
     LOGDEBUG << "Added upscaling layer for FCN";
+
+		graph_output << "node" << last_layer_id << " [shape=record, shape=record, label=\"" <<
+			"{Upscale Layer (" << factorx << "x" << factory  << ") | <o0> Output" << "}\"];\n";
+		graph_output << "node" << input_layer_id << ":o" << input_layer_output
+			<< " -> node" << last_layer_id << ";\n";
   }
 
   return last_layer_id;

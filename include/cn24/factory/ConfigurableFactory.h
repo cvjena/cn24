@@ -46,7 +46,7 @@ public:
 	* 
 	* @returns The layer id of the output layer
 	*/
-  virtual int AddLayers(Net& net, Connection data_layer_connection, const unsigned int output_classes);
+  virtual int AddLayers(Net& net, Connection data_layer_connection, const unsigned int output_classes, std::ostream& graph_output = std::cout);
 
   /**
 	* @returns The horizontal size of the receptive field
