@@ -245,7 +245,7 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
         first_layer = false;
 
 				graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
-					"{Convolutional Layer | <o0> Output}" << "\"];\n";
+					"{Convolutional Layer (" << k << " kernels @ " << kx << "x" << ky << ") | <o0> Output}" << "\"];\n";
 				graph_output << "node" << input_layer_id << ":o" << input_layer_output
 					<< " -> node" << last_layer_id << ";\n";
       }
