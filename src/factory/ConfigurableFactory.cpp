@@ -101,7 +101,7 @@ Layer* ConfigurableFactory::CreateLossLayer (const unsigned int output_classes) 
   return new ErrorLayer();
 }
 
-int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, const unsigned int output_classes, std::ostream& graph_output) {
+int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, const unsigned int output_classes, bool add_loss_layer, std::ostream& graph_output) {
   std::mt19937 rand (seed_);
   file_.clear();
   file_.seekg (0, std::ios::beg);
@@ -354,6 +354,26 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
 		graph_output << "node" << input_layer_id << ":o" << input_layer_output
 			<< " -> node" << last_layer_id << ";\n";
   }
+
+	// Add loss layer
+	if (add_loss_layer) {
+		int loss_layer_id = net.AddLayer(CreateLossLayer(output_classes), {
+			Connection(last_layer_id, last_layer_output),
+			Connection(data_layer_connection.net, 1),
+			Connection(data_layer_connection.net, 3)
+		});
+
+
+		graph_output << "node" << loss_layer_id << " [shape=record, label=\"" <<
+			"{Spatial Prior Layer | <o0> Output}" << "\"];\n";
+
+		graph_output << "node" <<  last_layer_id << ":o" << last_layer_output
+			<< " -> node" << loss_layer_id << ";\n";
+		graph_output << "node" <<  data_layer_connection.net << ":o" << 1
+			<< " -> node" << loss_layer_id << ";\n";
+		graph_output << "node" <<  data_layer_connection.net << ":o" << 3
+			<< " -> node" << loss_layer_id << ";\n";
+	}
 
   return last_layer_id;
 }

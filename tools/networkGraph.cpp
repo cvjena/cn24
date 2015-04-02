@@ -81,7 +81,7 @@ int main (int argc, char* argv[]) {
 	data_layer_id = net.AddLayer (data_layer);
 
   int output_layer_id =
-    factory->AddLayers (net, Conv::Connection (data_layer_id), CLASSES, ss);
+    factory->AddLayers (net, Conv::Connection (data_layer_id), CLASSES, true, ss);
 
   LOGDEBUG << "Output layer id: " << output_layer_id;
 

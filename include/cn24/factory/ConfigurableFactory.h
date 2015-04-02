@@ -43,10 +43,12 @@ public:
 	* @param data_layer_connection Input to the first layer of this configuration
 	* @param output_classes The number of output neurons. This also affects the activation function of
 	* 	 the last layer: for output_classes=1, tanh is used. Otherwise, sigm is used.
+	* @param add_loss_layer If set to true, the factory also adds a matching loss layer
+	* @param graph_output An output stream. The factory will write the layout in graphviz format into this string.
 	* 
 	* @returns The layer id of the output layer
 	*/
-  virtual int AddLayers(Net& net, Connection data_layer_connection, const unsigned int output_classes, std::ostream& graph_output = std::cout);
+  virtual int AddLayers(Net& net, Connection data_layer_connection, const unsigned int output_classes, bool add_loss_layer = false, std::ostream& graph_output = std::cout);
 
   /**
 	* @returns The horizontal size of the receptive field
