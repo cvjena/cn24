@@ -56,14 +56,14 @@ int main (int argc, char* argv[]) {
   dataset_config_fname = dataset_config_fname.substr (net_config_fname.rfind ("/") + 1);
 
   // Parse network configuration file
-  Conv::ConfigurableFactory* factory = new Conv::ConfigurableFactory (net_config_file, 8347734, true);
+  Conv::ConfigurableFactory* factory = new Conv::ConfigurableFactory (net_config_file, 8347734, false);
   factory->InitOptimalSettings();
-  LOGDEBUG << "Optimal settings: " << factory->optimal_settings();
   
   // Extract important settings from parsed configuration
-  unsigned int BATCHSIZE = factory->optimal_settings().pbatchsize;
-  
   Conv::TrainerSettings settings = factory->optimal_settings();
+	settings.pbatchsize = 1;
+  unsigned int BATCHSIZE = settings.pbatchsize;
+  LOGDEBUG << "Optimal settings: " << settings;
 
   // Load dataset
   Conv::Dataset* dataset = nullptr;
