@@ -217,7 +217,7 @@ unsigned int DatasetInputLayer::GetBatchSize() {
 }
 
 unsigned int DatasetInputLayer::GetLabelWidth() {
-  return (dataset_.GetWidth() == PATCH) ? 1 : dataset_.GetWidth();
+  return (dataset_.GetMethod() == PATCH) ? 1 : dataset_.GetWidth();
 }
 
 unsigned int DatasetInputLayer::GetLabelHeight() {
