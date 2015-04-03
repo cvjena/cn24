@@ -135,13 +135,15 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
 
 		int input_layer_id = last_layer_id;
 		int input_layer_output = last_layer_output;
-    last_layer_id = net.AddLayer (new ResizeLayer (receptive_field_x_, receptive_field_y_), { data_layer_connection });
+		ResizeLayer* rl = new ResizeLayer(receptive_field_x_, receptive_field_y_);
+    last_layer_id = net.AddLayer (rl, { data_layer_connection });
     last_layer_output = 0;
 
-		graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
+		WriteNode(graph_output, rl, input_layer_id, input_layer_output, last_layer_id, 1);
+		/*graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
 			"{Resize Layer (+" << receptive_field_x_ << "x" << receptive_field_y_ << ") | <o0> Output}" << "\"];\n";
 		graph_output << "node" << input_layer_id << ":o" << input_layer_output
-			<< " -> node" << last_layer_id << ";\n";
+			<< " -> node" << last_layer_id << ";\n";*/
   }
 
   bool first_layer = true;
@@ -244,10 +246,11 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
         last_layer_output = 0;
         first_layer = false;
 
-				graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
+				WriteNode(graph_output, cl, input_layer_id, input_layer_output, last_layer_id, 1);
+				/*graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
 					"{Convolutional Layer (" << k << " kernels @ " << kx << "x" << ky << ") | <o0> Output}" << "\"];\n";
 				graph_output << "node" << input_layer_id << ":o" << input_layer_output
-					<< " -> node" << last_layer_id << ";\n";
+					<< " -> node" << last_layer_id << ";\n";*/
       }
 
       if (StartsWithIdentifier (line, "maxpooling")) {
@@ -270,10 +273,11 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
         { Connection (last_layer_id, last_layer_output) });
         last_layer_output = 0;
 
-				graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
+				WriteNode(graph_output, mp, input_layer_id, input_layer_output, last_layer_id, 1);
+				/*graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
 					"{Max-Pooling Layer (" << kx << "x" << ky << ") | <o0> Output}" << "\"];\n";
 				graph_output << "node" << input_layer_id << ":o" << input_layer_output
-					<< " -> node" << last_layer_id << ";\n";
+					<< " -> node" << last_layer_id << ";\n";*/
       }
 
       if (StartsWithIdentifier (line, "sigm")) {
@@ -285,10 +289,11 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
         { Connection (last_layer_id, last_layer_output) });
         last_layer_output = 0;
 
-				graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
+				WriteNode(graph_output, l, input_layer_id, input_layer_output, last_layer_id, 1);
+				/*graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
 					"{Sigmoid Layer | <o0> Output}" << "\"];\n";
 				graph_output << "node" << input_layer_id << ":o" << input_layer_output
-					<< " -> node" << last_layer_id << ";\n";
+					<< " -> node" << last_layer_id << ";\n";*/
       }
 
       if (StartsWithIdentifier (line, "relu")) {
@@ -300,10 +305,11 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
         { Connection (last_layer_id, last_layer_output) });
         last_layer_output = 0;
 
-				graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
+				WriteNode(graph_output, l, input_layer_id, input_layer_output, last_layer_id, 1);
+				/*graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
 					"{Sigmoid Layer | <o0> Output}" << "\"];\n";
 				graph_output << "node" << input_layer_id << ":o" << input_layer_output
-					<< " -> node" << last_layer_id << ";\n";
+					<< " -> node" << last_layer_id << ";\n";*/
       }
 
       if (StartsWithIdentifier (line, "tanh")) {
@@ -315,10 +321,11 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
         { Connection (last_layer_id, last_layer_output) });
         last_layer_output = 0;
 
-				graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
+				WriteNode(graph_output, l, input_layer_id, input_layer_output, last_layer_id, 1);
+				/*graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
 					"{Tanh Layer | <o0> Output}" << "\"];\n";
 				graph_output << "node" << input_layer_id << ":o" << input_layer_output
-					<< " -> node" << last_layer_id << ";\n";
+					<< " -> node" << last_layer_id << ";\n";*/
       }
 
       if (StartsWithIdentifier (line, "spatialprior")) {
@@ -331,10 +338,11 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
           { Connection (last_layer_id, last_layer_output) });
           last_layer_output = 0;
 
-					graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
+				WriteNode(graph_output, l, input_layer_id, input_layer_output, last_layer_id, 1);
+					/*graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
 						"{Spatial Prior Layer | <o0> Output}" << "\"];\n";
 					graph_output << "node" << input_layer_id << ":o" << input_layer_output
-						<< " -> node" << last_layer_id << ";\n";
+						<< " -> node" << last_layer_id << ";\n";*/
         }
       }
     }
@@ -398,5 +406,24 @@ void ConfigurableFactory::InitOptimalSettings() {
   }
 }
 
+void ConfigurableFactory::WriteNode(std::ostream& graph_output, Layer* layer, int source_id, int source_port, int node_id, int outputs) {
+	graph_output << "node" << node_id << " [shape=record, shape=record, label=\"" <<
+		"{" << layer->GetLayerDescription();
+	if (outputs > 1) {
+		graph_output << " | {";
+		for (int i = 0; i < outputs; i++) {
+			if (i == 0)
+				graph_output << " | ";
+			graph_output << "<o" << i << "> Output " << i;
+		}
+		graph_output << "}";
+	}
+	else if (outputs == 1) {
+		graph_output << " | <o0> Output";
+	} 
+	graph_output << " }\"];\n";
+	graph_output << "node" << source_id << ":o" << source_port
+		<< " -> node" << node_id << ";\n";
+}
 
 }

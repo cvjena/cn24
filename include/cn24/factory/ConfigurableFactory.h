@@ -84,6 +84,7 @@ public:
    */
   Method method() const { return method_; }
 private:
+	void WriteNode(std::ostream& graph_output, Layer* layer, int source_id, int source_port, int node_id, int outputs);
   Method method_;
   
   int receptive_field_x_ = 0;

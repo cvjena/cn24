@@ -104,6 +104,8 @@ public:
    * the GPU's.
    */
   virtual bool IsOpenCLAware() { return false; }
+
+	virtual std::string GetLayerDescription() { return "Layer"; }
 protected:
   /**
    * @brief These CombinedTensors contain the weights and biases.

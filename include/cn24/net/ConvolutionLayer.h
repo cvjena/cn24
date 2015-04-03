@@ -49,6 +49,10 @@ public:
   inline unsigned int Gain() {
     return kernel_width_ * kernel_height_ * input_maps_;
   }
+
+	inline std::string GetLayerDescription() {
+		return "Convolutional Layer";
+	}
   
   bool IsOpenCLAware();
 private:
