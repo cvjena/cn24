@@ -15,6 +15,8 @@
 #ifndef CONV_NONLINEARITYLAYER_H
 #define CONV_NONLINEARITYLAYER_H
 
+#include <string>
+
 #include "CombinedTensor.h"
 #include "SimpleLayer.h"
 
@@ -24,6 +26,7 @@ namespace Conv {
 #define NL_LAYER(name) class name##Layer : public NonLinearityLayer {\
 public: \
 name##Layer() { LOGDEBUG << "Instance created, nl: " << #name; } \
+std::string GetLayerDescription() { return #name " Layer";}\
 void FeedForward(); \
 void BackPropagate(); \
 bool IsOpenCLAware(); \
@@ -32,6 +35,7 @@ bool IsOpenCLAware(); \
 #define NL_LAYER_NOCL(name) class name##Layer : public NonLinearityLayer {\
 public: \
 name##Layer() { LOGDEBUG << "Instance created, nl: " << #name; } \
+std::string GetLayerDescription() { return #name " Layer";}\
 void FeedForward(); \
 void BackPropagate(); \
 bool IsOpenCLAware() { return false; } \

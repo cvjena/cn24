@@ -15,6 +15,9 @@
 #ifndef CONV_MAXPOOLINGLAYER_H
 #define CONV_MAXPOOLINGLAYER_H
 
+#include <string>
+#include <sstream>
+
 #include "Tensor.h"
 #include "SimpleLayer.h"
 
@@ -42,6 +45,12 @@ public:
     return gain / (region_width_ * region_height_);
   }
   
+	inline std::string GetLayerDescription() {
+		std::ostringstream ss;
+		ss << "Max-Pooling Layer (" << region_width_ << "x" << region_height_ << ")";
+		return ss.str();
+	}
+
   bool IsOpenCLAware();
 private:
   // Settings

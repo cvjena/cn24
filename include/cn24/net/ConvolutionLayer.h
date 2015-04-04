@@ -16,6 +16,7 @@
 #define CONV_CONVOLUTIONLAYER_H
 
 #include <random>
+#include <sstream>
 
 #include "Layer.h"
 #include "SimpleLayer.h"
@@ -51,7 +52,9 @@ public:
   }
 
 	inline std::string GetLayerDescription() {
-		return "Convolutional Layer";
+		std::ostringstream ss;
+		ss << "Convolutional Layer (" << output_maps_ << " kernels @ " << kernel_width_ << "x" << kernel_height_ << ")";
+		return ss.str();
 	}
   
   bool IsOpenCLAware();

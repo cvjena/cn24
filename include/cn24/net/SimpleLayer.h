@@ -17,6 +17,7 @@
 #define CONV_SIMPLELAYER_H
 
 #include <vector>
+#include <string>
 
 #include "Layer.h"
 #include "CombinedTensor.h"
@@ -41,6 +42,7 @@ public:
    * @returns True if input and output nodes are correct
    */
   virtual bool Connect(const CombinedTensor* input, CombinedTensor* output) = 0;
+	// virtual std::string GetLayerDescription() { return "SimpleLayer"; }
 protected:
   const Net* net_ = nullptr;
   CombinedTensor* input_ = nullptr;
