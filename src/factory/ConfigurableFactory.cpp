@@ -140,10 +140,6 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
     last_layer_output = 0;
 
 		WriteNode(graph_output, rl, input_layer_id, input_layer_output, last_layer_id, 1);
-		/*graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
-			"{Resize Layer (+" << receptive_field_x_ << "x" << receptive_field_y_ << ") | <o0> Output}" << "\"];\n";
-		graph_output << "node" << input_layer_id << ":o" << input_layer_output
-			<< " -> node" << last_layer_id << ";\n";*/
   }
 
   bool first_layer = true;
@@ -247,10 +243,6 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
         first_layer = false;
 
 				WriteNode(graph_output, cl, input_layer_id, input_layer_output, last_layer_id, 1);
-				/*graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
-					"{Convolutional Layer (" << k << " kernels @ " << kx << "x" << ky << ") | <o0> Output}" << "\"];\n";
-				graph_output << "node" << input_layer_id << ":o" << input_layer_output
-					<< " -> node" << last_layer_id << ";\n";*/
       }
 
       if (StartsWithIdentifier (line, "maxpooling")) {
@@ -274,10 +266,6 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
         last_layer_output = 0;
 
 				WriteNode(graph_output, mp, input_layer_id, input_layer_output, last_layer_id, 1);
-				/*graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
-					"{Max-Pooling Layer (" << kx << "x" << ky << ") | <o0> Output}" << "\"];\n";
-				graph_output << "node" << input_layer_id << ":o" << input_layer_output
-					<< " -> node" << last_layer_id << ";\n";*/
       }
 
       if (StartsWithIdentifier (line, "sigm")) {
@@ -290,10 +278,6 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
         last_layer_output = 0;
 
 				WriteNode(graph_output, l, input_layer_id, input_layer_output, last_layer_id, 1);
-				/*graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
-					"{Sigmoid Layer | <o0> Output}" << "\"];\n";
-				graph_output << "node" << input_layer_id << ":o" << input_layer_output
-					<< " -> node" << last_layer_id << ";\n";*/
       }
 
       if (StartsWithIdentifier (line, "relu")) {
@@ -306,10 +290,6 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
         last_layer_output = 0;
 
 				WriteNode(graph_output, l, input_layer_id, input_layer_output, last_layer_id, 1);
-				/*graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
-					"{Sigmoid Layer | <o0> Output}" << "\"];\n";
-				graph_output << "node" << input_layer_id << ":o" << input_layer_output
-					<< " -> node" << last_layer_id << ";\n";*/
       }
 
       if (StartsWithIdentifier (line, "tanh")) {
@@ -322,10 +302,6 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
         last_layer_output = 0;
 
 				WriteNode(graph_output, l, input_layer_id, input_layer_output, last_layer_id, 1);
-				/*graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
-					"{Tanh Layer | <o0> Output}" << "\"];\n";
-				graph_output << "node" << input_layer_id << ":o" << input_layer_output
-					<< " -> node" << last_layer_id << ";\n";*/
       }
 
       if (StartsWithIdentifier (line, "spatialprior")) {
@@ -339,10 +315,6 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
           last_layer_output = 0;
 
 				WriteNode(graph_output, l, input_layer_id, input_layer_output, last_layer_id, 1);
-					/*graph_output << "node" << last_layer_id << " [shape=record, label=\"" <<
-						"{Spatial Prior Layer | <o0> Output}" << "\"];\n";
-					graph_output << "node" << input_layer_id << ":o" << input_layer_output
-						<< " -> node" << last_layer_id << ";\n";*/
         }
       }
     }
