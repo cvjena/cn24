@@ -85,9 +85,17 @@ int main (int argc, char* argv[]) {
 
   LOGDEBUG << "Output layer id: " << output_layer_id;
 
+	Conv::NetGraphNode* data_node = new Conv::NetGraphNode(data_layer);
+
+	Conv::NetGraph graph;
+	graph.AddNode(data_node);
+	bool completeness = factory->AddLayers(graph, Conv::NetGraphConnection(data_node, 0), CLASSES, true);
+
+	LOGINFO << "Complete: " << completeness;
+
   LOGINFO << "DONE!";
   LOGEND;
 
-	std::cout << "\nGraph output:\ndigraph G {\n" << ss.str() << "\n}\n";
+	//std::cout << "\nGraph output:\ndigraph G {\n" << ss.str() << "\n}\n";
   return 0;
 }

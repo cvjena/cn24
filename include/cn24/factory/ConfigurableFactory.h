@@ -21,6 +21,7 @@
 #include "Net.h"
 #include "Dataset.h"
 #include "Log.h"
+#include "NetGraph.h"
 
 namespace Conv {
 
@@ -49,6 +50,8 @@ public:
 	* @returns The layer id of the output layer
 	*/
   virtual int AddLayers(Net& net, Connection data_layer_connection, const unsigned int output_classes, bool add_loss_layer = false, std::ostream& graph_output = std::cout);
+
+  virtual bool AddLayers(NetGraph& graph, NetGraphConnection data_layer_connection, const unsigned int output_classes, bool add_loss_layer = false);
 
   /**
 	* @returns The horizontal size of the receptive field

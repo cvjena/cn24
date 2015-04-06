@@ -43,6 +43,8 @@ public:
    */
   virtual bool Connect(const CombinedTensor* input, CombinedTensor* output) = 0;
 	// virtual std::string GetLayerDescription() { return "SimpleLayer"; }
+
+	virtual void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers);
 protected:
   const Net* net_ = nullptr;
   CombinedTensor* input_ = nullptr;

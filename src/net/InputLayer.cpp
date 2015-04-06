@@ -4,6 +4,8 @@
  *
  * For licensing information, see the LICENSE file included with this project.
  */
+
+#include "NetGraph.h"
 #include "InputLayer.h"
 
 namespace Conv {
@@ -155,6 +157,21 @@ bool InputLayer::CreateOutputs ( const std::vector< CombinedTensor* >& inputs,
   }
 
   return true;
+}
+
+void InputLayer::CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers) {
+	NetGraphBuffer data_buffer;
+	NetGraphBuffer label_buffer;
+	NetGraphBuffer helper_buffer;
+	NetGraphBuffer weight_buffer;
+	data_buffer.description = "Data Output";
+	label_buffer.description = "Label";
+	helper_buffer.description = "Helper";
+	weight_buffer.description = "Weight";
+	buffers.push_back(data_buffer);
+	buffers.push_back(label_buffer);
+	buffers.push_back(helper_buffer);
+	buffers.push_back(weight_buffer);
 }
 
 }

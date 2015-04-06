@@ -58,6 +58,8 @@ public:
   virtual void FeedForward() { }
   virtual void BackPropagate() { }
   
+	std::string GetLayerDescription() { return "Simple Input Layer"; }
+	void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers);
 private:
   CombinedTensor* data_ = nullptr;
   CombinedTensor* label_ = nullptr;

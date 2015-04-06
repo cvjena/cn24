@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "Log.h"
+#include "NetGraph.h"
 
 #include "SimpleLayer.h"
 
@@ -42,6 +43,12 @@ bool SimpleLayer::Connect (const std::vector< CombinedTensor* >& inputs,
   net_ = net;
   
   return true;
+}
+
+void SimpleLayer::CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers) {
+	NetGraphBuffer buffer;
+	buffer.description = "Output";
+	buffers.push_back(buffer);
 }
 
 

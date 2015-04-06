@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cstring>
 
+#include "NetGraph.h"
 #include "DatasetInputLayer.h"
 
 namespace Conv {
@@ -250,6 +251,21 @@ void DatasetInputLayer::SetTestingMode (bool testing) {
   }
 
   testing_ = testing;
+}
+
+void DatasetInputLayer::CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers) {
+	NetGraphBuffer data_buffer;
+	NetGraphBuffer label_buffer;
+	NetGraphBuffer helper_buffer;
+	NetGraphBuffer weight_buffer;
+	data_buffer.description = "Data Output";
+	label_buffer.description = "Label";
+	helper_buffer.description = "Helper";
+	weight_buffer.description = "Weight";
+	buffers.push_back(data_buffer);
+	buffers.push_back(label_buffer);
+	buffers.push_back(helper_buffer);
+	buffers.push_back(weight_buffer);
 }
 
 bool DatasetInputLayer::IsOpenCLAware() {

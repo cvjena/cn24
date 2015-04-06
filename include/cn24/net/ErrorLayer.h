@@ -41,6 +41,7 @@ public:
   // Implementations for LossFunctionLayer
   datum CalculateLossFunction();
   
+	std::string GetLayerDescription() { return "Square Loss Layer";  }
 private:
   CombinedTensor* first_ = nullptr;
   CombinedTensor* second_ = nullptr;

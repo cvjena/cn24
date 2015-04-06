@@ -68,6 +68,8 @@ public:
     return current_element_;
   }
 
+	std::string GetLayerDescription() { return "Dataset Input Layer"; }
+	void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers);
   bool IsOpenCLAware();
 private:
   Dataset& dataset_;

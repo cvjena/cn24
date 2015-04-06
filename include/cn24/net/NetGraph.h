@@ -24,8 +24,10 @@ namespace Conv {
 
 class NetGraphNode;
 
-class NetGraphConnection {
+struct NetGraphConnection {
 public:
+	NetGraphConnection() {}
+	explicit NetGraphConnection(NetGraphNode* node, unsigned int buffer = 0) : node(node), buffer(buffer) {}
 	NetGraphNode* node = nullptr;
 	unsigned int buffer = 0;
 };
@@ -38,9 +40,20 @@ public:
 
 class NetGraphNode {
 public:
+	explicit NetGraphNode(Layer* layer) : layer(layer) {
+		layer->CreateBufferDescriptors(output_buffers);
+	}
+	NetGraphNode(Layer* layer, NetGraphConnection first_connection) : layer(layer) {
+		input_connections.push_back(first_connection);
+		layer->CreateBufferDescriptors(output_buffers);
+	}
+
 	Layer* layer;
-	std::vector<NetGraphConnection*> input_connections;
-	std::vector<NetGraphBuffer*> output_buffers;
+	std::vector<NetGraphConnection> input_connections;
+	std::vector<NetGraphBuffer> output_buffers;
+
+	bool initialized = false;
+	int graph_status = 0;
 };
 
 class NetGraph {

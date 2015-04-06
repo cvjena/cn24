@@ -16,6 +16,7 @@
 #ifndef CONV_LAYER_H
 #define CONV_LAYER_H
 
+#include <string>
 #include <vector>
 
 #include "Tensor.h"
@@ -26,6 +27,7 @@ namespace Conv {
   class Net;
   class Trainer;
   class GradientTester;
+	class NetGraphBuffer;
 class Layer {
   friend class Trainer;
   friend class GradientTester;
@@ -106,6 +108,7 @@ public:
   virtual bool IsOpenCLAware() { return false; }
 
 	virtual std::string GetLayerDescription() { return "Layer"; }
+	virtual void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers) {}
 protected:
   /**
    * @brief These CombinedTensors contain the weights and biases.
