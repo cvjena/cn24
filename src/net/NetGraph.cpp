@@ -105,4 +105,26 @@ void NetGraph::PrintGraph(std::ostream& graph_output) {
 	graph_output << edge_output.str();
 }
 
+void NetGraph::Initialize() {
+
+}
+
+void NetGraph::InitializeNode(NetGraphNode* node) {
+	if (!node->initialized) {
+		// Collect input tensors through DFS
+		std::vector<CombinedTensor*> input_tensors;
+		for (NetGraphConnection connection : node->input_connections) {
+			InitializeNode(connection.node);
+			input_tensors.push_back(connection.node->output_buffers[connection.buffer].combined_tensor);
+		}
+
+		std::vector<CombinedTensor*> output_tensors;
+		node->layer->CreateOutputs(input_tensors, output_tensors);
+
+		// TODO: Verify output buffer count
+
+		node->layer->Connect(input_tensors, output_tensors);
+
+	}
+}
 }

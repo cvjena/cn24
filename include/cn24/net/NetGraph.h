@@ -61,6 +61,10 @@ class NetGraph {
 public:
 	// Graph manipulation
 	void AddNode(NetGraphNode* node);
+	void Initialize();
+
+	// Network 
+	void FeedForward(std::vector<NetGraphNode*>& outputs);
 
 	// Output
 	void PrintGraph(std::ostream& graph_output);
@@ -68,6 +72,7 @@ public:
 	// Status
 	bool IsComplete() const;
 private:
+	void InitializeNode(NetGraphNode* node);
 	std::vector<NetGraphNode*> nodes_;
 
 	int last_uid = -1;
