@@ -56,7 +56,7 @@ int main (int argc, char* argv[]) {
   dataset_config_fname = dataset_config_fname.substr (net_config_fname.rfind ("/") + 1);
 
   // Parse network configuration file
-  Conv::ConfigurableFactory* factory = new Conv::ConfigurableFactory (net_config_file, 8347734, false);
+  Conv::ConfigurableFactory* factory = new Conv::ConfigurableFactory (net_config_file, 8347734, true);
   factory->InitOptimalSettings();
   
   // Extract important settings from parsed configuration
@@ -67,7 +67,12 @@ int main (int argc, char* argv[]) {
 
   // Load dataset
   Conv::Dataset* dataset = nullptr;
-	dataset = Conv::TensorStreamDataset::CreateFromConfiguration (dataset_config_file, false, Conv::LOAD_BOTH);
+	if (factory->method() == Conv::PATCH) {
+		dataset = Conv::TensorStreamPatchDataset::CreateFromConfiguration(dataset_config_file, false, Conv::LOAD_BOTH, factory->patchsizex(), factory->patchsizey());
+	}
+	else if (factory->method() == Conv::FCN) {
+		dataset = Conv::TensorStreamDataset::CreateFromConfiguration(dataset_config_file, false, Conv::LOAD_BOTH);
+	}
 
   unsigned int CLASSES = dataset->GetClasses();
 
@@ -96,6 +101,9 @@ int main (int argc, char* argv[]) {
   LOGINFO << "DONE!";
   LOGEND;
 
+	std::cout << "\ndigraph G {\n";
+	graph.PrintGraph(std::cout);
+	std::cout << "}\n";
 	//std::cout << "\nGraph output:\ndigraph G {\n" << ss.str() << "\n}\n";
   return 0;
 }
