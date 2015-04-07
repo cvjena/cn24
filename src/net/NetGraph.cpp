@@ -118,12 +118,21 @@ void NetGraph::InitializeNode(NetGraphNode* node) {
 			input_tensors.push_back(connection.node->output_buffers[connection.buffer].combined_tensor);
 		}
 
+		// Ask layer to create output buffers
 		std::vector<CombinedTensor*> output_tensors;
 		node->layer->CreateOutputs(input_tensors, output_tensors);
 
-		// TODO: Verify output buffer count
+		// Verify output buffer count
+		if (output_tensors.size() != node->output_buffers.size())
+			FATAL("Node created wrong number of output buffers!");
 
-		node->layer->Connect(input_tensors, output_tensors);
+		// Update node output buffer info
+		for (unsigned int b = 0; b < output_tensors.size(); b++) {
+			node->output_buffers[b].combined_tensor = output_tensors[b];
+		}
+
+		// Connect layer
+		node->layer->Connect(input_tensors, output_tensors, nullptr);
 
 	}
 }
