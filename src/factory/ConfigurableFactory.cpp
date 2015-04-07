@@ -567,7 +567,7 @@ void ConfigurableFactory::InitOptimalSettings() {
 }
 
 void ConfigurableFactory::WriteNode(std::ostream& graph_output, Layer* layer, int source_id, int source_port, int node_id, int outputs) {
-	graph_output << "node" << node_id << " [shape=record, shape=record, label=\"" <<
+	graph_output << "node" << node_id << " [shape=record, label=\"" <<
 		"{" << layer->GetLayerDescription();
 	if (outputs > 1) {
 		graph_output << " | {";

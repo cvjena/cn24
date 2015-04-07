@@ -54,14 +54,18 @@ public:
 
 	bool initialized = false;
 	int graph_status = 0;
+	int unique_id = -1;
 };
 
 class NetGraph {
 public:
 	void AddNode(NetGraphNode* node);
+	void PrintGraph(std::ostream& graph_output);
 	bool IsComplete();
 private:
 	std::vector<NetGraphNode*> nodes_;
+
+	int last_uid = -1;
 };
 
 }
