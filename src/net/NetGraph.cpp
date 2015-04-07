@@ -21,7 +21,7 @@ void NetGraph::AddNode(NetGraphNode* node) {
 	nodes_.push_back(node);
 }
 
-bool NetGraph::IsComplete() {
+bool NetGraph::IsComplete() const {
 	bool is_complete = true;
 	for (NetGraphNode* node : nodes_) {
 		bool node_okay = true;

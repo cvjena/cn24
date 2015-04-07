@@ -59,9 +59,14 @@ public:
 
 class NetGraph {
 public:
+	// Graph manipulation
 	void AddNode(NetGraphNode* node);
+
+	// Output
 	void PrintGraph(std::ostream& graph_output);
-	bool IsComplete();
+
+	// Status
+	bool IsComplete() const;
 private:
 	std::vector<NetGraphNode*> nodes_;
 
