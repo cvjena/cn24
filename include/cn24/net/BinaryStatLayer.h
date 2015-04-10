@@ -52,7 +52,7 @@ public:
                       std::vector< CombinedTensor* >& outputs);
   bool Connect (const std::vector< CombinedTensor* >& inputs,
                 const std::vector< CombinedTensor* >& outputs,
-                const Net* net );
+                const NetStatus* net );
   void FeedForward();
   void BackPropagate(); 
   

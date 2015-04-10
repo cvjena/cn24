@@ -120,7 +120,11 @@ void NetGraph::InitializeNode(NetGraphNode* node) {
 
 		// Ask layer to create output buffers
 		std::vector<CombinedTensor*> output_tensors;
-		node->layer->CreateOutputs(input_tensors, output_tensors);
+		bool success_outputs = node->layer->CreateOutputs(input_tensors, output_tensors);
+
+		// Verify output buffer creation
+		if (!success_outputs)
+			FATAL("Layer will not create outputs: " << node->layer->GetLayerDescription());
 
 		// Verify output buffer count
 		if (output_tensors.size() != node->output_buffers.size())
@@ -132,8 +136,9 @@ void NetGraph::InitializeNode(NetGraphNode* node) {
 		}
 
 		// Connect layer
-		node->layer->Connect(input_tensors, output_tensors, nullptr);
-
+		bool success_connect = node->layer->Connect(input_tensors, output_tensors, this);
+		if (!success_connect)
+			FATAL("Layer will not connect: " << node->layer->GetLayerDescription());
 	}
 }
 }

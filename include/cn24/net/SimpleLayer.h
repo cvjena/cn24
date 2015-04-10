@@ -21,7 +21,7 @@
 
 #include "Layer.h"
 #include "CombinedTensor.h"
-#include "Net.h"
+#include "NetStatus.h"
 
 namespace Conv {
   
@@ -29,7 +29,7 @@ class SimpleLayer : public Layer {
 public:
   bool Connect(const std::vector<CombinedTensor*>& inputs,
                const std::vector<CombinedTensor*>& outputs,
-               const Net* net );
+               const NetStatus* status );
   
   /**
    * @brief Connect the Layer to the CombinedTensors
@@ -46,7 +46,7 @@ public:
 
 	virtual void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers);
 protected:
-  const Net* net_ = nullptr;
+  const NetStatus* net_ = nullptr;
   CombinedTensor* input_ = nullptr;
   CombinedTensor* output_ = nullptr;
 };

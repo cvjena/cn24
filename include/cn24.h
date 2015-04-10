@@ -45,6 +45,7 @@
 #include "cn24/net/Net.h"
 #include "cn24/net/Trainer.h"
 #include "cn24/net/NetGraph.h"
+#include "cn24/net/NetStatus.h"
 
 #include "cn24/factory/ConfigurableFactory.h"
 

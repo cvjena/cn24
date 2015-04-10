@@ -15,7 +15,7 @@ namespace Conv {
   
 bool SimpleLayer::Connect (const std::vector< CombinedTensor* >& inputs,
                            const std::vector< CombinedTensor* >& outputs,
-                           const Net* net ){
+                           const NetStatus* net ){
   // A simple layer has exactly 1 input and output
   if(inputs.size() != 1) {
     LOGERROR << "Number of inputs not 1";

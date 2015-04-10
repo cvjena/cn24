@@ -17,6 +17,7 @@
 
 #include "Layer.h"
 #include "CombinedTensor.h"
+#include "NetStatus.h"
 
 #include <vector>
 
@@ -57,7 +58,7 @@ public:
 	int unique_id = -1;
 };
 
-class NetGraph {
+class NetGraph : public NetStatus {
 public:
 	// Graph manipulation
 	void AddNode(NetGraphNode* node);

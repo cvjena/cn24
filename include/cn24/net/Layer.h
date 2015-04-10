@@ -24,7 +24,7 @@
 
 namespace Conv {
 
-  class Net;
+  class NetStatus;
   class Trainer;
   class GradientTester;
 	class NetGraphBuffer;
@@ -52,7 +52,7 @@ public:
    */
   virtual bool Connect (const std::vector<CombinedTensor*>& inputs,
                         const std::vector<CombinedTensor*>& outputs,
-                        const Net* net) = 0;
+                        const NetStatus* status) = 0;
                         
   /**
    * @brief Performs a forward pass
