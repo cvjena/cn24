@@ -96,6 +96,8 @@ int main (int argc, char* argv[]) {
 	graph.AddNode(data_node);
 	bool completeness = factory->AddLayers(graph, Conv::NetGraphConnection(data_node, 0), CLASSES, true);
 
+	graph.Initialize();
+
 	LOGINFO << "Complete: " << completeness;
 
   LOGINFO << "DONE!";

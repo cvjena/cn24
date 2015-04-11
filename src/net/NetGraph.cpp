@@ -106,7 +106,9 @@ void NetGraph::PrintGraph(std::ostream& graph_output) {
 }
 
 void NetGraph::Initialize() {
-
+	for (NetGraphNode* node : nodes_){
+		InitializeNode(node);
+	}
 }
 
 void NetGraph::InitializeNode(NetGraphNode* node) {
@@ -139,6 +141,8 @@ void NetGraph::InitializeNode(NetGraphNode* node) {
 		bool success_connect = node->layer->Connect(input_tensors, output_tensors, this);
 		if (!success_connect)
 			FATAL("Layer will not connect: " << node->layer->GetLayerDescription());
+
+		node->initialized = true;
 	}
 }
 }

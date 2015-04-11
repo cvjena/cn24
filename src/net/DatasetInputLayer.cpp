@@ -112,7 +112,7 @@ bool DatasetInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inp
 
 bool DatasetInputLayer::Connect (const std::vector< CombinedTensor* >& inputs,
                                  const std::vector< CombinedTensor* >& outputs,
-                                 const NetStatus* net ) {
+                                 const NetStatus* net) {
   // TODO validate
   CombinedTensor* data_output = outputs[0];
   CombinedTensor* label_output = outputs[1];
