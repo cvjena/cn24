@@ -13,11 +13,21 @@
 namespace Conv {
 
 void NetGraph::AddNode(NetGraphNode* node) {
-	if (node == nullptr) {
-		LOGERROR << "Tried to add null-pointer node!";
-		return;
-	}
-	node->unique_id = ++last_uid;
+	// Validate node
+	if (node == nullptr)
+		FATAL("Tried to add null-pointer node!");
+
+	if (node->layer == nullptr)
+		FATAL("Tried to add layerless node!");
+
+	// We don't check the node's connections at this time because we can't expect
+	// the user to sort the nodes before adding. NetGraph::IsComplete() contains
+	// all necessary checks.
+
+	// Assign the node a new unique ID if it doesn't have one already
+	if (node->unique_id == -1)
+		node->unique_id = ++last_uid;
+
 	nodes_.push_back(node);
 }
 
