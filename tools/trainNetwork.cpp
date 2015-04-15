@@ -137,7 +137,7 @@ int main (int argc, char* argv[]) {
     Conv::ConfusionMatrixLayer* confusion_matrix_layer = new Conv::ConfusionMatrixLayer (class_names, CLASSES);
 		stat_node = new Conv::NetGraphNode(confusion_matrix_layer);
   }
-	stat_node->input_connections.push_back(Conv::NetGraphConnection(graph.GetDefaultOutputNode()));
+	stat_node->input_connections.push_back(Conv::NetGraphConnection(graph.GetDefaultOutputNode(), 0, false));
 	stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node,1));
 	stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node,3));
 	graph.AddNode(stat_node);
@@ -185,7 +185,7 @@ int main (int argc, char* argv[]) {
 				tstat_node = new Conv::NetGraphNode(tconfusion_matrix_layer);
 			}
 			Conv::NetGraphNode* toutput_node = testing_graph->GetDefaultOutputNode();
-			tstat_node->input_connections.push_back(Conv::NetGraphConnection(toutput_node));
+			tstat_node->input_connections.push_back(Conv::NetGraphConnection(toutput_node,0,false));
 			tstat_node->input_connections.push_back(Conv::NetGraphConnection(tinput_node,1));
 			tstat_node->input_connections.push_back(Conv::NetGraphConnection(tinput_node,3));
 			testing_graph->AddNode(tstat_node);
