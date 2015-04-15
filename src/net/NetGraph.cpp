@@ -228,7 +228,7 @@ void NetGraph::FeedForward() {
 
 void NetGraph::FeedForward(std::vector<NetGraphNode*>& nodes, bool clear_flag) {
 	if (clear_flag)
-		for (NetGraphNode* node : nodes_)
+		for (NetGraphNode* node : nodes)
 			node->flag_ff_visited = false;
 
 	for (NetGraphNode* node : nodes)
@@ -253,7 +253,7 @@ void NetGraph::BackPropagate() {
 
 void NetGraph::BackPropagate(std::vector<NetGraphNode*>& nodes, bool clear_flag) {
 	if (clear_flag)
-		for (NetGraphNode* node : nodes_)
+		for (NetGraphNode* node : nodes)
 			node->flag_bp_visited = false;
 
 	for (NetGraphNode* node : nodes)

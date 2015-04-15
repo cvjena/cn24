@@ -174,10 +174,7 @@ void Trainer::Epoch() {
       // Save errors
 			for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
 				LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
-				for (unsigned int i = 0; i < iterations; i++) {
-					graph_.FeedForward();
-					loss_sums[n] += lossfunction_layer->CalculateLossFunction();
-				}
+				loss_sums[n] += lossfunction_layer->CalculateLossFunction();
 			}
 
       // Correct errors
@@ -229,6 +226,13 @@ void Trainer::Epoch() {
 		LOGDEBUG << "Training, " << graph_.GetLossNodes()[n]->layer->GetLayerDescription() <<  " lps: " << loss_sums[n] / (datum)(iterations * sample_count_ * settings_.sbatchsize * first_training_layer_->GetLossSamplingProbability());
 	}
 
+	for (unsigned int n = 0; n < graph_.GetStatNodes().size(); n++) {
+		StatLayer* stat_layer = (StatLayer*)graph_.GetStatNodes()[n];
+    std::stringstream epochname;
+    epochname << "Training  - Epoch " << epoch_ << " -";
+    stat_layer->Print (epochname.str(), true);
+    stat_layer->Reset();
+	}
 
   delete[] loss_sums;
   epoch_++;
