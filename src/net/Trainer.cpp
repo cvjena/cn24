@@ -114,7 +114,7 @@ void Trainer::Test() {
 	}
 
 	for (unsigned int n = 0; n < graph_.GetStatNodes().size(); n++) {
-		StatLayer* stat_layer = (StatLayer*)graph_.GetStatNodes()[n];
+		StatLayer* stat_layer = dynamic_cast<StatLayer*>(graph_.GetStatNodes()[n]->layer);
     std::stringstream epochname;
     epochname << "Testing  - Epoch " << epoch_ << " -";
     stat_layer->Print (epochname.str(), false);
@@ -227,7 +227,7 @@ void Trainer::Epoch() {
 	}
 
 	for (unsigned int n = 0; n < graph_.GetStatNodes().size(); n++) {
-		StatLayer* stat_layer = (StatLayer*)graph_.GetStatNodes()[n];
+		StatLayer* stat_layer = dynamic_cast<StatLayer*>(graph_.GetStatNodes()[n]->layer);
     std::stringstream epochname;
     epochname << "Training  - Epoch " << epoch_ << " -";
     stat_layer->Print (epochname.str(), true);
