@@ -348,7 +348,26 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
     }
   } else if (command.compare (0, 4, "help") == 0) {
     help();
-  } else {
+	} else if (command.compare (0, 5, "graph") == 0) {
+    std::string param_file_name;
+    Conv::ParseStringParamIfPossible (command, "file", param_file_name);
+
+		if (param_file_name.length() == 0) {
+			LOGERROR << "Filename needed!";
+		}
+		else {
+			std::ofstream graph_output(param_file_name, std::ios::out);
+			graph_output << "digraph G {";
+			if (command.find("test") != std::string::npos) {
+				testing_graph.PrintGraph(graph_output);
+			} else {
+				graph.PrintGraph(graph_output);
+			}
+			graph_output << "}";
+			graph_output.close();
+		}
+	} 
+	else {
     LOGWARN << "Unknown command: " << command;
   }
 
@@ -368,6 +387,8 @@ void help() {
       << "    Reinitializes the nets parameters\n\n"
       << "  load file=<path> [last_layer=<l>]\n"
       << "    Load parameters from a file for all layers up to l (default: all layers)\n\n"
+			<< "  graph file=<path> {test|train}\n"
+			<< "    Write the network architecture for training/testing to a file in graphviz format\n\n"
       << "  save file=<path>\n"
       << "    Save parameters to a file\n";
 }
