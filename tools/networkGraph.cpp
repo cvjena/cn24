@@ -91,6 +91,7 @@ int main (int argc, char* argv[]) {
   LOGDEBUG << "Output layer id: " << output_layer_id;
 
 	Conv::NetGraphNode* data_node = new Conv::NetGraphNode(data_layer);
+	data_node->is_input = true;
 
 	Conv::NetGraph graph;
 	graph.AddNode(data_node);

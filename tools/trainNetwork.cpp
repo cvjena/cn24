@@ -23,7 +23,7 @@
 #include <cn24.h>
 #include <private/ConfigParsing.h>
 
-bool parseCommand (Conv::Net& net, Conv::Net& testing_net, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, bool hybrid, std::string& command);
+bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, bool hybrid, std::string& command);
 void help();
 
 int main (int argc, char* argv[]) {
@@ -100,10 +100,9 @@ int main (int argc, char* argv[]) {
   unsigned int CLASSES = dataset->GetClasses();
 
   // Assemble net
-  Conv::Net net;
-  int data_layer_id = 0;
-
+  Conv::NetGraph graph;
   Conv::DatasetInputLayer* data_layer = nullptr;
+	Conv::NetGraphNode* input_node = nullptr;
 
   if (GRADIENT_CHECK) {
     Conv::Tensor* data_tensor = new Conv::Tensor (BATCHSIZE, dataset->GetWidth(), dataset->GetHeight(), dataset->GetInputMaps());
@@ -115,50 +114,44 @@ int main (int argc, char* argv[]) {
       dataset->GetTestingSample (*data_tensor, *label_tensor, *weight_tensor, b, b);
 
     Conv::InputLayer* input_layer = new Conv::InputLayer (*data_tensor, *label_tensor, *helper_tensor, *weight_tensor);
-    data_layer_id = net.AddLayer (input_layer);
+		input_node = new Conv::NetGraphNode(input_layer);
+		input_node->is_input = true;
+		graph.AddNode(input_node);
   } else {
     data_layer = new Conv::DatasetInputLayer (*dataset, BATCHSIZE, patchwise_training ? 1.0 : loss_sampling_p, 983923);
-    data_layer_id = net.AddLayer (data_layer);
+		input_node = new Conv::NetGraphNode(data_layer);
+		input_node->is_input = true;
+		graph.AddNode(input_node);
   }
 
-  int output_layer_id =
-    factory->AddLayers (net, Conv::Connection (data_layer_id), CLASSES);
-
-  LOGDEBUG << "Output layer id: " << output_layer_id;
-
-  net.AddLayer (factory->CreateLossLayer (CLASSES), {
-    Conv::Connection (output_layer_id),
-    Conv::Connection (data_layer_id, 1),
-    Conv::Connection (data_layer_id, 3),
-  });
+	bool completeness = factory->AddLayers(graph, Conv::NetGraphConnection(input_node), CLASSES, true);
+	LOGINFO << "Graph complete: " << completeness;
 
   // Add appropriate statistics layer
+	Conv::NetGraphNode* stat_node = nullptr;
   if (CLASSES == 1) {
     Conv::BinaryStatLayer* binary_stat_layer = new Conv::BinaryStatLayer (13, -1, 1);
-    net.AddLayer (binary_stat_layer, {
-      Conv::Connection (output_layer_id),
-      Conv::Connection (data_layer_id, 1),
-      Conv::Connection (data_layer_id, 3)
-    });
+		stat_node = new Conv::NetGraphNode(binary_stat_layer);
   } else {
     std::vector<std::string> class_names = dataset->GetClassNames();
     Conv::ConfusionMatrixLayer* confusion_matrix_layer = new Conv::ConfusionMatrixLayer (class_names, CLASSES);
-    net.AddLayer (confusion_matrix_layer, {
-      Conv::Connection (output_layer_id),
-      Conv::Connection (data_layer_id, 1),
-      Conv::Connection (data_layer_id, 3)
-    });
+		stat_node = new Conv::NetGraphNode(confusion_matrix_layer);
   }
+	stat_node->input_connections.push_back(Conv::NetGraphConnection(graph.GetDefaultOutputNode()));
+	stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node,1));
+	stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node,3));
+	graph.AddNode(stat_node);
 
   // Initialize net with random weights
-  net.InitializeWeights();
+	graph.Initialize();
+  graph.InitializeWeights();
 
   if (GRADIENT_CHECK) {
-    Conv::GradientTester::TestGradient (net);
+    // Conv::GradientTester::TestGradient (net);
   } else {
-    Conv::Trainer trainer (net, settings);
+    Conv::Trainer trainer (graph, settings);
 
-    Conv::Net* testing_net;
+    Conv::NetGraph* testing_graph;
     Conv::Trainer* testing_trainer;
 
     if (patchwise_training) {
@@ -167,49 +160,43 @@ int main (int argc, char* argv[]) {
       
       // Assemble testing net
       Conv::TensorStreamDataset* testing_dataset = Conv::TensorStreamDataset::CreateFromConfiguration (dataset_config_file, false, Conv::LOAD_TESTING_ONLY);
-      testing_net = new Conv::Net();
+      testing_graph = new Conv::NetGraph();
 
       int tdata_layer_id = 0;
 
       Conv::DatasetInputLayer* tdata_layer = nullptr;
       tdata_layer = new Conv::DatasetInputLayer (*testing_dataset, BATCHSIZE, 1.0, 983923);
-      tdata_layer_id = testing_net->AddLayer (tdata_layer);
+			Conv::NetGraphNode* tinput_node = new Conv::NetGraphNode(tdata_layer);
+			tinput_node->is_input = true;
+			testing_graph->AddNode(tinput_node);
 
       Conv::ConfigurableFactory* tfactory = new Conv::ConfigurableFactory (net_config_file, 8347734);
-      int toutput_layer_id =
-        tfactory->AddLayers (*testing_net, Conv::Connection (tdata_layer_id), CLASSES);
-
-      LOGDEBUG << "Output layer id: " << toutput_layer_id;
-
-      testing_net->AddLayer (tfactory->CreateLossLayer (CLASSES), {
-        Conv::Connection (toutput_layer_id),
-        Conv::Connection (tdata_layer_id, 1),
-        Conv::Connection (tdata_layer_id, 3),
-      });
+			bool testing_completeness = tfactory->AddLayers(*testing_graph, Conv::NetGraphConnection(tinput_node), CLASSES, true);
+			LOGINFO << "Testing graph complete: " << testing_completeness;
 
       // Add appropriate statistics layer
-      if (CLASSES == 1) {
+			Conv::NetGraphNode* tstat_node = nullptr;
+			if (CLASSES == 1) {
         Conv::BinaryStatLayer* tbinary_stat_layer = new Conv::BinaryStatLayer (13, -1, 1);
-        testing_net->AddLayer (tbinary_stat_layer, {
-          Conv::Connection (toutput_layer_id),
-          Conv::Connection (tdata_layer_id, 1),
-          Conv::Connection (tdata_layer_id, 3)
-        });
-      } else {
-        std::vector<std::string> class_names = dataset->GetClassNames();
+				tstat_node = new Conv::NetGraphNode(tbinary_stat_layer);
+			} else {
+				std::vector<std::string> class_names = dataset->GetClassNames();
         Conv::ConfusionMatrixLayer* tconfusion_matrix_layer = new Conv::ConfusionMatrixLayer (class_names, CLASSES);
-        testing_net->AddLayer (tconfusion_matrix_layer, {
-          Conv::Connection (toutput_layer_id),
-          Conv::Connection (tdata_layer_id, 1),
-          Conv::Connection (tdata_layer_id, 3)
-        });
-      }
+				tstat_node = new Conv::NetGraphNode(tconfusion_matrix_layer);
+			}
+			Conv::NetGraphNode* toutput_node = testing_graph->GetDefaultOutputNode();
+			tstat_node->input_connections.push_back(Conv::NetGraphConnection(toutput_node));
+			tstat_node->input_connections.push_back(Conv::NetGraphConnection(tinput_node,1));
+			tstat_node->input_connections.push_back(Conv::NetGraphConnection(tinput_node,3));
+			testing_graph->AddNode(tstat_node);
+
+			testing_graph->Initialize();
 
       // Shadow training net weights
       std::vector<Conv::CombinedTensor*> training_params;
       std::vector<Conv::CombinedTensor*> testing_params;
-      net.GetParameters (training_params);
-      testing_net->GetParameters (testing_params);
+      graph.GetParameters (training_params);
+      testing_graph->GetParameters (testing_params);
 
       for (unsigned int p = 0; p < training_params.size(); p++) {
         Conv::CombinedTensor* training_ct = training_params[p];
@@ -221,9 +208,9 @@ int main (int argc, char* argv[]) {
       Conv::TrainerSettings settings = tfactory->optimal_settings();
       settings.pbatchsize = 1;
       settings.sbatchsize = 1;
-      testing_trainer = new Conv::Trainer (*testing_net, settings);
+      testing_trainer = new Conv::Trainer (*testing_graph, settings);
     } else {
-      testing_net = &net;
+      testing_graph = &graph;
       testing_trainer = &trainer;
     }
 
@@ -240,7 +227,7 @@ int main (int argc, char* argv[]) {
         std::string command;
         std::getline (script_file, command);
 
-        if (!parseCommand (net, *testing_net, trainer, *testing_trainer, patchwise_training, command) || script_file.eof())
+        if (!parseCommand (graph, *testing_graph, trainer, *testing_trainer, patchwise_training, command) || script_file.eof())
           break;
       }
     } else {
@@ -251,7 +238,7 @@ int main (int argc, char* argv[]) {
         std::string command;
         std::getline (std::cin, command);
 
-        if (!parseCommand (net, *testing_net, trainer, *testing_trainer, patchwise_training, command))
+        if (!parseCommand (graph, *testing_graph, trainer, *testing_trainer, patchwise_training, command))
           break;
       }
     }
@@ -263,7 +250,7 @@ int main (int argc, char* argv[]) {
 }
 
 
-bool parseCommand (Conv::Net& net, Conv::Net& testing_net, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, bool hybrid, std::string& command) {
+bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, bool hybrid, std::string& command) {
   if (command.compare ("q") == 0 || command.compare ("quit") == 0) {
     return false;
   } else if (command.compare (0, 5, "train") == 0) {
@@ -273,12 +260,12 @@ bool parseCommand (Conv::Net& net, Conv::Net& testing_net, Conv::Trainer& traine
     testing_trainer.SetEpoch (trainer.epoch());
     LOGINFO << "Training complete.";
   } else if (command.compare (0, 4, "test") == 0) {
-    unsigned int layerview = 0;
+    /*unsigned int layerview = 0;
     Conv::ParseCountIfPossible (command, "view", layerview);
-    testing_net.SetLayerViewEnabled (layerview == 1);
+    testing_net.SetLayerViewEnabled (layerview == 1);*/
     testing_trainer.SetEpoch (trainer.epoch());
     testing_trainer.Test();
-    testing_net.SetLayerViewEnabled (false);
+    /*testing_net.SetLayerViewEnabled (false);*/
     LOGINFO << "Testing complete.";
   } else if (command.compare (0, 4, "load") == 0) {
     std::string param_file_name;
@@ -292,7 +279,7 @@ bool parseCommand (Conv::Net& net, Conv::Net& testing_net, Conv::Trainer& traine
       std::ifstream param_file (param_file_name, std::ios::in | std::ios::binary);
 
       if (param_file.good()) {
-        net.DeserializeParameters (param_file, last_layer);
+        graph.DeserializeParameters (param_file, last_layer);
         LOGINFO << "Loaded parameters from " << param_file_name;
 
         if (hybrid) {
@@ -300,8 +287,8 @@ bool parseCommand (Conv::Net& net, Conv::Net& testing_net, Conv::Trainer& traine
           // Shadow training net weights
           std::vector<Conv::CombinedTensor*> training_params;
           std::vector<Conv::CombinedTensor*> testing_params;
-          net.GetParameters (training_params);
-          testing_net.GetParameters (testing_params);
+          graph.GetParameters (training_params);
+          testing_graph.GetParameters (testing_params);
 
           for (unsigned int p = 0; p < training_params.size(); p++) {
             Conv::CombinedTensor* training_ct = training_params[p];
@@ -326,7 +313,7 @@ bool parseCommand (Conv::Net& net, Conv::Net& testing_net, Conv::Trainer& traine
       std::ofstream param_file (param_file_name, std::ios::out | std::ios::binary);
 
       if (param_file.good()) {
-        net.SerializeParameters (param_file);
+        graph.SerializeParameters (param_file);
         LOGINFO << "Written parameters to " << param_file_name;
       } else {
         LOGERROR << "Cannot open " << param_file_name;
@@ -342,15 +329,15 @@ bool parseCommand (Conv::Net& net, Conv::Net& testing_net, Conv::Trainer& traine
     testing_trainer.SetEpoch (trainer.epoch());
   } else if (command.compare (0, 5, "reset") == 0) {
     LOGINFO << "Resetting parameters";
-    net.InitializeWeights();
+    graph.InitializeWeights();
 
     if (hybrid) {
       LOGDEBUG << "Reshadowing tensors...";
       // Shadow training net weights
       std::vector<Conv::CombinedTensor*> training_params;
       std::vector<Conv::CombinedTensor*> testing_params;
-      net.GetParameters (training_params);
-      testing_net.GetParameters (testing_params);
+      graph.GetParameters (training_params);
+      testing_graph.GetParameters (testing_params);
 
       for (unsigned int p = 0; p < training_params.size(); p++) {
         Conv::CombinedTensor* training_ct = training_params[p];

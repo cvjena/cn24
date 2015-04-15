@@ -19,10 +19,11 @@
 #include <vector>
 
 #include "Layer.h"
+#include "StatLayer.h"	
 
 namespace Conv {
 
-class ConfusionMatrixLayer: public Layer {
+class ConfusionMatrixLayer: public Layer, public StatLayer {
 public:
   /**
 	* @brief Creates a ConfusionMatrixLayer
@@ -64,6 +65,7 @@ public:
     disabled_ = disabled;
   }
 
+	std::string GetLayerDescription() { return "Confusion Matrix Layer"; }
   ~ConfusionMatrixLayer();
 private:
   unsigned int classes_;

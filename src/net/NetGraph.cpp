@@ -7,6 +7,9 @@
 
 #include <sstream>
 #include "Log.h"
+#include "LossFunctionLayer.h"
+#include "TrainingLayer.h"
+#include "StatLayer.h"
 
 #include "NetGraph.h"
 
@@ -28,11 +31,27 @@ void NetGraph::AddNode(NetGraphNode* node) {
 	if (node->unique_id == -1)
 		node->unique_id = ++last_uid;
 
+	// Add node to list
 	nodes_.push_back(node);
+
+	// Add node to registries
+	if (node->is_input)
+		input_nodes_.push_back(node);
+	if (node->is_output)
+		output_nodes_.push_back(node);
+
+	if (dynamic_cast<StatLayer*>(node->layer) != NULL)
+		stat_nodes_.push_back(node);
+	if (dynamic_cast<LossFunctionLayer*>(node->layer) != NULL)
+		loss_nodes_.push_back(node);
+	if (dynamic_cast<TrainingLayer*>(node->layer) != NULL)
+		training_nodes_.push_back(node);
 }
 
 bool NetGraph::IsComplete() const {
+	unsigned int inputs = 0, outputs = 0;
 	bool is_complete = true;
+
 	for (NetGraphNode* node : nodes_) {
 		bool node_okay = true;
 		if (node != nullptr) {
@@ -61,8 +80,16 @@ bool NetGraph::IsComplete() const {
 			}
 			if (node->unique_id == -1) {
 				LOGWARN << "Node has no unique identifier!";
-				is_complete = false;
+				node_okay = false;
 			}
+			if (node->is_input && node->is_output) {
+				LOGWARN << "Node is both input and output!";
+				node_okay = false;
+			}
+			if (node->is_input)
+				inputs++;
+			if (node->is_output)
+				outputs++;
 		}
 		else {
 			LOGWARN << "Null-pointer node encountered!";
@@ -78,18 +105,43 @@ bool NetGraph::IsComplete() const {
 		}
 	}
 
+	if (inputs == 0) {
+		LOGWARN << "Net has no inputs!";
+		is_complete = false;
+	}
+
+	if (outputs == 0) {
+		LOGWARN << "Net has no outputs!";
+		is_complete = false;
+	}
+
 	LOGINFO << "Graph check complete.";
 	return is_complete;
 }
 
 void NetGraph::PrintGraph(std::ostream& graph_output) {
+	if (nodes_.size() == 0)
+		return;
+
 	std::ostringstream node_output;
 	std::ostringstream edge_output;
 
+	node_output << "graph [ranksep=.75, esep=1];";
+
 	for (NetGraphNode* node : nodes_) {
+
 		// 1. Print node details
-		node_output << "node" << node->unique_id << " [shape=record, label=\""
-			<< "{" << node->layer->GetLayerDescription();
+		node_output << "node" << node->unique_id << " [shape=record,";
+
+		if (node->is_input) {
+			node_output << "color=red,";
+		}
+		if (node->is_output) {
+			node_output << "color=blue,";
+		}
+			
+		node_output << " label=\""
+			<< "{ <i>" << node->layer->GetLayerDescription();
 		if (node->output_buffers.size() > 1) {
 			node_output << "| {";
 			for (unsigned int i = 0; i < node->output_buffers.size(); i++) {
@@ -107,7 +159,14 @@ void NetGraph::PrintGraph(std::ostream& graph_output) {
 		// 2. Print edges
 		for (NetGraphConnection connection : node->input_connections) {
 			edge_output << "node" << connection.node->unique_id << ":o" << connection.buffer << " -> node"
-				<< node->unique_id << ";\n";
+				<< node->unique_id << ":i" << 
+				"[penwidth=2];\n";
+		}
+
+		for (NetGraphBackpropConnection backprop_connection : node->backprop_connections) {
+			edge_output << "node" << backprop_connection.node->unique_id << ":i -> node"
+				<< node->unique_id << ":o" << backprop_connection.buffer <<
+				"[penwidth=5,style=dotted,arrowsize=.6];\n";
 		}
 	}
 
@@ -127,6 +186,12 @@ void NetGraph::InitializeNode(NetGraphNode* node) {
 		std::vector<CombinedTensor*> input_tensors;
 		for (NetGraphConnection connection : node->input_connections) {
 			InitializeNode(connection.node);
+
+			// Add backprop connection where appropiate
+			if (connection.backprop && !connection.node->is_input) {
+				NetGraphBackpropConnection backprop_connection(node, connection.buffer);
+				connection.node->backprop_connections.push_back(backprop_connection);
+			}
 			input_tensors.push_back(connection.node->output_buffers[connection.buffer].combined_tensor);
 		}
 
@@ -152,7 +217,131 @@ void NetGraph::InitializeNode(NetGraphNode* node) {
 		if (!success_connect)
 			FATAL("Layer will not connect: " << node->layer->GetLayerDescription());
 
+		// Save to flag
 		node->initialized = true;
 	}
 }
+
+void NetGraph::FeedForward() {
+	FeedForward(nodes_, true);
+}
+
+void NetGraph::FeedForward(std::vector<NetGraphNode*>& nodes, bool clear_flag) {
+	if (clear_flag)
+		for (NetGraphNode* node : nodes_)
+			node->flag_ff_visited = false;
+
+	for (NetGraphNode* node : nodes)
+		FeedForward(node);
+}
+
+void NetGraph::FeedForward(NetGraphNode* node) {
+	if (!node->flag_ff_visited) {
+		// Make sure all input nodes have valid outputs
+		for (NetGraphConnection connection : node->input_connections)
+			FeedForward(connection.node);
+
+		// Call the Layer::FeedForward method and set the visited flag
+		node->layer->FeedForward();
+		node->flag_ff_visited = true;
+	}
+}
+
+void NetGraph::BackPropagate() {
+	BackPropagate(nodes_, true);
+}
+
+void NetGraph::BackPropagate(std::vector<NetGraphNode*>& nodes, bool clear_flag) {
+	if (clear_flag)
+		for (NetGraphNode* node : nodes_)
+			node->flag_bp_visited = false;
+
+	for (NetGraphNode* node : nodes)
+		BackPropagate(node);
+}
+
+void NetGraph::BackPropagate(NetGraphNode* node) {
+	if (!node->flag_bp_visited) {
+		// Make sure all source nodes have valid gradients
+		for (NetGraphBackpropConnection backprop_connection : node->backprop_connections)
+			BackPropagate(backprop_connection.node);
+
+		// Call the Layer::FeedForward method and set the visited flag
+		node->layer->BackPropagate();
+		node->flag_bp_visited = true;
+	}
+}
+
+void NetGraph::GetParameters (std::vector< CombinedTensor* >& parameters) {
+	for (NetGraphNode* node : nodes_) {
+		Layer* layer = node->layer;
+    for (unsigned int p = 0; p < layer->parameters().size(); p++) {
+      parameters.push_back (layer->parameters() [p]);
+    }
+  }
+}
+
+void NetGraph::SerializeParameters(std::ostream& output) {
+	// TODO use unique layer ids
+	for (unsigned int l = 0; l < nodes_.size(); l++) {
+		Layer* layer = nodes_[l]->layer;
+		for (unsigned int p = 0; p < layer->parameters().size(); p++) {
+			layer->parameters()[p]->data.Serialize(output);
+		}
+	}
+}
+
+void NetGraph::DeserializeParameters(std::istream& input, unsigned int last_layer) {
+	// TODO use unique layer ids
+  if (last_layer == 0 || last_layer >= nodes_.size())
+    last_layer = nodes_.size() - 1;
+  for (unsigned int l = 0; l <= last_layer; l++) {
+    Layer* layer = nodes_[l]->layer;
+    for (unsigned int p = 0; p < layer->parameters().size(); p++) {
+      if (!input.good() || input.eof())
+        break;
+      layer->parameters() [p]->data.Deserialize (input);
+      LOGINFO << "Loaded parameters for layer " << l << " parameter set " << p << ": " << layer->parameters()[p]->data;
+      input.peek();
+    }
+  }
+}
+
+void NetGraph::InitializeWeights() {
+	for (NetGraphNode* node : nodes_)
+		node->flag_bp_visited = false;
+
+	for (NetGraphNode* node : nodes_)
+		InitializeWeights(node);
+
+	for (NetGraphNode* node : nodes_)
+		node->flag_bp_visited = false;
+}
+
+void NetGraph::InitializeWeights(NetGraphNode* node) {
+	if (!node->flag_bp_visited) {
+		for (NetGraphBackpropConnection backprop_connection : node->backprop_connections) {
+			InitializeWeights(backprop_connection.node);
+			node->layer->OnLayerConnect(backprop_connection.node->layer);
+		}
+
+		node->flag_bp_visited = true;
+	}
+}
+
+void NetGraph::PrepareNode(NetGraphNode* node) {
+#ifdef BUILD_OPENCL
+	if (!node->layer->IsOpenCLAware()) {
+		for (NetGraphConnection connection : node->input_connections) {
+			connection.node->output_buffers[connection.buffer].combined_tensor->data.MoveToCPU();
+			connection.node->output_buffers[connection.buffer].combined_tensor->delta.MoveToCPU();
+		}
+		for (NetGraphBuffer& buffer : node->output_buffers) {
+			buffer.combined_tensor->data.MoveToCPU();
+			buffer.combined_tensor->delta.MoveToCPU();
+		}
+	}
+#endif
+}
+
 }

@@ -135,8 +135,7 @@ int Net::AddLayer (Layer* layer, const std::vector< Connection >& connections) {
     StatLayer* stat_layer = dynamic_cast<StatLayer*> (layer);
     stat_layers_.push_back (stat_layer);
 
-    LOGDEBUG << "Layer " << layer_id << " added as stat layer: " <<
-             stat_layer->stat_name();
+		LOGDEBUG << "Layer " << layer_id << " added as stat layer. ";
   }
 
   // Return the layer number

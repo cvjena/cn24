@@ -18,7 +18,8 @@
 #include <cmath>
 
 #include "CombinedTensor.h"
-#include "Net.h"
+#include "TrainingLayer.h"
+#include "NetGraph.h"
 
 namespace Conv {
 
@@ -45,7 +46,7 @@ public:
 	* @param net The Net to train
 	* @param settings The settings to use in training
 	*/
-  Trainer (Net& net, TrainerSettings settings);
+  Trainer (NetGraph& graph, TrainerSettings settings);
 
   /**
 	* @brief Train the net for the specified number of epochs
@@ -57,7 +58,7 @@ public:
   /**
 	* @brief Test the net by running every test sample through the net
 	*/
-  datum Test();
+  void Test();
 
   /**
 	* @brief Train the net for exactly one epoch
@@ -84,13 +85,14 @@ public:
 private:
   void ApplyGradients (datum lr);
   // References for easy access
-  Net& net_;
+  NetGraph& graph_;
   std::vector<CombinedTensor*> parameters_;
   std::vector<Tensor*> last_deltas_;
   std::vector<Tensor*> accumulated_gradients_;
-  TrainingLayer* training_layer_;
-  LossFunctionLayer* lossfunction_layer_;
   
+	// Saved pointers
+	TrainingLayer* first_training_layer_ = nullptr;
+
   // Sample count
   unsigned int sample_count_ = 0;
 

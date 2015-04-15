@@ -414,12 +414,14 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
       }
     }
     
+		bool is_output = false;
     if (line.compare ("?output") == 0) {
       if (output_classes == 1) {
         line = "?tanh";
       } else {
         line = "?sigm";
       }
+			is_output = true;
     }
     
     /*
@@ -482,6 +484,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
       if (StartsWithIdentifier (line, "sigm")) {
         SigmoidLayer* l = new SigmoidLayer();
 				NetGraphNode* node = new NetGraphNode(l, last_connection);
+				node->is_output = is_output && method_ == PATCH;
 				net.AddNode(node);
 				last_connection.buffer = 0;
 				last_connection.node = node;
@@ -490,6 +493,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
       if (StartsWithIdentifier (line, "relu")) {
         ReLULayer* l = new ReLULayer();
 				NetGraphNode* node = new NetGraphNode(l, last_connection);
+				node->is_output = is_output && method_ == PATCH;
 				net.AddNode(node);
 				last_connection.buffer = 0;
 				last_connection.node = node;
@@ -498,10 +502,24 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
       if (StartsWithIdentifier (line, "tanh")) {
         TanhLayer* l = new TanhLayer();
 				NetGraphNode* node = new NetGraphNode(l, last_connection);
+				node->is_output = is_output && method_ == PATCH;
 				net.AddNode(node);
 				last_connection.buffer = 0;
 				last_connection.node = node;
       }
+
+			if (is_output) {
+				if (method_ == FCN && (factorx != 1 || factory != 1)) {
+					UpscaleLayer* l = new UpscaleLayer(factorx, factory);
+					NetGraphNode* node = new NetGraphNode(l, last_connection);
+					node->is_output = true;
+					net.AddNode(node);
+					last_connection.buffer = 0;
+					last_connection.node = node;
+					
+					LOGDEBUG << "Added upscaling layer for FCN";
+				}
+			}
 
       if (StartsWithIdentifier (line, "spatialprior")) {
         if (method_ == FCN) {
@@ -515,15 +533,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
     }
   }
 
-  if (method_ == FCN && (factorx != 1 || factory != 1)) {
-		UpscaleLayer* l = new UpscaleLayer(factorx, factory);
-		NetGraphNode* node = new NetGraphNode(l, last_connection);
-		net.AddNode(node);
-		last_connection.buffer = 0;
-		last_connection.node = node;
-		
-    LOGDEBUG << "Added upscaling layer for FCN";
-  }
+
 
 	// Add loss layer
 	if (add_loss_layer) {
