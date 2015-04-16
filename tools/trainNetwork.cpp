@@ -128,7 +128,7 @@ int main (int argc, char* argv[]) {
 	LOGINFO << "Graph complete: " << completeness;
   
   if(!completeness)
-    FATAL("Graph completeness test failed!");
+    FATAL("Graph completeness test failed after factory run!");
 
   // Add appropriate statistics layer
 	Conv::NetGraphNode* stat_node = nullptr;
@@ -144,6 +144,12 @@ int main (int argc, char* argv[]) {
 	stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node,1));
 	stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node,3));
 	graph.AddNode(stat_node);
+  
+  completeness = graph.IsComplete();
+  LOGINFO << "Graph complete: " << completeness;
+  
+  if(!completeness)
+    FATAL("Graph completeness test failed after adding stat layer!");
 
   // Initialize net with random weights
 	graph.Initialize();
