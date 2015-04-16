@@ -192,6 +192,9 @@ void NetGraph::InitializeNode(NetGraphNode* node) {
 				NetGraphBackpropConnection backprop_connection(node, connection.buffer);
 				connection.node->backprop_connections.push_back(backprop_connection);
 			}
+			else if (connection.backprop && connection.node->is_input) {
+				connection.backprop = false;
+			}
 			input_tensors.push_back(connection.node->output_buffers[connection.buffer].combined_tensor);
 		}
 
@@ -267,7 +270,12 @@ void NetGraph::BackPropagate(NetGraphNode* node) {
 		for (NetGraphBackpropConnection backprop_connection : node->backprop_connections)
 			BackPropagate(backprop_connection.node);
 
+		bool do_backprop = false;
+		for (NetGraphConnection connection : node->input_connections)
+			do_backprop |= connection.backprop;
+
 		PrepareNode(node);
+		node->layer->SetBackpropagationEnabled(do_backprop);
 		// Call the Layer::FeedForward method and set the visited flag
 		node->layer->BackPropagate();
 		node->flag_bp_visited = true;
