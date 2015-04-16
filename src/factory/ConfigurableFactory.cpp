@@ -174,7 +174,7 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
       }
     }
     
-    if (line.compare ("?output") == 0) {
+    if (line.compare (0, 7, "?output") == 0) {
       if (output_classes == 1) {
         line = "?tanh";
       } else {
@@ -185,22 +185,22 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
     /*
      * STACK OPERATIONS
      */
-    if (line.compare("pusha") == 0) {
+    if (line.compare(0, 5, "pusha") == 0) {
       stack_a[++stack_a_pos].net = last_layer_id;
       stack_a[stack_a_pos].output = last_layer_output;
     }
 
-    if (line.compare("pushb") == 0) {
+    if (line.compare(0, 5, "pushb") == 0) {
       stack_b[++stack_b_pos].net = last_layer_id;
       stack_b[stack_b_pos].output = last_layer_output;
     }
     
-    if (line.compare("popa") == 0) {
+    if (line.compare(0, 4, "popa") == 0) {
       last_layer_id = stack_a[stack_a_pos].net;
       last_layer_output = stack_a[stack_a_pos--].output;
     }
     
-    if (line.compare("popb") == 0) {
+    if (line.compare(0, 4, "popb") == 0) {
       last_layer_id = stack_b[stack_b_pos].net;
       last_layer_output = stack_b[stack_b_pos--].output;
     }
@@ -427,19 +427,19 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
     /*
      * STACK OPERATIONS
      */
-    if (line.compare("pusha") == 0) {
+    if (line.compare(0, 5, "pusha") == 0) {
       stack_a[++stack_a_pos] = last_connection;
     }
 
-    if (line.compare("pushb") == 0) {
+    if (line.compare(0, 5, "pushb") == 0) {
       stack_b[++stack_b_pos] = last_connection;
     }
     
-    if (line.compare("popa") == 0) {
+    if (line.compare(0, 4, "popa") == 0) {
       last_connection = stack_a[stack_a_pos];
     }
     
-    if (line.compare("popb") == 0) {
+    if (line.compare(0, 4, "popb") == 0) {
       last_connection = stack_b[stack_b_pos];
     }
     
