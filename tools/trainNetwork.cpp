@@ -126,6 +126,9 @@ int main (int argc, char* argv[]) {
 
 	bool completeness = factory->AddLayers(graph, Conv::NetGraphConnection(input_node), CLASSES, true);
 	LOGINFO << "Graph complete: " << completeness;
+  
+  if(!completeness)
+    FATAL("Graph completeness test failed!");
 
   // Add appropriate statistics layer
 	Conv::NetGraphNode* stat_node = nullptr;

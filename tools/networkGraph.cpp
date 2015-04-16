@@ -101,6 +101,9 @@ int main (int argc, char* argv[]) {
 
 	LOGINFO << "Complete: " << completeness;
 
+  if(!completeness)
+    FATAL("Graph completeness test failed!");
+
   LOGINFO << "DONE!";
   LOGEND;
 
