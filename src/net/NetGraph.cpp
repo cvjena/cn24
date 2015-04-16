@@ -241,6 +241,7 @@ void NetGraph::FeedForward(NetGraphNode* node) {
 		for (NetGraphConnection connection : node->input_connections)
 			FeedForward(connection.node);
 
+		PrepareNode(node);
 		// Call the Layer::FeedForward method and set the visited flag
 		node->layer->FeedForward();
 		node->flag_ff_visited = true;
@@ -266,6 +267,7 @@ void NetGraph::BackPropagate(NetGraphNode* node) {
 		for (NetGraphBackpropConnection backprop_connection : node->backprop_connections)
 			BackPropagate(backprop_connection.node);
 
+		PrepareNode(node);
 		// Call the Layer::FeedForward method and set the visited flag
 		node->layer->BackPropagate();
 		node->flag_bp_visited = true;
