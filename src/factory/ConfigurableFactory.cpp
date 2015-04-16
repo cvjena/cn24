@@ -415,7 +415,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
     }
     
 		bool is_output = false;
-    if (line.compare ("?output") == 0) {
+    if (line.compare (0, 7, "?output") == 0) {
       if (output_classes == 1) {
         line = "?tanh";
       } else {
