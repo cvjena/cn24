@@ -6,6 +6,8 @@
  */
 
 #include <sstream>
+#include <algorithm>
+
 #include "Log.h"
 #include "LossFunctionLayer.h"
 #include "TrainingLayer.h"
