@@ -14,6 +14,7 @@
 #include "NonLinearityLayer.h"
 #include "UpscaleLayer.h"
 #include "SpatialPriorLayer.h"
+#include "ConcatenationLayer.h"
 #include "ConfigParsing.h"
 #include "NetGraph.h"
 
@@ -375,6 +376,8 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
   int stack_a_pos = -1;
   int stack_b_pos = -1;
 
+	bool already_upscaled = (factorx == 1) && (factory == 1);
+
   if (method_ == FCN) {
 		ResizeLayer* rl = new ResizeLayer(receptive_field_x_, receptive_field_y_);
 		NetGraphNode* node = new NetGraphNode(rl, last_connection);
@@ -484,7 +487,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
       if (StartsWithIdentifier (line, "sigm")) {
         SigmoidLayer* l = new SigmoidLayer();
 				NetGraphNode* node = new NetGraphNode(l, last_connection);
-				node->is_output = is_output && method_ == PATCH;
+				node->is_output = is_output && (method_ == PATCH || already_upscaled);
 				net.AddNode(node);
 				last_connection.buffer = 0;
 				last_connection.node = node;
@@ -493,7 +496,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
       if (StartsWithIdentifier (line, "relu")) {
         ReLULayer* l = new ReLULayer();
 				NetGraphNode* node = new NetGraphNode(l, last_connection);
-				node->is_output = is_output && method_ == PATCH;
+				node->is_output = is_output && (method_ == PATCH || already_upscaled);
 				net.AddNode(node);
 				last_connection.buffer = 0;
 				last_connection.node = node;
@@ -502,34 +505,41 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
       if (StartsWithIdentifier (line, "tanh")) {
         TanhLayer* l = new TanhLayer();
 				NetGraphNode* node = new NetGraphNode(l, last_connection);
-				node->is_output = is_output && method_ == PATCH;
+				node->is_output = is_output && (method_ == PATCH || already_upscaled);
 				net.AddNode(node);
 				last_connection.buffer = 0;
 				last_connection.node = node;
       }
 
-			if (is_output) {
-				if (method_ == FCN && (factorx != 1 || factory != 1)) {
+      if (StartsWithIdentifier (line, "spatialprior")) {
+				if (!already_upscaled && method_ == FCN) {
 					UpscaleLayer* l = new UpscaleLayer(factorx, factory);
 					NetGraphNode* node = new NetGraphNode(l, last_connection);
-					node->is_output = true;
 					net.AddNode(node);
 					last_connection.buffer = 0;
 					last_connection.node = node;
 					
-					LOGDEBUG << "Added upscaling layer for FCN";
+					LOGDEBUG << "Added upscaling layer for FCN (spatial prior)";
+					already_upscaled = true;
 				}
-			}
-
-      if (StartsWithIdentifier (line, "spatialprior")) {
-        if (method_ == FCN) {
-          SpatialPriorLayer* l = new SpatialPriorLayer();
-					NetGraphNode* node = new NetGraphNode(l, last_connection);
-					net.AddNode(node);
-					last_connection.buffer = 0;
-					last_connection.node = node;
-        }
+				ConcatenationLayer* l = new ConcatenationLayer();
+				NetGraphNode* node = new NetGraphNode(l, last_connection);
+				node->input_connections.push_back(NetGraphConnection(data_layer_connection.node, 2, false));
+				net.AddNode(node);
+				last_connection.buffer = 0;
+				last_connection.node = node;
       }
+
+			if (is_output && !already_upscaled && method_ == FCN && (factorx != 1 || factory != 1)) {
+				UpscaleLayer* l = new UpscaleLayer(factorx, factory);
+				NetGraphNode* node = new NetGraphNode(l, last_connection);
+				node->is_output = true;
+				net.AddNode(node);
+				last_connection.buffer = 0;
+				last_connection.node = node;
+				
+				LOGDEBUG << "Added upscaling layer for FCN";
+			}
     }
   }
 

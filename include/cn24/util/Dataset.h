@@ -106,7 +106,7 @@ public:
     * @returns True on success
     */
   virtual bool GetTrainingSample ( Tensor& data_tensor, Tensor& label_tensor,
-				   Tensor& weight_tensor, 
+				   Tensor& helper_tensor, Tensor& weight_tensor, 
 				   unsigned int sample, unsigned int index) = 0;
 
   /**
@@ -119,7 +119,7 @@ public:
     * @returns True on success
     */
   virtual bool GetTestingSample ( Tensor& data_tensor, Tensor& label_tensor,
-				  Tensor& weight_tensor, 
+				  Tensor& helper_tensor, Tensor& weight_tensor, 
 				   unsigned int sample, unsigned int index) = 0;
 				   
   /**
@@ -167,8 +167,8 @@ class TensorStreamPatchDataset : public Dataset {
   virtual unsigned int GetTrainingSamples() const;
   virtual unsigned int GetTestingSamples() const;
   virtual bool SupportsTesting() const;
-  virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
-  virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& weight_tensor,  unsigned int sample, unsigned int index);
+  virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
+  virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index);
   
   static TensorStreamPatchDataset* CreateFromConfiguration(std::istream& file, bool dont_load, DatasetLoadSelection selection, unsigned int patchsize_x, unsigned int patchsize_y);
   
@@ -222,8 +222,8 @@ public:
   virtual unsigned int GetTrainingSamples() const;
   virtual unsigned int GetTestingSamples() const;
   virtual bool SupportsTesting() const;
-  virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
-  virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& weight_tensor,  unsigned int sample, unsigned int index);
+  virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
+  virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index);
   
   static TensorStreamDataset* CreateFromConfiguration(std::istream& file, bool dont_load = false, DatasetLoadSelection selection = LOAD_BOTH);
   

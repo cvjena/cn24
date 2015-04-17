@@ -175,9 +175,9 @@ void DatasetInputLayer::FeedForward() {
     bool success;
 
     if (testing_)
-      success = dataset_.GetTestingSample (data_output_->data, label_output_->data, localized_error_output_->data, sample, selected_element);
+      success = dataset_.GetTestingSample (data_output_->data, label_output_->data, helper_output_->data, localized_error_output_->data, sample, selected_element);
     else
-      success = dataset_.GetTrainingSample (data_output_->data, label_output_->data, localized_error_output_->data, sample, selected_element);
+      success = dataset_.GetTrainingSample (data_output_->data, label_output_->data, helper_output_->data, localized_error_output_->data, sample, selected_element);
 
     if (!success) {
       FATAL ("Cannot load samples from Dataset!");

@@ -111,7 +111,7 @@ int main (int argc, char* argv[]) {
     Conv::Tensor* helper_tensor = new Conv::Tensor (BATCHSIZE, dataset->GetWidth(), dataset->GetHeight(), 2);
 
     for (unsigned int b = 0; b < BATCHSIZE; b++)
-      dataset->GetTestingSample (*data_tensor, *label_tensor, *weight_tensor, b, b);
+      dataset->GetTestingSample (*data_tensor, *label_tensor, *helper_tensor, *weight_tensor, b, b);
 
     Conv::InputLayer* input_layer = new Conv::InputLayer (*data_tensor, *label_tensor, *helper_tensor, *weight_tensor);
 		input_node = new Conv::NetGraphNode(input_layer);

@@ -182,7 +182,7 @@ bool TensorStreamPatchDataset::SupportsTesting() const {
   return tensor_count_testing_ > 0;
 }
 
-bool TensorStreamPatchDataset::GetTrainingSample (Tensor& data_tensor, Tensor& label_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
+bool TensorStreamPatchDataset::GetTrainingSample (Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
   if (index < sample_count_training_) {
     bool success = true;
 
@@ -220,6 +220,17 @@ bool TensorStreamPatchDataset::GetTrainingSample (Tensor& data_tensor, Tensor& l
         *labels_[t].data_ptr_const (col + (patchsize_x_ / 2), row + (patchsize_y_ / 2), map, 0);
     }
 
+		// Copy helper tensor
+		if (data_[t].width() > 1)
+			*helper_tensor.data_ptr(0, 0, 0, sample) = ((datum)col) / ((datum)data_[t].width() - 1);
+		else
+			*helper_tensor.data_ptr(0, 0, 0, sample) = 0;
+
+		if (data_[t].height() > 1)
+			*helper_tensor.data_ptr(0, 0, 1, sample) = ((datum)row) / ((datum)data_[t].height() - 1);
+		else
+			*helper_tensor.data_ptr(0, 0, 1, sample) = 0;
+
     // Copy error
     *weight_tensor.data_ptr (0, 0, 0, sample) =
       error_function_ (col + (patchsize_x_ / 2), row + (patchsize_y_ / 2),
@@ -229,7 +240,7 @@ bool TensorStreamPatchDataset::GetTrainingSample (Tensor& data_tensor, Tensor& l
   } else return false;
 }
 
-bool TensorStreamPatchDataset::GetTestingSample (Tensor& data_tensor, Tensor& label_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
+bool TensorStreamPatchDataset::GetTestingSample (Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
   LOGERROR << "Patch testing is NIY, please use FCN for testing.";
   return false;
 }
