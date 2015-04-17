@@ -545,22 +545,24 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 
 
 
-	// Add loss layer
+	// Add loss layers
 	if (add_loss_layer) {
-		// Collect inputs
-		NetGraphConnection label_connection = data_layer_connection;
-		label_connection.buffer = 1;
+		for (NetGraphNode* output_node : net.GetOutputNodes()) {
+			// Collect inputs
+			NetGraphConnection label_connection = data_layer_connection;
+			label_connection.buffer = 1;
 
-		NetGraphConnection weight_connection = data_layer_connection;
-		weight_connection.buffer = 3;
+			NetGraphConnection weight_connection = data_layer_connection;
+			weight_connection.buffer = 3;
 
-		Layer* loss_layer = CreateLossLayer(output_classes);
-		NetGraphNode* node = new NetGraphNode(loss_layer);
-		node->input_connections.push_back(last_connection);
-		node->input_connections.push_back(label_connection);
-		node->input_connections.push_back(weight_connection);
+			Layer* loss_layer = CreateLossLayer(output_classes);
+			NetGraphNode* node = new NetGraphNode(loss_layer);
+			node->input_connections.push_back(NetGraphConnection(output_node));
+			node->input_connections.push_back(label_connection);
+			node->input_connections.push_back(weight_connection);
 
-		net.AddNode(node);
+			net.AddNode(node);
+		}
 	}
 
 	return net.IsComplete();

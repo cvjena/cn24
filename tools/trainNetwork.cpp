@@ -23,6 +23,7 @@
 #include <cn24.h>
 #include <private/ConfigParsing.h>
 
+void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Dataset* dataset);
 bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, bool hybrid, std::string& command);
 void help();
 
@@ -130,23 +131,7 @@ int main (int argc, char* argv[]) {
   if(!completeness)
     FATAL("Graph completeness test failed after factory run!");
 
-  // Add appropriate statistics layer
-	Conv::NetGraphNode* stat_node = nullptr;
-  if (CLASSES == 1) {
-    Conv::BinaryStatLayer* binary_stat_layer = new Conv::BinaryStatLayer (13, -1, 1);
-		stat_node = new Conv::NetGraphNode(binary_stat_layer);
-  } else {
-    std::vector<std::string> class_names = dataset->GetClassNames();
-    Conv::ConfusionMatrixLayer* confusion_matrix_layer = new Conv::ConfusionMatrixLayer (class_names, CLASSES);
-		stat_node = new Conv::NetGraphNode(confusion_matrix_layer);
-  }
-	stat_node->input_connections.push_back(Conv::NetGraphConnection(graph.GetDefaultOutputNode(), 0, false));
-	stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node,1));
-	stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node,3));
-	graph.AddNode(stat_node);
-  
-  completeness = graph.IsComplete();
-  LOGINFO << "Graph complete: " << completeness;
+	addStatLayers(graph, input_node, dataset);
   
   if(!completeness)
     FATAL("Graph completeness test failed after adding stat layer!");
@@ -183,21 +168,13 @@ int main (int argc, char* argv[]) {
 			bool testing_completeness = tfactory->AddLayers(*testing_graph, Conv::NetGraphConnection(tinput_node), CLASSES, true);
 			LOGINFO << "Testing graph complete: " << testing_completeness;
 
-      // Add appropriate statistics layer
-			Conv::NetGraphNode* tstat_node = nullptr;
-			if (CLASSES == 1) {
-        Conv::BinaryStatLayer* tbinary_stat_layer = new Conv::BinaryStatLayer (13, -1, 1);
-				tstat_node = new Conv::NetGraphNode(tbinary_stat_layer);
-			} else {
-				std::vector<std::string> class_names = dataset->GetClassNames();
-        Conv::ConfusionMatrixLayer* tconfusion_matrix_layer = new Conv::ConfusionMatrixLayer (class_names, CLASSES);
-				tstat_node = new Conv::NetGraphNode(tconfusion_matrix_layer);
-			}
-			Conv::NetGraphNode* toutput_node = testing_graph->GetDefaultOutputNode();
-			tstat_node->input_connections.push_back(Conv::NetGraphConnection(toutput_node,0,false));
-			tstat_node->input_connections.push_back(Conv::NetGraphConnection(tinput_node,1));
-			tstat_node->input_connections.push_back(Conv::NetGraphConnection(tinput_node,3));
-			testing_graph->AddNode(tstat_node);
+			if(!completeness)
+				FATAL("Graph completeness test failed after factory run!");
+
+			addStatLayers(*testing_graph, tinput_node, testing_dataset);
+			
+			if(!completeness)
+				FATAL("Graph completeness test failed after adding stat layer!");
 
 			testing_graph->Initialize();
 
@@ -256,6 +233,25 @@ int main (int argc, char* argv[]) {
   LOGINFO << "DONE!";
   LOGEND;
   return 0;
+}
+
+void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Dataset* dataset) {
+	for (Conv::NetGraphNode* output_node : graph.GetOutputNodes()) {
+		// Add appropriate statistics layer
+		Conv::NetGraphNode* stat_node = nullptr;
+		if (dataset->GetClasses() == 1) {
+			Conv::BinaryStatLayer* binary_stat_layer = new Conv::BinaryStatLayer (13, -1, 1);
+			stat_node = new Conv::NetGraphNode(binary_stat_layer);
+		} else {
+			std::vector<std::string> class_names = dataset->GetClassNames();
+			Conv::ConfusionMatrixLayer* confusion_matrix_layer = new Conv::ConfusionMatrixLayer (class_names, dataset->GetClasses());
+			stat_node = new Conv::NetGraphNode(confusion_matrix_layer);
+		}
+		stat_node->input_connections.push_back(Conv::NetGraphConnection(output_node, 0, false));
+		stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node,1));
+		stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node,3));
+		graph.AddNode(stat_node);
+	}
 }
 
 
