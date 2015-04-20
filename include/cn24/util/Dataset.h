@@ -100,6 +100,7 @@ public:
     * @brief Fill the specified Tensors with the specified training sample.
     * @param data_tensor An empty Tensor
     * @param label_tensor An empty Tensor
+    * @param helper_tensor An empty tensor
     * @param weight_tensor An empty Tensor
     * @param sample The sample in the target Tensors
     * @param index The index of the training sample to load
@@ -113,6 +114,7 @@ public:
     * @brief Fill the specified Tensors with the specified testing sample.
     * @param data_tensor An empty Tensor
     * @param label_tensor An empty Tensor
+    * @param helper_tensor An empty Tensor
     * @param weight_tensor An empty Tensor
     * @param sample The sample in the target Tensors
     * @param index The index of the testing sample to load
