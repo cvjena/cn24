@@ -49,6 +49,17 @@ void NetGraph::AddNode(NetGraphNode* node) {
 		loss_nodes_.push_back(node);
 	if (dynamic_cast<TrainingLayer*>(node->layer) != NULL)
 		training_nodes_.push_back(node);
+  
+  // Add backprop connection where appropiate
+  for(NetGraphConnection connection : node->input_connections) {
+    if (connection.backprop && !connection.node->is_input) {
+      NetGraphBackpropConnection backprop_connection(node, connection.buffer);
+      connection.node->backprop_connections.push_back(backprop_connection);
+    }
+    else if (connection.backprop && connection.node->is_input) {
+      connection.backprop = false;
+    }
+  }
 }
 
 bool NetGraph::IsComplete() const {
@@ -178,18 +189,47 @@ void NetGraph::PrintGraph(std::ostream& graph_output) {
 }
 
 void NetGraph::Initialize() {
-	for (NetGraphNode* node : nodes_){
-		InitializeNode(node);
-	}
-	
 	// check for nodes with multiple backprop connections
   bool no_multiple_connections = true;
-  for (NetGraphNode* node : nodes_) {
-    if(node->backprop_connections.size() > 1 && dynamic_cast<GradientAccumulationLayer*>(node->layer) == NULL) {
-      no_multiple_connections = false;
-      LOGWARN << "Node has multiple backprop connections: " << node->layer->GetLayerDescription();
+  do {
+    no_multiple_connections = true;
+    for (NetGraphNode* node : nodes_) {
+      if(node->backprop_connections.size() > 1 && dynamic_cast<GradientAccumulationLayer*>(node->layer) == NULL) {
+        no_multiple_connections = false;
+        LOGINFO << "Node has multiple backprop connections: " << node->layer->GetLayerDescription();
+        
+        // Insert gradient accumulation layer
+        GradientAccumulationLayer* ga = new GradientAccumulationLayer(node->backprop_connections.size());
+        NetGraphNode* ga_node = new NetGraphNode(ga, NetGraphConnection(node));
+        AddNode(ga_node);
+        
+        // Redirect input connections using backprop connections
+        int b = 0;
+        for(NetGraphBackpropConnection& backprop_connection : node->backprop_connections) {
+          if(backprop_connection.node != ga_node) {
+            for(NetGraphConnection& target_connection : backprop_connection.node->input_connections) {
+              if(target_connection.node == node && target_connection.buffer == backprop_connection.buffer && target_connection.backprop) {
+                target_connection.node = ga_node;
+                backprop_connection.buffer = b;
+                target_connection.buffer = b++;
+              }
+            }
+            ga_node->backprop_connections.push_back(backprop_connection);
+          }
+        }
+        
+        // Remove backprop connections from node
+        auto predicate = 
+          [&](NetGraphBackpropConnection backprop_connection){ return backprop_connection.node != ga_node; };
+        node->backprop_connections.erase(std::remove_if(node->backprop_connections.begin(), node->backprop_connections.end(),
+        predicate), node->backprop_connections.end());
+      }
     }
-  }
+  } while(!no_multiple_connections);
+  
+  for (NetGraphNode* node : nodes_){
+		InitializeNode(node);
+	}
 }
 
 void NetGraph::InitializeNode(NetGraphNode* node) {
@@ -199,14 +239,7 @@ void NetGraph::InitializeNode(NetGraphNode* node) {
 		for (NetGraphConnection connection : node->input_connections) {
 			InitializeNode(connection.node);
 
-			// Add backprop connection where appropiate
-			if (connection.backprop && !connection.node->is_input) {
-				NetGraphBackpropConnection backprop_connection(node, connection.buffer);
-				connection.node->backprop_connections.push_back(backprop_connection);
-			}
-			else if (connection.backprop && connection.node->is_input) {
-				connection.backprop = false;
-			}
+
 			input_tensors.push_back(connection.node->output_buffers[connection.buffer].combined_tensor);
 		}
 
