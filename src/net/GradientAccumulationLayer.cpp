@@ -24,11 +24,6 @@ bool GradientAccumulationLayer::CreateOutputs (const std::vector< CombinedTensor
     return false;
   }
   
-  if(outputs.size() != output_count_) {
-    LOGERROR << "Wrong number of output nodes!";
-    return false;
-  }
-  
   CombinedTensor* input = inputs[0];
   for(unsigned int i = 0; i < output_count_; i++) {
     CombinedTensor* output = new CombinedTensor(input->data.samples(),

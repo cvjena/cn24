@@ -10,6 +10,7 @@
 #define CONV_GRADIENTACCUMULATIONLAYER_H
 
 #include <string>
+#include <sstream>
 
 #include "Layer.h"
 #include "NetGraph.h"
@@ -34,7 +35,9 @@ public:
   void CreateBufferDescriptors(std::vector< NetGraphBuffer >& buffers) {
     for(unsigned int i = 0; i < output_count_; i++) {
       NetGraphBuffer buffer;
-      buffer.description = "Output " + i;
+      std::ostringstream ss;
+      ss << "Output " << i;
+      buffer.description = ss.str();
       buffers.push_back(buffer);
     }
   };
