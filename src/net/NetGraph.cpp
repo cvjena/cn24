@@ -11,6 +11,7 @@
 #include "Log.h"
 #include "LossFunctionLayer.h"
 #include "TrainingLayer.h"
+#include "GradientAccumulationLayer.h"
 #include "StatLayer.h"
 
 #include "NetGraph.h"
@@ -180,6 +181,15 @@ void NetGraph::Initialize() {
 	for (NetGraphNode* node : nodes_){
 		InitializeNode(node);
 	}
+	
+	// check for nodes with multiple backprop connections
+  bool no_multiple_connections = true;
+  for (NetGraphNode* node : nodes_) {
+    if(node->backprop_connections.size() > 1 && dynamic_cast<GradientAccumulationLayer*>(node->layer) == NULL) {
+      no_multiple_connections = false;
+      LOGWARN << "Node has multiple backprop connections: " << node->layer->GetLayerDescription();
+    }
+  }
 }
 
 void NetGraph::InitializeNode(NetGraphNode* node) {

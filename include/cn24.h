@@ -43,6 +43,7 @@
 #include "cn24/net/ConfusionMatrixLayer.h"
 #include "cn24/net/SpatialPriorLayer.h"
 #include "cn24/net/ConcatenationLayer.h"
+#include "cn24/net/GradientAccumulationLayer.h"
 #include "cn24/net/Net.h"
 #include "cn24/net/Trainer.h"
 #include "cn24/net/NetGraph.h"
