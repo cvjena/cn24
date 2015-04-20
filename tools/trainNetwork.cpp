@@ -76,7 +76,6 @@ int main (int argc, char* argv[]) {
   // Parse network configuration file
   Conv::ConfigurableFactory* factory = new Conv::ConfigurableFactory (net_config_file, 8347734, true);
   factory->InitOptimalSettings();
-  LOGDEBUG << "Optimal settings: " << factory->optimal_settings();
   
   // Extract important settings from parsed configuration
   const bool patchwise_training = (factory->method() == Conv::PATCH);
@@ -200,6 +199,7 @@ int main (int argc, char* argv[]) {
       testing_trainer = &trainer;
     }
 
+    LOGINFO << "Current training settings: " << factory->optimal_settings();
 
     if (FROM_SCRIPT) {
       LOGINFO << "Executing script: " << script_fname;

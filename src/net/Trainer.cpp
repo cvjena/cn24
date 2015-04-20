@@ -52,9 +52,6 @@ namespace Conv {
 		// Outputs the number of weights
 		LOGDEBUG << "Weights: " << w;
 
-		// ..and an overview of the training settings
-		LOGINFO << "Training settings: " << settings_;
-
 		first_training_layer_ = dynamic_cast<TrainingLayer*>(graph_.GetTrainingNodes()[0]->layer);
 		sample_count_ = first_training_layer_->GetLabelWidth() * first_training_layer_->GetLabelHeight()
     * first_training_layer_->GetBatchSize();
