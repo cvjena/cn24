@@ -87,10 +87,10 @@ void Trainer::Test() {
 
   auto t_begin = std::chrono::system_clock::now();
 
-	for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
-		LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
-		for (unsigned int i = 0; i < iterations; i++) {
-			graph_.FeedForward();
+  for (unsigned int i = 0; i < iterations; i++) {
+    graph_.FeedForward();
+    for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
+      LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
 			loss_sums[n] += lossfunction_layer->CalculateLossFunction();
 		}
 	}
