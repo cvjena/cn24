@@ -471,6 +471,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 				net.AddNode(node);
 				last_connection.buffer = 0;
 				last_connection.node = node;
+				last_connection.backprop = true;
       }
 
       if (StartsWithIdentifier (line, "maxpooling")) {
@@ -483,6 +484,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 				net.AddNode(node);
 				last_connection.buffer = 0;
 				last_connection.node = node;
+				last_connection.backprop = true;
       }
 
       if (StartsWithIdentifier (line, "sigm")) {
@@ -492,6 +494,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 				net.AddNode(node);
 				last_connection.buffer = 0;
 				last_connection.node = node;
+				last_connection.backprop = true;
       }
 
       if (StartsWithIdentifier (line, "relu")) {
@@ -501,6 +504,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 				net.AddNode(node);
 				last_connection.buffer = 0;
 				last_connection.node = node;
+				last_connection.backprop = true;
       }
 
       if (StartsWithIdentifier (line, "tanh")) {
@@ -510,6 +514,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 				net.AddNode(node);
 				last_connection.buffer = 0;
 				last_connection.node = node;
+				last_connection.backprop = true;
       }
 
       if (StartsWithIdentifier (line, "spatialprior")) {
@@ -519,6 +524,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 					net.AddNode(node);
 					last_connection.buffer = 0;
 					last_connection.node = node;
+					last_connection.backprop = true;
 					
 					LOGDEBUG << "Added upscaling layer for FCN (spatial prior)";
 					already_upscaled = true;
@@ -529,6 +535,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 				net.AddNode(node);
 				last_connection.buffer = 0;
 				last_connection.node = node;
+				last_connection.backprop = true;
       }
 
 			if (StartsWithIdentifier(line, "concat")){
@@ -552,6 +559,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 				net.AddNode(node);
 				last_connection.buffer = 0;
 				last_connection.node = node;
+				last_connection.backprop = true;
 			}
 
 			if (is_output && !already_upscaled && method_ == FCN && (factorx != 1 || factory != 1)) {
@@ -561,12 +569,12 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 				net.AddNode(node);
 				last_connection.buffer = 0;
 				last_connection.node = node;
+				last_connection.backprop = true;
 				
 				LOGDEBUG << "Added upscaling layer for FCN";
 			}
     }
 
-		last_connection.backprop = true;
   }
 
 
