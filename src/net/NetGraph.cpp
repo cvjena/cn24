@@ -51,7 +51,7 @@ void NetGraph::AddNode(NetGraphNode* node) {
 		training_nodes_.push_back(node);
   
   // Add backprop connection where appropiate
-  for(NetGraphConnection connection : node->input_connections) {
+  for(NetGraphConnection& connection : node->input_connections) {
     if (connection.backprop && !connection.node->is_input) {
       NetGraphBackpropConnection backprop_connection(node, connection.buffer);
       connection.node->backprop_connections.push_back(backprop_connection);
@@ -173,15 +173,18 @@ void NetGraph::PrintGraph(std::ostream& graph_output) {
 		// 2. Print edges
 		for (NetGraphConnection connection : node->input_connections) {
 			edge_output << "node" << connection.node->unique_id << ":o" << connection.buffer << " -> node"
-				<< node->unique_id << ":i" << 
-				"[penwidth=2];\n";
+				<< node->unique_id << ":i" <<
+				"[penwidth=2";
+			if (!connection.backprop)
+				edge_output << ",style=dotted";
+			edge_output << "];\n";
 		}
 
-		for (NetGraphBackpropConnection backprop_connection : node->backprop_connections) {
+		/*for (NetGraphBackpropConnection backprop_connection : node->backprop_connections) {
 			edge_output << "node" << backprop_connection.node->unique_id << ":i -> node"
 				<< node->unique_id << ":o" << backprop_connection.buffer <<
 				"[penwidth=5,style=dotted,arrowsize=.6];\n";
-		}
+		}*/
 	}
 
 	graph_output << node_output.str();
