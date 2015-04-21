@@ -99,8 +99,8 @@ ConfigurableFactory::ConfigurableFactory (std::istream& file, const unsigned int
   patch_field_y_ = receptive_field_y_ + factory;
 }
 
-Layer* ConfigurableFactory::CreateLossLayer (const unsigned int output_classes) {
-  return new ErrorLayer();
+Layer* ConfigurableFactory::CreateLossLayer (const unsigned int output_classes, const datum loss_weight) {
+  return new ErrorLayer(loss_weight);
 }
 
 int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, const unsigned int output_classes, bool add_loss_layer, std::ostream& graph_output) {
@@ -393,6 +393,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
   while (! file_.eof()) {
     std::string line;
     std::getline (file_, line);
+		datum loss_weight = 1.0;
 
     /*
      * PREPROCESSING
@@ -420,6 +421,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
     
 		bool is_output = false;
     if (line.compare (0, 7, "?output") == 0) {
+			ParseDatumParamIfPossible(line, "weight", loss_weight);
       if (output_classes == 1) {
         line = "?tanh";
       } else {
@@ -573,6 +575,25 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 				
 				LOGDEBUG << "Added upscaling layer for FCN";
 			}
+
+			if (is_output && add_loss_layer) {
+				NetGraphNode* output_node = last_connection.node;
+
+				// Collect inputs
+				NetGraphConnection label_connection = data_layer_connection;
+				label_connection.buffer = 1;
+
+				NetGraphConnection weight_connection = data_layer_connection;
+				weight_connection.buffer = 3;
+
+				Layer* loss_layer = CreateLossLayer(output_classes, loss_weight);
+				NetGraphNode* node = new NetGraphNode(loss_layer);
+				node->input_connections.push_back(NetGraphConnection(output_node));
+				node->input_connections.push_back(label_connection);
+				node->input_connections.push_back(weight_connection);
+
+				net.AddNode(node);
+			}
     }
 
   }
@@ -582,20 +603,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 	// Add loss layers
 	if (add_loss_layer) {
 		for (NetGraphNode* output_node : net.GetOutputNodes()) {
-			// Collect inputs
-			NetGraphConnection label_connection = data_layer_connection;
-			label_connection.buffer = 1;
 
-			NetGraphConnection weight_connection = data_layer_connection;
-			weight_connection.buffer = 3;
-
-			Layer* loss_layer = CreateLossLayer(output_classes);
-			NetGraphNode* node = new NetGraphNode(loss_layer);
-			node->input_connections.push_back(NetGraphConnection(output_node));
-			node->input_connections.push_back(label_connection);
-			node->input_connections.push_back(weight_connection);
-
-			net.AddNode(node);
 		}
 	}
 

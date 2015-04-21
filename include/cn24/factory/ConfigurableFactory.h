@@ -67,9 +67,10 @@ public:
 	* @brief Create a loss layer for this configuration
 	*
 	* @param output_classes Number of output neurons
+	* @param loss_weight The weight of the loss function
 	* @returns Pointer to the layer instance of the created loss layer
 	*/
-  virtual Layer* CreateLossLayer(const unsigned int output_classes);
+  virtual Layer* CreateLossLayer(const unsigned int output_classes, const datum loss_weight = 1.0);
 
   /**
 	* @brief Read the optimal training settings from the configuration file
