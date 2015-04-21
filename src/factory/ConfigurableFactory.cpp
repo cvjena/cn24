@@ -598,15 +598,6 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 
   }
 
-
-
-	// Add loss layers
-	if (add_loss_layer) {
-		for (NetGraphNode* output_node : net.GetOutputNodes()) {
-
-		}
-	}
-
 	return net.IsComplete();
 }
 
