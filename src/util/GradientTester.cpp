@@ -12,13 +12,18 @@
 namespace Conv {
   
 void GradientTester::TestGradient ( NetGraph& graph ) {
-  const double epsilon = 0.001;
+  const double epsilon = 0.005;
   LOGDEBUG << "Testing gradient. FeedForward...";
 	graph.FeedForward();
   LOGDEBUG << "Testing gradient. BackPropagate...";
   graph.BackPropagate();
   
 	const datum initial_loss = graph.AggregateLoss();
+	unsigned int global_okay = 0;
+	unsigned int global_tolerable = 0;
+	unsigned int global_failed = 0;
+	unsigned int global_weights = 0;
+
   LOGDEBUG << "Initial loss: " << initial_loss;
   LOGDEBUG << "Using epsilon: " << epsilon;
   for(unsigned int l = 0; l < graph.GetNodes().size(); l++) {
@@ -30,6 +35,8 @@ void GradientTester::TestGradient ( NetGraph& graph ) {
       LOGDEBUG << param->data;
       bool passed = true;
       unsigned int okay = 0;
+      unsigned int tolerable = 0;
+      unsigned int failed = 0;
       for(unsigned int e = 0; e < param->data.elements(); e++)
       {
 #ifdef BUILD_OPENCL
@@ -54,17 +61,19 @@ graph.FeedForward();
 	
 	const double ratio = actual_delta / delta;
 	if(ratio > 1.02 || ratio < 0.98) {
-	  if(ratio > 1.1 || ratio < 0.9) {
+	  if(ratio > 1.2 || ratio < 0.8) {
 	    if(passed)
 	      LOGWARN << "delta analytic: " << delta << ", numeric: " << actual_delta << ", ratio: " << ratio;
 	    passed = false;
-	    std::cout << "!" << std::flush;
+	    // std::cout << "!" << std::flush;
+			failed++;
 	  } else {
-	  std::cout << "#" << std::flush;
+	  // std::cout << "#" << std::flush;
+		tolerable++;
 	  }
 	}
 	else {
-	  std::cout << "." << std::flush;
+	  // std::cout << "." << std::flush;
 	  okay++;
 	}
 #ifdef BUILD_OPENCL
@@ -72,15 +81,26 @@ graph.FeedForward();
 #endif
 	param->data[e] = old_param;
       }
-      std::cout << "\n";
+      // std::cout << "\n";
       if(passed) {
 	LOGINFO << "Okay!";
       } else {
 	LOGERROR << "Failed!";
       }
-      LOGINFO << okay << " of " << param->data.elements() << " gradients okay";
+			LOGINFO << okay << " of " << param->data.elements() << " gradients okay (delta < 2%)";
+			LOGINFO << tolerable << " of " << param->data.elements() << " gradients tolerable (delta < 20%)";
+			LOGINFO << failed << " of " << param->data.elements() << " gradients failed (delta >= 10%)";
+			global_okay += okay;
+			global_tolerable += tolerable;
+			global_failed += failed;
+			global_weights += param->data.elements();
     }
   }
+
+	LOGINFO << global_okay << " of " << global_weights << " gradients okay (delta < 2%)";
+	LOGINFO << global_tolerable << " of " << global_weights << " gradients tolerable (delta < 20%)";
+	LOGINFO << global_failed << " of " << global_weights << " gradients failed (delta >= 10%)";
+
 }
 
   
