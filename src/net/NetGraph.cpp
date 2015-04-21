@@ -155,7 +155,7 @@ void NetGraph::PrintGraph(std::ostream& graph_output) {
 		}
 			
 		node_output << " label=\""
-			<< "{ <i>" << node->layer->GetLayerDescription();
+			<< "{ <i> " << node->unique_id << ": " << node->layer->GetLayerDescription();
 		if (node->output_buffers.size() > 1) {
 			node_output << "| {";
 			for (unsigned int i = 0; i < node->output_buffers.size(); i++) {
