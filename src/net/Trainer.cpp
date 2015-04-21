@@ -68,6 +68,7 @@ void Trainer::Train (unsigned int epochs) {
 }
 
 void Trainer::Test() {
+	datum aggregate_loss = 0.0;
 	datum* loss_sums = new datum[graph_.GetLossNodes().size()];
 	for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++)
 		loss_sums[n] = 0;
@@ -92,6 +93,7 @@ void Trainer::Test() {
     for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
       LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
 			loss_sums[n] += lossfunction_layer->CalculateLossFunction();
+			aggregate_loss += loss_sums[n];
 		}
 	}
 
@@ -109,6 +111,7 @@ void Trainer::Test() {
 		LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
 		LOGDEBUG << "Testing, " << graph_.GetLossNodes()[n]->layer->GetLayerDescription() <<  " lps: " << loss_sums[n] / (datum)(iterations * sample_count_);
 	}
+	LOGDEBUG << "Testing, aggregate lps: " << aggregate_loss / (datum)(iterations * sample_count_);
 
 	for (unsigned int n = 0; n < graph_.GetStatNodes().size(); n++) {
 		StatLayer* stat_layer = dynamic_cast<StatLayer*>(graph_.GetStatNodes()[n]->layer);
@@ -127,6 +130,7 @@ void Trainer::Test() {
 }
 
 void Trainer::Epoch() {
+	datum aggregate_loss = 0.0;
 	datum* loss_sums = new datum[graph_.GetLossNodes().size()];
 	for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++)
 		loss_sums[n] = 0;
@@ -172,6 +176,7 @@ void Trainer::Epoch() {
 			for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
 				LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
 				loss_sums[n] += lossfunction_layer->CalculateLossFunction();
+				aggregate_loss += loss_sums[n];
 			}
 
       // Correct errors
@@ -222,6 +227,7 @@ void Trainer::Epoch() {
 		LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
 		LOGDEBUG << "Training, " << graph_.GetLossNodes()[n]->layer->GetLayerDescription() <<  " lps: " << loss_sums[n] / (datum)(iterations * sample_count_ * settings_.sbatchsize * first_training_layer_->GetLossSamplingProbability());
 	}
+	LOGDEBUG << "Training, aggregate lps: " << aggregate_loss / (datum)(iterations * sample_count_ * settings_.sbatchsize * first_training_layer_->GetLossSamplingProbability());
 
 	for (unsigned int n = 0; n < graph_.GetStatNodes().size(); n++) {
 		StatLayer* stat_layer = dynamic_cast<StatLayer*>(graph_.GetStatNodes()[n]->layer);
