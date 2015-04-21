@@ -193,7 +193,8 @@ void NetGraph::Initialize() {
   bool no_multiple_connections = true;
   do {
     no_multiple_connections = true;
-    for (NetGraphNode* node : nodes_) {
+		std::vector<NetGraphNode*> nodes(nodes_);
+    for (NetGraphNode* node : nodes) {
       if(node->backprop_connections.size() > 1 && dynamic_cast<GradientAccumulationLayer*>(node->layer) == NULL) {
         no_multiple_connections = false;
         LOGINFO << "Node has multiple backprop connections: " << node->layer->GetLayerDescription();
@@ -397,6 +398,19 @@ void NetGraph::PrepareNode(NetGraphNode* node) {
 		}
 	}
 #endif
+}
+
+datum NetGraph::AggregateLoss() {
+	datum loss = 0;
+	for (NetGraphNode* loss_node : GetLossNodes()) {
+		LossFunctionLayer* loss_layer = dynamic_cast<LossFunctionLayer*>(loss_node->layer);
+		if (loss_layer != NULL) {
+			loss += loss_layer->CalculateLossFunction();
+		} else {
+			FATAL("Null pointer in loss node encountered!");
+		}
+	}
+	return loss;
 }
 
 }

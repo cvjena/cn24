@@ -91,7 +91,7 @@ int main (int argc, char* argv[]) {
   Conv::Dataset* dataset = nullptr;
 
   if (patchwise_training) {
-    dataset = Conv::TensorStreamPatchDataset::CreateFromConfiguration (dataset_config_file, false, patchwise_training ? Conv::LOAD_TRAINING_ONLY : Conv::LOAD_BOTH,
+    dataset = Conv::TensorStreamPatchDataset::CreateFromConfiguration (dataset_config_file, false, (patchwise_training && !GRADIENT_CHECK) ? Conv::LOAD_TRAINING_ONLY : Conv::LOAD_BOTH,
               factory->patchsizex(), factory->patchsizey());
   } else {
     dataset = Conv::TensorStreamDataset::CreateFromConfiguration (dataset_config_file, false, Conv::LOAD_BOTH);
@@ -105,14 +105,29 @@ int main (int argc, char* argv[]) {
 	Conv::NetGraphNode* input_node = nullptr;
 
   if (GRADIENT_CHECK) {
-    Conv::Tensor* data_tensor = new Conv::Tensor (BATCHSIZE, dataset->GetWidth(), dataset->GetHeight(), dataset->GetInputMaps());
-    Conv::Tensor* weight_tensor = new Conv::Tensor (BATCHSIZE, dataset->GetWidth(), dataset->GetHeight(), 1);
-    Conv::Tensor* label_tensor = new Conv::Tensor (BATCHSIZE, dataset->GetWidth(), dataset->GetHeight(), dataset->GetLabelMaps());
-    Conv::Tensor* helper_tensor = new Conv::Tensor (BATCHSIZE, dataset->GetWidth(), dataset->GetHeight(), 2);
+		Conv::Tensor* data_tensor;
+    Conv::Tensor* weight_tensor;
+    Conv::Tensor* label_tensor;
+    Conv::Tensor* helper_tensor;
+		if (patchwise_training) {
+			data_tensor = new Conv::Tensor(BATCHSIZE, dataset->GetWidth(), dataset->GetHeight(), dataset->GetInputMaps());
+			weight_tensor = new Conv::Tensor(BATCHSIZE, 1, 1, 1);
+			label_tensor = new Conv::Tensor(BATCHSIZE, 1, 1, dataset->GetLabelMaps());
+			helper_tensor = new Conv::Tensor(BATCHSIZE, 1, 1, 2);
+		} else {
+			data_tensor = new Conv::Tensor(BATCHSIZE, dataset->GetWidth(), dataset->GetHeight(), dataset->GetInputMaps());
+			weight_tensor = new Conv::Tensor(BATCHSIZE, dataset->GetWidth(), dataset->GetHeight(), 1);
+			label_tensor = new Conv::Tensor(BATCHSIZE, dataset->GetWidth(), dataset->GetHeight(), dataset->GetLabelMaps());
+			helper_tensor = new Conv::Tensor(BATCHSIZE, dataset->GetWidth(), dataset->GetHeight(), 2);
+		}
 
+		bool dataset_success = true;
     for (unsigned int b = 0; b < BATCHSIZE; b++)
-      dataset->GetTestingSample (*data_tensor, *label_tensor, *helper_tensor, *weight_tensor, b, b);
+      dataset_success &= dataset->GetTestingSample (*data_tensor, *label_tensor, *helper_tensor, *weight_tensor, b, b);
 
+		if (!dataset_success) {
+			FATAL("Could not load samples for gradient check!");
+		}
     Conv::InputLayer* input_layer = new Conv::InputLayer (*data_tensor, *label_tensor, *helper_tensor, *weight_tensor);
 		input_node = new Conv::NetGraphNode(input_layer);
 		input_node->is_input = true;
@@ -140,7 +155,7 @@ int main (int argc, char* argv[]) {
   graph.InitializeWeights();
 
   if (GRADIENT_CHECK) {
-    // Conv::GradientTester::TestGradient (net);
+    Conv::GradientTester::TestGradient (graph);
   } else {
     Conv::Trainer trainer (graph, settings);
 

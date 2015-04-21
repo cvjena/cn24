@@ -103,6 +103,7 @@ public:
 
 	// Output
 	void PrintGraph(std::ostream& graph_output);
+	datum AggregateLoss();
 
 	// Status
 	bool IsComplete() const;

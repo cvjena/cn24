@@ -11,20 +11,22 @@
 
 namespace Conv {
   
-void GradientTester::TestGradient ( Net& net ) {
+void GradientTester::TestGradient ( NetGraph& graph ) {
   const double epsilon = 0.001;
   LOGDEBUG << "Testing gradient. FeedForward...";
-  net.FeedForward();
+	graph.FeedForward();
   LOGDEBUG << "Testing gradient. BackPropagate...";
-  net.BackPropagate();
+  graph.BackPropagate();
   
-  const datum initial_loss = net.lossfunction_layer()->CalculateLossFunction();
+	const datum initial_loss = graph.AggregateLoss();
   LOGDEBUG << "Initial loss: " << initial_loss;
   LOGDEBUG << "Using epsilon: " << epsilon;
-  for(unsigned int l = 0; l < net.layers_.size(); l++) {
-    for(unsigned int p = 0; p < net.layers_[l]->parameters().size(); p++) {
-      CombinedTensor* const param = net.layers_[l]->parameters_[p];
-      LOGDEBUG << "Testing layer " << l << ", parameter set " << p;
+  for(unsigned int l = 0; l < graph.GetNodes().size(); l++) {
+		NetGraphNode* node = graph.GetNodes()[l];
+		Layer* layer = node->layer;
+    for(unsigned int p = 0; p < layer->parameters().size(); p++) {
+			CombinedTensor* const param = layer->parameters()[p];
+      LOGDEBUG << "Testing layer " << l << " (" << layer->GetLayerDescription() << "), parameter set " << p;
       LOGDEBUG << param->data;
       bool passed = true;
       unsigned int okay = 0;
@@ -37,15 +39,15 @@ void GradientTester::TestGradient ( Net& net ) {
 	const datum old_param = param->data(e);
 	
 	param->data[e] = old_param + epsilon;
-	net.FeedForward();
-	const double plus_loss = net.lossfunction_layer()->CalculateLossFunction();
+	graph.FeedForward();
+	const double plus_loss = graph.AggregateLoss();
 	
 #ifdef BUILD_OPENCL
 	param->data.MoveToCPU();
 #endif
 	param->data[e] = old_param - epsilon;
-	net.FeedForward();
-	const double minus_loss = net.lossfunction_layer()->CalculateLossFunction();
+graph.FeedForward();
+	const double minus_loss = graph.AggregateLoss();
 	
 	const double delta = param->delta[e];
 	const double actual_delta = (plus_loss - minus_loss) / (2.0 * epsilon);
@@ -54,7 +56,7 @@ void GradientTester::TestGradient ( Net& net ) {
 	if(ratio > 1.02 || ratio < 0.98) {
 	  if(ratio > 1.1 || ratio < 0.9) {
 	    if(passed)
-	      LOGWARN << "delta calculated: " << delta << ",actual: " << actual_delta << ",ratio: " << ratio;
+	      LOGWARN << "delta calculated: " << delta << ", actual: " << actual_delta << ", ratio: " << ratio;
 	    passed = false;
 	    std::cout << "!" << std::flush;
 	  } else {
