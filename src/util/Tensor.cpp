@@ -601,12 +601,39 @@ void Tensor::WriteToFile ( const std::string& filename ) {
 }
 
 
+void Tensor::PrintStats() {
+#ifdef BUILD_OPENCL
+	MoveToCPU();
+#endif
+	datum min = std::numeric_limits<datum>::max();
+	datum max = std::numeric_limits<datum>::lowest();
+	datum sum = 0;
+	datum variance = 0;
+
+	for (unsigned int e = 0; e < elements_; e++) {
+		sum += data_ptr_[e];
+		if (data_ptr_[e] > max)
+			max = data_ptr_[e];
+		if (data_ptr_[e] < min)
+			min = data_ptr_[e];
+	}
+
+	datum avg = sum / (datum)elements_;
+
+	for (unsigned int e = 0; e < elements_; e++) {
+		variance += (data_ptr_[e] - avg) * (data_ptr_[e] - avg);
+	}
+
+	LOGINFO << "Minimum : " << min;
+	LOGINFO << "Maximum : " << max;
+	LOGINFO << "Average : " << avg;
+	LOGINFO << "Variance: " << variance;
+}
 
 std::ostream& operator<< ( std::ostream& output, const Tensor& tensor ) {
   return output << "(" << tensor.samples() << "s@" << tensor.width() <<
          "x" << tensor.height() << "x" << tensor.maps() << "m)";
 }
-
 
 
 }

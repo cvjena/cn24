@@ -162,11 +162,16 @@ public:
   void LoadFromFile(const std::string& filename);
   
   /**
-   * @brief Writs the Tensor to a file
+   * @brief Writes the Tensor to a file
    * 
    * @param filename Full path of the file to write to
    */
   void WriteToFile(const std::string& filename);
+
+	/**
+	 * @brief Writes some tensor statistics to the debug output
+	 */
+	void PrintStats();
 
   /**
    * @brief Copy a complete sample from one Tensor to another.

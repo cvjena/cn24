@@ -386,7 +386,23 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 			graph_output << "}";
 			graph_output.close();
 		}
-	} 
+	}
+	else if (command.compare(0, 4, "stat") == 0) {
+		unsigned int node_uid = 0;
+		Conv::ParseCountIfPossible(command, "node", node_uid);
+		for (Conv::NetGraphNode* node : graph.GetNodes()) {
+			if (node->unique_id == (int)node_uid) {
+				unsigned int p = 0;
+				for (Conv::CombinedTensor* param_tensor : node->layer->parameters()) {
+					LOGINFO << "Reporting stats on parameter set " << p++ << " " << param_tensor->data;
+					LOGINFO << "Weight stats:";
+					param_tensor->data.PrintStats();
+					LOGINFO << "Gradient stats:";
+					param_tensor->delta.PrintStats();
+				}
+			}
+		}
+	}
 	else {
     LOGWARN << "Unknown command: " << command;
   }
