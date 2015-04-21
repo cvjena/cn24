@@ -530,6 +530,29 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 				last_connection.node = node;
       }
 
+			if (StartsWithIdentifier(line, "concat")){
+				std::string stack_name;
+				NetGraphConnection* stack_ptr;
+				int stack_pos;
+				ParseStringParamIfPossible(line, "stack", stack_name);
+				if (stack_name.compare("b") == 0){
+					stack_ptr = stack_b;
+					stack_pos = stack_b_pos;
+				}
+				else {
+					stack_ptr = stack_a;
+					stack_pos = stack_a_pos;
+				}
+				ConcatenationLayer* l = new ConcatenationLayer();
+				NetGraphNode* node = new NetGraphNode(l);
+				for (int p = stack_pos; p >= 0; p--) {
+					node->input_connections.push_back(stack_ptr[p]);
+				}
+				net.AddNode(node);
+				last_connection.buffer = 0;
+				last_connection.node = node;
+			}
+
 			if (is_output && !already_upscaled && method_ == FCN && (factorx != 1 || factory != 1)) {
 				UpscaleLayer* l = new UpscaleLayer(factorx, factory);
 				NetGraphNode* node = new NetGraphNode(l, last_connection);
