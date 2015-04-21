@@ -92,8 +92,9 @@ void Trainer::Test() {
     graph_.FeedForward();
     for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
       LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
-			loss_sums[n] += lossfunction_layer->CalculateLossFunction();
-			aggregate_loss += loss_sums[n];
+			const datum loss = lossfunction_layer->CalculateLossFunction();
+			loss_sums[n] += loss;
+			aggregate_loss += loss;
 		}
 	}
 
@@ -175,8 +176,9 @@ void Trainer::Epoch() {
       // Save errors
 			for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
 				LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
-				loss_sums[n] += lossfunction_layer->CalculateLossFunction();
-				aggregate_loss += loss_sums[n];
+				const datum loss = lossfunction_layer->CalculateLossFunction();
+				loss_sums[n] += loss;
+				aggregate_loss += loss;
 			}
 
       // Correct errors
