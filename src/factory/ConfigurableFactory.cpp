@@ -385,6 +385,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 
 		last_connection.node = node;
 		last_connection.buffer = 0;
+		last_connection.backprop = false;
   }
 
   bool first_layer = true;
@@ -564,6 +565,8 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 				LOGDEBUG << "Added upscaling layer for FCN";
 			}
     }
+
+		last_connection.backprop = true;
   }
 
 
