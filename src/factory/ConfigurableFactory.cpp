@@ -545,7 +545,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 				NetGraphConnection* stack_ptr;
 				int stack_pos;
 				ParseStringParamIfPossible(line, "stack", stack_name);
-				if (stack_name.compare("b") == 0){
+				if (stack_name.compare(0, 1, "b") == 0){
 					stack_ptr = stack_b;
 					stack_pos = stack_b_pos;
 				}
