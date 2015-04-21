@@ -56,7 +56,7 @@ graph.FeedForward();
 	if(ratio > 1.02 || ratio < 0.98) {
 	  if(ratio > 1.1 || ratio < 0.9) {
 	    if(passed)
-	      LOGWARN << "delta calculated: " << delta << ", actual: " << actual_delta << ", ratio: " << ratio;
+	      LOGWARN << "delta analytic: " << delta << ", numeric: " << actual_delta << ", ratio: " << ratio;
 	    passed = false;
 	    std::cout << "!" << std::flush;
 	  } else {
