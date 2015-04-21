@@ -89,7 +89,7 @@ graph.FeedForward();
       }
 			LOGINFO << okay << " of " << param->data.elements() << " gradients okay (delta < 2%)";
 			LOGINFO << tolerable << " of " << param->data.elements() << " gradients tolerable (delta < 20%)";
-			LOGINFO << failed << " of " << param->data.elements() << " gradients failed (delta >= 10%)";
+			LOGINFO << failed << " of " << param->data.elements() << " gradients failed (delta >= 20%)";
 			global_okay += okay;
 			global_tolerable += tolerable;
 			global_failed += failed;
@@ -99,7 +99,7 @@ graph.FeedForward();
 
 	LOGINFO << global_okay << " of " << global_weights << " gradients okay (delta < 2%)";
 	LOGINFO << global_tolerable << " of " << global_weights << " gradients tolerable (delta < 20%)";
-	LOGINFO << global_failed << " of " << global_weights << " gradients failed (delta >= 10%)";
+	LOGINFO << global_failed << " of " << global_weights << " gradients failed (delta >= 20%)";
 
 }
 
