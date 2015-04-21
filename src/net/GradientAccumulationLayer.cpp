@@ -87,7 +87,7 @@ void GradientAccumulationLayer::BackPropagate() {
   input_->delta.Clear();
 #pragma omp parallel for default(shared)
   for(unsigned int s = 0; s < samples_; s++) {
-    unsigned int start_element = samples_ * elements_per_sample_;
+    unsigned int start_element = s * elements_per_sample_;
     for(unsigned int e = 0; e < elements_per_sample_; e++) {
       for(unsigned int i = 0; i < output_count_; i++) {
         input_->delta[start_element + e] += outputs_[i]->delta[start_element + e];
