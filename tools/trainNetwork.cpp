@@ -387,7 +387,7 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 			graph_output.close();
 		}
 	}
-	else if (command.compare(0, 4, "stat") == 0) {
+	else if (command.compare(0, 5, "wstat") == 0) {
 		unsigned int node_uid = 0;
 		Conv::ParseCountIfPossible(command, "node", node_uid);
 		for (Conv::NetGraphNode* node : graph.GetNodes()) {
@@ -399,6 +399,23 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 					param_tensor->data.PrintStats();
 					LOGINFO << "Gradient stats:";
 					param_tensor->delta.PrintStats();
+				}
+			}
+		}
+	}
+	else if (command.compare(0, 5, "dstat") == 0) {
+		unsigned int node_uid = 0;
+		Conv::ParseCountIfPossible(command, "node", node_uid);
+		for (Conv::NetGraphNode* node : graph.GetNodes()) {
+			if (node->unique_id == (int)node_uid) {
+				unsigned int p = 0;
+				for (Conv::NetGraphBuffer& output_buffer : node->output_buffers) {
+					Conv::CombinedTensor* output_tensor = output_buffer.combined_tensor;
+					LOGINFO << "Reporting stats on buffer " << output_buffer.description;
+					LOGINFO << "Data stats:";
+					output_tensor->data.PrintStats();
+					LOGINFO << "Delta stats:";
+					output_tensor->delta.PrintStats();
 				}
 			}
 		}
