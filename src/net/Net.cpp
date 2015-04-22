@@ -150,7 +150,7 @@ int Net::AddLayer (Layer* layer, const int input_layer) {
 void Net::InitializeWeights() {
   for (int l = weight_connections_.size() - 1; l > 0; l--) {
     std::pair<Layer*, Layer*> p = weight_connections_[l];
-    p.first->OnLayerConnect (p.second);
+		p.first->OnLayerConnect({ p.second });
   }
 }
 

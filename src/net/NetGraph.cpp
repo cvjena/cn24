@@ -379,10 +379,12 @@ void NetGraph::InitializeWeights() {
 
 void NetGraph::InitializeWeights(NetGraphNode* node) {
 	if (!node->flag_bp_visited) {
+		std::vector<Layer*> layers_to_connect;
 		for (NetGraphBackpropConnection backprop_connection : node->backprop_connections) {
 			InitializeWeights(backprop_connection.node);
-			node->layer->OnLayerConnect(backprop_connection.node->layer);
+			layers_to_connect.push_back(backprop_connection.node->layer);
 		}
+		node->layer->OnLayerConnect(layers_to_connect);
 
 		node->flag_bp_visited = true;
 	}

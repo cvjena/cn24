@@ -677,8 +677,11 @@ void ConvolutionLayer::BackPropagate() {
 #endif
 }
 
-void ConvolutionLayer::OnLayerConnect (Layer* next_layer) {
-  unsigned int next_layer_gain = next_layer->Gain();
+void ConvolutionLayer::OnLayerConnect (const std::vector<Layer*> next_layers) {
+	unsigned int next_layer_gain = 0;
+	for (Layer* next_layer: next_layers)
+		next_layer_gain += next_layer->Gain();
+
   unsigned int this_layer_gain = Gain();
 
   const datum range = sqrt (6) / sqrt (next_layer_gain + this_layer_gain);

@@ -45,7 +45,7 @@ public:
   void FeedForward();
   void BackPropagate();
   
-  void OnLayerConnect (Layer* next_layer);
+  void OnLayerConnect (const std::vector<Layer*> next_layer);
   
   inline unsigned int Gain() {
     return kernel_width_ * kernel_height_ * input_maps_;
