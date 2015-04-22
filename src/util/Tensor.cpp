@@ -608,9 +608,11 @@ void Tensor::PrintStats() {
 	datum min = std::numeric_limits<datum>::max();
 	datum max = std::numeric_limits<datum>::lowest();
 	datum sum = 0;
+	datum sum_of_sqares = 0;
 	datum variance = 0;
 
 	for (unsigned int e = 0; e < elements_; e++) {
+		sum_of_sqares += data_ptr_[e] * data_ptr_[e];
 		sum += data_ptr_[e];
 		if (data_ptr_[e] > max)
 			max = data_ptr_[e];
@@ -619,14 +621,18 @@ void Tensor::PrintStats() {
 	}
 
 	datum avg = sum / (datum)elements_;
+	datum l2 = sqrt(sum_of_sqares);
 
 	for (unsigned int e = 0; e < elements_; e++) {
 		variance += (data_ptr_[e] - avg) * (data_ptr_[e] - avg);
 	}
 
+	variance /= (datum)elements_;
+
 	LOGINFO << "Minimum : " << min;
 	LOGINFO << "Maximum : " << max;
 	LOGINFO << "Average : " << avg;
+	LOGINFO << "L2 Norm : " << l2;
 	LOGINFO << "Variance: " << variance;
 }
 
