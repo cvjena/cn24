@@ -138,7 +138,12 @@ void ParseDatumParamIfPossible ( std::string line, std::string identifier, datum
 
   std::string size = line.substr ( size_pos + ilen );
 
-  k = std::atof ( size.c_str() );
+  std::stringstream ss;
+  ss << size;
+  datum d;
+  ss >> d;
+  
+  k = d; //std::atof ( size.c_str() );
 }
 
 }

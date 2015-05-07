@@ -31,8 +31,10 @@ public:
 	*
 	* @param file The input stream to read the configuration from
 	* @param seed The random seed used to initialize the layers
+        * @param is_training_factory This needs to be true for ConfigurableFactory
+        *   to read the "method=" setting
 	*/
-  ConfigurableFactory(std::istream& file, const unsigned seed = 0);
+  ConfigurableFactory(std::istream& file, const unsigned seed = 0, bool is_training_factory = false);
   
   /**
 	* @brief Adds the configured layers to a network using the specified input layer
@@ -73,7 +75,12 @@ public:
   /**
 	* @returns The optimal training settings for this configuration
 	*/
-  TrainerSettings optimal_settings() const { return optimal_settings_; }
+  TrainerSettings optimal_settings() const { return optimal_settings_; } 
+  
+  /**
+   * @returns The current method for this net
+   */
+  Method method() const { return method_; }
 private:
   Method method_;
   

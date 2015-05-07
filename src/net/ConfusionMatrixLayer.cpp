@@ -58,7 +58,8 @@ bool ConfusionMatrixLayer::CreateOutputs (
 
 bool ConfusionMatrixLayer::Connect
 ( const std::vector< CombinedTensor* >& inputs,
-  const std::vector< CombinedTensor* >& outputs ) {
+  const std::vector< CombinedTensor* >& outputs,
+  const Net* net ) {
   // Needs exactly three inputs to calculate the stat
   if ( inputs.size() != 3 )
     return false;

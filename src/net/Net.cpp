@@ -61,7 +61,7 @@ int Net::AddLayer (Layer* layer, const std::vector< Connection >& connections) {
   }
 
   // Connect the layer
-  bool connection_result = layer->Connect (inputs, outputs);
+  bool connection_result = layer->Connect (inputs, outputs, this);
   if (!connection_result) {
     FATAL ("Layer failed to connect!");
     return -1;

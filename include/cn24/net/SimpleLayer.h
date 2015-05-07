@@ -20,13 +20,15 @@
 
 #include "Layer.h"
 #include "CombinedTensor.h"
+#include "Net.h"
 
 namespace Conv {
   
 class SimpleLayer : public Layer {
 public:
   bool Connect(const std::vector<CombinedTensor*>& inputs,
-               const std::vector<CombinedTensor*>& outputs);
+               const std::vector<CombinedTensor*>& outputs,
+               const Net* net );
   
   /**
    * @brief Connect the Layer to the CombinedTensors
@@ -40,6 +42,7 @@ public:
    */
   virtual bool Connect(const CombinedTensor* input, CombinedTensor* output) = 0;
 protected:
+  const Net* net_ = nullptr;
   CombinedTensor* input_ = nullptr;
   CombinedTensor* output_ = nullptr;
 };

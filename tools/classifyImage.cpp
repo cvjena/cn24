@@ -51,7 +51,7 @@ int main (int argc, char* argv[]) {
   }
   
   // Parse network configuration file
-  Conv::ConfigurableFactory* factory = new Conv::ConfigurableFactory(net_config_file, 238238);
+  Conv::ConfigurableFactory* factory = new Conv::ConfigurableFactory(net_config_file, 238238, false);
   // Parse dataset configuration file
   Conv::TensorStreamDataset* dataset = Conv::TensorStreamDataset::CreateFromConfiguration(dataset_config_file, true);
   unsigned int CLASSES = dataset->GetClasses();
@@ -66,6 +66,16 @@ int main (int argc, char* argv[]) {
     width++;
   if(height & 1)
     height++;
+  
+  if(width & 2)
+    width+=2;
+  if(height & 2)
+    height+=2;
+  
+  if(width & 4)
+    width+=4;
+  if(height & 4)
+    height+=4;
   
   Conv::Tensor data_tensor(1, width, height, original_data_tensor.maps());
   data_tensor.Clear();
@@ -82,6 +92,7 @@ int main (int argc, char* argv[]) {
   // Load network parameters
   net.DeserializeParameters(param_tensor_file);
   
+  net.SetIsTesting(true);
   LOGINFO << "Classifying..." << std::flush;
   net.FeedForward();
   

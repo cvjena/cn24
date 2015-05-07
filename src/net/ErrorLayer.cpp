@@ -58,7 +58,8 @@ bool ErrorLayer::CreateOutputs ( const std::vector< CombinedTensor* >& inputs,
 }
 
 bool ErrorLayer::Connect ( const std::vector< CombinedTensor* >& inputs,
-                           const std::vector< CombinedTensor* >& outputs ) {
+                           const std::vector< CombinedTensor* >& outputs,
+                           const Net* net ) {
   // Needs exactly three inputs to calculate the difference
   if ( inputs.size() != 3 )
     return false;

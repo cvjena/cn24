@@ -48,7 +48,8 @@ public:
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs,
                       std::vector< CombinedTensor* >& outputs);
   bool Connect (const std::vector< CombinedTensor* >& inputs,
-                const std::vector< CombinedTensor* >& outputs);
+                const std::vector< CombinedTensor* >& outputs,
+                const Net* net );
   void FeedForward();
   void BackPropagate();
 
@@ -57,6 +58,8 @@ public:
   unsigned int GetSamplesInTrainingSet();
   unsigned int GetSamplesInTestingSet();
   unsigned int GetBatchSize();
+  unsigned int GetLabelWidth();
+  unsigned int GetLabelHeight();
 
   inline datum GetLossSamplingProbability() {
     return loss_sampling_p_;

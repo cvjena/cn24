@@ -24,6 +24,7 @@ __kernel void BIASED_CONVOLUTION ( __global __read_only float* X,
                                    __global __read_only float* W,
                                    __global __read_only float* b,
                                    __global __write_only float* Y,
+                                   __global __read_only float* D,
                                    uint input_width,
                                    uint input_height,
                                    uint input_maps,
@@ -42,40 +43,43 @@ __kernel void BIASED_CONVOLUTION ( __global __read_only float* X,
     uint sample_id = sk_id / output_maps;
 
     float sum = 0;
+    float dropout_mask_item = D[sk_id];
 
-    uint X_begin_sample = input_width * input_height * input_maps * sample_id;
-    uint W_begin_kid = kernel_width * kernel_height * input_maps * kernel_id;
+    if(dropout_mask_item != 0.0) {
+      uint X_begin_sample = input_width * input_height * input_maps * sample_id;
+      uint W_begin_kid = kernel_width * kernel_height * input_maps * kernel_id;
 
-    for ( uint imap = 0; imap < input_maps; imap++ ) {
-        const uint X_begin_imap = X_begin_sample + ( imap * input_width * input_height );
-        const uint W_begin_imap = W_begin_kid + ( imap * kernel_width * kernel_height );
-        for ( uint ky = 0; ky < kernel_height; ky++ ) {
-            const uint X_begin_kyx = X_begin_imap + ( input_width * ( ky + output_y ) ) + output_x;
-            const uint W_begin_ky = W_begin_imap + ( kernel_width * ky );
-            if ( kernel_width > 3 ) {
-                const uint vector_fetch_end = ( kernel_width - 4 ) & ~ ( 0x3 );
-                for ( uint kx = 0; kx <= vector_fetch_end; kx+=4 ) {
-                    const float4 X_value = vload4(0, X + X_begin_kyx + kx);
-                    const float4 W_value = vload4(0, W + W_begin_ky + kx);
-                    sum += dot ( X_value, W_value );
-                }
-                for ( uint kx = vector_fetch_end + 4; kx < kernel_width; kx++ ) {
-                    const float X_value = X[X_begin_kyx + kx];
-                    const float W_value = W[W_begin_ky + kx];
-                    sum += ( X_value * W_value );
-                }
-            } else {
-                for ( uint kx = 0; kx < kernel_width; kx++ ) {
-                    const float X_value = X[X_begin_kyx + kx];
-                    const float W_value = W[W_begin_ky + kx];
-                    sum += ( X_value * W_value );
-                }
-            }
-        }
+      for ( uint imap = 0; imap < input_maps; imap++ ) {
+          const uint X_begin_imap = X_begin_sample + ( imap * input_width * input_height );
+          const uint W_begin_imap = W_begin_kid + ( imap * kernel_width * kernel_height );
+          for ( uint ky = 0; ky < kernel_height; ky++ ) {
+              const uint X_begin_kyx = X_begin_imap + ( input_width * ( ky + output_y ) ) + output_x;
+              const uint W_begin_ky = W_begin_imap + ( kernel_width * ky );
+              if ( kernel_width > 3 ) {
+                  const uint vector_fetch_end = ( kernel_width - 4 ) & ~ ( 0x3 );
+                  for ( uint kx = 0; kx <= vector_fetch_end; kx+=4 ) {
+                      const float4 X_value = vload4(0, X + X_begin_kyx + kx);
+                      const float4 W_value = vload4(0, W + W_begin_ky + kx);
+                      sum += dot ( X_value, W_value );
+                  }
+                  for ( uint kx = vector_fetch_end + 4; kx < kernel_width; kx++ ) {
+                      const float X_value = X[X_begin_kyx + kx];
+                      const float W_value = W[W_begin_ky + kx];
+                      sum += ( X_value * W_value );
+                  }
+              } else {
+                  for ( uint kx = 0; kx < kernel_width; kx++ ) {
+                      const float X_value = X[X_begin_kyx + kx];
+                      const float W_value = W[W_begin_ky + kx];
+                      sum += ( X_value * W_value );
+                  }
+              }
+          }
+      }
+
+      sum += b[kernel_id];
+      sum *= weight_factor;
     }
-
-    sum *= weight_factor;
-    sum += b[kernel_id];
 
     const uint Y_begin_sample = output_width * output_height * sk_id;
     const uint Y_begin_line = Y_begin_sample + ( output_width * output_y );
