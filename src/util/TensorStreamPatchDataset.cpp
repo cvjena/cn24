@@ -22,120 +22,123 @@ namespace Conv {
 datum DefaultLocalizedErrorFunction (unsigned int x, unsigned int y, unsigned int w, unsigned int h) {
   return 1;
 }
-TensorStreamPatchDataset::TensorStreamPatchDataset (std::istream& training_stream,
-    std::istream& testing_stream,
-    unsigned int classes,
-    std::vector< std::string > class_names,
-    std::vector<unsigned int> class_colors,
-    unsigned int patchsize_x,
-    unsigned int patchsize_y,
-    dataset_localized_error_function error_function) :
-  classes_ (classes), class_names_ (class_names), class_colors_ (class_colors),
-  patchsize_x_ (patchsize_x), patchsize_y_ (patchsize_y),
-  error_function_ (error_function) {
-  LOGDEBUG << "Instance created.";
+TensorStreamPatchDataset::TensorStreamPatchDataset(std::istream& training_stream,
+		std::istream& testing_stream,
+		unsigned int classes,
+		std::vector< std::string > class_names,
+		std::vector<unsigned int> class_colors,
+		std::vector<datum> class_weights,
+		unsigned int patchsize_x,
+		unsigned int patchsize_y,
+		dataset_localized_error_function error_function) : 
+	classes_(classes), class_names_(class_names), class_colors_(class_colors),
+	class_weights_(class_weights),
+	patchsize_x_(patchsize_x), patchsize_y_(patchsize_y),
+	error_function_(error_function) {
+	LOGDEBUG << "Instance created.";
 
-  if (classes != class_names.size() ||
-      classes != class_colors.size()) {
-    FATAL ("Class count does not match class information count!");
-  }
+	if (classes != class_names.size() ||
+		classes != class_colors.size()) {
+		FATAL("Class count does not match class information count!");
+	}
 
-  // Count tensors
-  Tensor tensor;
+	// Count tensors
+	Tensor tensor;
 
-  while (!training_stream.eof()) {
-    tensor.Deserialize (training_stream);
+	while (!training_stream.eof()) {
+		tensor.Deserialize(training_stream);
 
-    if (tensor.elements() == 0)
-      break;
+		if (tensor.elements() == 0)
+			break;
 
-    // LOGDEBUG << "Tensor " << tensor_count_training_ << ": " << tensor;
-    tensor_count_training_++;
+		// LOGDEBUG << "Tensor " << tensor_count_training_ << ": " << tensor;
+		tensor_count_training_++;
 
-    training_stream.peek();
-  }
+		training_stream.peek();
+	}
 
-  LOGDEBUG << tensor_count_training_  / 2 << " training tensors";
+	LOGDEBUG << tensor_count_training_ / 2 << " training tensors";
 
-  // We need alternating label and image tensors, so we need an even count
-  if (tensor_count_training_ & 1) {
-    FATAL ("Odd training tensor count!");
-  }
+	// We need alternating label and image tensors, so we need an even count
+	if (tensor_count_training_ & 1) {
+		FATAL("Odd training tensor count!");
+	}
 
-  while (!testing_stream.eof()) {
-    tensor.Deserialize (testing_stream);
+	while (!testing_stream.eof()) {
+		tensor.Deserialize(testing_stream);
 
-    if (tensor.elements() == 0)
-      break;
+		if (tensor.elements() == 0)
+			break;
 
-    // LOGDEBUG << "Tensor " << tensor_count_testing_ << ": " << tensor;
-    tensor_count_testing_++;
+		// LOGDEBUG << "Tensor " << tensor_count_testing_ << ": " << tensor;
+		tensor_count_testing_++;
 
-    testing_stream.peek();
-  }
+		testing_stream.peek();
+	}
 
-  LOGDEBUG << tensor_count_testing_ / 2 << " testing tensors";
+	LOGDEBUG << tensor_count_testing_ / 2 << " testing tensors";
 
-  if (tensor_count_testing_ & 1) {
-    FATAL ("Odd testing tensor count!");
-  }
+	if (tensor_count_testing_ & 1) {
+		FATAL("Odd testing tensor count!");
+	}
 
-  tensors_ = (tensor_count_testing_ + tensor_count_training_) / 2;
+	tensors_ = (tensor_count_testing_ + tensor_count_training_) / 2;
 
-  // Reset streams
-  training_stream.clear();
-  testing_stream.clear();
-  training_stream.seekg (0, std::ios::beg);
-  testing_stream.seekg (0, std::ios::beg);
+	// Reset streams
+	training_stream.clear();
+	testing_stream.clear();
+	training_stream.seekg(0, std::ios::beg);
+	testing_stream.seekg(0, std::ios::beg);
 
-  // Allocate arrays that depend on the tensor count
-  if (tensors_ > 0) {
-    data_ = new Tensor[tensors_];
-    labels_ = new Tensor[tensors_];
-    last_sample_ = new unsigned int [tensors_];
-  } else {
-    data_ = new Tensor[1];
-    labels_ = new Tensor[1];
-    last_sample_ = new unsigned int [1];
-  }
+	// Allocate arrays that depend on the tensor count
+	if (tensors_ > 0) {
+		data_ = new Tensor[tensors_];
+		labels_ = new Tensor[tensors_];
+		last_sample_ = new unsigned int[tensors_];
+	}
+	else {
+		data_ = new Tensor[1];
+		labels_ = new Tensor[1];
+		last_sample_ = new unsigned int[1];
+	}
 
-  // Read tensors
-  unsigned int e = 0;
+	// Read tensors
+	unsigned int e = 0;
 
-  for (unsigned int t = 0; t < (tensor_count_training_ / 2); t++) {
-    data_[t].Deserialize (training_stream);
+	for (unsigned int t = 0; t < (tensor_count_training_ / 2); t++) {
+		data_[t].Deserialize(training_stream);
 
-    unsigned int inner_width = data_[t].width() - (patchsize_x_ - 1);
-    unsigned int inner_height = data_[t].height() - (patchsize_y_ - 1);
+		unsigned int inner_width = data_[t].width() - (patchsize_x_ - 1);
+		unsigned int inner_height = data_[t].height() - (patchsize_y_ - 1);
 
-    if (t == 0)
-      last_sample_[t] = inner_width * inner_height;
-    else
-      last_sample_[t] = last_sample_[t - 1] + (inner_width * inner_height);
+		if (t == 0)
+			last_sample_[t] = inner_width * inner_height;
+		else
+			last_sample_[t] = last_sample_[t - 1] + (inner_width * inner_height);
 
-    sample_count_training_ += inner_width * inner_height;
+		sample_count_training_ += inner_width * inner_height;
 
-    labels_[t].Deserialize (training_stream);
-  }
+		labels_[t].Deserialize(training_stream);
+	}
 
-  for (unsigned int t = (tensor_count_training_ / 2) ; t < tensors_; t++) {
-    data_[t].Deserialize (testing_stream);
+	for (unsigned int t = (tensor_count_training_ / 2); t < tensors_; t++) {
+		data_[t].Deserialize(testing_stream);
 
-    unsigned int inner_width = data_[t].width() - (patchsize_x_ - 1);
-    unsigned int inner_height = data_[t].height() - (patchsize_y_ - 1);
+		unsigned int inner_width = data_[t].width() - (patchsize_x_ - 1);
+		unsigned int inner_height = data_[t].height() - (patchsize_y_ - 1);
 
-    if (t == 0)
-      last_sample_[t] = inner_width * inner_height;
-    else
-      last_sample_[t] = last_sample_[t - 1] + (inner_width * inner_height);
+		if (t == 0)
+			last_sample_[t] = inner_width * inner_height;
+		else
+			last_sample_[t] = last_sample_[t - 1] + (inner_width * inner_height);
 
-    sample_count_testing_ += inner_width * inner_height;
+		sample_count_testing_ += inner_width * inner_height;
 
-    labels_[t].Deserialize (testing_stream);
-  }
+		labels_[t].Deserialize(testing_stream);
+	}
 
-  input_maps_ = data_[0].maps();
-  label_maps_ = labels_[0].maps();
+	input_maps_ = data_[0].maps();
+	label_maps_ = labels_[0].maps();
 }
 
 Task TensorStreamPatchDataset::GetTask() const {
@@ -168,6 +171,10 @@ std::vector<std::string> TensorStreamPatchDataset::GetClassNames() const {
 
 std::vector<unsigned int> TensorStreamPatchDataset::GetClassColors() const {
   return class_colors_;
+}
+
+std::vector<datum> TensorStreamPatchDataset::GetClassWeights() const {
+	return class_weights_;
 }
 
 unsigned int TensorStreamPatchDataset::GetTrainingSamples() const {
@@ -220,10 +227,12 @@ bool TensorStreamPatchDataset::GetTrainingSample (Tensor& data_tensor, Tensor& l
         *labels_[t].data_ptr_const (col + (patchsize_x_ / 2), row + (patchsize_y_ / 2), map, 0);
     }
 
+		const datum class_weight = class_weights_[label_tensor.PixelMaximum(0, 0, sample)];
+
     // Copy error
     *weight_tensor.data_ptr (0, 0, 0, sample) =
       error_function_ (col + (patchsize_x_ / 2), row + (patchsize_y_ / 2),
-      data_[t].width(), data_[t].height());
+      data_[t].width(), data_[t].height()) * class_weight;
 
     return success;
   } else return false;
@@ -238,6 +247,7 @@ TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std
   unsigned int classes = 0;
   std::vector<std::string> class_names;
   std::vector<unsigned int> class_colors;
+	std::vector<datum> class_weights;
   dataset_localized_error_function error_function = DefaultLocalizedErrorFunction;
   std::string training_file;
   std::string testing_file;
@@ -277,6 +287,21 @@ TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std
       }
     }
 
+		if (StartsWithIdentifier(line, "weights")) {
+			if (classes != 0) {
+				for (int c = 0; c < classes; c++) {
+					std::string weight;
+					datum dweight;
+					std::getline(file, weight);
+					std::stringstream ss;
+					ss << weight;
+					ss >> dweight;
+					class_weights.push_back(dweight);
+					LOGDEBUG << "Class " << c << " weight: " << dweight;
+				}
+			}
+		}
+
     if (StartsWithIdentifier (line, "localized_error")) {
       std::string error_function_name;
       ParseStringIfPossible (line, "localized_error", error_function_name);
@@ -313,8 +338,13 @@ TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std
     testing_stream = new std::istringstream();
   }
 
+	if (class_weights.size() != classes) {
+		for (unsigned int c = 0; c < classes; c++)
+			class_weights.push_back(1.0);
+	}
+
   return new TensorStreamPatchDataset (*training_stream, *testing_stream, classes,
-                                       class_names, class_colors, patchsize_x,
+                                       class_names, class_colors, class_weights, patchsize_x,
                                        patchsize_y, error_function);
 }
 
