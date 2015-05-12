@@ -24,8 +24,10 @@ TensorStreamDataset::TensorStreamDataset (std::istream& training_stream,
     unsigned int classes,
     std::vector< std::string > class_names,
     std::vector<unsigned int> class_colors,
+		std::vector<datum> class_weights,
     dataset_localized_error_function error_function) :
   classes_ (classes), class_names_ (class_names), class_colors_ (class_colors),
+	class_weights_(class_weights),
   error_function_ (error_function) {
   LOGDEBUG << "Instance created.";
 
@@ -182,6 +184,10 @@ std::vector<unsigned int> TensorStreamDataset::GetClassColors() const {
   return class_colors_;
 }
 
+std::vector<datum> TensorStreamDataset::GetClassWeights() const {
+	return class_weights_;
+}
+
 unsigned int TensorStreamDataset::GetTrainingSamples() const {
   return tensor_count_training_ / 2;
 }
@@ -218,18 +224,19 @@ bool TensorStreamDataset::GetTrainingSample (Tensor& data_tensor, Tensor& label_
 			}
 		}
 
-    if (data_[index].width() == GetWidth() && data_[index].height() == GetHeight()) {
-      success &= Tensor::CopySample (error_cache, 0, weight_tensor, sample);
-    } else {
+    //if (data_[index].width() == GetWidth() && data_[index].height() == GetHeight()) {
+    //  success &= Tensor::CopySample (error_cache, 0, weight_tensor, sample);
+    //} else {
       // Reevaluate error function
       weight_tensor.Clear (0.0, sample);
 
       for (unsigned int y = 0; y < data_[index].height(); y++) {
         for (unsigned int x = 0; x < data_[index].width(); x++) {
-          *weight_tensor.data_ptr (x, y, 0, sample) = error_function_ (x, y, data_[index].width(), data_[index].height());
+					const datum class_weight = class_weights_[label_tensor.PixelMaximum(x, y, sample)];
+          *weight_tensor.data_ptr (x, y, 0, sample) = error_function_ (x, y, data_[index].width(), data_[index].height()) * class_weight;
         }
       }
-    }
+    //}
 
     return success;
   } else return false;
@@ -260,18 +267,19 @@ bool TensorStreamDataset::GetTestingSample (Tensor& data_tensor, Tensor& label_t
 			}
 		}
 
-    if (data_[test_index].width() == GetWidth() && data_[test_index].height() == GetHeight()) {
-      success &= Tensor::CopySample (error_cache, 0, weight_tensor, sample);
-    } else {
+    //if (data_[test_index].width() == GetWidth() && data_[test_index].height() == GetHeight()) {
+    //  success &= Tensor::CopySample (error_cache, 0, weight_tensor, sample);
+    //} else {
       // Reevaluate error function
       weight_tensor.Clear (0.0, sample);
 
       for (unsigned int y = 0; y < data_[test_index].height(); y++) {
         for (unsigned int x = 0; x < data_[test_index].width(); x++) {
-          *weight_tensor.data_ptr (x, y, 0, sample) = error_function_ (x, y, data_[test_index].width(), data_[test_index].height());
+					const datum class_weight = class_weights_[label_tensor.PixelMaximum(x, y, sample)];
+          *weight_tensor.data_ptr (x, y, 0, sample) = error_function_ (x, y, data_[test_index].width(), data_[test_index].height()) * class_weight;
         }
       }
-    }
+    //}
 
     return success;
   } else return false;
@@ -281,6 +289,7 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
   unsigned int classes = 0;
   std::vector<std::string> class_names;
   std::vector<unsigned int> class_colors;
+	std::vector<datum> class_weights;
   dataset_localized_error_function error_function = DefaultLocalizedErrorFunction;
   std::string training_file;
   std::string testing_file;
@@ -320,6 +329,21 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
       }
     }
 
+		if (StartsWithIdentifier(line, "weights")) {
+			if (classes != 0) {
+				for (int c = 0; c < classes; c++) {
+					std::string weight;
+					datum dweight;
+					std::getline(file, weight);
+					std::stringstream ss;
+					ss << weight;
+					ss >> dweight;
+					class_weights.push_back(dweight);
+					LOGDEBUG << "Class " << c << " weight: " << dweight;
+				}
+			}
+		}
+
     if (StartsWithIdentifier (line, "localized_error")) {
       std::string error_function_name;
       ParseStringIfPossible (line, "localized_error", error_function_name);
@@ -356,8 +380,13 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
     testing_stream = new std::istringstream();
   }
 
+	if (class_weights.size() != classes) {
+		for (unsigned int c = 0; c < classes; c++)
+			class_weights.push_back(1.0);
+	}
+
   return new TensorStreamDataset (*training_stream, *testing_stream, classes,
-                                  class_names, class_colors, error_function);
+                                  class_names, class_colors, class_weights, error_function);
 }
 
 }
