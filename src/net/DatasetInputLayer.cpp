@@ -148,13 +148,13 @@ void DatasetInputLayer::FeedForward() {
 
     if (testing_) {
       // The testing samples are not randomized
-      selected_element = current_element_testing_;
-      current_element_testing_++;
-
       if (current_element_testing_ >= elements_testing_) {
         force_no_weight = true;
         selected_element = 0;
+      } else {
+        selected_element = current_element_testing_++;
       }
+
     } else {
       // Select samples until one from the right subset is hit
       // Select a sample from the permutation
