@@ -3,6 +3,12 @@ project(CN24 C CXX)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
+# Get Git SHA1 hash
+include(GetGitRevisionDescription)
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+#git_describe(GIT_SHA1)
+add_definitions("-DGIT_SHA1=\"${GIT_SHA1} ${GIT_REFSPEC}\"")
+
 # Definitions
 set(CN24_SRC "${CN24_SOURCE_DIR}/src")
 set(CN24_INC "${CN24_SOURCE_DIR}/include" "${CN24_SOURCE_DIR}/include/cn24"
