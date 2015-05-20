@@ -63,8 +63,10 @@ cl_kernel CLHelper::k_nlSigmBackward = 0;
 
 TensorViewer* System::viewer = nullptr;
 
+#define STRING_SHA1 GIT_SHA1
+
 void System::Init() {
-  LOGINFO << "CN24 built on " << BUILD_DATE;
+  LOGINFO << "CN24 version " STRING_SHA1;
   LOGINFO << "Copyright (C) 2015 Clemens-Alexander Brust";
   LOGINFO << "For licensing information, see the LICENSE"
           << " file included with this project.";
