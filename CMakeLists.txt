@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(CN24 C CXX)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+
 # Definitions
 set(CN24_SRC "${CN24_SOURCE_DIR}/src")
 set(CN24_INC "${CN24_SOURCE_DIR}/include" "${CN24_SOURCE_DIR}/include/cn24"
@@ -127,15 +129,15 @@ if(CN24_BUILD_JPG)
   endif()
 endif()
 
-set(CN24_BUILD_POSTGRES ON CACHE BOOL "Build CN24 with PostgreSQL logging support")
-if(CN24_BUILD_POSTGRES)
-  find_package(PostgreSQL)
-  if(PostgreSQL_FOUND)
-    include_directories(${PostgreSQL_INCLUDE_DIRS})
-    set(CN24_LIBS ${CN24_LIBS} ${PostgreSQL_LIBRARIES})
-    add_definitions("-DBUILD_POSTGRES")
+set(CN24_BUILD_SQLITE3 ON CACHE BOOL "Build CN24 with SQLITE3 logging support")
+if(CN24_BUILD_SQLITE3)
+  find_package(SQLite3)
+  if(SQLITE3_FOUND)
+    include_directories(${SQLITE3_INCLUDE_DIRS})
+    set(CN24_LIBS ${CN24_LIBS} ${SQLITE3_LIBRARIES})
+    add_definitions("-DBUILD_SQLITE3")
   else()
-    message(STATUS "PostgreSQL not found!")
+    message(STATUS "SQLITE3 not found!")
   endif()
 endif()
 
