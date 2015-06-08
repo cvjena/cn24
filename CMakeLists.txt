@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 2.8)
 project(CN24 C CXX)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+
+# Get Git SHA1 hash
+include(GetGitRevisionDescription)
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+#git_describe(GIT_SHA1)
+add_definitions("-DGIT_SHA1=\"${GIT_SHA1} ${GIT_REFSPEC}\"")
+
 # Definitions
 set(CN24_SRC "${CN24_SOURCE_DIR}/src")
 set(CN24_INC "${CN24_SOURCE_DIR}/include" "${CN24_SOURCE_DIR}/include/cn24"
@@ -28,11 +36,6 @@ macro (currentdate RESULT)
     endif (WIN32)
 endmacro (currentdate)
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lc++")
-endif()
-
 if(CMAKE_COMPILER_IS_GNUCXX)
   # We need C++11
   execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion
@@ -48,7 +51,8 @@ if(CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra")
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
   message(STATUS "This is the right compiler, using -std=c++11.")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lc++")
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
   message(STATUS "This is the right compiler, no switches needed")
 else()
@@ -158,13 +162,17 @@ endif()
 
 set(CN24_BUILD_OPENCL OFF CACHE BOOL "Build CN24 with OpenCL support")
 if(CN24_BUILD_OPENCL)
-  find_library(OPENCL_ICDL NAMES OpenCL libOpenCL PATHS $ENV{CUDA_PATH}/lib/x64)
-  find_path(OPENCL_INCLUDE_DIR CL/cl.h cl.h PATHS $ENV{CUDA_PATH}/include)
+  find_library(OPENCL_ICDL NAMES OpenCL libOpenCL PATHS $ENV{CUDA_PATH}/lib/x64
+    $ENV{INTELOCLSDKROOT}/lib/x64)
+  find_path(OPENCL_INCLUDE_DIR CL/cl.h cl.h PATHS $ENV{CUDA_PATH}/include
+    $ENV{INTELOCLSDKROOT}/include)
   message(STATUS "Using OpenCL library: ${OPENCL_ICDL}")
   message(STATUS "Using OpenCL include directory: ${OPENCL_INCLUDE_DIR}")
   include_directories(${OPENCL_INCLUDE_DIR})
   set(CN24_LIBS ${CN24_LIBS} ${OPENCL_ICDL})
   add_definitions("-DBUILD_OPENCL")
+else()
+  message(STATUS "Enable OpenCL with -DCN24_BUILD_OPENCL:BOOL=ON to use your GPU")
 endif()
 
 set(CN24_BUILD_OPENMP OFF CACHE BOOL "Build CN24 with OpenMP support if possible")

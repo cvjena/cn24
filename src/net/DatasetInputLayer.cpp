@@ -110,7 +110,8 @@ bool DatasetInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inp
 }
 
 bool DatasetInputLayer::Connect (const std::vector< CombinedTensor* >& inputs,
-                                 const std::vector< CombinedTensor* >& outputs) {
+                                 const std::vector< CombinedTensor* >& outputs,
+                                 const Net* net ) {
   // TODO validate
   CombinedTensor* data_output = outputs[0];
   CombinedTensor* label_output = outputs[1];
@@ -146,13 +147,13 @@ void DatasetInputLayer::FeedForward() {
 
     if (testing_) {
       // The testing samples are not randomized
-      selected_element = current_element_testing_;
-      current_element_testing_++;
-
       if (current_element_testing_ >= elements_testing_) {
         force_no_weight = true;
         selected_element = 0;
+      } else {
+        selected_element = current_element_testing_++;
       }
+
     } else {
       // Select samples until one from the right subset is hit
       // Select a sample from the permutation
@@ -213,6 +214,14 @@ void DatasetInputLayer::BackPropagate() {
 
 unsigned int DatasetInputLayer::GetBatchSize() {
   return batch_size_;
+}
+
+unsigned int DatasetInputLayer::GetLabelWidth() {
+  return (dataset_.GetMethod() == PATCH) ? 1 : dataset_.GetWidth();
+}
+
+unsigned int DatasetInputLayer::GetLabelHeight() {
+  return (dataset_.GetMethod() == PATCH) ? 1 : dataset_.GetHeight();
 }
 
 unsigned int DatasetInputLayer::GetSamplesInTestingSet() {

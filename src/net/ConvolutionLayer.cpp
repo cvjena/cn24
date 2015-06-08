@@ -3,8 +3,9 @@
  * copyright (C) 2015 Clemens-Alexander Brust (ikosa dot de at gmail dot com).
  *
  * For licensing information, see the LICENSE file included with this project.
- */  
+ */
 #include <cstring>
+#include <algorithm>
 
 #ifdef BUILD_OPENCL
 #define BUILD_OPENCL_CONV
@@ -16,6 +17,7 @@
 
 #include "Config.h"
 #include "Log.h"
+#include "Net.h"
 #include "CLHelper.h"
 #include "MKLHelper.h"
 
@@ -26,9 +28,9 @@ namespace Conv {
 ConvolutionLayer::ConvolutionLayer (const unsigned int kwidth,
                                     const unsigned int kheight,
                                     const unsigned int output_maps,
-                                    const int seed) :
+                                    const int seed, const datum dropout_fraction) :
   output_maps_ (output_maps), kernel_width_ (kwidth), kernel_height_ (kheight),
-  rand_ (seed) {
+  rand_ (seed), dropout_fraction_(dropout_fraction) {
   // Validate kernel dimensions. These are very important because the
   // FeedForward and BackPropagate implementations rely on some assumptions.
 
@@ -45,6 +47,7 @@ ConvolutionLayer::ConvolutionLayer (const unsigned int kwidth,
 
   LOGDEBUG << "Instance created. " << output_maps_ << " output maps with " <<
            kernel_width_ << "x" << kernel_height_ << " kernels.";
+  LOGDEBUG << "Dropout fraction: " << dropout_fraction_;
 }
 
 bool ConvolutionLayer::CreateOutputs (
@@ -126,9 +129,11 @@ bool ConvolutionLayer::Connect (const CombinedTensor* input,
 
   // This is faster than adding manually...
   ones_.Resize (1, output_width_ * output_height_ * input->data.samples());
+
   for (unsigned int i = 0; i < ones_.elements(); i++) {
     ones_[i] = 1;
   }
+
 #endif
 
 #ifdef BUILD_OPENCL_CONV
@@ -145,6 +150,9 @@ bool ConvolutionLayer::Connect (const CombinedTensor* input,
   // is not called. Random memory junk may work but is certainly not optimal.
   bias_->data.Clear();
   weights_->data.Clear();
+  
+  // Initialize the dropout mask tensor
+  dropout_mask_.Resize(input->data.samples(),output_maps_);
 
   // Tell the net about our parameters
   parameters_.push_back (weights_);
@@ -154,6 +162,24 @@ bool ConvolutionLayer::Connect (const CombinedTensor* input,
 }
 
 void ConvolutionLayer::FeedForward() {
+  const datum p = net_->IsTesting() ? 0.0 : dropout_fraction_;
+  const datum w = net_->IsTesting() ? (1.0 - dropout_fraction_) : 1.0;
+  
+#ifdef BUILD_OPENCL_CONV
+  dropout_mask_.MoveToCPU();
+#endif
+  if(p == 0.0) {
+    dropout_mask_.Clear(1.0);
+  } else {
+    std::uniform_real_distribution<datum> dist(0.0, 1.0);
+    for(unsigned int e = 0; e < input_->data.samples() * output_maps_; e++) {
+      dropout_mask_[e] = dist(rand_) < p ? 0.0 : 1.0;
+    }
+  }
+#ifdef BUILD_OPENCL_CONV
+  dropout_mask_.MoveToGPU();
+#endif
+  
   // Because we add every input map
   output_->data.Clear();
 
@@ -167,15 +193,16 @@ void ConvolutionLayer::FeedForward() {
   error |= clSetKernelArg (CLHelper::k_biasedConvolution, 1, sizeof (cl_mem), &weights_->data.cl_data_ptr_);
   error |= clSetKernelArg (CLHelper::k_biasedConvolution, 2, sizeof (cl_mem), &bias_->data.cl_data_ptr_);
   error |= clSetKernelArg (CLHelper::k_biasedConvolution, 3, sizeof (cl_mem), &output_->data.cl_data_ptr_);
-  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 4, sizeof (unsigned int), &input_width_);
-  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 5, sizeof (unsigned int), &input_height_);
-  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 6, sizeof (unsigned int), &input_maps_);
-  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 7, sizeof (unsigned int), &kernel_width_);
-  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 8, sizeof (unsigned int), &kernel_height_);
-  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 9, sizeof (unsigned int), &output_width_);
-  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 10, sizeof (unsigned int), &output_height_);
-  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 11, sizeof (unsigned int), &output_maps_);
-  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 12, sizeof (datum), &weight_factor_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 4, sizeof (cl_mem), &dropout_mask_.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 5, sizeof (unsigned int), &input_width_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 6, sizeof (unsigned int), &input_height_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 7, sizeof (unsigned int), &input_maps_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 8, sizeof (unsigned int), &kernel_width_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 9, sizeof (unsigned int), &kernel_height_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 10, sizeof (unsigned int), &output_width_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 11, sizeof (unsigned int), &output_height_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 12, sizeof (unsigned int), &output_maps_);
+  error |= clSetKernelArg (CLHelper::k_biasedConvolution, 13, sizeof (datum), &w);
 
   if (error != CL_SUCCESS) {
     FATAL ("Error setting kernel args: " << (signed int) error);
@@ -185,18 +212,36 @@ void ConvolutionLayer::FeedForward() {
 
   error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_biasedConvolution, 3, NULL,
                                   global_work_size, NULL, 0, NULL, NULL);
+
   if (error != CL_SUCCESS) {
     FATAL ("Error enqueueing kernel: " << (signed int) error);
   }
 
 #ifdef BRUTAL_FINISH
   error = clFinish (CLHelper::queue);
+
   if (error != CL_SUCCESS) {
     FATAL ("Error finishing command queue: " << (signed int) error);
   }
+
 #endif
 
-#else
+#else // No OpenCL
+
+  // Very simple dropout FF implementation
+  // This could be optimized a _lot_
+  unsigned int sk_id = 0;
+  for(unsigned int s = 0; s < input_->data.samples(); s++) {
+    for(unsigned int m = 0; m < output_maps_; m++) {
+      datum* target_map = output_->data.data_ptr(0,0,m,s);
+      for(unsigned int e = 0; e < output_width_ * output_height_; e++) {
+        if(dropout_mask_[sk_id] == 0.0)
+          target_map[e] = 0.0;
+      }
+    }
+    sk_id++;
+  }
+
 #ifdef BUILD_BLAS
   im2colff();
 
@@ -209,7 +254,7 @@ void ConvolutionLayer::FeedForward() {
   GEMM (CblasRowMajor, CblasNoTrans, CblasTrans, output_maps_,
         output_width_ * output_height_ * input_->data.samples(),
         kernel_width_ * kernel_height_ * input_maps_,
-        weight_factor_ , W, kernel_width_ * kernel_height_ * input_maps_,
+        w , W, kernel_width_ * kernel_height_ * input_maps_,
         X, kernel_width_ * kernel_height_ * input_maps_, 0.0,
         Y, output_width_ * output_height_ * input_->data.samples());
 
@@ -225,27 +270,33 @@ void ConvolutionLayer::FeedForward() {
   // i * k = o
   // The kernels are always "flipped", so this is an actual convolution
   #pragma omp parallel for default(shared)
+
   for (unsigned int sample = 0; sample < input_->data.samples(); sample++) {
     for (unsigned int omap = 0; omap < output_maps_; omap++) {
       datum bias = bias_->data (omap);
+
       for (unsigned int oy = 0; oy < output_height_; oy++) {
         for (unsigned int ox = 0; ox < output_width_; ox++) {
           datum* oval =
             output_->data.data_ptr (ox, oy, omap, sample);
+
           for (unsigned int ky = 0; ky < kernel_height_; ky++) {
             unsigned int iy = oy + ky;
+
             for (unsigned int kx = 0; kx < kernel_width_; kx++) {
               unsigned int ix = ox + kx;
+
               for (unsigned int imap = 0; imap < input_maps_; imap++) {
                 const datum weight =
                   *weights_->data.data_ptr_const (kx, ky, imap, omap);
                 const datum ival =
                   *input_->data.data_ptr_const (ix, iy, imap, sample);
 
-                *oval += weight_factor_ * weight * ival;
+                *oval += w * weight * ival;
               }
             }
           }
+
           *oval += bias;
         }
       }
@@ -258,7 +309,7 @@ void ConvolutionLayer::FeedForward() {
 
 void ConvolutionLayer::BackPropagate() {
 
-    static datum one = 1.0;
+  static datum one = 1.0;
 
 #ifndef BUILD_OPENCL_CONV
 #ifndef BUILD_BLAS
@@ -267,11 +318,28 @@ void ConvolutionLayer::BackPropagate() {
 #endif
 #endif
 
+#ifdef BUILD_OPENCL_CONV
+  output_->delta.MoveToCPU();
+#endif
+  // Very simple dropout backprop implementation
+  // This could be optimized a _lot_
+  unsigned int sk_id = 0;
+  for(unsigned int s = 0; s < input_->data.samples(); s++) {
+    for(unsigned int m = 0; m < output_maps_; m++) {
+      datum* target_map = output_->delta.data_ptr(0,0,m,s);
+      if(dropout_mask_[sk_id] == 0.0)
+        for(unsigned int e = 0; e < output_width_ * output_height_; e++) {
+          target_map[e] = 0.0;
+        }
+    }
+    sk_id++;
+  }
 
   /*
    * 1. Backpropagation
    */
 #ifdef BUILD_OPENCL_CONV
+
   if (backprop_enabled_) {
     // dX = dY * W'
     cl_uint error = 0;
@@ -300,18 +368,22 @@ void ConvolutionLayer::BackPropagate() {
 
     error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_fullConvolution, 3, NULL,
                                     global_work_size, NULL, 0, NULL, NULL);
+
     if (error != CL_SUCCESS) {
       FATAL ("Error enqueueing kernel: " << (signed int) error);
     }
 
 #ifdef BRUTAL_FINISH
     error = clFinish (CLHelper::queue);
+
     if (error != CL_SUCCESS) {
       FATAL ("Error finishing command queue: " << (signed int) error);
     }
+
 #endif
 
   }
+
 #else
 #ifdef BUILD_BLAS
   im2colbp();
@@ -334,6 +406,7 @@ void ConvolutionLayer::BackPropagate() {
     input_->delta.Clear();
     col2imbp();
   }
+
 #else
 
   const unsigned int inner_nh_x = kernel_width_ - 1;
@@ -343,14 +416,17 @@ void ConvolutionLayer::BackPropagate() {
   // flipped filter.
   if (backprop_enabled_) {
     #pragma omp parallel for default(shared)
+
     for (unsigned int sample = 0; sample < input_->data.samples(); sample++) {
       for (unsigned int imap = 0; imap < input_maps_; imap++) {
         for (unsigned int diy = 0; diy < input_height_; diy++) {
           for (unsigned int dix = 0; dix < input_width_; dix++) {
             for (unsigned int ky = 0; ky < kernel_height_; ky++) {
               int doy = ky + diy - inner_nh_y;
+
               for (unsigned int kx = 0; kx < kernel_width_; kx++) {
                 int dox = kx + dix - inner_nh_x;
+
                 for (unsigned int omap = 0; omap < output_maps_; omap++) {
                   if (dox >= 0 && doy >= 0 && dox < (int) output_width_ &&
                       doy < (int) output_height_) {
@@ -373,6 +449,7 @@ void ConvolutionLayer::BackPropagate() {
       }
     }
   }
+
 #endif // BUILD_BLAS
 #endif // BUILD_OPENCL
 
@@ -383,7 +460,7 @@ void ConvolutionLayer::BackPropagate() {
   {
     cl_uint error = 0;
     input_->data.MoveToGPU();
-    delta_buffer_.MoveToGPU(true);
+    delta_buffer_.MoveToGPU (true);
     output_->delta.MoveToGPU();
     const unsigned int samples = input_->data.samples();
     error |= clSetKernelArg (CLHelper::k_crossCorrelation, 0, sizeof (cl_mem), &input_->data.cl_data_ptr_);
@@ -408,15 +485,18 @@ void ConvolutionLayer::BackPropagate() {
 
     error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_crossCorrelation, 3, NULL,
                                     global_work_size, NULL, 0, NULL, NULL);
+
     if (error != CL_SUCCESS) {
       FATAL ("Error enqueueing kernel: " << (signed int) error);
     }
 
 #ifdef BRUTAL_FINISH
     error = clFinish (CLHelper::queue);
+
     if (error != CL_SUCCESS) {
       FATAL ("Error finishing command queue: " << (signed int) error);
     }
+
 #endif
 
   }
@@ -424,7 +504,7 @@ void ConvolutionLayer::BackPropagate() {
   {
 
     cl_uint error = 0;
-    weights_->delta.MoveToGPU(true);
+    weights_->delta.MoveToGPU (true);
     delta_buffer_.MoveToGPU();
 
     const unsigned int samples = input_->data.samples();
@@ -444,15 +524,18 @@ void ConvolutionLayer::BackPropagate() {
 
     error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_foldWeights, 3, NULL,
                                     global_work_size, NULL, 0, NULL, NULL);
+
     if (error != CL_SUCCESS) {
       FATAL ("Error enqueueing kernel: " << (signed int) error);
     }
 
 #ifdef BRUTAL_FINISH
     error = clFinish (CLHelper::queue);
+
     if (error != CL_SUCCESS) {
       FATAL ("Error finishing command queue: " << (signed int) error);
     }
+
 #endif
 
   }
@@ -466,6 +549,7 @@ void ConvolutionLayer::BackPropagate() {
         X, kernel_width_ * kernel_height_ * input_maps_,
         0.0, dW, kernel_width_ * kernel_height_ * input_maps_);
 #else
+
   // Calculate gradients via x-correlation i * do = k
   for (unsigned int sample = 0; sample < input_->data.samples(); sample++) {
     for (unsigned int imap = 0; imap < input_maps_; imap++) {
@@ -473,8 +557,10 @@ void ConvolutionLayer::BackPropagate() {
         for (unsigned int kx = 0; kx < kernel_width_; kx++) {
           for (unsigned int doy = 0; doy < output_height_; doy++) {
             unsigned int iy = ky + doy;
+
             for (unsigned int dox = 0; dox < output_width_; dox++) {
               unsigned int ix = kx + dox;
+
               for (unsigned int omap = 0; omap < output_maps_; omap++) {
                 const datum doval =
                   *output_->delta.data_ptr_const (dox, doy, omap, sample);
@@ -492,6 +578,7 @@ void ConvolutionLayer::BackPropagate() {
       }
     }
   }
+
 #endif // BUILD_BLAS
 #endif // BUILD_OPENCL
   /*
@@ -500,7 +587,7 @@ void ConvolutionLayer::BackPropagate() {
 #ifdef BUILD_OPENCL_CONV
   {
     cl_uint error = 0;
-    bias_buffer_.MoveToGPU(true);
+    bias_buffer_.MoveToGPU (true);
     output_->delta.MoveToGPU();
     const unsigned int samples = input_->data.samples();
     error |= clSetKernelArg (CLHelper::k_biasGradientPart1, 0, sizeof (cl_mem), &output_->delta.cl_data_ptr_);
@@ -517,23 +604,26 @@ void ConvolutionLayer::BackPropagate() {
 
     error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_biasGradientPart1, 2, NULL,
                                     global_work_size, NULL, 0, NULL, NULL);
+
     if (error != CL_SUCCESS) {
       FATAL ("Error enqueueing kernel: " << (signed int) error);
     }
 
 #ifdef BRUTAL_FINISH
     error = clFinish (CLHelper::queue);
+
     if (error != CL_SUCCESS) {
       FATAL ("Error finishing command queue: " << (signed int) error);
     }
+
 #endif
 
   }
-  
+
   {
     cl_uint error = 0;
-    
-    bias_->delta.MoveToGPU(true);
+
+    bias_->delta.MoveToGPU (true);
     const unsigned int samples = input_->data.samples();
     error |= clSetKernelArg (CLHelper::k_biasGradientPart2, 0, sizeof (cl_mem), &bias_buffer_.cl_data_ptr_);
     error |= clSetKernelArg (CLHelper::k_biasGradientPart2, 1, sizeof (cl_mem), &bias_->delta.cl_data_ptr_);
@@ -549,15 +639,18 @@ void ConvolutionLayer::BackPropagate() {
 
     error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_biasGradientPart2, 1, NULL,
                                     global_work_size, NULL, 0, NULL, NULL);
+
     if (error != CL_SUCCESS) {
       FATAL ("Error enqueueing kernel: " << (signed int) error);
     }
 
 #ifdef BRUTAL_FINISH
     error = clFinish (CLHelper::queue);
+
     if (error != CL_SUCCESS) {
       FATAL ("Error finishing command queue: " << (signed int) error);
     }
+
 #endif
 
   }
@@ -565,19 +658,22 @@ void ConvolutionLayer::BackPropagate() {
   bias_->delta.Clear();
 
   #pragma omp parallel for default(shared)
+
   for (unsigned int omap = 0; omap < output_maps_; omap++) {
     for (unsigned int sample = 0; sample < input_->data.samples(); sample++) {
 //      for (unsigned int imap = 0; imap < input_maps_; imap++) {
-        for (unsigned int doy = 0; doy < output_height_; doy++) {
-          for (unsigned int dox = 0; dox < output_width_; dox++) {
-            const datum doval =
-              *output_->delta.data_ptr_const (dox, doy, omap, sample);
-            bias_->delta[omap] += doval; //* 2.0f;
-          }
+      for (unsigned int doy = 0; doy < output_height_; doy++) {
+        for (unsigned int dox = 0; dox < output_width_; dox++) {
+          const datum doval =
+            *output_->delta.data_ptr_const (dox, doy, omap, sample);
+          bias_->delta[omap] += doval; //* 2.0f;
         }
+      }
+
 //      }
     }
   }
+
 #endif
 }
 
@@ -591,6 +687,7 @@ void ConvolutionLayer::OnLayerConnect (Layer* next_layer) {
   weights_->data.MoveToCPU();
 #endif
   std::uniform_real_distribution<datum> dist_weights (-range , range);
+
   for (std::size_t i = 0; i < weights_->data.elements(); i++) {
     weights_->data[i] = dist_weights (rand_);
   }
@@ -601,6 +698,7 @@ void ConvolutionLayer::OnLayerConnect (Layer* next_layer) {
 
 void ConvolutionLayer::im2colff() {
   #pragma omp parallel for default(shared)
+
   for (unsigned int sample = 0; sample < input_->data.samples(); sample++) {
     for (unsigned int imap = 0; imap < input_maps_; imap++) {
       for (unsigned int oy = 0; oy < output_height_; oy++) {
@@ -643,6 +741,7 @@ void ConvolutionLayer::im2colbp() {
 
 void ConvolutionLayer::col2imbp() {
   #pragma omp parallel for default(shared)
+
   for (unsigned int sample = 0; sample < input_->data.samples(); sample++) {
     for (unsigned int imap = 0; imap < input_maps_; imap++) {
       for (unsigned int dxx = 0; dxx < output_width_; dxx++) {

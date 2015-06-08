@@ -47,6 +47,15 @@ public:
    */
   virtual datum GetLossSamplingProbability() = 0;
   
+  /**
+   * @brief Gets the width of the label image (expected output)
+   */
+  virtual unsigned int GetLabelWidth() = 0;
+  
+  /**
+   * @brief Gets the height of the label image (expected output)
+   */
+  virtual unsigned int GetLabelHeight() = 0;
 };
 
 }

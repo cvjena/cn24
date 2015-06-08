@@ -81,6 +81,12 @@ public:
   virtual std::vector<unsigned int> GetClassColors() const = 0;
   
   /**
+   * @brief Gets the colors of the classes in this Dataset.
+   * The colors are unsigned ints of the format 0x00RRGGBB.
+   */
+  virtual std::vector<datum> GetClassWeights() const = 0;
+  
+  /**
    * @brief Gets the number of training samples in this Dataset.
    */
   virtual unsigned int GetTrainingSamples() const = 0;
@@ -145,15 +151,16 @@ enum DatasetLoadSelection {
 
 class TensorStreamPatchDataset : public Dataset {
  public:
-  TensorStreamPatchDataset(std::istream& training_stream,
-    std::istream& testing_stream,
-    unsigned int classes,
-    std::vector<std::string> class_names,
-    std::vector<unsigned int> class_colors,
-    unsigned int patchsize_x,
-    unsigned int patchsize_y,
-    dataset_localized_error_function error_function = DefaultLocalizedErrorFunction);
-  
+	 TensorStreamPatchDataset(std::istream& training_stream,
+		 std::istream& testing_stream,
+		 unsigned int classes,
+		 std::vector<std::string> class_names,
+		 std::vector<unsigned int> class_colors,
+		 std::vector<datum> class_weights,
+		 unsigned int patchsize_x,
+		 unsigned int patchsize_y,
+		 dataset_localized_error_function error_function = DefaultLocalizedErrorFunction);
+ 
   // Dataset implementations
   virtual Task GetTask() const;
   virtual Method GetMethod() const { return PATCH; }
@@ -164,6 +171,7 @@ class TensorStreamPatchDataset : public Dataset {
   virtual unsigned int GetClasses() const;
   virtual std::vector< std::string > GetClassNames() const;
   virtual std::vector< unsigned int > GetClassColors() const;
+  virtual std::vector< datum > GetClassWeights() const;
   virtual unsigned int GetTrainingSamples() const;
   virtual unsigned int GetTestingSamples() const;
   virtual bool SupportsTesting() const;
@@ -196,6 +204,7 @@ private:
   // Parameters
   std::vector<std::string> class_names_;
   std::vector<unsigned int> class_colors_;
+  std::vector<datum> class_weights_;
   unsigned int classes_;
   dataset_localized_error_function error_function_;
 }; 
@@ -207,6 +216,7 @@ public:
     unsigned int classes,
     std::vector<std::string> class_names,
     std::vector<unsigned int> class_colors,
+		std::vector<datum> class_weights,
     dataset_localized_error_function error_function = DefaultLocalizedErrorFunction);
   
   // Dataset implementations
@@ -219,6 +229,7 @@ public:
   virtual unsigned int GetClasses() const;
   virtual std::vector< std::string > GetClassNames() const;
   virtual std::vector< unsigned int > GetClassColors() const;
+  virtual std::vector< datum > GetClassWeights() const;
   virtual unsigned int GetTrainingSamples() const;
   virtual unsigned int GetTestingSamples() const;
   virtual bool SupportsTesting() const;
@@ -247,6 +258,7 @@ private:
   // Parameters
   std::vector<std::string> class_names_;
   std::vector<unsigned int> class_colors_;
+  std::vector<datum> class_weights_;
   unsigned int classes_;
   dataset_localized_error_function error_function_;
 };

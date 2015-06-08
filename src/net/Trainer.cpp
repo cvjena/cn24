@@ -58,10 +58,14 @@ Trainer::Trainer (Conv::Net& net, TrainerSettings settings) :
 
   // ..and an overview of the training settings
   LOGINFO << "Training settings: " << settings_;
+  
+  sample_count_ = training_layer_->GetLabelWidth() * training_layer_->GetLabelHeight()
+    * training_layer_->GetBatchSize();
 }
 
 void Trainer::Train (unsigned int epochs) {
   net_.SetTestOnlyStatDisabled (false);
+  net_.SetIsTesting(false);
 
   for (unsigned int e = 0; e < epochs; e++)
     Epoch();
@@ -78,16 +82,16 @@ datum Trainer::Test() {
   for (unsigned int s = 0; s < stat_count; s++)
     stat_sum[s] = 0;
 
-  unsigned int batchsize = training_layer_->GetBatchSize();
   unsigned int iterations = (training_layer_->GetSamplesInTestingSet()
-                             / batchsize) + 1;
+                             / training_layer_->GetBatchSize()) + 1;
   iterations = (unsigned int) ( ( (datum) iterations) *
                                 settings_.testing_ratio);
 
   training_layer_->SetTestingMode (true);
+  net_.SetIsTesting(true);
 
   LOGDEBUG << "Testing, iterations: " << iterations <<
-           ", batch size: " << batchsize;
+           ", batch size: " << training_layer_->GetBatchSize();
 
   auto t_begin = std::chrono::system_clock::now();
 
@@ -103,14 +107,14 @@ datum Trainer::Test() {
   auto t_end = std::chrono::system_clock::now();
   std::chrono::duration<double> t_diff = t_end - t_begin;
   LOGINFO << "Testing, sps: " <<
-          (datum) (training_layer_->GetBatchSize() * iterations)
+          (datum) (sample_count_ * iterations)
           / (datum) t_diff.count();
 
   LOGINFO << "Testing, tps: " <<
           1000000.0f * (datum) t_diff.count() /
-          (datum) (training_layer_->GetBatchSize() * iterations) << " us";
+          (datum) (sample_count_ * iterations) << " us";
 
-  LOGDEBUG << "Testing, lps: " << loss_sum / (datum) (iterations * batchsize);
+  LOGDEBUG << "Testing, lps: " << loss_sum / (datum) (iterations * sample_count_);
 
   for (unsigned int s = 0; s < stat_count; s++) {
     LOGRESULT << "Testing, " << net_.stat_layers() [s]->stat_name() <<
@@ -132,6 +136,7 @@ datum Trainer::Test() {
   }
 
   training_layer_->SetTestingMode (false);
+  net_.SetIsTesting(false);
 
   delete[] stat_sum;
   return loss_sum / (datum) iterations;
@@ -141,7 +146,7 @@ void Trainer::Epoch() {
   datum epoch_error = 0.0;
   unsigned int stat_count = net_.stat_layers().size();
   datum* stat_sum = new datum[stat_count];
-  unsigned int batchsize = training_layer_->GetBatchSize() * settings_.sbatchsize;
+  // unsigned int batchsize = training_layer_->GetBatchSize() * settings_.sbatchsize;
   unsigned int iterations =
     settings_.iterations == 0 ?
     training_layer_->GetSamplesInTrainingSet() :
@@ -155,7 +160,7 @@ void Trainer::Epoch() {
   training_layer_->SetTestingMode (false);
 
   LOGDEBUG << "Epoch: " << epoch_ << ", it: " << iterations <<
-           ", bsize: " << batchsize << ", lr0: " <<
+           ", bsize: " << training_layer_->GetBatchSize() * settings_.sbatchsize << ", lr0: " <<
            CalculateLR (epoch_ * iterations) << std::endl;
 
 
@@ -223,18 +228,19 @@ void Trainer::Epoch() {
   auto t_end = std::chrono::system_clock::now();
   std::chrono::duration<double> t_diff = t_end - t_begin;
   LOGINFO << "Training, sps: " <<
-          (datum) (training_layer_->GetBatchSize() * settings_.sbatchsize
+          (datum) (sample_count_ * settings_.sbatchsize
                    * training_layer_->GetLossSamplingProbability() * iterations)
           / (datum) t_diff.count();
 
   LOGINFO << "Training, tps: " <<
           1000000.0f * (datum) t_diff.count() /
-          (datum) (training_layer_->GetBatchSize() * settings_.sbatchsize
+          (datum) (sample_count_ * settings_.sbatchsize
                    * training_layer_->GetLossSamplingProbability() * iterations) << " us";
 
   // Display training epoch_error
-  LOGDEBUG << "Training, lps: " << epoch_error / (datum) (iterations * batchsize
-           * training_layer_->GetLossSamplingProbability());
+  LOGDEBUG << "Training, lps: " << epoch_error / (datum) (iterations * sample_count_
+            * settings_.sbatchsize
+            * training_layer_->GetLossSamplingProbability());
 
   for (unsigned int s = 0; s < stat_count; s++) {
     LOGTRESULT << "Training, " << net_.stat_layers() [s]->stat_name() <<
@@ -285,10 +291,12 @@ void Trainer::ApplyGradients (datum lr) {
          * the minibatch
          */
         const datum last_delta = (*last_deltas_[dp]) (w);
-        const datum delta = llr *
-                            (w_gradient / (datum) (training_layer_->GetBatchSize() * settings_.sbatchsize)) +
-                            llr * (settings_.l2_weight * l2_gradient +
-                                  settings_.l1_weight * l1_gradient) / ((datum) (training_layer_->GetBatchSize() * settings_.sbatchsize));
+        const datum delta = 
+        
+          // Average of gradient over minibatch
+          llr * (w_gradient / (datum) (sample_count_ * settings_.sbatchsize)) +
+          // Regularization
+          llr * (settings_.l2_weight * l2_gradient + settings_.l1_weight * l1_gradient);
                             
         const datum step = delta + settings_.momentum * last_delta;
         param->data[w] -= step;
