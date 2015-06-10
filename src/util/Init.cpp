@@ -331,13 +331,17 @@ cl_program CLHelper::CreateProgram ( const char* file_name ) {
 
   std::string binary_path;
   System::GetExecutablePath(binary_path);
-#ifdef _MSC_VER
-  std::string full_path = binary_path + "..\\" + std::string(file_name);
-  std::ifstream kernel_file ( full_path, std::ios::in );
-#else
+  
+  // Search in binary path first
   std::string full_path = binary_path + std::string(file_name);
+  
+  // If kernel cannot be found, go up one folder (Xcode, Visual Studio and
+  // other multi-target build setups)
+  if ( !std::ifstream(full_path, std::ios::in).good()) {
+    full_path = binary_path + "../" + std::string(file_name);
+  }
+  
   std::ifstream kernel_file ( full_path, std::ios::in );
-#endif
 
   if ( !kernel_file.good() ) {
     FATAL ( "Cannot open kernel: " << full_path );
