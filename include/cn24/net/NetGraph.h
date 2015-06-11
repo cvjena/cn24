@@ -62,7 +62,8 @@ public:
 	std::vector<NetGraphBackpropConnection> backprop_connections;
 	std::vector<NetGraphBuffer> output_buffers;
 
-	int unique_id = -1;
+	//int unique_id = -1;
+  std::string unique_name = "";
 	bool is_output = false;
 	bool is_input = false;
 

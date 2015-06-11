@@ -31,8 +31,11 @@ void NetGraph::AddNode(NetGraphNode* node) {
 	// all necessary checks.
 
 	// Assign the node a new unique ID if it doesn't have one already
-	if (node->unique_id == -1)
-		node->unique_id = ++last_uid;
+  if (node->unique_name.length() == 0) {
+    int node_id = ++last_uid;
+    std::stringstream ss; ss << "node" << node_id;
+    node->unique_name = ss.str();
+  }
 
 	// Add node to list
 	nodes_.push_back(node);
@@ -92,7 +95,7 @@ bool NetGraph::IsComplete() const {
 				LOGWARN << "Node has null-pointer for layer!";
 				node_okay = false;
 			}
-			if (node->unique_id == -1) {
+			if (node->unique_name.length() == 0) {
 				LOGWARN << "Node has no unique identifier!";
 				node_okay = false;
 			}
@@ -145,7 +148,7 @@ void NetGraph::PrintGraph(std::ostream& graph_output) {
 	for (NetGraphNode* node : nodes_) {
 
 		// 1. Print node details
-		node_output << "node" << node->unique_id << " [shape=record,";
+		node_output << node->unique_name << " [shape=record,";
 
 		if (node->is_input) {
 			node_output << "color=red,";
@@ -155,7 +158,7 @@ void NetGraph::PrintGraph(std::ostream& graph_output) {
 		}
 			
 		node_output << " label=\""
-			<< "{ <i> " << node->unique_id << ": " << node->layer->GetLayerDescription();
+			<< "{ <i> " << node->unique_name << ": " << node->layer->GetLayerDescription();
 		if (node->output_buffers.size() > 1) {
 			node_output << "| {";
 			for (unsigned int i = 0; i < node->output_buffers.size(); i++) {
@@ -172,8 +175,8 @@ void NetGraph::PrintGraph(std::ostream& graph_output) {
 
 		// 2. Print edges
 		for (NetGraphConnection connection : node->input_connections) {
-			edge_output << "node" << connection.node->unique_id << ":o" << connection.buffer << " -> node"
-				<< node->unique_id << ":i" <<
+			edge_output << connection.node->unique_name << ":o" << connection.buffer << " -> "
+				<< node->unique_name << ":i" <<
 				"[penwidth=2";
 			if (!connection.backprop)
 				edge_output << ",style=dotted";
@@ -234,6 +237,7 @@ void NetGraph::Initialize() {
   for (NetGraphNode* node : nodes_){
 		InitializeNode(node);
 	}
+
 }
 
 void NetGraph::InitializeNode(NetGraphNode* node) {
