@@ -388,10 +388,10 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 		}
 	}
 	else if (command.compare(0, 5, "wstat") == 0) {
-		unsigned int node_uid = 0;
-		Conv::ParseCountIfPossible(command, "node", node_uid);
+    std::string node_uid = 0;
+		Conv::ParseStringIfPossible(command, "node", node_uid);
 		for (Conv::NetGraphNode* node : graph.GetNodes()) {
-			if (node->unique_id == (int)node_uid) {
+			if (node->unique_name.compare(node_uid) == 0) {
 				unsigned int p = 0;
 				for (Conv::CombinedTensor* param_tensor : node->layer->parameters()) {
 					LOGINFO << "Reporting stats on parameter set " << p++ << " " << param_tensor->data;
@@ -404,10 +404,10 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 		}
 	}
 	else if (command.compare(0, 5, "dstat") == 0) {
-		unsigned int node_uid = 0;
-		Conv::ParseCountIfPossible(command, "node", node_uid);
+    std::string node_uid = 0;
+		Conv::ParseStringIfPossible(command, "node", node_uid);
 		for (Conv::NetGraphNode* node : graph.GetNodes()) {
-			if (node->unique_id == (int)node_uid) {
+			if (node->unique_name.compare(node_uid) == 0) {
 				unsigned int p = 0;
 				for (Conv::NetGraphBuffer& output_buffer : node->output_buffers) {
 					Conv::CombinedTensor* output_tensor = output_buffer.combined_tensor;
