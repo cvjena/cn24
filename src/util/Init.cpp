@@ -14,6 +14,7 @@
 #include "Init.h"
 #include "CLHelper.h"
 #include "Config.h"
+#include "ConfigParsing.h"
 #include "Log.h"
 
 #include <locale.h>
@@ -74,8 +75,33 @@ void System::Init() {
   std::string binary_path;
   GetExecutablePath(binary_path);
   LOGDEBUG << "Executable path: " << binary_path;
+  
+  unsigned int platform_number = 0;
+  unsigned int device_number = 0;
+  
+  // Look for configuration file
+  std::string config_path = binary_path + "config";
+  if(!std::ifstream(config_path, std::ios::in).good()) {
+    config_path = binary_path + "../config";
+  }
+  
+  // Load and parse config file
+  std::ifstream config_file(config_path, std::ios::in);
+  if(config_file.good()) {
+    LOGINFO << "Loading config file: " << config_path;
+    
+    while (!config_file.eof()) {
+      std::string line;
+      std::getline (config_file, line);
+      
+      ParseUIntIfPossible(line, "opencl_platform", platform_number);
+      ParseUIntIfPossible(line, "opencl_device", device_number);
+    }
+  } else {
+    LOGINFO << "Could not find a config file.";
+  }
 
-  CLHelper::Init();
+  CLHelper::Init(platform_number, device_number);
 #ifdef BUILD_GUI
   if(!gtk_init_check ( nullptr, nullptr )) {
     LOGWARN << "Could not initialize GTK!";
@@ -137,12 +163,8 @@ void System::GetExecutablePath(std::string& binary_path) {
 #endif
 }
 
-void CLHelper::Init() {
+void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
 #ifdef BUILD_OPENCL
-  // TODO make this configurable
-  unsigned int platform_number = 0;
-  unsigned int device_number = 0;
-
   cl_uint platform_count = 0;
   clGetPlatformIDs ( 0, 0, &platform_count );
 
@@ -331,13 +353,17 @@ cl_program CLHelper::CreateProgram ( const char* file_name ) {
 
   std::string binary_path;
   System::GetExecutablePath(binary_path);
-#ifdef _MSC_VER
-  std::string full_path = binary_path + "..\\" + std::string(file_name);
-  std::ifstream kernel_file ( full_path, std::ios::in );
-#else
+  
+  // Search in binary path first
   std::string full_path = binary_path + std::string(file_name);
+  
+  // If kernel cannot be found, go up one folder (Xcode, Visual Studio and
+  // other multi-target build setups)
+  if ( !std::ifstream(full_path, std::ios::in).good()) {
+    full_path = binary_path + "../" + std::string(file_name);
+  }
+  
   std::ifstream kernel_file ( full_path, std::ios::in );
-#endif
 
   if ( !kernel_file.good() ) {
     FATAL ( "Cannot open kernel: " << full_path );
