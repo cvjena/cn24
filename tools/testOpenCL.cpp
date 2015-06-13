@@ -29,7 +29,7 @@ int main() {
   for(int i = 0; i < platform_count; i++) {
     cl_uint device_count = 0;
     clGetDeviceIDs(platform_ids[i], CL_DEVICE_TYPE_ALL, 0, 0, &device_count);
-    LOGINFO << "Platform " << i + 1 << ": " << device_count << " devices";
+    LOGINFO << "Platform " << i << ": " << device_count << " devices";
     
     cl_device_id* device_ids = new cl_device_id[device_count];
     clGetDeviceIDs(platform_ids[i], CL_DEVICE_TYPE_ALL, device_count,
@@ -38,11 +38,11 @@ int main() {
     for(int j = 0; j < device_count; j++) {
       char buf[256];
       clGetDeviceInfo(device_ids[j], CL_DEVICE_NAME, 256, buf, 0);
-      LOGINFO << "Platform " << i + 1 << ", device " << j + 1 << ": "
+      LOGINFO << "Platform " << i << ", device " << j << ": "
         << buf;
       
       clGetDeviceInfo(device_ids[j], CL_DEVICE_VERSION, 256, buf, 0);
-      LOGINFO << "Platform " << i + 1 << ", device " << j + 1 << ": supports "
+      LOGINFO << "Platform " << i << ", device " << j << ": supports "
         << buf;
     }
     

@@ -27,7 +27,8 @@
 namespace Conv {
 class CLHelper {
 public:
-  static void Init();
+  static void Init(unsigned int platform_number = 0,
+                   unsigned int device_number = 0);
 #ifdef BUILD_OPENCL
   static cl_program CreateProgram(const char* file_name);
   static cl_device_id device;
