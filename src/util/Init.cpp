@@ -4,12 +4,10 @@
  *
  * For licensing information, see the LICENSE file included with this project.
  */
-#ifdef BUILD_OPENCL
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#endif
 
 #include "Init.h"
 #include "CLHelper.h"
@@ -215,8 +213,8 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   LOGINFO << "Creating OpenCL context...";
 
   cl_int error = 0;
-  context = clCreateContext ( context_properties, device_count,
-                              device_ids, 0, 0, &error );
+  context = clCreateContext ( context_properties, 1,
+                              &device_ids[device_number], 0, 0, &error );
 
   if ( error != CL_SUCCESS ) {
     FATAL ( "Error creating OpenCL context: " << error );
@@ -230,8 +228,8 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
     FATAL ( "Error creating OpenCL command queue: " << error );
   }
 
-  delete device_ids;
-  delete platform_ids;
+  delete[] device_ids;
+  delete[] platform_ids;
 
   // Compile kernels
   cl_program p_crossCorrelation = CreateProgram ( "kernels/crossCorrelation.cl" );
