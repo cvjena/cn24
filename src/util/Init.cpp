@@ -4,12 +4,10 @@
  *
  * For licensing information, see the LICENSE file included with this project.
  */
-#ifdef BUILD_OPENCL
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#endif
 
 #include "Init.h"
 #include "CLHelper.h"
