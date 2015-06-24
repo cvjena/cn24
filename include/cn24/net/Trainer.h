@@ -23,6 +23,11 @@
 
 namespace Conv {
 
+enum OPTIMIZATION_METHOD {
+  GRADIENT_DESCENT,
+  QUICKPROP
+};
+  
 struct TrainerSettings {
 public:
   datum learning_rate = 0.0001;
@@ -33,6 +38,9 @@ public:
   datum momentum = 0.9;
   datum epoch_training_ratio = 1.0;
   datum testing_ratio = 1.0;
+  datum mu = 1.75;
+  datum eta = 1.5;
+  OPTIMIZATION_METHOD optimization_method = GRADIENT_DESCENT;
   unsigned int pbatchsize = 1;
   unsigned int sbatchsize = 1;
   unsigned int iterations = 500;
@@ -88,6 +96,7 @@ private:
   NetGraph& graph_;
   std::vector<CombinedTensor*> parameters_;
   std::vector<Tensor*> last_deltas_;
+  std::vector<Tensor*> last_gradients_;
   std::vector<Tensor*> accumulated_gradients_;
   
 	// Saved pointers

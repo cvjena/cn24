@@ -37,17 +37,21 @@ namespace Conv {
 		for (unsigned int p = 0; p < parameters_.size(); p++) {
 			w += parameters_[p]->data.elements();
 
-			// Allocate Tensors for momentum
-			Tensor* last_delta = new Tensor();
-			Tensor* accumulated_gradient = new Tensor();
-			last_delta->Resize(parameters_[p]->data);
-			last_delta->Clear();
-			accumulated_gradient->Resize(parameters_[p]->data);
-			accumulated_gradient->Clear();
+      // Allocate Tensors for momentum
+      Tensor* last_delta = new Tensor();
+      Tensor* last_gradient = new Tensor();
+      Tensor* accumulated_gradient = new Tensor();
+      last_delta->Resize (parameters_[p]->data);
+      last_delta->Clear();
+      last_gradient->Resize (parameters_[p]->data);
+      last_gradient->Clear();
+      accumulated_gradient->Resize (parameters_[p]->data);
+      accumulated_gradient->Clear();
 
-			last_deltas_.push_back(last_delta);
-			accumulated_gradients_.push_back(accumulated_gradient);
-		}
+      last_deltas_.push_back (last_delta);
+      last_gradients_.push_back (last_gradient);
+      accumulated_gradients_.push_back (accumulated_gradient);
+    }
 
 		// Outputs the number of weights
 		LOGDEBUG << "Weights: " << w;
@@ -246,10 +250,17 @@ void Trainer::Epoch() {
 void Trainer::ApplyGradients (datum lr) {
   unsigned int dp = 0;
 
-
 	for (unsigned int l = 0; l < graph_.GetNodes().size(); l++) {
 		Layer* const layer = graph_.GetNodes()[l]->layer;
-    const datum llr = lr * layer->local_lr_;
+    datum llr;
+    switch (settings_.optimization_method) {
+      case GRADIENT_DESCENT:
+        llr = lr * layer->local_lr_;
+        break;
+      case QUICKPROP:
+        llr = layer->local_lr_;
+        break;
+    }
 
     for (unsigned int p = 0; p < layer->parameters().size(); p++) {
       CombinedTensor* const param = layer->parameters_[p];
@@ -269,19 +280,45 @@ void Trainer::ApplyGradients (datum lr) {
          * This site says that one should average the gradient over
          * the minibatch
          */
-        const datum last_delta = (*last_deltas_[dp]) (w);
-        const datum delta = 
+        const datum delta =
         
           // Average of gradient over minibatch
           llr * (w_gradient / (datum) (sample_count_ * settings_.sbatchsize)) +
           // Regularization
           llr * (settings_.l2_weight * l2_gradient + settings_.l1_weight * l1_gradient);
-                            
-        const datum step = delta + settings_.momentum * last_delta;
-        param->data[w] -= step;
+        
+        // This is needed for both methods
+        const datum last_delta = (*last_deltas_[dp]) (w);
+        
+        switch (settings_.optimization_method) {
+          case GRADIENT_DESCENT:
+          {
+            const datum step = delta + settings_.momentum * last_delta;
+            param->data[w] -= step;
 
-        // Backup delta
-        (*last_deltas_[dp]) [w] = step;
+            // Backup delta
+            (*last_deltas_[dp]) [w] = step;
+          }
+            break;
+          case QUICKPROP:
+          {
+            const datum last_gradient = (*last_gradients_[dp]) (w);
+            datum inner_step = delta / last_delta - delta;
+            if (!(fabs(inner_step) < settings_.mu))
+              inner_step = settings_.mu;
+            datum step = last_delta * inner_step;
+            
+            if ((delta > 0 && last_gradient > 0) || (delta < 0 && last_gradient < 0)) {
+              step -= settings_.eta * delta;
+            }
+            param->data[w] += step;
+
+            // Backup steps and gradient
+            (*last_deltas_[dp]) [w] = step;
+            (*last_gradients_[dp]) [w] = delta;
+          }
+            break;
+        }
       }
 
       dp++;
@@ -298,7 +335,17 @@ std::ostream& operator<< (std::ostream & output,
   output << "PB: " << settings.pbatchsize << ", ";
   output << "L1: " << settings.l1_weight << ", ";
   output << "L2: " << settings.l2_weight << ", ";
-  output << "MM: " << settings.momentum;
+  output << "MM: " << settings.momentum << ", ";
+  output << "MU: " << settings.mu << ", ";
+  output << "ET: " << settings.eta << ", ";
+  switch (settings.optimization_method) {
+    case GRADIENT_DESCENT:
+      output << "GD";
+      break;
+    case QUICKPROP:
+      output << "QP";
+      break;
+  }
   return output;
 }
 
