@@ -256,6 +256,14 @@ void ConfigurableFactory::InitOptimalSettings() {
     ParseUIntIfPossible (line, "iterations", optimal_settings_.iterations);
     ParseUIntIfPossible (line, "sbatchsize", optimal_settings_.sbatchsize);
     ParseUIntIfPossible (line, "pbatchsize", optimal_settings_.pbatchsize);
+    
+    std::string method;
+    ParseStringIfPossible(line, "optimization", method);
+    if(method.compare("gradient_descent") == 0) {
+      optimal_settings_.optimization_method = GRADIENT_DESCENT;
+    } else if(method.compare("quickprop") == 0) {
+      optimal_settings_.optimization_method = QUICKPROP;
+    }
   }
 }
 
