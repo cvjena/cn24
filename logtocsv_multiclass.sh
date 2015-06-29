@@ -3,7 +3,7 @@ INPUTFILE=$1
 #OUTPUTFILE=${INPUTFILE}.csv
 #echo "Converting $INPUTFILE to $OUTPUTFILE"
 
-echo -ne "Training,Epoch,AggrateLoss,OverallRR,AverageRR,AverageIOU"
+echo -ne "Training,Epoch,AggregateLoss,OverallRR,AverageRR,AverageIOU"
 cat $INPUTFILE |\
 sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" |\
 grep -E "(intersection)|(recognition rate)|(aggregate lps)" |\
