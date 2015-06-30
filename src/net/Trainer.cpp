@@ -305,7 +305,7 @@ void Trainer::ApplyGradients (datum lr) {
             const datum last_gradient = (*last_gradients_[dp]) (w);
             datum inner_step = delta / last_delta - delta;
             if (!(fabs(inner_step) < settings_.mu))
-              inner_step = settings_.mu;
+              inner_step = (inner_step < 0) ? -settings_.mu : settings_.mu;
             datum step = last_delta * inner_step;
             
             if ((delta > 0 && last_gradient > 0) || (delta < 0 && last_gradient < 0)) {
