@@ -623,9 +623,9 @@ void ConfigurableFactory::InitOptimalSettings() {
     
     std::string method;
     ParseStringIfPossible(line, "optimization", method);
-    if(method.compare("gradient_descent") == 0) {
+    if(method.compare(0, 16, "gradient_descent") == 0) {
       optimal_settings_.optimization_method = GRADIENT_DESCENT;
-    } else if(method.compare("quickprop") == 0) {
+    } else if(method.compare(0, 9, "quickprop") == 0) {
       optimal_settings_.optimization_method = QUICKPROP;
     }
   }
