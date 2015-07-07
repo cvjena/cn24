@@ -347,9 +347,11 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
     LOGINFO << "Setting current epoch to " << epoch;
     trainer.SetEpoch (epoch);
     testing_trainer.SetEpoch (trainer.epoch());
+    trainer.Reset();
   } else if (command.compare (0, 5, "reset") == 0) {
     LOGINFO << "Resetting parameters";
     graph.InitializeWeights();
+    trainer.Reset();
 
     if (hybrid) {
       LOGDEBUG << "Reshadowing tensors...";
