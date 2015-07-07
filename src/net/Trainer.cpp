@@ -280,7 +280,7 @@ void Trainer::ApplyGradients (datum lr) {
          * This site says that one should average the gradient over
          * the minibatch
          */
-        const datum delta =
+        datum delta =
         
           // Average of gradient over minibatch
           llr * (w_gradient / (datum) (sample_count_ * settings_.sbatchsize)) +
@@ -288,12 +288,12 @@ void Trainer::ApplyGradients (datum lr) {
           llr * (settings_.l2_weight * l2_gradient + settings_.l1_weight * l1_gradient);
         
         // This is needed for both methods
-        const datum last_delta = (*last_deltas_[dp]) (w);
+        const datum last_step = (*last_deltas_[dp]) (w);
         
         switch (settings_.optimization_method) {
           case GRADIENT_DESCENT:
           {
-            const datum step = delta + settings_.momentum * last_delta;
+            const datum step = delta + settings_.momentum * last_step;
             param->data[w] -= step;
 
             // Backup delta
@@ -303,14 +303,50 @@ void Trainer::ApplyGradients (datum lr) {
           case QUICKPROP:
           {
             const datum last_gradient = (*last_gradients_[dp]) (w);
-            datum inner_step = delta / last_delta - delta;
-            if (!(fabs(inner_step) < settings_.mu))
-              inner_step = (inner_step < 0) ? -settings_.mu : settings_.mu;
-            datum step = last_delta * inner_step;
+            const datum s = settings_.mu / (1.0 + settings_.mu);
+            /*datum inner_step = delta / (last_gradient - delta);
             
-            if ((delta > 0 && last_gradient > 0) || (delta < 0 && last_gradient < 0)) {
-              step -= settings_.eta * delta;
+            if (!(fabs(inner_step) < fabs(settings_.mu)))
+              inner_step = (inner_step < 0) ? -settings_.mu : settings_.mu;
+
+            datum step = inner_step * last_step;
+
+            if ((delta >= 0 && last_gradient >= 0) || (delta < 0 && last_gradient < 0)) {
+             step -= settings_.eta * delta;
+            }*/
+            
+            datum step = 0;
+            if(last_step > 0.001) {
+              if(delta > 0.0) {
+                step += settings_.eta * delta;
+              }
+              
+              if(delta > (s * last_gradient)) {
+                step += settings_.mu * last_step;
+              } else {
+                step += last_step * delta / (last_gradient - delta);
+              }
+              
+            } else if(last_step < 0.001) {
+              if(delta < 0.0) {
+                step += settings_.eta * delta;
+              }
+              if(delta < (s * last_gradient)) {
+                step += settings_.mu * last_step;
+              } else {
+                step += last_step * delta / (last_gradient - delta);
+              }
+            } else {
+              step += settings_.eta * delta;
             }
+            
+            if(step > 1000 || step < -1000) {
+              if(step>1000)
+                step=1000;
+              else
+                step=-1000;
+            }
+            
             param->data[w] += step;
 
             // Backup steps and gradient
