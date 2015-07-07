@@ -77,7 +77,7 @@ public:
     @brief Resets the Trainer's inner state (last gradients/steps)
   **/
   inline void Reset() {
-    LOGDEBUT << "Resetting Trainer state";
+    LOGDEBUG << "Resetting Trainer state";
     for(Tensor* t : last_gradients_)
       t->Clear();
     for(Tensor* t : last_deltas_)
