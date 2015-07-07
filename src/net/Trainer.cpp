@@ -327,7 +327,7 @@ void Trainer::ApplyGradients (datum lr) {
                 step += last_step * delta / (last_gradient - delta);
               }
               
-            } else if(last_step < 0.001) {
+            } else if(last_step < -0.001) {
               if(delta < 0.0) {
                 step += settings_.eta * delta;
               }
@@ -347,7 +347,7 @@ void Trainer::ApplyGradients (datum lr) {
                 step=-1000;
             }
             
-            param->data[w] += step;
+            param->data[w] -= step;
 
             // Backup steps and gradient
             (*last_deltas_[dp]) [w] = step;
