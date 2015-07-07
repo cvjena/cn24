@@ -74,12 +74,24 @@ public:
   void Epoch();
 
   /**
+    @brief Resets the Trainer's inner state (last gradients/steps)
+  **/
+  inline void Reset() {
+    LOGDEBUT << "Resetting Trainer state";
+    for(Tensor* t : last_gradients_)
+      t->Clear();
+    for(Tensor* t : last_deltas_)
+      t->Clear();
+  }
+
+  /**
 	* @brief Set the current epoch
 	*
 	* @param epoch The new epoch number
 	*/
   inline void SetEpoch (unsigned int epoch) {
     epoch_ = epoch;
+    Reset();
   }
   
   inline unsigned int epoch() { return epoch_; }
