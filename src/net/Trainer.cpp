@@ -252,13 +252,13 @@ void Trainer::ApplyGradients (datum lr) {
 
 	for (unsigned int l = 0; l < graph_.GetNodes().size(); l++) {
 		Layer* const layer = graph_.GetNodes()[l]->layer;
-    datum llr;
+    datum layer_lr;
     switch (settings_.optimization_method) {
       case GRADIENT_DESCENT:
-        llr = lr * layer->local_lr_;
+        layer_lr = layer->local_lr_;
         break;
       case QUICKPROP:
-        llr = layer->local_lr_;
+        layer_lr = layer->local_lr_;
         break;
     }
 
@@ -283,9 +283,9 @@ void Trainer::ApplyGradients (datum lr) {
         datum delta =
         
           // Average of gradient over minibatch
-          llr * (w_gradient / (datum) (sample_count_ * settings_.sbatchsize)) +
+          layer_lr * (w_gradient / (datum) (sample_count_ * settings_.sbatchsize)) +
           // Regularization
-          llr * (settings_.l2_weight * l2_gradient + settings_.l1_weight * l1_gradient);
+          layer_lr * (settings_.l2_weight * l2_gradient + settings_.l1_weight * l1_gradient);
         
         // This is needed for both methods
         const datum last_step = (*last_deltas_[dp]) (w);
@@ -293,7 +293,7 @@ void Trainer::ApplyGradients (datum lr) {
         switch (settings_.optimization_method) {
           case GRADIENT_DESCENT:
           {
-            const datum step = delta + settings_.momentum * last_step;
+            const datum step = lr * delta + settings_.momentum * last_step;
             param->data[w] -= step;
 
             // Backup delta
@@ -304,21 +304,11 @@ void Trainer::ApplyGradients (datum lr) {
           {
             const datum last_gradient = (*last_gradients_[dp]) (w);
             const datum s = settings_.mu / (1.0 + settings_.mu);
-            /*datum inner_step = delta / (last_gradient - delta);
-            
-            if (!(fabs(inner_step) < fabs(settings_.mu)))
-              inner_step = (inner_step < 0) ? -settings_.mu : settings_.mu;
-
-            datum step = inner_step * last_step;
-
-            if ((delta >= 0 && last_gradient >= 0) || (delta < 0 && last_gradient < 0)) {
-             step -= settings_.eta * delta;
-            }*/
             
             datum step = 0;
             if(last_step > 0.001) {
               if(delta > 0.0) {
-                step += settings_.eta * delta;
+                step += lr * settings_.eta * delta;
               }
               
               if(delta > (s * last_gradient)) {
@@ -329,15 +319,16 @@ void Trainer::ApplyGradients (datum lr) {
               
             } else if(last_step < -0.001) {
               if(delta < 0.0) {
-                step += settings_.eta * delta;
+                step += lr * settings_.eta * delta;
               }
+              
               if(delta < (s * last_gradient)) {
                 step += settings_.mu * last_step;
               } else {
                 step += last_step * delta / (last_gradient - delta);
               }
             } else {
-              step += settings_.eta * delta;
+              step += lr * settings_.eta * delta;
             }
             
             if(step > 1000 || step < -1000) {
