@@ -9,6 +9,7 @@
 #include "ErrorLayer.h"
 
 #include "ConvolutionLayer.h"
+#include "LocalResponseNormalizationLayer.h"
 #include "ResizeLayer.h"
 #include "MaxPoolingLayer.h"
 #include "NonLinearityLayer.h"
@@ -474,6 +475,32 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 				last_connection.buffer = 0;
 				last_connection.node = node;
 				last_connection.backprop = true;
+      }
+      
+      if (StartsWithIdentifier (line, "lrn")) {
+        LocalResponseNormalizationLayer::NormalizationMethod normalization_method;
+        std::string method_string;
+        ParseStringParamIfPossible(line, "method", method_string);
+        if(method_string.compare(0,6,"across") == 0)
+          normalization_method = LocalResponseNormalizationLayer::ACROSS_CHANNELS;
+        else if(method_string.compare(0,6,"within") == 0)
+          normalization_method = LocalResponseNormalizationLayer::WITHIN_CHANNELS;
+        else {
+          FATAL("Cannot initialize LRN layer: method missing!");
+        }
+        
+        unsigned int rx = 1, ry = 1;
+        datum alpha = 1, beta = 1;
+        ParseKernelSizeIfPossible(line, "size", rx, ry);
+        ParseDatumParamIfPossible(line, "alpha", alpha);
+        ParseDatumParamIfPossible(line, "beta", beta);
+        
+        LocalResponseNormalizationLayer* lrn = new LocalResponseNormalizationLayer(rx, ry, alpha, beta, normalization_method);
+        NetGraphNode* node = new NetGraphNode(lrn, last_connection);
+        net.AddNode(node);
+        last_connection.buffer = 0;
+        last_connection.node = node;
+        last_connection.backprop = true;
       }
 
       if (StartsWithIdentifier (line, "maxpooling")) {
