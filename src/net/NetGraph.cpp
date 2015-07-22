@@ -16,6 +16,8 @@
 
 #include "NetGraph.h"
 
+#include "TensorViewer.h"
+
 namespace Conv {
 
 void NetGraph::AddNode(NetGraphNode* node) {
@@ -300,6 +302,16 @@ void NetGraph::FeedForward(NetGraphNode* node) {
 		PrepareNode(node);
 		// Call the Layer::FeedForward method and set the visited flag
 		node->layer->FeedForward();
+    if(layerview_enabled_)
+      for(NetGraphBuffer buffer: node->output_buffers) {
+        std::stringstream ss;
+        ss << node->unique_name << ": " << node->layer->GetLayerDescription() << ", buffer " << buffer.description;
+#ifdef BUILD_OPENCL
+        buffer.combined_tensor->data.MoveToCPU();
+#endif
+        viewer.show(&(buffer.combined_tensor->data), ss.str());
+      }
+    
 		node->flag_ff_visited = true;
 	}
 }

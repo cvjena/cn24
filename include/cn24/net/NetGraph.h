@@ -18,6 +18,7 @@
 #include "Layer.h"
 #include "CombinedTensor.h"
 #include "NetStatus.h"
+#include "TensorViewer.h"
 
 #include <vector>
 
@@ -104,6 +105,7 @@ public:
 
 	// Output
 	void PrintGraph(std::ostream& graph_output);
+  void SetLayerViewEnabled(bool enabled) { layerview_enabled_ = enabled; }
 	datum AggregateLoss();
 
 	// Status
@@ -124,6 +126,8 @@ private:
 	std::vector<NetGraphNode*> training_nodes_;
 
 	int last_uid = -1;
+  bool layerview_enabled_ = false;
+  TensorViewer viewer;
 };
 
 }

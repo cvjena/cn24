@@ -280,12 +280,12 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
     testing_trainer.SetEpoch (trainer.epoch());
     LOGINFO << "Training complete.";
   } else if (command.compare (0, 4, "test") == 0) {
-    /*unsigned int layerview = 0;
+    unsigned int layerview = 0;
     Conv::ParseCountIfPossible (command, "view", layerview);
-    testing_net.SetLayerViewEnabled (layerview == 1);*/
+    testing_graph.SetLayerViewEnabled (layerview == 1);
     testing_trainer.SetEpoch (trainer.epoch());
     testing_trainer.Test();
-    /*testing_net.SetLayerViewEnabled (false);*/
+    testing_graph.SetLayerViewEnabled (false);
     LOGINFO << "Testing complete.";
   } else if (command.compare (0, 4, "load") == 0) {
     std::string param_file_name;
