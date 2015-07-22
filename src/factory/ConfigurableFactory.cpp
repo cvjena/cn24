@@ -489,13 +489,13 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
           FATAL("Cannot initialize LRN layer: method missing!");
         }
         
-        unsigned int rx = 1, ry = 1;
+        unsigned int size = 1;
         datum alpha = 1, beta = 1;
-        ParseKernelSizeIfPossible(line, "size", rx, ry);
+        ParseCountIfPossible(line, "size", size);
         ParseDatumParamIfPossible(line, "alpha", alpha);
         ParseDatumParamIfPossible(line, "beta", beta);
         
-        LocalResponseNormalizationLayer* lrn = new LocalResponseNormalizationLayer(rx, ry, alpha, beta, normalization_method);
+        LocalResponseNormalizationLayer* lrn = new LocalResponseNormalizationLayer(size, alpha, beta, normalization_method);
         NetGraphNode* node = new NetGraphNode(lrn, last_connection);
         net.AddNode(node);
         last_connection.buffer = 0;

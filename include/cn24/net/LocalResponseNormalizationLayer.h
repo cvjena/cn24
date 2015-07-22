@@ -31,7 +31,7 @@ public:
     ACROSS_CHANNELS,
     WITHIN_CHANNELS
   };
-  LocalResponseNormalizationLayer(const unsigned int rx, const unsigned int ry,
+  LocalResponseNormalizationLayer(const unsigned int size,
                                   const datum alpha, const datum beta,
                                   const NormalizationMethod normalization_method);
   
@@ -50,7 +50,7 @@ public:
   }
   
 private:
-  unsigned int rx_, ry_;
+  unsigned int size_;
   datum alpha_, beta_;
   NormalizationMethod normalization_method_;
   

@@ -12,11 +12,11 @@
 namespace Conv {
 
 LocalResponseNormalizationLayer::
-  LocalResponseNormalizationLayer(const unsigned int rx, const unsigned int ry,
+  LocalResponseNormalizationLayer(const unsigned int size,
     const datum alpha, const datum beta,
     const LocalResponseNormalizationLayer::NormalizationMethod normalization_method) :
-    rx_(rx), ry_(ry), alpha_(alpha), beta_(beta), normalization_method_(normalization_method) {
-  LOGDEBUG << "Instance created: " << rx_ << "x" << ry_ << ", alpha: " << alpha_ 
+    size_(size), alpha_(alpha), beta_(beta), normalization_method_(normalization_method) {
+  LOGDEBUG << "Instance created, size: " << size_ << ", alpha: " << alpha_ 
   << ", beta: " << beta_ << ", method: " << (normalization_method_ == ACROSS_CHANNELS) ? "across" : "within";
 
 }
@@ -68,7 +68,7 @@ bool LocalResponseNormalizationLayer::
 }
 
 void LocalResponseNormalizationLayer::FeedForward() {
-
+  
 }
 
 void LocalResponseNormalizationLayer::BackPropagate() {
