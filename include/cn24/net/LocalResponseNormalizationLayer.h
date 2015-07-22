@@ -5,9 +5,10 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * @file GradientAccumulationLayer.h
- * @class GradientAccumulationLayer
- * @brief Accumulates the gradients at the outputs
+ * @file LocalResponseNormalizationLayer.h
+ * @class LocalResponseNormalizationLayer
+ * @brief A local response normaliyation layer using the formula described in
+ *   the Caffe Layer Catalogue: http://caffe.berkeleyvision.org/tutorial/layers.html
  *
  * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
