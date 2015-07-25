@@ -168,6 +168,18 @@ if(CN24_BUILD_ACMLCBLAS)
   add_definitions("-DBLAS_ACML")
 endif()
 
+set(CN24_BUILD_ACCELERATE OFF CACHE BOOL "Build CN24 with Accelerate BLAS support")
+if(CN24_BUILD_ACCELERATE)
+  find_library(ACCELERATE_BLAS NAMES libBlas.dylib)
+  find_path(ACCELERATE_INCLUDE_DIR Accelerate/Accelerate.h)
+  message(STATUS "Using Accelerate BLAS: ${ACCELERATE_BLAS}")
+  message(STATUS "Using Accelerate include directory: ${ACCELERATE_INCLUDE_DIR}")
+  include_directories(${ACCELERATE_INCLUDE_DIR})
+  set(CN24_LIBS ${CN24_LIBS} ${ACCELERATE_BLAS})
+  add_definitions("-DBUILD_BLAS")
+  add_definitions("-DBLAS_ACCELERATE")
+endif()
+
 set(CN24_BUILD_OPENCL OFF CACHE BOOL "Build CN24 with OpenCL support")
 if(CN24_BUILD_OPENCL)
   find_library(OPENCL_ICDL NAMES OpenCL libOpenCL PATHS $ENV{CUDA_PATH}/lib/x64

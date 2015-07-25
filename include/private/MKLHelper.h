@@ -19,6 +19,13 @@
  * Here we include our favorite BLAS library and define important functions
  * so that they are independent of the type
  */
+
+#ifdef BLAS_ACCELERATE
+#include <Accelerate/Accelerate.h>
+#define GEMM cblas_sgemm
+
+#endif
+
 #ifdef BLAS_ATLAS
 extern "C" {
 #include <cblas.h>
