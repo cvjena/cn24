@@ -106,8 +106,8 @@ bool ConvolutionLayer::Connect (const CombinedTensor* input,
                                 CombinedTensor* output) {
   bool valid =
     input->data.width() >= kernel_width_ && input->data.height() >=  kernel_height_ &&
-    output->data.width() == input->data.width() - (kernel_width_ - 1) &&
-    output->data.height() == input->data.height() - (kernel_height_ - 1);
+    output->data.width() == (input->data.width() - (kernel_width_ - 1)) / stride_ &&
+    output->data.height() == (input->data.height() - (kernel_height_ - 1)) / stride_;
 
   if (!valid) {
     return false;
