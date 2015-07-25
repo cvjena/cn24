@@ -73,9 +73,15 @@ ConfigurableFactory::ConfigurableFactory (std::istream& file, const unsigned int
       line = line.substr (1);
 
       if (StartsWithIdentifier (line, "convolutional")) {
-        unsigned int kx, ky;
+        unsigned int kx, ky, stride = 1;
+        
+        ParseCountIfPossible (line, "stride", stride);
+        if(stride != 1) {
+          FATAL("Strided convolutions only supported by manual receptive field size method!");
+        }
+        
         ParseKernelSizeIfPossible (line, "size", kx, ky);
-        LOGDEBUG << "Adding convolutional layer to receptive field (" << kx << "," << ky << ")";
+        LOGDEBUG << "Adding convolutional layer to receptive field (" << kx << "," << ky << "s" << stride <<")";
         receptive_field_x_ += factorx * (kx - 1);
         receptive_field_y_ += factory * (ky - 1);
       }
