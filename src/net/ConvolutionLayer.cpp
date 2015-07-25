@@ -28,9 +28,10 @@ namespace Conv {
 ConvolutionLayer::ConvolutionLayer (const unsigned int kwidth,
                                     const unsigned int kheight,
                                     const unsigned int output_maps,
+                                    const unsigned int stride,
                                     const int seed, const datum dropout_fraction) :
   output_maps_ (output_maps), kernel_width_ (kwidth), kernel_height_ (kheight),
-  rand_ (seed), dropout_fraction_(dropout_fraction) {
+  rand_ (seed), stride_(stride), dropout_fraction_(dropout_fraction) {
   // Validate kernel dimensions. These are very important because the
   // FeedForward and BackPropagate implementations rely on some assumptions.
 
@@ -38,6 +39,16 @@ ConvolutionLayer::ConvolutionLayer (const unsigned int kwidth,
   if (kernel_width_ == 0 || kernel_height_ == 0) {
     FATAL ("Kernels cannot have zero dimensions");
   }
+    
+#ifdef BUILD_BLAS
+    if(stride == 0) {
+      FATAL("Stride needs to be at least 1!");
+    }
+#else
+    if(stride != 1) {
+      FATAL("This code path does not support strides other than 1!");
+    }
+#endif
 
   // Using a zero seed on more than one layer may introduce symmetries and
   // influence the gain of a network in a negative way
@@ -46,7 +57,7 @@ ConvolutionLayer::ConvolutionLayer (const unsigned int kwidth,
   }
 
   LOGDEBUG << "Instance created. " << output_maps_ << " output maps with " <<
-           kernel_width_ << "x" << kernel_height_ << " kernels.";
+           kernel_width_ << "x" << kernel_height_ << " kernels, stride: "<<  stride_ << ".";
   LOGDEBUG << "Dropout fraction: " << dropout_fraction_;
 }
 
@@ -80,9 +91,10 @@ bool ConvolutionLayer::CreateOutputs (
   }
 
   // Create output
+  const unsigned int output_width = (input->data.width() - (kernel_width_ - 1)) / stride_;
+  const unsigned int output_height = (input->data.height() - (kernel_height_ - 1)) / stride_;
   CombinedTensor* output = new CombinedTensor (input->data.samples(),
-      input->data.width() - (kernel_width_ - 1), input->data.height() - (kernel_height_ - 1),
-      output_maps_);
+      output_width, output_height, output_maps_);
 
   // Tell network about the output
   outputs.push_back (output);
@@ -308,6 +320,9 @@ void ConvolutionLayer::FeedForward() {
 }
 
 void ConvolutionLayer::BackPropagate() {
+  if(stride_ != 1) {
+    FATAL("Strided convolutions are only supported for prediction!");
+  }
 
   static datum one = 1.0;
 
@@ -709,12 +724,10 @@ void ConvolutionLayer::im2colff() {
           // Maybe putting y on the outside will help with large kernels
           // and short cache lines?
           for (unsigned int ky = 0; ky < kernel_height_; ky++) {
-            unsigned int iy = oy + ky;
-            const datum* source = input_->data.data_ptr_const (ox, iy, imap, sample);
+            unsigned int iy = (oy * stride_) + ky;
+            const datum* source = input_->data.data_ptr_const (ox * stride_, iy, imap, sample);
             datum* target = im2col_ff_buffer.data_ptr (kernel_width_ * ky,
-                            imap, oy *
-                            output_width_ +
-                            ox, sample);
+                            imap, oy * output_width_ + ox, sample);
 
             std::memcpy (target, source, sizeof (datum) * kernel_width_);
           }

@@ -31,12 +31,13 @@ public:
    * @param kwidth Width of the kernels
    * @param kheight Height of the kernels
    * @param output_maps Number of output feature maps
+   * @param stride Stride of the convolution
    * @param seed Random seed for weight generation
    * @param dropout_fraction Propability of a feature map to be dropped out
    */
   ConvolutionLayer(const unsigned int kwidth, const unsigned int kheight,
-                   const unsigned int output_maps, const int seed = 0,
-                   const datum dropout_fraction = 0.0 );
+                   const unsigned int output_maps, const unsigned int stride = 1,
+                   const int seed = 0, const datum dropout_fraction = 0.0 );
   
   // Implementations for SimpleLayer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs,
@@ -92,6 +93,7 @@ private:
   
   std::mt19937 rand_;
 
+  unsigned int stride_ = 0;
   datum dropout_fraction_ = 0.0;
 };
 

@@ -458,16 +458,17 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
       LOGDEBUG << "Parsing layer: " << line;
 
       if (StartsWithIdentifier (line, "convolutional")) {
-        unsigned int kx = 1, ky = 1, k = 1;
+        unsigned int kx = 1, ky = 1, k = 1, stride = 1;
         datum llr = 1;
         datum dropout_fraction = 0.0;
         ParseKernelSizeIfPossible (line, "size", kx, ky);
         ParseCountIfPossible (line, "kernels", k);
+        ParseCountIfPossible (line, "stride", stride);
         ParseDatumParamIfPossible (line, "dropout", dropout_fraction);
         ParseDatumParamIfPossible (line, "llr", llr);
         LOGDEBUG << "Parsed dropout fraction: " << dropout_fraction;
 
-        ConvolutionLayer* cl = new ConvolutionLayer (kx, ky, k, rand(), dropout_fraction);
+        ConvolutionLayer* cl = new ConvolutionLayer (kx, ky, k, stride, rand(), dropout_fraction);
 				cl->SetLocalLearningRate (llr);
 
 				NetGraphNode* node = new NetGraphNode(cl, last_connection);
