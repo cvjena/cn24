@@ -116,7 +116,7 @@ void LocalResponseNormalizationLayer::FeedForward() {
 }
 
 void LocalResponseNormalizationLayer::BackPropagate() {
-
+  FATAL("Backward pass missing, use only for prediction!");
 }
 
 
