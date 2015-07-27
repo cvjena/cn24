@@ -17,7 +17,6 @@
 
 #include <vector>
 
-#include "CombinedTensor.h"
 #include "Layer.h"
 #include "StatLayer.h"	
 

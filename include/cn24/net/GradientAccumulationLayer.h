@@ -19,8 +19,6 @@
 #include <sstream>
 
 #include "Layer.h"
-#include "NetGraph.h"
-#include "CombinedTensor.h"
 
 namespace Conv {
 

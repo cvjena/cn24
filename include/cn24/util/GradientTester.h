@@ -14,7 +14,7 @@
 #ifndef CONV_GRADIENTTESTER_H
 #define CONV_GRADIENTTESTER_H
 
-#include "NetGraph.h"
+#include "../net/NetGraph.h"
 
 namespace Conv {
 class GradientTester {

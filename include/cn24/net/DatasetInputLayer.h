@@ -19,13 +19,10 @@
 #include <random>
 #include <iostream>
 
-#include "Tensor.h"
-#include "CombinedTensor.h"
-
 #include "Layer.h"
 #include "TrainingLayer.h"
 
-#include "Dataset.h"
+#include "../util/Dataset.h"
 
 namespace Conv {
 

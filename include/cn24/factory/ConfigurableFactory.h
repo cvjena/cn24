@@ -17,11 +17,11 @@
 
 #include <iostream>
 
-#include "Trainer.h"
-#include "Net.h"
-#include "Dataset.h"
-#include "Log.h"
-#include "NetGraph.h"
+#include "../net/Net.h"
+#include "../net/NetGraph.h"
+#include "../net/Trainer.h"
+#include "../util/Dataset.h"
+#include "../util/Log.h"
 
 namespace Conv {
 

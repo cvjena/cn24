@@ -16,9 +16,9 @@
 #define CONV_NETGRAPH_H
 
 #include "Layer.h"
-#include "CombinedTensor.h"
+#include "../util/CombinedTensor.h"
 #include "NetStatus.h"
-#include "TensorViewer.h"
+#include "../util/TensorViewer.h"
 
 #include <vector>
 

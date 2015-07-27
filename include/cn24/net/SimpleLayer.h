@@ -20,7 +20,6 @@
 #include <string>
 
 #include "Layer.h"
-#include "CombinedTensor.h"
 #include "NetStatus.h"
 
 namespace Conv {

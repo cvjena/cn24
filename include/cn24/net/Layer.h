@@ -19,8 +19,8 @@
 #include <string>
 #include <vector>
 
-#include "Tensor.h"
-#include "CombinedTensor.h"
+#include "../util/Tensor.h"
+#include "../util/CombinedTensor.h"
 
 namespace Conv {
 
@@ -133,5 +133,7 @@ protected:
 };
 
 }
+
+#include "NetGraph.h"
 
 #endif

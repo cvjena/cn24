@@ -18,7 +18,6 @@
 #include <string>
 #include <sstream>
 
-#include "Tensor.h"
 #include "SimpleLayer.h"
 
 

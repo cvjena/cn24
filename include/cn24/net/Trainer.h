@@ -17,7 +17,7 @@
 
 #include <cmath>
 
-#include "CombinedTensor.h"
+#include "../util/CombinedTensor.h"
 #include "TrainingLayer.h"
 #include "NetGraph.h"
 

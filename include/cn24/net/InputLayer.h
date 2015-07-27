@@ -15,9 +15,6 @@
 #ifndef CONV_INPUTLAYER_H
 #define CONV_INPUTLAYER_H
 
-#include "Log.h"
-#include "Tensor.h"
-#include "CombinedTensor.h"
 #include "Layer.h"
 
 namespace Conv {

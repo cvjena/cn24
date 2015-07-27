@@ -18,8 +18,6 @@
 #include <string>
 #include <sstream>
 
-#include "Config.h"
-#include "CombinedTensor.h"
 #include "Layer.h"
 #include "LossFunctionLayer.h"
 
