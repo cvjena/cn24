@@ -16,7 +16,6 @@
 #include "PNGUtil.h"
 #include "JPGUtil.h"
 
-#include "MKLHelper.h"
 #ifdef BLAS_MKL
 #include <mkl_service.h>
 #endif

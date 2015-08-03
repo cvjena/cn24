@@ -60,16 +60,10 @@ public:
   
   bool IsOpenCLAware();
 private:
-  void im2colff();
-  void col2imff();
-  
-  void im2colbp();
   void col2imbp();
   
   Tensor im2col_ff_buffer;
-  Tensor ff_output_buffer;
   Tensor bp_deltax_buffer;
-  Tensor bp_deltay_buffer;
   
   Tensor ones_;
   

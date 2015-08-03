@@ -26,6 +26,8 @@
 #include "cn24/util/Init.h"
 #include "cn24/util/GradientTester.h"
 
+#include "cn24/math/TensorMath.h"
+
 #include "cn24/net/Layer.h"
 #include "cn24/net/InputLayer.h"
 #include "cn24/net/TrainingLayer.h"

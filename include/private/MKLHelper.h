@@ -22,7 +22,8 @@
 
 #ifdef BLAS_ACCELERATE
 #include <Accelerate/Accelerate.h>
-#define GEMM cblas_sgemm
+#define INNERGEMM cblas_sgemm
+#define INNERGEMV cblas_sgemv
 
 #endif
 
@@ -31,7 +32,8 @@ extern "C" {
 #include <cblas.h>
 }
 
-#define GEMM cblas_sgemm
+#define INNERGEMM cblas_sgemm
+#define INNERGEMV cblas_sgemv
 
 #endif
 
@@ -40,7 +42,8 @@ extern "C" {
 #include <cblas.h>
 }
 
-#define GEMM cblas_sgemm
+#define INNERGEMM cblas_sgemm
+#define INNERGEMV cblas_sgemv
 
 #endif
 
@@ -50,7 +53,8 @@ extern "C" {
 #include <mkl_cblas.h>
 }
 
-#define GEMM cblas_sgemm
+#define INNERGEMM cblas_sgemm
+#define INNERGEMV cblas_sgemv
 
 #endif
 
@@ -59,7 +63,8 @@ extern "C" {
 
 #include "Log.h"
 
-#define GEMM(...) { FATAL("GEMM function called without BLAS support!"); }
+#define INNERGEMM(...) { FATAL("GEMM function called without BLAS support!"); }
+#define INNERGEMV(...) { FATAL("GEMV function called without BLAS support!"); }
 
 #endif
 
