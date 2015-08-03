@@ -11,7 +11,7 @@
 
 namespace Conv {
   
-void TensorMath::GEMM(const bool is_row_major, const bool transpose_A, const bool transpose_B, const int M, const int N, const int K, const datum alpha, const datum* A, const int ldA, const datum* B, const int ldB, const datum beta, datum* C, const int ldC)
+void TensorMath::RAW_GEMM(const bool is_row_major, const bool transpose_A, const bool transpose_B, const int M, const int N, const int K, const datum alpha, const datum* A, const int ldA, const datum* B, const int ldB, const datum beta, datum* C, const int ldC)
 {
 #ifdef BUILD_BLAS
   INNERGEMM(is_row_major ? CblasRowMajor : CblasColMajor,
@@ -26,7 +26,7 @@ void TensorMath::GEMM(const bool is_row_major, const bool transpose_A, const boo
 #endif
 }
 
-void TensorMath::GEMV(const bool is_row_major, const bool transpose_A, const int M, const int N, const datum alpha, const datum* A, const int ldA, const datum* X, const int incX, const datum beta, datum* Y, const int incY)
+void TensorMath::RAW_GEMV(const bool is_row_major, const bool transpose_A, const int M, const int N, const datum alpha, const datum* A, const int ldA, const datum* X, const int incX, const datum beta, datum* Y, const int incY)
 {
 #ifdef BUILD_BLAS
   INNERGEMV(is_row_major ? CblasRowMajor : CblasColMajor,
@@ -50,6 +50,7 @@ void TensorMath::IM2COL(const Tensor& source, const int source_width, const int 
   if(target_size != actual_target_size)
     FATAL("Target size wrong!");
   
+  #pragma omp parallel for default(shared)
   for(int sample = 0; sample < samples; sample++) {
     const datum* source_ptr = source.data_ptr_const(0, 0, 0, sample);
     datum* target_ptr = target.data_ptr(0, 0, 0, sample);
@@ -80,6 +81,40 @@ void TensorMath::IM2COL(const Tensor& source, const int source_width, const int 
   }
 }
 
-
+void TensorMath::COL2IM(Tensor& source, const int source_width, const int source_height, const int maps, const int samples, const int kernel_width, const int kernel_height, const int stride_width, const int stride_height, const int pad_width, const int pad_height, const Tensor& target)
+{
+  const int target_width = (2 * pad_width + source_width - kernel_width) / stride_width + 1;
+  const int target_height = (2 * pad_height + source_height - kernel_height) / stride_height + 1;
+  const int target_maps = kernel_width * kernel_height * maps;
+  
+  const int target_size = samples * target_width * target_height * target_maps;
+  const int actual_target_size = target.samples() * target.width()* target.height() * target.maps();
+  
+  if(target_size != actual_target_size)
+    FATAL("Target size wrong!");
+  
+  #pragma omp parallel for default(shared)
+  for(int sample = 0; sample < samples; sample++) {
+    datum* source_ptr = source.data_ptr(0, 0, 0, sample);
+    const datum* target_ptr = target.data_ptr_const(0, 0, 0, sample);
+    for(int target_map = 0; target_map < target_maps; target_map++) {
+      int kx = target_map % kernel_width;
+      int ky = (target_map / kernel_width) % kernel_height;
+      int imap = target_map / (kernel_width * kernel_height);
+      for(int oy = 0; oy < target_height; oy++) {
+        int iy = oy * stride_height - pad_height + ky;
+        if(iy >= 0 && iy < source_height) {
+          for(int ox = 0; ox < target_width; ox++) {
+            int ix = ox * stride_width - pad_width + kx;
+            if(ix >= 0 && iy < source_width) {
+              source_ptr[(imap * source_height + iy) * source_width + ix] +=
+                target_ptr[(target_map * target_height + oy) * target_width + ox];
+            } 
+          }
+        }
+      }
+    }
+  }
+}
   
 }
