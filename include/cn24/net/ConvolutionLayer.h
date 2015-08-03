@@ -60,8 +60,6 @@ public:
   
   bool IsOpenCLAware();
 private:
-  void col2imbp();
-  
   Tensor im2col_ff_buffer;
   Tensor bp_deltax_buffer;
   

@@ -161,15 +161,15 @@ void ConvolutionLayer::FeedForward() {
     TensorMath::GEMM(true, false, false, output_maps_,
           output_width_ * output_height_,
           kernel_width_ * kernel_height_ * input_maps_,
-          w, weights_->data.data_ptr_const(), kernel_width_ * kernel_height_ * input_maps_,
-          im2col_ff_buffer.data_ptr_const(0, 0, 0, sample), output_width_ * output_height_,
-          0.0, output_->data.data_ptr(0, 0, 0, sample), output_width_ * output_height_);
+          w, weights_->data, 0, kernel_width_ * kernel_height_ * input_maps_,
+          im2col_ff_buffer, sample, output_width_ * output_height_,
+          0.0, output_->data, sample, output_width_ * output_height_);
 
     // Add bias
     TensorMath::GEMM (true, false, false, output_maps_,
-          output_width_ * output_height_, 1, w, bias_->data.data_ptr_const(), 1,
-          ones_.data_ptr_const(), output_width_ * output_height_,
-          1.0, output_->data.data_ptr(0, 0, 0, sample), output_width_ * output_height_);
+          output_width_ * output_height_, 1, w, bias_->data, 0, 1,
+          ones_, 0, output_width_ * output_height_,
+          1.0, output_->data, sample, output_width_ * output_height_);
 
   }
 
@@ -225,16 +225,14 @@ void ConvolutionLayer::BackPropagate() {
     /*
     * 1. Backpropagation
     */
-    if (backprop_enabled_) { 
+    if (backprop_enabled_)
       TensorMath::GEMM (true, true, false,
             kernel_width_ * kernel_height_ * input_maps_,
             output_width_ * output_height_,
             output_maps_,
-            1.0, weights_->data.data_ptr_const(), kernel_width_ * kernel_height_ * input_maps_,
-            output_->delta.data_ptr_const(0, 0, 0, sample), output_width_ * output_height_,
-            0.0, bp_deltax_buffer.data_ptr(0, 0, 0, sample), output_width_ * output_height_);
-
-    }
+            1.0, weights_->data, 0, kernel_width_ * kernel_height_ * input_maps_,
+            output_->delta, sample, output_width_ * output_height_,
+            0.0, bp_deltax_buffer, sample, output_width_ * output_height_);
 
     /*
     * 2. Weight gradient calculation
@@ -242,20 +240,21 @@ void ConvolutionLayer::BackPropagate() {
     TensorMath::GEMM (true, false, true, output_maps_,
           kernel_width_ * kernel_height_ * input_maps_,
           output_width_ * output_height_,
-          1.0, output_->delta.data_ptr_const(0, 0, 0, sample), output_width_ * output_height_,
-          im2col_ff_buffer.data_ptr_const(0, 0, 0, sample), output_width_ * output_height_,
-          1.0, weights_->delta.data_ptr(), kernel_width_ * kernel_height_ * input_maps_);
+          1.0, output_->delta, sample, output_width_ * output_height_,
+          im2col_ff_buffer, sample, output_width_ * output_height_,
+          1.0, weights_->delta, 0, kernel_width_ * kernel_height_ * input_maps_);
     
     /*
     * 3. Bias gradient calculation
     */
     TensorMath::GEMV(true, false, output_maps_, output_width_ * output_height_, 1.0,
-                     output_->delta.data_ptr_const(0, 0, 0, sample), output_width_ * output_height_,
-                     ones_.data_ptr_const(), 1, 1.0, bias_->delta.data_ptr(), 1);
+          output_->delta, sample, output_width_ * output_height_,
+          ones_, 0, 1, 1.0, bias_->delta, 0, 1);
   }
   
   input_->delta.Clear();
-  col2imbp();
+  TensorMath::COL2IM(input_->delta, input_width_, input_height_, input_maps_, input_->data.samples(),
+        kernel_width_, kernel_height_, 1, 1, 0, 0, bp_deltax_buffer);
 }
 
 
@@ -281,35 +280,13 @@ void ConvolutionLayer::OnLayerConnect (const std::vector<Layer*> next_layers) {
            << next_layer_gain;
 }
 
-void ConvolutionLayer::col2imbp() {
-  #pragma omp parallel for default(shared)
-
-  for (unsigned int sample = 0; sample < input_->data.samples(); sample++) {
-    for (unsigned int imap = 0; imap < input_maps_; imap++) {
-      for (unsigned int dxx = 0; dxx < output_width_; dxx++) {
-        for (unsigned int dxy = 0; dxy < output_height_; dxy++) {
-          for (unsigned int ky = 0; ky < kernel_height_; ky++) {
-            const datum* kernel_line = bp_deltax_buffer.data_ptr_const (
-                                         kernel_width_ * ky, imap, dxy * output_width_ + dxx, sample);
-            datum* target_line = input_->delta.data_ptr (
-                                   dxx, dxy + ky, imap, sample);
-
-            for (unsigned int kx = 0; kx < kernel_width_; kx++) {
-              target_line[kx] += kernel_line[kx];
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
 bool ConvolutionLayer::IsOpenCLAware() {
-#ifdef BUILD_OPENCL_CONV
-  return true;
-#else
+// Right now, it is not.
+//ifdef BUILD_OPENCL_CONV
+//  return true;
+//else
   return false;
-#endif
+//endif
 }
 
 }
