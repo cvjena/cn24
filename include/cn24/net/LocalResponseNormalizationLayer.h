@@ -20,8 +20,6 @@
 #include <sstream>
 
 #include "SimpleLayer.h"
-#include "NetGraph.h"
-#include "CombinedTensor.h"
 
 namespace Conv {
 class LocalResponseNormalizationLayer: public SimpleLayer {
