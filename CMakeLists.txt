@@ -115,7 +115,7 @@ if(CN24_BUILD_SQLITE3)
 endif()
 
 include_directories(${CN24_INC})
-add_library(cn24 ${CN24_SOURCES} ${CN24_HEADERS})
+add_library(cn24 STATIC SHARED ${CN24_SOURCES} ${CN24_HEADERS})
 
 # And now for some dependencies
 set(CN24_BUILD_PNG ON CACHE BOOL "Build CN24 with libpng support")
