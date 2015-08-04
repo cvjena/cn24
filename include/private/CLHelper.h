@@ -20,6 +20,10 @@
 #else
 #include <CL/cl.h>
 #endif
+
+#ifdef BUILD_CLBLAS
+#include <clBLAS.h>
+#endif
 #endif
 
 #include "Init.h"
