@@ -24,39 +24,7 @@ namespace Conv {
 
 class TensorMath {
 public:
-  // Datum version of functions
-  static void RAW_GEMM(
-    const bool is_row_major,
-    const bool transpose_A,
-    const bool transpose_B,
-    const int M,
-    const int N,
-    const int K,
-    const datum alpha,
-    const datum* A,
-    const int ldA,
-    const datum* B,
-    const int ldB,
-    const datum beta,
-    datum* C,
-    const int ldC);
-  
-  static void RAW_GEMV(
-    const bool is_row_major,
-    const bool transpose_A,
-    const int M,
-    const int N,
-    const datum alpha,
-    const datum* A,
-    const int ldA,
-    const datum* X,
-    const int incX,
-    const datum beta,
-    datum* Y,
-    const int incY);
-  
-  // Fancy tensor versions of functions
-  inline static void GEMM(
+  static void GEMM(
     const bool is_row_major,
     const bool transpose_A,
     const bool transpose_B,
@@ -73,12 +41,9 @@ public:
     const datum beta,
     Tensor& C,
     const int smC,
-    const int ldC)
-  {
-    RAW_GEMM(is_row_major, transpose_A, transpose_B, M, N, K, alpha, A.data_ptr_const(0,0,0,smA), ldA, B.data_ptr_const(0,0,0,smB), ldB, beta, C.data_ptr(0,0,0,smC), ldC);
-  }
+    const int ldC);
   
-  inline static void GEMV(
+  static void GEMV(
     const bool is_row_major,
     const bool transpose_A,
     const int M,
@@ -93,10 +58,7 @@ public:
     const datum beta,
     Tensor& Y,
     const int smY,
-    const int incY)
-  {
-    RAW_GEMV(is_row_major, transpose_A, M, N, alpha, A.data_ptr_const(0,0,0,smA), ldA, X.data_ptr_const(0,0,0,smX),incX,beta,Y.data_ptr(0,0,0,smY),incY);
-  }
+    const int incY);
   
   static void IM2COL(
     const Tensor& source,

@@ -11,27 +11,28 @@
 
 namespace Conv {
   
-void TensorMath::RAW_GEMM(const bool is_row_major, const bool transpose_A, const bool transpose_B, const int M, const int N, const int K, const datum alpha, const datum* A, const int ldA, const datum* B, const int ldB, const datum beta, datum* C, const int ldC)
+void TensorMath::GEMM(const bool is_row_major, const bool transpose_A, const bool transpose_B, const int M, const int N, const int K, const datum alpha, const Conv::Tensor &A, const int smA, const int ldA, const Conv::Tensor &B, const int smB, const int ldB, const datum beta, Conv::Tensor &C, const int smC, const int ldC)
 {
 #ifdef BUILD_BLAS
   INNERGEMM(is_row_major ? CblasRowMajor : CblasColMajor,
     transpose_A ? CblasTrans : CblasNoTrans,
     transpose_B ? CblasTrans : CblasNoTrans,
     M, N, K,
-    alpha, A, ldA,
-    B, ldB,
-    beta, C, ldC);
+    alpha, A.data_ptr_const(0,0,0,smA), ldA,
+    B.data_ptr_const(0,0,0,smB), ldB,
+    beta, C.data_ptr(0,0,0,smC), ldC);
 #else
   FATAL("No reference GEMM at this time!");
 #endif
 }
-
-void TensorMath::RAW_GEMV(const bool is_row_major, const bool transpose_A, const int M, const int N, const datum alpha, const datum* A, const int ldA, const datum* X, const int incX, const datum beta, datum* Y, const int incY)
+  
+void TensorMath::GEMV(const bool is_row_major, const bool transpose_A, const int M, const int N, const datum alpha, const Conv::Tensor &A, const int smA, const int ldA, const Conv::Tensor &X, const int smX, const int incX, const datum beta, Conv::Tensor &Y, const int smY, const int incY)
 {
 #ifdef BUILD_BLAS
   INNERGEMV(is_row_major ? CblasRowMajor : CblasColMajor,
             transpose_A ? CblasTrans : CblasNoTrans,
-            M, N, alpha, A, ldA, X, incX, beta, Y, incY);
+            M, N, alpha, A.data_ptr_const(0,0,0,smA),
+            ldA, X.data_ptr_const(0,0,0,smX), incX, beta, Y.data_ptr(0,0,0,smY), incY);
 #else
   FATAL("No reference GEMV at this time!");
 #endif
