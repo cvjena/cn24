@@ -155,6 +155,8 @@ void ConvolutionLayer::FeedForward() {
   
   TensorMath::IM2COL(input_->data, input_width_, input_height_, input_maps_, input_->data.samples(),
         kernel_width_, kernel_height_, 1, 1, 0, 0, im2col_ff_buffer);
+  
+  output_->data.hint_ignore_content_ = true;
 
   for(unsigned int sample = 0; sample < input_->data.samples(); sample++) {
     // Convolve
@@ -176,7 +178,7 @@ void ConvolutionLayer::FeedForward() {
   // Very simple dropout FF implementation
   // This could be optimized a _lot_
   if(p == 0.0) {
-    dropout_mask_.Clear(1.0);
+    //dropout_mask_.Clear(1.0);
   } else {
     FATAL("Dropout is not yet TensorMath compatible");
   /*
@@ -208,7 +210,7 @@ void ConvolutionLayer::BackPropagate() {
 
   // Very simple dropout backprop implementation
   // This could be optimized a _lot_
-  unsigned int sk_id = 0;
+  /*unsigned int sk_id = 0;
   for(unsigned int s = 0; s < input_->data.samples(); s++) {
     for(unsigned int m = 0; m < output_maps_; m++) {
       datum* target_map = output_->delta.data_ptr(0,0,m,s);
@@ -218,10 +220,12 @@ void ConvolutionLayer::BackPropagate() {
         }
     }
     sk_id++;
-  }
+  }*/
 
-  weights_->delta.Clear(0);
-  bias_->delta.Clear(0);
+  TensorMath::SETSAMPLE(weights_->delta, -1, 0.0);
+  TensorMath::SETSAMPLE(bias_->delta, -1, 0.0);
+  
+  bp_deltax_buffer.hint_ignore_content_ = true;
   
   for(unsigned int sample = 0; sample < input_->data.samples(); sample++) {
     /*
@@ -254,8 +258,8 @@ void ConvolutionLayer::BackPropagate() {
           ones_, 0, 1, 1.0, bias_->delta, 0, 1);
   }
   
-  input_->delta.Clear();
-  TensorMath::COL2IM(input_->delta, input_width_, input_height_, input_maps_, input_->data.samples(),
+  if(backprop_enabled_)
+    TensorMath::COL2IM(input_->delta, input_width_, input_height_, input_maps_, input_->data.samples(),
         kernel_width_, kernel_height_, 1, 1, 0, 0, bp_deltax_buffer);
 }
 
