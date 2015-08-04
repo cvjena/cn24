@@ -38,6 +38,8 @@
 namespace Conv {
 
 #ifdef BUILD_OPENCL
+long CLHelper::bytes_up = 0;
+long CLHelper::bytes_down = 0;
 cl_context CLHelper::context = 0;
 cl_command_queue CLHelper::queue = 0;
 cl_device_id CLHelper::device = 0;

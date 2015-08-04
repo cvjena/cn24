@@ -10,8 +10,8 @@
 
 #include "Log.h"
 #include "Net.h"
-
 #include "StatLayer.h"
+#include "CLHelper.h"
 
 #include "Trainer.h"
 
@@ -227,6 +227,13 @@ void Trainer::Epoch() {
           1000000.0f * (datum) t_diff.count() /
           (datum) (sample_count_ * settings_.sbatchsize
                    * first_training_layer_->GetLossSamplingProbability() * iterations) << " us";
+                  
+#ifdef BUILD_OPENCL
+  LOGINFO << "Training, GB/s   up: " << ((datum)CLHelper::bytes_up)/(1073741824.0 * (datum)t_diff.count());
+  LOGINFO << "Training, GB/s down: " << ((datum)CLHelper::bytes_down)/(1073741824.0 * (datum)t_diff.count());
+  CLHelper::bytes_up = 0;
+  CLHelper::bytes_down = 0;
+#endif
 
   // Display training epoch_error
 	for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {

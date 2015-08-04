@@ -412,6 +412,8 @@ void Tensor::MoveToGPU ( bool no_copy ) {
       if ( error_ret != CL_SUCCESS ) {
         FATAL ( "Error moving to GPU: " << error_ret );
       }
+      
+      CLHelper::bytes_up += elements_ * sizeof(datum);
 
 #ifdef BRUTAL_FINISH
       error_ret = clFinish ( CLHelper::queue );
@@ -453,16 +455,14 @@ void Tensor::MoveToCPU ( bool no_copy ) {
       if ( error_ret != CL_SUCCESS ) {
         FATAL ( "Error moving to CPU: " << error_ret );
       }
+      
+      CLHelper::bytes_down += elements_ * sizeof(datum);
 
-#ifdef BRUTAL_FINISH
       error_ret = clFinish ( CLHelper::queue );
 
       if ( error_ret != CL_SUCCESS ) {
         FATAL ( "Error finishing command queue (2): " << error_ret );
       }
-
-#endif
-
     }
 
     cl_gpu_ = false;

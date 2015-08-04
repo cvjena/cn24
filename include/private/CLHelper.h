@@ -35,6 +35,8 @@ public:
                    unsigned int device_number = 0);
 #ifdef BUILD_OPENCL
   static cl_program CreateProgram(const char* file_name);
+  static long bytes_up;
+  static long bytes_down;
   static cl_device_id device;
   static cl_context context;
   static cl_command_queue queue;
