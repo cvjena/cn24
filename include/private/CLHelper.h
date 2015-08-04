@@ -56,6 +56,7 @@ public:
   static cl_kernel k_nlTanhBackward;
   static cl_kernel k_nlSigm;
   static cl_kernel k_nlSigmBackward;
+  static cl_kernel k_setValue;
 #endif
 };
   

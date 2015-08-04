@@ -58,6 +58,7 @@ cl_kernel CLHelper::k_nlTanh = 0;
 cl_kernel CLHelper::k_nlTanhBackward = 0;
 cl_kernel CLHelper::k_nlSigm = 0;
 cl_kernel CLHelper::k_nlSigmBackward = 0;
+cl_kernel CLHelper::k_setValue = 0;
 #endif
 
 TensorViewer* System::viewer = nullptr;
@@ -241,6 +242,7 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   cl_program p_matrixMatrix = CreateProgram ( "kernels/matrixMatrix.cl" );
   cl_program p_maximum = CreateProgram ( "kernels/maximumPooling.cl" );
   cl_program p_nonLinearFunctions = CreateProgram ( "kernels/nonLinearFunctions.cl" );
+  cl_program p_setValue = CreateProgram ( "kernels/setValue.cl" );
 
   k_crossCorrelation = clCreateKernel ( p_crossCorrelation, "CROSS_CORRELATION", &error );
 
@@ -333,6 +335,12 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   }
 
   k_nlSigmBackward = clCreateKernel ( p_nonLinearFunctions, "NL_SIGM_BWD", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+  
+  k_setValue = clCreateKernel ( p_setValue, "SET_VALUE", &error );
 
   if ( error != CL_SUCCESS ) {
     FATAL ( "Error creating kernel: " << ( signed int ) error );
