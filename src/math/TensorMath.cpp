@@ -8,6 +8,8 @@
 #include "MKLHelper.h"
 #include "CLHelper.h"
 
+#include <cstring>
+
 #include "TensorMath.h"
 
 namespace Conv {
@@ -236,6 +238,49 @@ void TensorMath::SETSAMPLE(Tensor& A, const int smA, const datum value)
 
   A.hint_ignore_content_ = false;
 }
+
+void TensorMath::SMS(const Tensor& source, Tensor& target)
+{
+#ifdef BUILD_OPENCL
+  ((Tensor&)source).MoveToCPU();
+  target.MoveToCPU(true);
+#endif
+  const int width = target.width();
+  const int height = target.height();
+  const int maps = target.maps();
+  const int samples = target.samples();
+  for(int sample = 0; sample < samples; sample++) {
+    for(int map = 0; map < maps; map++) {
+      const datum* src = source.data_ptr_const(0, 0, sample, map);
+      datum* tgt = target.data_ptr(0, 0, map, sample);
+      std::memcpy(tgt, src, sizeof(datum) * width * height);
+    }
+  }
+  
+  target.hint_ignore_content_ = false;
+}
+
+void TensorMath::SMS2(const Tensor& source, Tensor& target)
+{
+#ifdef BUILD_OPENCL
+  ((Tensor&)source).MoveToCPU();
+  target.MoveToCPU(true);
+#endif
+  const int width = target.width();
+  const int height = target.height();
+  const int maps = target.maps();
+  const int samples = target.samples();
+  for(int sample = 0; sample < samples; sample++) {
+    for(int map = 0; map < maps; map++) {
+      const datum* src = source.data_ptr_const(0, 0, map, sample);
+      datum* tgt = target.data_ptr(0, 0, sample, map);
+      std::memcpy(tgt, src, sizeof(datum) * width * height);
+    }
+  }
+  
+  target.hint_ignore_content_ = false;
+}
+
 
   
 }

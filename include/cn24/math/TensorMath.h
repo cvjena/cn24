@@ -92,6 +92,14 @@ public:
     Tensor& A,
     const int smA,
     const datum value);
+  
+  static void SMS(
+    const Tensor& source,
+    Tensor& target);
+  
+  static void SMS2(
+    const Tensor& source,
+    Tensor& target);
 };
   
 }
