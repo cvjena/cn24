@@ -87,6 +87,11 @@ public:
     const int pad_width,
     const int pad_height,
     const Tensor& target);
+  
+  static void SETSAMPLE(
+    Tensor& A,
+    const int smA,
+    const datum value);
 };
   
 }

@@ -17,7 +17,7 @@ void TensorMath::GEMM(const bool is_row_major, const bool transpose_A, const boo
 #ifdef BUILD_CLBLAS
   ((Tensor&)A).MoveToGPU();
   ((Tensor&)B).MoveToGPU();
-  C.MoveToGPU();
+  C.MoveToGPU(C.hint_ignore_content_ && beta == 0.0);
   
   cl_event done_event = NULL;
   
@@ -54,6 +54,7 @@ void TensorMath::GEMM(const bool is_row_major, const bool transpose_A, const boo
   FATAL("No reference GEMM at this time!");
 #endif // BUILD_BLAS
 #endif // BUILD_CLBLAS
+  C.hint_ignore_content_ = false;
 }
   
 void TensorMath::GEMV(const bool is_row_major, const bool transpose_A, const int M, const int N, const datum alpha, const Conv::Tensor &A, const int smA, const int ldA, const Conv::Tensor &X, const int smX, const int incX, const datum beta, Conv::Tensor &Y, const int smY, const int incY)
@@ -61,7 +62,7 @@ void TensorMath::GEMV(const bool is_row_major, const bool transpose_A, const int
 #ifdef BUILD_CLBLAS
   ((Tensor&)A).MoveToGPU();
   ((Tensor&)X).MoveToGPU();
-  Y.MoveToGPU();
+  Y.MoveToGPU(Y.hint_ignore_content_ && beta == 0.0);
   
   cl_event done_event = NULL;
   
@@ -95,6 +96,7 @@ void TensorMath::GEMV(const bool is_row_major, const bool transpose_A, const int
   FATAL("No reference GEMV at this time!");
 #endif // BUILD_BLAS
 #endif // BUILD_CLBLAS
+  Y.hint_ignore_content_ = false;
 }
 
 
@@ -144,14 +146,18 @@ void TensorMath::IM2COL(const Tensor& source, const int source_width, const int 
       }
     }
   }
+  
+  target.hint_ignore_content_ = false;
 }
 
 void TensorMath::COL2IM(Tensor& source, const int source_width, const int source_height, const int maps, const int samples, const int kernel_width, const int kernel_height, const int stride_width, const int stride_height, const int pad_width, const int pad_height, const Tensor& target)
 {
 #ifdef BUILD_OPENCL
-  source.MoveToCPU(true);
   ((Tensor&)target).MoveToCPU();
+  source.MoveToCPU(true);
 #endif
+  SETSAMPLE(source, -1, 0.0);
+  
   const int target_width = (2 * pad_width + source_width - kernel_width) / stride_width + 1;
   const int target_height = (2 * pad_height + source_height - kernel_height) / stride_height + 1;
   const int target_maps = kernel_width * kernel_height * maps;
@@ -184,6 +190,52 @@ void TensorMath::COL2IM(Tensor& source, const int source_width, const int source
       }
     }
   }
+  
+  source.hint_ignore_content_ = false;
 }
+
+void TensorMath::SETSAMPLE(Tensor& A, const int smA, const datum value)
+{
+#ifdef BUILD_OPENCL
+  if(A.cl_gpu_) {
+    cl_uint error = 0;
+    cl_uint offset = smA == -1 ? 0 : smA * (A.width() * A.height() * A.maps());
+
+    error |= clSetKernelArg (CLHelper::k_setValue, 0, sizeof (cl_mem), &(A.cl_data_ptr_));
+    error |= clSetKernelArg (CLHelper::k_setValue, 1, sizeof (datum), &value);
+    error |= clSetKernelArg (CLHelper::k_setValue, 2, sizeof (cl_uint), &offset);
+
+    if (error != CL_SUCCESS) {
+      FATAL("Error setting kernel args: " << (signed int) error);
+    }
+
+    size_t global_work_size[] = {smA == -1 ? A.elements() : A.width() * A.height() * A.samples()};
+
+    error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_setValue, 1, NULL,
+        global_work_size, NULL, 0, NULL, NULL);
+    if (error != CL_SUCCESS) {
+      FATAL("Error enqueueing kernel: " << (signed int) error);
+    }
+
+#ifdef BRUTAL_FINISH
+    error = clFinish (CLHelper::queue);
+    if (error != CL_SUCCESS) {
+      FATAL("Error finishing command queue: " << (signed int) error);
+    }
+#endif
+      
+  } else {
+#endif
+    datum* start = smA == -1 ? A.data_ptr() : A.data_ptr(0, 0, 0, smA);
+    datum* end = smA == -1 ? A.data_ptr(0, 0, 0, A.samples()) : A.data_ptr(0, 0, 0, smA + 1);
+    for(datum* ptr = start; ptr < end; ptr++)
+      *ptr = value;
+#ifdef BUILD_OPENCL
+  }
+#endif
+
+  A.hint_ignore_content_ = false;
+}
+
   
 }

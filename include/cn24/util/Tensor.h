@@ -314,11 +314,13 @@ public:
    */
   void* cl_data_ptr_ = 0;
   
-private:
   /**
    * @brief If this is true, the data is currently in the GPU's memory
    */
   bool cl_gpu_ = false;
+  
+  
+  bool hint_ignore_content_ = false;
 };
 
 
