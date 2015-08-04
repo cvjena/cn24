@@ -337,6 +337,11 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   if ( error != CL_SUCCESS ) {
     FATAL ( "Error creating kernel: " << ( signed int ) error );
   }
+#ifdef BUILD_CLBLAS
+  cl_int err = clblasSetup();
+  if (err!=CL_SUCCESS)
+    FATAL("Call to clblasSetup failed. Error: " << err);
+#endif
 
 #endif
 

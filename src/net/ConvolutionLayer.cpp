@@ -178,6 +178,8 @@ void ConvolutionLayer::FeedForward() {
   if(p == 0.0) {
     dropout_mask_.Clear(1.0);
   } else {
+    FATAL("Dropout is not yet TensorMath compatible");
+  /*
     std::uniform_real_distribution<datum> dist(0.0, 1.0);
     for(unsigned int e = 0; e < input_->data.samples() * output_maps_; e++) {
       dropout_mask_[e] = dist(rand_) < p ? 0.0 : 1.0;
@@ -193,7 +195,7 @@ void ConvolutionLayer::FeedForward() {
           target_map[e] = 0.0;
       }
     }
-    sk_id++;
+    sk_id++;*/
   }
 }
 
@@ -281,12 +283,11 @@ void ConvolutionLayer::OnLayerConnect (const std::vector<Layer*> next_layers) {
 }
 
 bool ConvolutionLayer::IsOpenCLAware() {
-// Right now, it is not.
-//ifdef BUILD_OPENCL_CONV
-//  return true;
-//else
+#ifdef BUILD_OPENCL_CONV
+  return true;
+#else
   return false;
-//endif
+#endif
 }
 
 }

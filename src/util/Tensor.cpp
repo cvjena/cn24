@@ -77,6 +77,13 @@ Tensor::~Tensor() {
 }
 
 void Tensor::Clear ( const datum value, const int sample ) {
+#ifdef BUILD_OPENCL
+  if ( sample == -1 ) {
+    MoveToCPU(true);
+  } else {
+    MoveToCPU();
+  }
+#endif
   if ( sample == -1 ) {
     for ( std::size_t element = 0; element < elements_; element++ ) {
       data_ptr_[element] = value;
