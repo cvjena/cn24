@@ -37,10 +37,10 @@ void TensorMath::GEMM(const bool is_row_major, const bool transpose_A, const boo
   if(err!=CL_SUCCESS)
     FATAL("Call to clblasSgemm failed. Error: " << err);
   
-  err = clWaitForEvents(1, &done_event);
+  /*err = clWaitForEvents(1, &done_event);
   
   if(err!=CL_SUCCESS)
-    FATAL("Call to clWaitForEvents failed. Error: " << err);
+    FATAL("Call to clWaitForEvents failed. Error: " << err);*/
 #else
 #ifdef BUILD_BLAS
   INNERGEMM(is_row_major ? CblasRowMajor : CblasColMajor,
@@ -82,10 +82,10 @@ void TensorMath::GEMV(const bool is_row_major, const bool transpose_A, const int
   if(err!=CL_SUCCESS)
     FATAL("Call to clblasSgemv failed. Error: " << err);
   
-  err = clWaitForEvents(1, &done_event);
+  /*err = clWaitForEvents(1, &done_event);
   
   if(err!=CL_SUCCESS)
-    FATAL("Call to clWaitForEvents failed. Error: " << err);
+    FATAL("Call to clWaitForEvents failed. Error: " << err);*/
 #else
 #ifdef BUILD_BLAS
   INNERGEMV(is_row_major ? CblasRowMajor : CblasColMajor,
