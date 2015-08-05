@@ -59,6 +59,9 @@ public:
   static cl_kernel k_nlSigm;
   static cl_kernel k_nlSigmBackward;
   static cl_kernel k_setValue;
+  static cl_kernel k_sms;
+  static cl_kernel k_im2col;
+  static cl_kernel k_col2im;
 #endif
 };
   

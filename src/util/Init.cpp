@@ -61,6 +61,9 @@ cl_kernel CLHelper::k_nlTanhBackward = 0;
 cl_kernel CLHelper::k_nlSigm = 0;
 cl_kernel CLHelper::k_nlSigmBackward = 0;
 cl_kernel CLHelper::k_setValue = 0;
+cl_kernel CLHelper::k_sms = 0;
+cl_kernel CLHelper::k_im2col = 0;
+cl_kernel CLHelper::k_col2im = 0;
 #endif
 
 TensorViewer* System::viewer = nullptr;
@@ -245,6 +248,8 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   cl_program p_maximum = CreateProgram ( "kernels/maximumPooling.cl" );
   cl_program p_nonLinearFunctions = CreateProgram ( "kernels/nonLinearFunctions.cl" );
   cl_program p_setValue = CreateProgram ( "kernels/setValue.cl" );
+  cl_program p_sms = CreateProgram ( "kernels/sms.cl" );
+  cl_program p_im2col = CreateProgram ( "kernels/im2col.cl" );
 
   k_crossCorrelation = clCreateKernel ( p_crossCorrelation, "CROSS_CORRELATION", &error );
 
@@ -343,6 +348,24 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   }
   
   k_setValue = clCreateKernel ( p_setValue, "SET_VALUE", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+  
+  k_sms = clCreateKernel ( p_sms, "SMS", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+  
+  k_im2col = clCreateKernel ( p_im2col, "IM2COL", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+  
+  k_col2im = clCreateKernel ( p_im2col, "COL2IM", &error );
 
   if ( error != CL_SUCCESS ) {
     FATAL ( "Error creating kernel: " << ( signed int ) error );
