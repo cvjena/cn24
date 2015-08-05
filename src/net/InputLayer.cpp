@@ -154,6 +154,8 @@ bool InputLayer::CreateOutputs ( const std::vector< CombinedTensor* >& inputs,
 
   if ( weight_ != nullptr ) {
     outputs.push_back ( weight_ );
+  } else {
+    outputs.push_back (new CombinedTensor (data_->data.samples(), data_->data.width(), data_->data.height(), data_->data.maps()));
   }
 
   return true;

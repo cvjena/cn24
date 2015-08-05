@@ -86,10 +86,12 @@ int main (int argc, char* argv[]) {
   Conv::InputLayer input_layer(data_tensor);
 
 	Conv::NetGraphNode input_node(&input_layer);
+  input_node.is_input = true;
 
 	graph.AddNode(&input_node);
 	bool complete = factory->AddLayers(graph, Conv::NetGraphConnection(&input_node), CLASSES);
 	if (!complete)
+    FATAL("Failed completeness check, inspect model!");
 
 	graph.Initialize();
 
