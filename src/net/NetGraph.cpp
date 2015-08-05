@@ -304,12 +304,16 @@ void NetGraph::FeedForward(NetGraphNode* node) {
 		node->layer->FeedForward();
     if(layerview_enabled_)
       for(NetGraphBuffer buffer: node->output_buffers) {
-        std::stringstream ss;
-        ss << node->unique_name << ": " << node->layer->GetLayerDescription() << ", buffer " << buffer.description;
-#ifdef BUILD_OPENCL
-        buffer.combined_tensor->data.MoveToCPU();
-#endif
-        viewer.show(&(buffer.combined_tensor->data), ss.str());
+        for(unsigned int sample = 0; sample < buffer.combined_tensor->data.samples(); sample++) {
+          for(unsigned int map = 0; map < buffer.combined_tensor->data.maps(); map++) {
+            std::stringstream ss;
+            ss << node->unique_name << ": " << node->layer->GetLayerDescription() << ", buffer " << buffer.description;
+  #ifdef BUILD_OPENCL
+            buffer.combined_tensor->data.MoveToCPU();
+  #endif
+            viewer.show(&(buffer.combined_tensor->data), ss.str(), false, map, sample);
+          }
+        }
       }
     
 		node->flag_ff_visited = true;
