@@ -114,16 +114,17 @@ void TensorMath::IM2COL(const Tensor& source, const int source_width, const int 
   const int target_maps = kernel_width * kernel_height * maps;
   
   const int target_size = samples * target_width * target_height * target_maps;
-  const int actual_target_size = target.samples() * target.width()* target.height() * target.maps();
+  const int actual_target_size = target.samples() * target.width() * target.height() * target.maps();
   
   if(target_size != actual_target_size)
     FATAL("Target size wrong!");
   
+  
   #pragma omp parallel for default(shared)
   for(int sample = 0; sample < samples; sample++) {
     const datum* source_ptr = source.data_ptr_const(0, 0, 0, sample);
-    datum* target_ptr = target.data_ptr(0, 0, 0, sample);
     for(int target_map = 0; target_map < target_maps; target_map++) {
+      datum* target_ptr = target.data_ptr(0, 0, 0, target_map); 
       int kx = target_map % kernel_width;
       int ky = (target_map / kernel_width) % kernel_height;
       int imap = target_map / (kernel_width * kernel_height);
@@ -133,16 +134,16 @@ void TensorMath::IM2COL(const Tensor& source, const int source_width, const int 
           for(int ox = 0; ox < target_width; ox++) {
             int ix = ox * stride_width - pad_width + kx;
             if(ix >= 0 && iy < source_width) {
-              target_ptr[(target_map * target_height + oy) * target_width + ox] =
+              target_ptr[(sample * target_height + oy) * target_width + ox] =
                 source_ptr[(imap * source_height + iy) * source_width + ix];
             } else {
-              target_ptr[(target_map * target_height + oy) * target_width + ox] = 0;
+              target_ptr[(sample * target_height + oy) * target_width + ox] = 0;
             }
           }
         } else {
           // Zero out
           for(int ox = 0; ox < target_width; ox++) {
-              target_ptr[(target_map * target_height + oy) * target_width + ox] = 0;
+              target_ptr[(sample * target_height + oy) * target_width + ox] = 0;
           } 
         }
       }
@@ -173,8 +174,8 @@ void TensorMath::COL2IM(Tensor& source, const int source_width, const int source
   #pragma omp parallel for default(shared)
   for(int sample = 0; sample < samples; sample++) {
     datum* source_ptr = source.data_ptr(0, 0, 0, sample);
-    const datum* target_ptr = target.data_ptr_const(0, 0, 0, sample);
     for(int target_map = 0; target_map < target_maps; target_map++) {
+      const datum* target_ptr = target.data_ptr_const(0, 0, 0, target_map);
       int kx = target_map % kernel_width;
       int ky = (target_map / kernel_width) % kernel_height;
       int imap = target_map / (kernel_width * kernel_height);
@@ -185,7 +186,7 @@ void TensorMath::COL2IM(Tensor& source, const int source_width, const int source
             int ix = ox * stride_width - pad_width + kx;
             if(ix >= 0 && iy < source_width) {
               source_ptr[(imap * source_height + iy) * source_width + ix] +=
-                target_ptr[(target_map * target_height + oy) * target_width + ox];
+                target_ptr[(sample * target_height + oy) * target_width + ox];
             } 
           }
         }
@@ -260,7 +261,7 @@ void TensorMath::SMS(const Tensor& source, Tensor& target)
   target.hint_ignore_content_ = false;
 }
 
-void TensorMath::SMS2(const Tensor& source, Tensor& target)
+/*void TensorMath::SMS2(const Tensor& source, Tensor& target)
 {
 #ifdef BUILD_OPENCL
   ((Tensor&)source).MoveToCPU();
@@ -272,14 +273,14 @@ void TensorMath::SMS2(const Tensor& source, Tensor& target)
   const int samples = target.samples();
   for(int sample = 0; sample < samples; sample++) {
     for(int map = 0; map < maps; map++) {
-      const datum* src = source.data_ptr_const(0, 0, map, sample);
-      datum* tgt = target.data_ptr(0, 0, sample, map);
+      const datum* src = source.data_ptr_const(0, 0, sample, map);
+      datum* tgt = target.data_ptr(0, 0, map, sample);
       std::memcpy(tgt, src, sizeof(datum) * width * height);
     }
   }
   
   target.hint_ignore_content_ = false;
-}
+}*/
 
 
   
