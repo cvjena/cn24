@@ -61,6 +61,8 @@ public:
   bool IsOpenCLAware();
 private:
   Tensor im2col_ff_buffer;
+  Tensor sms_ff_buffer;
+  Tensor sms2_bp_buffer;
   Tensor bp_deltax_buffer;
   
   Tensor ones_;

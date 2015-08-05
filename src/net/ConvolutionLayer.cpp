@@ -117,14 +117,18 @@ bool ConvolutionLayer::Connect (const CombinedTensor* input,
   LOGDEBUG << "Local learning rate is now " << local_lr_;
   
   // Create im2col output buffer
-  im2col_ff_buffer.Resize (input->data.samples(), kernel_width_ * kernel_height_, input_maps_,
-                          output_width_ * output_height_);
+  im2col_ff_buffer.Resize (kernel_width_ * kernel_height_ * input_maps_, output_width_,
+                           output_height_, input->data.samples());
+  
+  sms_ff_buffer.Resize(output_maps_, output_width_, output_height_, input->data.samples());
+  
+  sms2_bp_buffer.Resize(output_maps_, output_width_, output_height_, input->data.samples());
 
-  bp_deltax_buffer.Resize (input->data.samples(), kernel_width_ * kernel_height_, input_maps_,
-                           output_width_ * output_height_);
+  bp_deltax_buffer.Resize (kernel_width_ * kernel_height_ * input_maps_, output_width_,
+                           output_height_, input->data.samples());
 
   // This is faster than adding manually...
-  ones_.Resize (1, output_width_ * output_height_);
+  ones_.Resize (1, output_width_ * output_height_ * input->data.samples());
 
   for (unsigned int i = 0; i < ones_.elements(); i++) {
     ones_[i] = 1;
@@ -157,23 +161,32 @@ void ConvolutionLayer::FeedForward() {
         kernel_width_, kernel_height_, 1, 1, 0, 0, im2col_ff_buffer);
   
   output_->data.hint_ignore_content_ = true;
+  sms_ff_buffer.hint_ignore_content_ = true;
 
-  for(unsigned int sample = 0; sample < input_->data.samples(); sample++) {
-    // Convolve
-    TensorMath::GEMM(true, false, false, output_maps_,
-          output_width_ * output_height_,
-          kernel_width_ * kernel_height_ * input_maps_,
-          w, weights_->data, 0, kernel_width_ * kernel_height_ * input_maps_,
-          im2col_ff_buffer, sample, output_width_ * output_height_,
-          0.0, output_->data, sample, output_width_ * output_height_);
+  // Convolve
+  TensorMath::GEMM(true, false, false, output_maps_,
+        output_width_ * output_height_ * input_->data.samples(),
+        kernel_width_ * kernel_height_ * input_maps_,
+        w, weights_->data, 0, kernel_width_ * kernel_height_ * input_maps_,
+        im2col_ff_buffer, 0, output_width_ * output_height_ * input_->data.samples(),
+        0.0, sms_ff_buffer, 0, output_width_ * output_height_ * input_->data.samples());
+  
+  // Add bias
+  TensorMath::GEMM (true, false, false, output_maps_,
+        output_width_ * output_height_ * input_->data.samples(), 1, w, bias_->data, 0, 1,
+        ones_, 0, output_width_ * output_height_ * input_->data.samples(),
+        1.0, sms_ff_buffer, 0, output_width_ * output_height_ * input_->data.samples());
 
+  TensorMath::SMS(sms_ff_buffer, output_->data);
+
+  /*for(unsigned int sample = 0; sample < input_->data.samples(); sample++) {
     // Add bias
     TensorMath::GEMM (true, false, false, output_maps_,
           output_width_ * output_height_, 1, w, bias_->data, 0, 1,
           ones_, 0, output_width_ * output_height_,
           1.0, output_->data, sample, output_width_ * output_height_);
 
-  }
+  }*/
 
   // Very simple dropout FF implementation
   // This could be optimized a _lot_
@@ -222,41 +235,43 @@ void ConvolutionLayer::BackPropagate() {
     sk_id++;
   }*/
 
-  TensorMath::SETSAMPLE(weights_->delta, -1, 0.0);
-  TensorMath::SETSAMPLE(bias_->delta, -1, 0.0);
-  
   bp_deltax_buffer.hint_ignore_content_ = true;
+  sms2_bp_buffer.hint_ignore_content_ = true;
+  weights_->delta.hint_ignore_content_ = true;
+  bias_->delta.hint_ignore_content_ = true;
+  input_->delta.hint_ignore_content_ = true;
   
-  for(unsigned int sample = 0; sample < input_->data.samples(); sample++) {
-    /*
-    * 1. Backpropagation
-    */
-    if (backprop_enabled_)
-      TensorMath::GEMM (true, true, false,
-            kernel_width_ * kernel_height_ * input_maps_,
-            output_width_ * output_height_,
-            output_maps_,
-            1.0, weights_->data, 0, kernel_width_ * kernel_height_ * input_maps_,
-            output_->delta, sample, output_width_ * output_height_,
-            0.0, bp_deltax_buffer, sample, output_width_ * output_height_);
-
-    /*
-    * 2. Weight gradient calculation
-    */
-    TensorMath::GEMM (true, false, true, output_maps_,
+  TensorMath::SMS(output_->delta, sms2_bp_buffer);
+  
+  /*
+  * 1. Backpropagation
+  */
+  if (backprop_enabled_)
+    TensorMath::GEMM (true, true, false,
           kernel_width_ * kernel_height_ * input_maps_,
-          output_width_ * output_height_,
-          1.0, output_->delta, sample, output_width_ * output_height_,
-          im2col_ff_buffer, sample, output_width_ * output_height_,
-          1.0, weights_->delta, 0, kernel_width_ * kernel_height_ * input_maps_);
-    
-    /*
-    * 3. Bias gradient calculation
-    */
-    TensorMath::GEMV(true, false, output_maps_, output_width_ * output_height_, 1.0,
-          output_->delta, sample, output_width_ * output_height_,
-          ones_, 0, 1, 1.0, bias_->delta, 0, 1);
-  }
+          output_width_ * output_height_ * input_->data.samples(),
+          output_maps_,
+          1.0, weights_->data, 0, kernel_width_ * kernel_height_ * input_maps_,
+          sms2_bp_buffer, 0, output_width_ * output_height_ * input_->data.samples(),
+          0.0, bp_deltax_buffer, 0, output_width_ * output_height_ * input_->data.samples());
+  
+  /*
+  * 2. Weight gradient calculation
+  */
+  TensorMath::GEMM (true, false, true, output_maps_,
+        kernel_width_ * kernel_height_ * input_maps_,
+        output_width_ * output_height_ * input_->data.samples(),
+        1.0, sms2_bp_buffer, 0, output_width_ * output_height_ * input_->data.samples(),
+        im2col_ff_buffer, 0, output_width_ * output_height_ * input_->data.samples(),
+        0.0, weights_->delta, 0, kernel_width_ * kernel_height_ * input_maps_);
+
+  /*
+  * 3. Bias gradient calculation
+  */
+  TensorMath::GEMV(true, false, output_maps_, output_width_ * output_height_ * input_->data.samples(), 1.0,
+        sms2_bp_buffer, 0, output_width_ * output_height_ * input_->data.samples(),
+        ones_, 0, 1, 0.0, bias_->delta, 0, 1);
+
   
   if(backprop_enabled_)
     TensorMath::COL2IM(input_->delta, input_width_, input_height_, input_maps_, input_->data.samples(),
