@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(CN24 C CXX)
 
+set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type")
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 # Get Git SHA1 hash
@@ -107,7 +109,7 @@ endif()
 file(GLOB_RECURSE CN24_SOURCES ${CN24_SRC}/*.cpp)
 file(GLOB_RECURSE CN24_HEADERS ${CN24_INC}/*.h)
 
-set(CN24_BUILD_SQLITE3 ON CACHE BOOL "Build CN24 with SQLITE3 logging support")
+set(CN24_BUILD_SQLITE3 OFF CACHE BOOL "Build CN24 with SQLITE3 logging support")
 if(CN24_BUILD_SQLITE3)
   include_directories("${CN24_SOURCE_DIR}/external/sqlite3")
   set(CN24_SOURCES ${CN24_SOURCES} "${CN24_SOURCE_DIR}/external/sqlite3/sqlite3.c")
