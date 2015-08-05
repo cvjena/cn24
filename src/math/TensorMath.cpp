@@ -39,6 +39,13 @@ void TensorMath::GEMM(const bool is_row_major, const bool transpose_A, const boo
   if(err!=CL_SUCCESS)
     FATAL("Call to clblasSgemm failed. Error: " << err);
 #else
+  
+#ifdef BUILD_OPENCL
+  ((Tensor&)A).MoveToCPU();
+  ((Tensor&)B).MoveToCPU();
+  C.MoveToCPU(C.hint_ignore_content_ && beta == 0.0);
+#endif 
+  
 #ifdef BUILD_BLAS
   INNERGEMM(is_row_major ? CblasRowMajor : CblasColMajor,
     transpose_A ? CblasTrans : CblasNoTrans,
@@ -48,7 +55,36 @@ void TensorMath::GEMM(const bool is_row_major, const bool transpose_A, const boo
     B.data_ptr_const(0,0,0,smB), ldB,
     beta, C.data_ptr(0,0,0,smC), ldC);
 #else
-  FATAL("No reference GEMM at this time!");
+  if(!is_row_major)
+    FATAL("Reference GEMM does not support column-major matrices!");
+  
+  const datum* a_ptr = A.data_ptr_const(0, 0, 0, smA);
+  const datum* b_ptr = B.data_ptr_const(0, 0, 0, smB);
+  datum* c_ptr = C.data_ptr(0, 0, 0, smC);
+  
+  #pragma omp parallel for default(shared)
+  for(int i = 0; i < M; i++) {
+    for(int j = 0; j < N; j++) {
+      datum sum = 0.0;
+      for(int k = 0; k < K; k++) {
+        const datum a_value = transpose_A ?
+          a_ptr[k * ldA + i]
+        :
+          a_ptr[i * ldA + k];
+        
+        const datum b_value = transpose_B ?
+          b_ptr[j * ldB + k]
+        :
+          b_ptr[k * ldB + j];
+          
+        sum += a_value * b_value;
+      }
+      if(beta == 0.0)
+        c_ptr[ldC * i + j] = alpha * sum;
+      else
+        c_ptr[ldC * i + j] = beta * c_ptr[ldC * i + j] + alpha * sum;
+    }
+  }
 #endif // BUILD_BLAS
 #endif // BUILD_CLBLAS
   C.hint_ignore_content_ = false;
@@ -79,13 +115,44 @@ void TensorMath::GEMV(const bool is_row_major, const bool transpose_A, const int
   if(err!=CL_SUCCESS)
     FATAL("Call to clblasSgemv failed. Error: " << err);
 #else
+#ifdef BUILD_OPENCL
+  ((Tensor&)A).MoveToCPU();
+  ((Tensor&)X).MoveToCPU();
+  Y.MoveToCPU(Y.hint_ignore_content_ && beta == 0.0);
+#endif
+  
 #ifdef BUILD_BLAS
   INNERGEMV(is_row_major ? CblasRowMajor : CblasColMajor,
             transpose_A ? CblasTrans : CblasNoTrans,
             M, N, alpha, A.data_ptr_const(0,0,0,smA),
             ldA, X.data_ptr_const(0,0,0,smX), incX, beta, Y.data_ptr(0,0,0,smY), incY);
 #else
-  FATAL("No reference GEMV at this time!");
+  if(!is_row_major)
+    FATAL("Reference GEMV does not support column-major matrices!");
+  
+  // ...
+  const datum* a_ptr = A.data_ptr_const(0, 0, 0, smA);
+  const datum* x_ptr = X.data_ptr_const(0, 0, 0, smX);
+  datum* y_ptr = Y.data_ptr(0, 0, 0, smY);
+  
+  #pragma omp parallel for default(shared)
+  for(int i = 0; i < M; i++) {
+    datum sum = 0.0;
+    for(int j = 0; j < N; j++) {
+      const datum a_value = transpose_A ?
+        a_ptr[j * ldA + i]
+      :
+        a_ptr[i * ldA + j];
+      
+      const datum x_value = x_ptr[j * incX];
+      sum += x_value * a_value;
+    }
+    if(beta == 0.0)
+      y_ptr[i * incY] = alpha * sum;
+    else 
+      y_ptr[i * incY] = beta * y_ptr[i * incY] + alpha * sum;
+  }
+  
 #endif // BUILD_BLAS
 #endif // BUILD_CLBLAS
   Y.hint_ignore_content_ = false;
@@ -312,7 +379,6 @@ void TensorMath::SETSAMPLE(Tensor& A, const int smA, const datum value)
       FATAL("Error finishing command queue: " << (signed int) error);
     }
 #endif
-      
   } else {
 #endif
     datum* start = smA == -1 ? A.data_ptr() : A.data_ptr(0, 0, 0, smA);
