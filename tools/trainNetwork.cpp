@@ -275,9 +275,13 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
     return false;
   } else if (command.compare (0, 5, "train") == 0) {
     unsigned int epochs = 1;
+    unsigned int layerview = 0;
+    Conv::ParseCountIfPossible (command, "view", layerview);
+    graph.SetLayerViewEnabled (layerview == 1);
     Conv::ParseCountIfPossible (command, "epochs", epochs);
     trainer.Train (epochs);
     testing_trainer.SetEpoch (trainer.epoch());
+    graph.SetLayerViewEnabled (false);
     LOGINFO << "Training complete.";
   } else if (command.compare (0, 4, "test") == 0) {
     unsigned int layerview = 0;
