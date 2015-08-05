@@ -21,6 +21,8 @@
 #include "CLHelper.h"
 #include "TensorMath.h"
 
+#include "TensorViewer.h"
+
 #include "ConvolutionLayer.h"
 
 namespace Conv {
@@ -157,11 +159,13 @@ void ConvolutionLayer::FeedForward() {
   const datum p = net_->IsTesting() ? 0.0 : dropout_fraction_;
   const datum w = net_->IsTesting() ? (1.0 - dropout_fraction_) : 1.0;
   
+  im2col_ff_buffer.hint_ignore_content_ = true;
+  output_->data.hint_ignore_content_ = true;
+  sms_ff_buffer.hint_ignore_content_ = true;
+  
   TensorMath::IM2COL(input_->data, input_width_, input_height_, input_maps_, input_->data.samples(),
         kernel_width_, kernel_height_, 1, 1, 0, 0, im2col_ff_buffer);
   
-  output_->data.hint_ignore_content_ = true;
-  sms_ff_buffer.hint_ignore_content_ = true;
 
   // Convolve
   TensorMath::GEMM(true, false, false, output_maps_,
