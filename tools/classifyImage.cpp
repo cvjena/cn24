@@ -97,7 +97,7 @@ int main (int argc, char* argv[]) {
 
 
   // Load network parameters
-  // net.DeserializeParameters(param_tensor_file);
+  graph.DeserializeParameters(param_tensor_file);
   
   graph.SetIsTesting(true);
   LOGINFO << "Classifying..." << std::flush;
