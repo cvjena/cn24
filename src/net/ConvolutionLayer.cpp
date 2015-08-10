@@ -30,10 +30,16 @@ namespace Conv {
 ConvolutionLayer::ConvolutionLayer (const unsigned int kwidth,
                                     const unsigned int kheight,
                                     const unsigned int output_maps,
-                                    const unsigned int stride,
+                                    const unsigned int stride_width,
+                                    const unsigned int stride_height,
+                                    const unsigned int pad_width,
+                                    const unsigned int pad_height,
+                                    const unsigned int group,
                                     const int seed, const datum dropout_fraction) :
   output_maps_ (output_maps), kernel_width_ (kwidth), kernel_height_ (kheight),
-  rand_ (seed), stride_(stride), dropout_fraction_(dropout_fraction) {
+  rand_ (seed), stride_width_(stride_width), stride_height_(stride_height),
+  pad_width_(pad_width), pad_height_(pad_height),
+  group_(group), dropout_fraction_(dropout_fraction) {
   // Validate kernel dimensions. These are very important because the
   // FeedForward and BackPropagate implementations rely on some assumptions.
 
@@ -42,7 +48,7 @@ ConvolutionLayer::ConvolutionLayer (const unsigned int kwidth,
     FATAL ("Kernels cannot have zero dimensions");
   }
     
-  if(stride == 0) {
+  if(stride_width_ == 0 || stride_height_ == 0) {
     FATAL("Stride needs to be at least 1!");
   }
   
@@ -53,7 +59,8 @@ ConvolutionLayer::ConvolutionLayer (const unsigned int kwidth,
   }
 
   LOGDEBUG << "Instance created. " << output_maps_ << " output maps with " <<
-           kernel_width_ << "x" << kernel_height_ << " kernels, stride: "<<  stride_ << ".";
+           kernel_width_ << "x" << kernel_height_ << " kernels, stride: "<<  stride_width << "x" << stride_height_ << 
+           ", padding: " << pad_width_ << "x" << pad_height_ << ", group: " << group_ << ".";
   LOGDEBUG << "Dropout fraction: " << dropout_fraction_;
 }
 
@@ -81,14 +88,15 @@ bool ConvolutionLayer::CreateOutputs (
   // For MNIST recognition, LeCun says that 'same' convolutions perform better
   // as a first layer. He adds a border around the training and test sets to
   // achieve the same thing without changing the code.
-  if (input->data.height() < kernel_height_ || input->data.width() < kernel_width_) {
+  const int output_width = ((int)pad_width_ + (int)pad_width_ + (int)input->data.width() - ((int)kernel_width_ - 1)) / (int)stride_width_;
+  const int output_height = ((int)pad_height_ + (int)pad_height_ + (int)input->data.height() - ((int)kernel_height_ - 1)) / (int)stride_height_;
+  
+  if (output_width <= 0 || output_height <= 0) {
     LOGERROR << "Unsupported input dimensions " << input->data;
     return false;
   }
-
+  
   // Create output
-  const unsigned int output_width = (input->data.width() - (kernel_width_ - 1)) / stride_;
-  const unsigned int output_height = (input->data.height() - (kernel_height_ - 1)) / stride_;
   CombinedTensor* output = new CombinedTensor (input->data.samples(),
       output_width, output_height, output_maps_);
 
@@ -101,9 +109,9 @@ bool ConvolutionLayer::CreateOutputs (
 bool ConvolutionLayer::Connect (const CombinedTensor* input,
                                 CombinedTensor* output) {
   bool valid =
-    input->data.width() >= kernel_width_ && input->data.height() >=  kernel_height_ &&
-    output->data.width() == (input->data.width() - (kernel_width_ - 1)) / stride_ &&
-    output->data.height() == (input->data.height() - (kernel_height_ - 1)) / stride_;
+    // input->data.width() >= kernel_width_ && input->data.height() >=  kernel_height_ &&
+    output->data.width() == (pad_width_ + pad_width_ + input->data.width() - (kernel_width_ - 1)) / stride_width_ &&
+    output->data.height() == (pad_height_ + pad_height_ + input->data.height() - (kernel_height_ - 1)) / stride_height_;
 
   if (!valid) {
     return false;
@@ -164,7 +172,7 @@ void ConvolutionLayer::FeedForward() {
   sms_ff_buffer.hint_ignore_content_ = true;
   
   TensorMath::IM2COL(input_->data, input_width_, input_height_, input_maps_, input_->data.samples(),
-        kernel_width_, kernel_height_, 1, 1, 0, 0, im2col_ff_buffer);
+        kernel_width_, kernel_height_, stride_width_, stride_height_, pad_width_, pad_height_, im2col_ff_buffer);
   
 
   // Convolve
@@ -219,12 +227,6 @@ void ConvolutionLayer::FeedForward() {
 }
 
 void ConvolutionLayer::BackPropagate() {
-  if(stride_ != 1) {
-    FATAL("Strided convolutions are only supported for prediction!");
-  }
-
-  static datum one = 1.0;
-
   // Very simple dropout backprop implementation
   // This could be optimized a _lot_
   /*unsigned int sk_id = 0;
@@ -279,7 +281,7 @@ void ConvolutionLayer::BackPropagate() {
   
   if(backprop_enabled_)
     TensorMath::COL2IM(input_->delta, input_width_, input_height_, input_maps_, input_->data.samples(),
-        kernel_width_, kernel_height_, 1, 1, 0, 0, bp_deltax_buffer);
+        kernel_width_, kernel_height_, stride_width_, stride_height_, pad_width_, pad_height_, bp_deltax_buffer);
 }
 
 

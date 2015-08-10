@@ -36,7 +36,9 @@ public:
    * @param dropout_fraction Propability of a feature map to be dropped out
    */
   ConvolutionLayer(const unsigned int kwidth, const unsigned int kheight,
-                   const unsigned int output_maps, const unsigned int stride = 1,
+                   const unsigned int output_maps, const unsigned int stride_width_ = 1,
+                   const unsigned int stride_height = 1, const unsigned int pad_width = 0,
+                   const unsigned int pad_height = 0, const unsigned int group = 1,
                    const int seed = 0, const datum dropout_fraction = 0.0 );
   
   // Implementations for SimpleLayer
@@ -87,7 +89,11 @@ private:
   
   std::mt19937 rand_;
 
-  unsigned int stride_ = 0;
+  unsigned int stride_width_ = 0;
+  unsigned int stride_height_ = 0;
+  unsigned int pad_width_ = 0;
+  unsigned int pad_height_ = 0;
+  unsigned int group_ = 0;
   datum dropout_fraction_ = 0.0;
 };
 
