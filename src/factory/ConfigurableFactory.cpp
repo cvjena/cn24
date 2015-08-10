@@ -479,6 +479,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
         ParseKernelSizeIfPossible (line, "stride", stridex, stridey);
         ParseKernelSizeIfPossible (line, "pad", padx, pady);
         ParseCountIfPossible (line, "kernels", k);
+        ParseCountIfPossible (line, "group", group);
         ParseDatumParamIfPossible (line, "dropout", dropout_fraction);
         ParseDatumParamIfPossible (line, "llr", llr);
         LOGDEBUG << "Parsed dropout fraction: " << dropout_fraction;

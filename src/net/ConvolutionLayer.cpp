@@ -52,6 +52,10 @@ ConvolutionLayer::ConvolutionLayer (const unsigned int kwidth,
     FATAL("Stride needs to be at least 1!");
   }
   
+  if((output_maps_ % group) != 0) {
+    FATAL("Output maps need to divide group count");
+  }
+  
   // Using a zero seed on more than one layer may introduce symmetries and
   // influence the gain of a network in a negative way
   if (seed == 0) {
@@ -94,6 +98,10 @@ bool ConvolutionLayer::CreateOutputs (
   if (output_width <= 0 || output_height <= 0) {
     LOGERROR << "Unsupported input dimensions " << input->data;
     return false;
+  }
+  
+  if ((input->data.maps() % group_) != 0) {
+    FATAL("Input maps need to divide group count!");
   }
   
   // Create output
@@ -145,7 +153,7 @@ bool ConvolutionLayer::Connect (const CombinedTensor* input,
   }
 
   // Create kernels
-  weights_ = new CombinedTensor (output_maps_, kernel_width_, kernel_height_, input_maps_);
+  weights_ = new CombinedTensor (output_maps_, kernel_width_, kernel_height_, input_maps_ / group_);
   bias_ = new CombinedTensor (1, output_maps_);
 
   // Initialize weights to zero so the net won't work if Net::InitializeWeights
@@ -175,13 +183,15 @@ void ConvolutionLayer::FeedForward() {
         kernel_width_, kernel_height_, stride_width_, stride_height_, pad_width_, pad_height_, im2col_ff_buffer);
   
 
-  // Convolve
-  TensorMath::GEMM(true, false, false, output_maps_,
-        output_width_ * output_height_ * input_->data.samples(),
-        kernel_width_ * kernel_height_ * input_maps_,
-        w, weights_->data, 0, kernel_width_ * kernel_height_ * input_maps_,
-        im2col_ff_buffer, 0, output_width_ * output_height_ * input_->data.samples(),
-        0.0, sms_ff_buffer, 0, output_width_ * output_height_ * input_->data.samples());
+  for(unsigned int g = 0; g < group_; g++) {
+    // Convolve
+    TensorMath::GEMM(true, false, false, output_maps_ / group_,
+          output_width_ * output_height_ * input_->data.samples(),
+          (kernel_width_ * kernel_height_ * input_maps_) / group_,
+          w, weights_->data, (g * output_maps_) / group_, (kernel_width_ * kernel_height_ * input_maps_) / group_,
+          im2col_ff_buffer, (kernel_width_ * kernel_height_ * input_maps_ * g) / group_, output_width_ * output_height_ * input_->data.samples(),
+          0.0, sms_ff_buffer, (g * output_maps_) / group_, output_width_ * output_height_ * input_->data.samples());
+  }
   
   // Add bias
   TensorMath::GEMM (true, false, false, output_maps_,
@@ -249,28 +259,29 @@ void ConvolutionLayer::BackPropagate() {
   
   TensorMath::SMS(output_->delta, sms2_bp_buffer);
   
-  /*
-  * 1. Backpropagation
-  */
-  if (backprop_enabled_)
-    TensorMath::GEMM (true, true, false,
-          kernel_width_ * kernel_height_ * input_maps_,
+  for(unsigned int g = 0; g < group_; g++) {
+    /*
+    * 1. Backpropagation
+    */
+    if (backprop_enabled_)
+      TensorMath::GEMM (true, true, false,
+            (kernel_width_ * kernel_height_ * input_maps_) / group_,
+            output_width_ * output_height_ * input_->data.samples(),
+            output_maps_ / group_,
+            1.0, weights_->data, (g * output_maps_) / group_, (kernel_width_ * kernel_height_ * input_maps_) / group_,
+            sms2_bp_buffer, (g * output_maps_) / group_, output_width_ * output_height_ * input_->data.samples(),
+            0.0, bp_deltax_buffer, (kernel_width_ * kernel_height_ * input_maps_ * g) / group_, output_width_ * output_height_ * input_->data.samples());
+    
+    /*
+    * 2. Weight gradient calculation
+    */
+    TensorMath::GEMM (true, false, true, output_maps_ / group_,
+          (kernel_width_ * kernel_height_ * input_maps_) / group_,
           output_width_ * output_height_ * input_->data.samples(),
-          output_maps_,
-          1.0, weights_->data, 0, kernel_width_ * kernel_height_ * input_maps_,
-          sms2_bp_buffer, 0, output_width_ * output_height_ * input_->data.samples(),
-          0.0, bp_deltax_buffer, 0, output_width_ * output_height_ * input_->data.samples());
-  
-  /*
-  * 2. Weight gradient calculation
-  */
-  TensorMath::GEMM (true, false, true, output_maps_,
-        kernel_width_ * kernel_height_ * input_maps_,
-        output_width_ * output_height_ * input_->data.samples(),
-        1.0, sms2_bp_buffer, 0, output_width_ * output_height_ * input_->data.samples(),
-        im2col_ff_buffer, 0, output_width_ * output_height_ * input_->data.samples(),
-        0.0, weights_->delta, 0, kernel_width_ * kernel_height_ * input_maps_);
-
+          1.0, sms2_bp_buffer, (g * output_maps_) / group_, output_width_ * output_height_ * input_->data.samples(),
+          im2col_ff_buffer, (kernel_width_ * kernel_height_ * input_maps_ * g) / group_, output_width_ * output_height_ * input_->data.samples(),
+          0.0, weights_->delta, (g * output_maps_) / group_, (kernel_width_ * kernel_height_ * input_maps_) / group_);
+  }
   /*
   * 3. Bias gradient calculation
   */
