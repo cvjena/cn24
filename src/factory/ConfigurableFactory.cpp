@@ -27,6 +27,7 @@ namespace Conv {
 
 ConfigurableFactory::ConfigurableFactory (std::istream& file, const unsigned int seed, bool is_training_factory) :
   seed_ (seed), file_ (file), method_ (FCN) {
+  bool used_pad = false;
   file_.clear();
   file_.seekg (0, std::ios::beg);
 
@@ -73,17 +74,21 @@ ConfigurableFactory::ConfigurableFactory (std::istream& file, const unsigned int
       line = line.substr (1);
 
       if (StartsWithIdentifier (line, "convolutional")) {
-        unsigned int kx, ky, stride = 1;
+        unsigned int kx, ky, stridex = 1, stridey = 1, padx = 0, pady = 0;
         
-        ParseCountIfPossible (line, "stride", stride);
-        if(stride != 1) {
-          FATAL("Strided convolutions only supported by manual receptive field size method!");
+        ParseKernelSizeIfPossible (line, "stride", stridex, stridey);
+        ParseKernelSizeIfPossible (line, "pad", padx, pady);
+        ParseKernelSizeIfPossible (line, "size", kx, ky);
+        
+        if(padx > 0 || pady > 0) {
+          used_pad = true;
         }
         
-        ParseKernelSizeIfPossible (line, "size", kx, ky);
-        LOGDEBUG << "Adding convolutional layer to receptive field (" << kx << "," << ky << "s" << stride <<")";
-        receptive_field_x_ += factorx * (kx - 1);
-        receptive_field_y_ += factory * (ky - 1);
+        LOGDEBUG << "Adding convolutional layer to receptive field (" << kx << "," << ky << "s" << stridex << "," << stridey << "p" << padx << "," << pady << ")";
+        receptive_field_x_ += factorx * ((int)kx - 1 - (int)padx - (int)padx);
+        receptive_field_y_ += factory * ((int)ky - 1 - (int)pady - (int)pady);
+        factorx *= stridex;
+        factory *= stridey;
       }
 
       if (StartsWithIdentifier (line, "maxpooling")) {
@@ -100,6 +105,9 @@ ConfigurableFactory::ConfigurableFactory (std::istream& file, const unsigned int
   if (method_ == PATCH) {
     receptive_field_x_ += factorx;
     receptive_field_y_ += factory;
+    if(used_pad)
+      LOGWARN << "Using padding in hybrid mode may have undesired consequences!";
+  LOGINFO << "Patch size would be " << receptive_field_x_ << "x" << receptive_field_y_;
   }
 
   patch_field_x_ = receptive_field_x_ + factorx;
@@ -385,7 +393,7 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 
 	bool already_upscaled = (factorx == 1) && (factory == 1);
 
-  if (method_ == FCN) {
+  if (method_ == FCN && (receptive_field_x_ > 0) && (receptive_field_y_ > 0)) {
 		ResizeLayer* rl = new ResizeLayer(receptive_field_x_, receptive_field_y_);
 		NetGraphNode* node = new NetGraphNode(rl, last_connection);
 		net.AddNode(node);
@@ -464,17 +472,18 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
       LOGDEBUG << "Parsing layer: " << line;
 
       if (StartsWithIdentifier (line, "convolutional")) {
-        unsigned int kx = 1, ky = 1, k = 1, stride = 1;
+        unsigned int kx = 1, ky = 1, k = 1, stridex = 1, stridey = 1, padx = 0, pady = 0, group = 1;
         datum llr = 1;
         datum dropout_fraction = 0.0;
         ParseKernelSizeIfPossible (line, "size", kx, ky);
+        ParseKernelSizeIfPossible (line, "stride", stridex, stridey);
+        ParseKernelSizeIfPossible (line, "pad", padx, pady);
         ParseCountIfPossible (line, "kernels", k);
-        ParseCountIfPossible (line, "stride", stride);
         ParseDatumParamIfPossible (line, "dropout", dropout_fraction);
         ParseDatumParamIfPossible (line, "llr", llr);
         LOGDEBUG << "Parsed dropout fraction: " << dropout_fraction;
 
-        ConvolutionLayer* cl = new ConvolutionLayer (kx, ky, k, stride, rand(), dropout_fraction);
+        ConvolutionLayer* cl = new ConvolutionLayer (kx, ky, k, stridex, stridey, padx, pady, group, rand(), dropout_fraction);
 				cl->SetLocalLearningRate (llr);
 
 				NetGraphNode* node = new NetGraphNode(cl, last_connection);
