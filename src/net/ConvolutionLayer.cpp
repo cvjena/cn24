@@ -92,8 +92,8 @@ bool ConvolutionLayer::CreateOutputs (
   // For MNIST recognition, LeCun says that 'same' convolutions perform better
   // as a first layer. He adds a border around the training and test sets to
   // achieve the same thing without changing the code.
-  const int output_width = ((int)pad_width_ + (int)pad_width_ + (int)input->data.width() - ((int)kernel_width_ - 1)) / (int)stride_width_;
-  const int output_height = ((int)pad_height_ + (int)pad_height_ + (int)input->data.height() - ((int)kernel_height_ - 1)) / (int)stride_height_;
+  const int output_width = ((int)pad_width_ + (int)pad_width_ + (int)input->data.width() - (int)kernel_width_) / (int)stride_width_ + 1;
+  const int output_height = ((int)pad_height_ + (int)pad_height_ + (int)input->data.height() - (int)kernel_height_) / (int)stride_height_ + 1;
   
   if (output_width <= 0 || output_height <= 0) {
     LOGERROR << "Unsupported input dimensions " << input->data;
@@ -118,8 +118,8 @@ bool ConvolutionLayer::Connect (const CombinedTensor* input,
                                 CombinedTensor* output) {
   bool valid =
     // input->data.width() >= kernel_width_ && input->data.height() >=  kernel_height_ &&
-    output->data.width() == (pad_width_ + pad_width_ + input->data.width() - (kernel_width_ - 1)) / stride_width_ &&
-    output->data.height() == (pad_height_ + pad_height_ + input->data.height() - (kernel_height_ - 1)) / stride_height_;
+    output->data.width() == (pad_width_ + pad_width_ + input->data.width() - kernel_width_) / stride_width_  + 1 &&
+    output->data.height() == (pad_height_ + pad_height_ + input->data.height() - kernel_height_) / stride_height_ + 1;
 
   if (!valid) {
     return false;
