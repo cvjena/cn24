@@ -54,6 +54,8 @@ public:
   static cl_kernel k_foldWeights;
   static cl_kernel k_maximumForward;
   static cl_kernel k_maximumBackward;
+  static cl_kernel k_amaximumForward;
+  static cl_kernel k_amaximumBackward;
   static cl_kernel k_nlTanh;
   static cl_kernel k_nlTanhBackward;
   static cl_kernel k_nlSigm;

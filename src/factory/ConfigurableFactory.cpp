@@ -12,6 +12,7 @@
 #include "LocalResponseNormalizationLayer.h"
 #include "ResizeLayer.h"
 #include "MaxPoolingLayer.h"
+#include "AdvancedMaxPoolingLayer.h"
 #include "NonLinearityLayer.h"
 #include "UpscaleLayer.h"
 #include "SpatialPriorLayer.h"
@@ -90,18 +91,23 @@ ConfigurableFactory::ConfigurableFactory (std::istream& file, const unsigned int
         factorx *= stridex;
         factory *= stridey;
       }
-
+      
       if (StartsWithIdentifier (line, "maxpooling")) {
+        unsigned int kx, ky;
+        ParseKernelSizeIfPossible (line, "size", kx, ky);
+        LOGDEBUG << "Adding maxpooling layer to receptive field (" << kx << "," << ky << ")";
+        factorx *= kx;
+        factory *= ky;
+      }
+
+      if (StartsWithIdentifier (line, "amaxpooling")) {
         unsigned int kx, ky, sx, sy;
-        LOGDEBUG << "Convolutional layer";
         ParseKernelSizeIfPossible (line, "size", kx, ky);
         sx = kx; sy = ky;
         ParseKernelSizeIfPossible (line, "stride", sx, sy);
-        LOGDEBUG << "Adding maxpooling layer to receptive field (" << kx << "," << ky << "s" << sx << "," << sy << ")";
-        //if(sx != kx || sy != ky) {
-          receptive_field_x_ += factorx * ((int)kx - 1);
-          receptive_field_y_ += factory * ((int)ky - 1);
-        //}
+        LOGDEBUG << "Adding adv. maxpooling layer to receptive field (" << kx << "," << ky << "s" << sx << "," << sy << ")";
+        receptive_field_x_ += factorx * ((int)kx - 1);
+        receptive_field_y_ += factory * ((int)ky - 1);
         factorx *= sx;
         factory *= sy;
       }
@@ -284,7 +290,7 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
 				int input_layer_id = last_layer_id;
 				int input_layer_output = last_layer_output;
 
-        MaxPoolingLayer* mp = new MaxPoolingLayer (kx, ky, 0 ,0);
+        MaxPoolingLayer* mp = new MaxPoolingLayer (kx, ky);
         last_layer_id = net.AddLayer (mp ,
         { Connection (last_layer_id, last_layer_output) });
         last_layer_output = 0;
@@ -527,18 +533,31 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
       }
 
       if (StartsWithIdentifier (line, "maxpooling")) {
-        unsigned int kx = 1, ky = 1, sx, sy;
+        unsigned int kx = 1, ky = 1;
         ParseKernelSizeIfPossible (line, "size", kx, ky);
-        sx = kx; sy = ky;
-        ParseKernelSizeIfPossible (line, "stride", sx, sy);
 
-        MaxPoolingLayer* mp = new MaxPoolingLayer (kx, ky, sx, sy);
+        MaxPoolingLayer* mp = new MaxPoolingLayer (kx, ky);
 
 				NetGraphNode* node = new NetGraphNode(mp, last_connection);
 				net.AddNode(node);
 				last_connection.buffer = 0;
 				last_connection.node = node;
 				last_connection.backprop = true;
+      }
+      
+      if (StartsWithIdentifier (line, "amaxpooling")) {
+        unsigned int kx = 1, ky = 1, sx, sy;
+        ParseKernelSizeIfPossible (line, "size", kx, ky);
+        sx = kx; sy = ky;
+        ParseKernelSizeIfPossible (line, "stride", sx, sy);
+
+        AdvancedMaxPoolingLayer* mp = new AdvancedMaxPoolingLayer (kx, ky, sx, sy);
+
+        NetGraphNode* node = new NetGraphNode(mp, last_connection);
+        net.AddNode(node);
+        last_connection.buffer = 0;
+        last_connection.node = node;
+        last_connection.backprop = true;
       }
 
       if (StartsWithIdentifier (line, "sigm")) {

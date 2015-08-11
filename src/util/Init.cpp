@@ -56,6 +56,8 @@ cl_kernel CLHelper::k_matrixMatrix = 0;
 cl_kernel CLHelper::k_foldWeights = 0;
 cl_kernel CLHelper::k_maximumForward = 0;
 cl_kernel CLHelper::k_maximumBackward = 0;
+cl_kernel CLHelper::k_amaximumForward = 0;
+cl_kernel CLHelper::k_amaximumBackward = 0;
 cl_kernel CLHelper::k_nlTanh = 0;
 cl_kernel CLHelper::k_nlTanhBackward = 0;
 cl_kernel CLHelper::k_nlSigm = 0;
@@ -246,6 +248,7 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   cl_program p_biasGradient = CreateProgram ( "kernels/biasGradient.cl" );
   cl_program p_matrixMatrix = CreateProgram ( "kernels/matrixMatrix.cl" );
   cl_program p_maximum = CreateProgram ( "kernels/maximumPooling.cl" );
+  cl_program p_amaximum = CreateProgram ( "kernels/advmaximumPooling.cl" );
   cl_program p_nonLinearFunctions = CreateProgram ( "kernels/nonLinearFunctions.cl" );
   cl_program p_setValue = CreateProgram ( "kernels/setValue.cl" );
   cl_program p_sms = CreateProgram ( "kernels/sms.cl" );
@@ -318,6 +321,18 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   }
 
   k_maximumBackward = clCreateKernel ( p_maximum, "MAXIMUM_POOLING_BWD", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+  
+  k_amaximumForward = clCreateKernel ( p_amaximum, "AMAXIMUM_POOLING_FWD", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+
+  k_amaximumBackward = clCreateKernel ( p_amaximum, "AMAXIMUM_POOLING_BWD", &error );
 
   if ( error != CL_SUCCESS ) {
     FATAL ( "Error creating kernel: " << ( signed int ) error );
