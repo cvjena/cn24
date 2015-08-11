@@ -92,12 +92,18 @@ ConfigurableFactory::ConfigurableFactory (std::istream& file, const unsigned int
       }
 
       if (StartsWithIdentifier (line, "maxpooling")) {
-        unsigned int kx, ky;
+        unsigned int kx, ky, sx, sy;
         LOGDEBUG << "Convolutional layer";
         ParseKernelSizeIfPossible (line, "size", kx, ky);
-        LOGDEBUG << "Adding maxpooling layer to receptive field (" << kx << "," << ky << ")";
-        factorx *= kx;
-        factory *= ky;
+        sx = kx; sy = ky;
+        ParseKernelSizeIfPossible (line, "stride", sx, sy);
+        LOGDEBUG << "Adding maxpooling layer to receptive field (" << kx << "," << ky << "s" << sx << "," << sy << ")";
+        //if(sx != kx || sy != ky) {
+          receptive_field_x_ += factorx * ((int)kx - 1);
+          receptive_field_y_ += factory * ((int)ky - 1);
+        //}
+        factorx *= sx;
+        factory *= sy;
       }
     }
   }
@@ -278,7 +284,7 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
 				int input_layer_id = last_layer_id;
 				int input_layer_output = last_layer_output;
 
-        MaxPoolingLayer* mp = new MaxPoolingLayer (kx, ky);
+        MaxPoolingLayer* mp = new MaxPoolingLayer (kx, ky, 0 ,0);
         last_layer_id = net.AddLayer (mp ,
         { Connection (last_layer_id, last_layer_output) });
         last_layer_output = 0;
@@ -521,10 +527,12 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
       }
 
       if (StartsWithIdentifier (line, "maxpooling")) {
-        unsigned int kx = 1, ky = 1;
+        unsigned int kx = 1, ky = 1, sx, sy;
         ParseKernelSizeIfPossible (line, "size", kx, ky);
+        sx = kx; sy = ky;
+        ParseKernelSizeIfPossible (line, "stride", sx, sy);
 
-        MaxPoolingLayer* mp = new MaxPoolingLayer (kx, ky);
+        MaxPoolingLayer* mp = new MaxPoolingLayer (kx, ky, sx, sy);
 
 				NetGraphNode* node = new NetGraphNode(mp, last_connection);
 				net.AddNode(node);
