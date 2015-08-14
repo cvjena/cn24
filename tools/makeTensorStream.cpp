@@ -51,14 +51,9 @@ int main ( int argc, char** argv ) {
 
   unsigned int number_of_classes = dataset->GetClasses();
   // arrays to store class colors in an easy to index way
-  Conv::datum* cr = NULL;
-  Conv::datum* cg = NULL;
-  Conv::datum* cb = NULL;
-
-  // if there are classes cache their colors  
-  cr = new Conv::datum[number_of_classes];
-  cg = new Conv::datum[number_of_classes];
-  cb = new Conv::datum[number_of_classes];
+  Conv::datum* cr = new Conv::datum[number_of_classes];
+  Conv::datum* cg = new Conv::datum[number_of_classes];
+  Conv::datum* cb = new Conv::datum[number_of_classes];
 
   for ( unsigned int c = 0; c < number_of_classes; c++ ) {
     const unsigned int class_color = dataset->GetClassColors() [c];
