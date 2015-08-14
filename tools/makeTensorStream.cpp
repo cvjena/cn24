@@ -17,13 +17,14 @@
 #include <cn24.h>
 
 int main ( int argc, char** argv ) {
-  if ( argc < 7 ) {
-    LOGERROR << "USAGE: " << argv[0] << " <dataset config file> <image list file> <image directory> <label list file> <label directory> <output file>";
+  if ( argc < 8 ) {
+    LOGERROR << "USAGE: " << argv[0] << " <dataset config file> <image list file> <image directory> <label list file> <label directory> <output file> <true/false for direct RGB of labels>";
     LOGEND;
     return -1;
   }
 
   // Capture command line arguments
+  std::string directRGB ( argv[7] );
   std::string output_fname ( argv[6] );
   std::string label_directory ( argv[5] );
   std::string label_list_fname ( argv[4] );
@@ -44,16 +45,17 @@ int main ( int argc, char** argv ) {
     FATAL ( "Cannot open dataset configuration file!" );
   }
 
+  LOGINFO << "Loading dataset";
   // Load dataset
   Conv::TensorStreamDataset* dataset = Conv::TensorStreamDataset::CreateFromConfiguration ( dataset_config_file, true );
-  unsigned int CLASSES = dataset->GetClasses();
 
-  // Save colors
-  Conv::datum* cr = new Conv::datum[dataset->GetClasses()];
-  Conv::datum* cg = new Conv::datum[dataset->GetClasses()];
-  Conv::datum* cb = new Conv::datum[dataset->GetClasses()];
+  unsigned int number_of_classes = dataset->GetClasses();
+  // arrays to store class colors in an easy to index way
+  Conv::datum* cr = new Conv::datum[number_of_classes];
+  Conv::datum* cg = new Conv::datum[number_of_classes];
+  Conv::datum* cb = new Conv::datum[number_of_classes];
 
-  for ( unsigned int c = 0; c < dataset->GetClasses(); c++ ) {
+  for ( unsigned int c = 0; c < number_of_classes; c++ ) {
     const unsigned int class_color = dataset->GetClassColors() [c];
     cr[c] = DATUM_FROM_UCHAR ( ( class_color >> 16 ) & 0xFF );
     cg[c] = DATUM_FROM_UCHAR ( ( class_color >> 8 ) & 0xFF );
@@ -80,7 +82,7 @@ int main ( int argc, char** argv ) {
     FATAL ( "Cannot open output file!" );
   }
 
-  // Iterate through lists
+  // Iterate through lists of images and labels
   while ( !image_list_file.eof() ) {
     std::string image_fname;
     std::string label_fname;
@@ -99,11 +101,25 @@ int main ( int argc, char** argv ) {
       LOGERROR << "Dimensions don't match, skipping file!";
       continue;
     }
+ 
+    int label_tensor_width = number_of_classes; 
+    if(directRGB == "true") {
+      label_tensor_width = 3;
+    }
+	
+    Conv::Tensor label_tensor ( 1, label_rgb_tensor.width(), label_rgb_tensor.height(), label_tensor_width);
 
-    Conv::Tensor label_tensor ( 1, label_rgb_tensor.width(), label_rgb_tensor.height(), CLASSES );
-
-    // Convert RGB images into multi-channel label tensors
-    if ( CLASSES == 1 ) {
+    if(directRGB == "true") {
+      // no classes - interpret the label tensor input as the output (no class/color mapping)
+       for ( unsigned int y = 0; y < label_rgb_tensor.height(); y++ ) {
+        for ( unsigned int x = 0; x < label_rgb_tensor.width(); x++ ) {     
+          *label_tensor.data_ptr ( x,y,0,0 ) = *label_rgb_tensor.data_ptr_const ( x,y,0,0 );
+          *label_tensor.data_ptr ( x,y,1,0 ) = *label_rgb_tensor.data_ptr_const ( x,y,1,0 );
+          *label_tensor.data_ptr ( x,y,2,0 ) = *label_rgb_tensor.data_ptr_const ( x,y,2,0 );
+        }
+      }
+    } else if(number_of_classes == 1) {
+      // 1 class - convert RGB images into multi-channel label tensors
       const unsigned int foreground_color = dataset->GetClassColors() [0];
       const Conv::datum fr = DATUM_FROM_UCHAR ( ( foreground_color >> 16 ) & 0xFF ),
                         fg = DATUM_FROM_UCHAR ( ( foreground_color >> 8 ) & 0xFF ),
@@ -133,6 +149,7 @@ int main ( int argc, char** argv ) {
         }
       }
     } else {
+      // any number of other classes      
       label_tensor.Clear ( 0.0 );
 
       for ( unsigned int y = 0; y < label_rgb_tensor.height(); y++ ) {
@@ -151,13 +168,13 @@ int main ( int argc, char** argv ) {
             FATAL ( "Unsupported input channel count!" );
           }
 
-          for ( unsigned int c = 0; c < dataset->GetClasses(); c++ ) {
-	    if(lr == cr[c] && lg == cg[c] && lb == cb[c])
-	      *label_tensor.data_ptr ( x,y,c,0 ) = 1.0;
+          for ( unsigned int c = 0; c <number_of_classes; c++ ) {
+            if(lr == cr[c] && lg == cg[c] && lb == cb[c])
+              *label_tensor.data_ptr ( x,y,c,0 ) = 1.0;
           }
         }
       }
-    }
+    } // end if
 
     image_tensor.Serialize ( output_file );
     label_tensor.Serialize ( output_file );
