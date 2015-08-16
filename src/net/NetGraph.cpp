@@ -380,8 +380,13 @@ void NetGraph::DeserializeParameters(std::istream& input, unsigned int last_laye
     for (unsigned int p = 0; p < layer->parameters().size(); p++) {
       if (!input.good() || input.eof())
         break;
+      unsigned int elements_before = layer->parameters() [p]->data.elements();
       layer->parameters() [p]->data.Deserialize (input);
+      unsigned int elements_after = layer->parameters() [p]->data.elements();
       LOGINFO << "Loaded parameters for layer " << l << " parameter set " << p << ": " << layer->parameters()[p]->data;
+      if(elements_before != elements_after) {
+        LOGERROR << "Deserialization changed layer parameter count!";
+      }
       input.peek();
     }
   }
