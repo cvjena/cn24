@@ -137,6 +137,21 @@ TensorStreamDataset::TensorStreamDataset (std::istream& training_stream,
   if (max_height_ & 4)
     max_height_+=4;
   
+  if (max_width_ & 8)
+    max_width_+=8;
+  if (max_height_ & 8)
+    max_height_+=8;
+  
+  if (max_width_ & 16)
+    max_width_+=16;
+  if (max_height_ & 16)
+    max_height_+=16;
+  
+  if (max_width_ & 32)
+    max_width_+=32;
+  if (max_height_ & 32)
+    max_height_+=32;
+  
   input_maps_ = data_[0].maps();
   label_maps_ = labels_[0].maps();
 
