@@ -9,6 +9,7 @@
 
 #include "Log.h"
 #include "LocalResponseNormalizationLayer.h"
+#include "TensorMath.h"
 
 namespace Conv {
 
@@ -116,7 +117,8 @@ void LocalResponseNormalizationLayer::FeedForward() {
 }
 
 void LocalResponseNormalizationLayer::BackPropagate() {
-  FATAL("Backward pass missing, use only for prediction!");
+//  FATAL("Backward pass missing, use only for prediction!");
+  TensorMath::SETSAMPLE(input_->delta, -1, 0);
 }
 
 
