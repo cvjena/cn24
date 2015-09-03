@@ -383,14 +383,20 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
   std::istream* training_stream = nullptr;
   std::istream* testing_stream = nullptr;
 
-  if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TRAINING_ONLY)) {
+  if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TRAINING_ONLY) && training_file.length() > 0) {
     training_stream = new std::ifstream (training_file, std::ios::in | std::ios::binary);
+    if(!training_stream->good()) {
+      FATAL("Failed to load " << training_file << "!");
+    }
   } else {
     training_stream = new std::istringstream();
   }
 
-  if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TESTING_ONLY)) {
+  if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TESTING_ONLY) && testing_file.length() > 0) {
     testing_stream = new std::ifstream (testing_file, std::ios::in | std::ios::binary);
+    if(!testing_stream->good()) {
+      FATAL("Failed to load " << testing_file << "!");
+    }
   } else {
     testing_stream = new std::istringstream();
   }
