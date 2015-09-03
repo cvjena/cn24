@@ -109,6 +109,13 @@ endif()
 file(GLOB_RECURSE CN24_SOURCES ${CN24_SRC}/*.cpp)
 file(GLOB_RECURSE CN24_HEADERS ${CN24_INC}/*.h)
 
+set(CN24_VERBOSE OFF CACHE BOOL "Enable CN24 verbose debug output")
+if(CN24_VERBOSE)
+  add_definitions("-DBUILD_VERBOSE")
+  message("Verbose output enabled")
+endif()
+
+
 set(CN24_BUILD_SQLITE3 OFF CACHE BOOL "Build CN24 with SQLITE3 logging support")
 if(CN24_BUILD_SQLITE3)
   include_directories("${CN24_SOURCE_DIR}/external/sqlite3")

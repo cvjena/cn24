@@ -104,19 +104,19 @@ void Trainer::Test() {
 
   auto t_end = std::chrono::system_clock::now();
   std::chrono::duration<double> t_diff = t_end - t_begin;
-  LOGINFO << "Testing, sps: " <<
+  LOGDEBUG << "Testing, sps: " <<
           (datum) (sample_count_ * iterations)
           / (datum) t_diff.count();
 
-  LOGINFO << "Testing, tps: " <<
+  LOGDEBUG << "Testing, tps: " <<
           1000000.0f * (datum) t_diff.count() /
           (datum) (sample_count_ * iterations) << " us";
 
 	for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
 		LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
-		LOGDEBUG << "Testing (Epoch " << epoch_ << ", node " << n << ") " << graph_.GetLossNodes()[n]->layer->GetLayerDescription() <<  " lps: " << loss_sums[n] / (datum)(iterations * sample_count_);
+		LOGINFO << "Testing (Epoch " << epoch_ << ", node " << n << ") " << graph_.GetLossNodes()[n]->layer->GetLayerDescription() <<  " lps: " << loss_sums[n] / (datum)(iterations * sample_count_);
 	}
-	LOGDEBUG << "Testing (Epoch " << epoch_ << ") aggregate lps: " << aggregate_loss / (datum)(iterations * sample_count_);
+	LOGINFO << "Testing (Epoch " << epoch_ << ") aggregate lps: " << aggregate_loss / (datum)(iterations * sample_count_);
 
 	for (unsigned int n = 0; n < graph_.GetStatNodes().size(); n++) {
 		StatLayer* stat_layer = dynamic_cast<StatLayer*>(graph_.GetStatNodes()[n]->layer);
@@ -218,19 +218,19 @@ void Trainer::Epoch() {
 
   auto t_end = std::chrono::system_clock::now();
   std::chrono::duration<double> t_diff = t_end - t_begin;
-  LOGINFO << "Training, sps: " <<
+  LOGDEBUG << "Training, sps: " <<
           (datum) (sample_count_ * settings_.sbatchsize
                    * first_training_layer_->GetLossSamplingProbability() * iterations)
           / (datum) t_diff.count();
 
-  LOGINFO << "Training, tps: " <<
+  LOGDEBUG << "Training, tps: " <<
           1000000.0f * (datum) t_diff.count() /
           (datum) (sample_count_ * settings_.sbatchsize
                    * first_training_layer_->GetLossSamplingProbability() * iterations) << " us";
                   
 #ifdef BUILD_OPENCL
-  LOGINFO << "Training, GB/s   up: " << ((datum)CLHelper::bytes_up)/(1073741824.0 * (datum)t_diff.count());
-  LOGINFO << "Training, GB/s down: " << ((datum)CLHelper::bytes_down)/(1073741824.0 * (datum)t_diff.count());
+  LOGDEBUG << "Training, GB/s   up: " << ((datum)CLHelper::bytes_up)/(1073741824.0 * (datum)t_diff.count());
+  LOGDEBUG << "Training, GB/s down: " << ((datum)CLHelper::bytes_down)/(1073741824.0 * (datum)t_diff.count());
   CLHelper::bytes_up = 0;
   CLHelper::bytes_down = 0;
 #endif
@@ -238,9 +238,9 @@ void Trainer::Epoch() {
   // Display training epoch_error
 	for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
 		LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
-		LOGDEBUG << "Training (Epoch " << epoch_ << ", node " << n << ") " << graph_.GetLossNodes()[n]->layer->GetLayerDescription() <<  " lps: " << loss_sums[n] / (datum)(iterations * sample_count_ * settings_.sbatchsize * first_training_layer_->GetLossSamplingProbability());
+		LOGINFO << "Training (Epoch " << epoch_ << ", node " << n << ") " << graph_.GetLossNodes()[n]->layer->GetLayerDescription() <<  " lps: " << loss_sums[n] / (datum)(iterations * sample_count_ * settings_.sbatchsize * first_training_layer_->GetLossSamplingProbability());
 	}
-	LOGDEBUG << "Training (Epoch " << epoch_ << ") aggregate lps: " << aggregate_loss / (datum)(iterations * sample_count_ * settings_.sbatchsize * first_training_layer_->GetLossSamplingProbability());
+	LOGINFO << "Training (Epoch " << epoch_ << ") aggregate lps: " << aggregate_loss / (datum)(iterations * sample_count_ * settings_.sbatchsize * first_training_layer_->GetLossSamplingProbability());
 
 	for (unsigned int n = 0; n < graph_.GetStatNodes().size(); n++) {
 		StatLayer* stat_layer = dynamic_cast<StatLayer*>(graph_.GetStatNodes()[n]->layer);

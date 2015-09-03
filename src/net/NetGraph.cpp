@@ -116,10 +116,10 @@ bool NetGraph::IsComplete() const {
 		}
 
 		if (node_okay) {
-			LOGINFO << "Node is okay: " << node->layer->GetLayerDescription();
+			LOGDEBUG << "Node is okay: " << node->layer->GetLayerDescription();
 		}
 		else {
-			LOGINFO << "Node is not okay: " << node->layer->GetLayerDescription();
+			LOGWARN << "Node is not okay: " << node->layer->GetLayerDescription();
 			is_complete = false;
 		}
 	}
@@ -134,7 +134,7 @@ bool NetGraph::IsComplete() const {
 		is_complete = false;
 	}
 
-	LOGINFO << "Graph check complete.";
+	LOGDEBUG << "Graph check complete.";
 	return is_complete;
 }
 

@@ -30,15 +30,25 @@ void help();
 int main (int argc, char* argv[]) {
   bool GRADIENT_CHECK = false;
   bool FROM_SCRIPT = false;
+  int requested_log_level = -1;
 #ifdef LAYERTIME
   const Conv::datum it_factor = 0.01;
 #else
   const Conv::datum it_factor = 1;
   const Conv::datum loss_sampling_p = 0.25;
 #endif
+  
+  if(argc > 1) {
+    if(std::string(argv[1]).compare("-v") == 0) {
+      requested_log_level = 3;
+      argv[1] = argv[0];
+      argc--; argv++;
+    }
+  }
+  
 
   if (argc < 3) {
-    LOGERROR << "USAGE: " << argv[0] << " <dataset config file> <net config file> {[script file]|gradient_check}";
+    LOGERROR << "USAGE: " << argv[0] << " [-v] <dataset config file> <net config file> {[script file]|gradient_check}";
     LOGEND;
     return -1;
   }
@@ -55,7 +65,7 @@ int main (int argc, char* argv[]) {
   std::string net_config_fname (argv[2]);
   std::string dataset_config_fname (argv[1]);
 
-  Conv::System::Init();
+  Conv::System::Init(requested_log_level);
 
   // Open network and dataset configuration files
   std::ifstream net_config_file (net_config_fname, std::ios::in);
@@ -140,7 +150,7 @@ int main (int argc, char* argv[]) {
   }
 
 	bool completeness = factory->AddLayers(graph, Conv::NetGraphConnection(input_node), CLASSES, true);
-	LOGINFO << "Graph complete: " << completeness;
+	LOGDEBUG << "Graph complete: " << completeness;
   
   if(!completeness)
     FATAL("Graph completeness test failed after factory run!");
@@ -180,7 +190,7 @@ int main (int argc, char* argv[]) {
 
       Conv::ConfigurableFactory* tfactory = new Conv::ConfigurableFactory (net_config_file, 8347734);
 			bool testing_completeness = tfactory->AddLayers(*testing_graph, Conv::NetGraphConnection(tinput_node), CLASSES, true);
-			LOGINFO << "Testing graph complete: " << testing_completeness;
+			LOGDEBUG << "Testing graph complete: " << testing_completeness;
 
 			if(!completeness)
 				FATAL("Graph completeness test failed after factory run!");

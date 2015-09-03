@@ -14,6 +14,8 @@
 #ifndef CONV_LOG_H
 #define CONV_LOG_H
 
+#include "Init.h"
+
 #include <iostream>
 #include <string>
 #include <stdexcept>
@@ -36,13 +38,13 @@ inline std::string methodName (const std::string& prettyFunction) {
 #define LOGERROR (std::cerr << std::endl << "\033[1;31mERR [ " << \
                   methodName(__PRETTY_FUNCTION__) << "(" << __LINE__ << ") ] " \
                   "\033[0m" << std::flush )
-#define LOGWARN (std::cerr << std::endl << "\033[1;33mWRN [ " << \
+#define LOGWARN if(Conv::System::log_level < 1) {} else (std::cerr << std::endl << "\033[1;33mWRN [ " << \
                   methodName(__PRETTY_FUNCTION__) << "(" << __LINE__ << ") ] " \
                   "\033[0m" << std::flush )
-#define LOGINFO (std::cout << std::endl << "\033[1mINF [ " << \
+#define LOGINFO if(Conv::System::log_level < 2) {} else (std::cout << std::endl << "\033[1mINF [ " << \
                  methodName(__PRETTY_FUNCTION__) << "(" << __LINE__ << ") ] " \
                  "\033[0m" << std::flush )
-#define LOGDEBUG (std::cout << std::endl << "DBG [ " << \
+#define LOGDEBUG if(Conv::System::log_level < 3) {} else (std::cout << std::endl << "DBG [ " << \
                   methodName(__PRETTY_FUNCTION__) << "(" << __LINE__ << ") ] " \
                   << std::flush )
 
@@ -50,11 +52,11 @@ inline std::string methodName (const std::string& prettyFunction) {
 
 #define LOGERROR (std::cerr << std::endl << "ERR [ " << __FUNCTION__ << "(" << \
                   __LINE__ << ") ] " << std::flush)
-#define LOGWARN (std::cerr << std::endl << "WRN [ " << __FUNCTION__ << "(" << \
+#define LOGWARN if(Conv::System::log_level < 1) {} (std::cerr << std::endl << "WRN [ " << __FUNCTION__ << "(" << \
                   __LINE__ << ") ] " << std::flush)
-#define LOGINFO (std::cout << std::endl << "INF [ " << __FUNCTION__ << "(" << \
+#define LOGINFO if(Conv::System::log_level < 2) {} (std::cout << std::endl << "INF [ " << __FUNCTION__ << "(" << \
                  __LINE__ << ") ] " << std::flush)
-#define LOGDEBUG (std::cout << std::endl << "DBG [ " << __FUNCTION__ << "(" << \
+#define LOGDEBUG if(Conv::System::log_level < 3) {} else (std::cout << std::endl << "DBG [ " << __FUNCTION__ << "(" << \
                   __LINE__ << ") ] " << std::flush)
 #endif
 

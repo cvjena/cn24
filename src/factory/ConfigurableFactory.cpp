@@ -51,7 +51,7 @@ ConfigurableFactory::ConfigurableFactory (std::istream& file, const unsigned int
     if (method.compare (0, 5, "patch") == 0) {
       if (is_training_factory) {
         method_ = PATCH;
-        LOGINFO << "Setting method to PATCH";
+        LOGDEBUG << "Setting method to PATCH";
       }
     }
     
@@ -62,7 +62,7 @@ ConfigurableFactory::ConfigurableFactory (std::istream& file, const unsigned int
       ParseCountIfPossible(line, "factorx", fx);
       ParseCountIfPossible(line, "factory", fy);
       if(rfx > 0 && rfy > 0) {
-        LOGINFO << "Using manual receptive field method";
+        LOGDEBUG << "Using manual receptive field method";
         receptive_field_x_ = rfx;
         receptive_field_y_ = rfy;
         factorx = fx;
@@ -119,7 +119,7 @@ ConfigurableFactory::ConfigurableFactory (std::istream& file, const unsigned int
     receptive_field_y_ += factory;
     if(used_pad)
       LOGWARN << "Using padding in hybrid mode may have undesired consequences!";
-  LOGINFO << "Patch size would be " << receptive_field_x_ << "x" << receptive_field_y_;
+  LOGDEBUG << "Patch size would be " << receptive_field_x_ << "x" << receptive_field_y_;
   }
 
   patch_field_x_ = receptive_field_x_ + factorx;

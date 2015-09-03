@@ -69,10 +69,20 @@ cl_kernel CLHelper::k_col2im = 0;
 #endif
 
 TensorViewer* System::viewer = nullptr;
+int System::log_level = 0;
 
 #define STRING_SHA1 GIT_SHA1
 
-void System::Init() {
+void System::Init(int requested_log_level) {
+  if(requested_log_level == -1) {
+#ifdef BUILD_VERBOSE
+    log_level = 3;
+#else
+    log_level = 2;
+#endif
+  } else
+    log_level = requested_log_level;
+  
   LOGINFO << "CN24 version " STRING_SHA1;
   LOGINFO << "Copyright (C) 2015 Clemens-Alexander Brust";
   LOGINFO << "For licensing information, see the LICENSE"
@@ -104,7 +114,9 @@ void System::Init() {
       ParseUIntIfPossible(line, "opencl_device", device_number);
     }
   } else {
-    LOGINFO << "Could not find a config file.";
+#ifdef BUILD_OPENCL
+    LOGINFO << "Could not find a config file, using default OpenCL settings.";
+#endif
   }
 
   CLHelper::Init(platform_number, device_number);
@@ -201,13 +213,8 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   clGetDeviceInfo ( device_ids[device_number], CL_DEVICE_IMAGE_SUPPORT, 4,
                     &support_buffer, 0 );
 
-  uint32_t max_wg_size;
-  clGetDeviceInfo ( device_ids[device_number], CL_DEVICE_MAX_WORK_GROUP_SIZE, 4,
-                    &max_wg_size, 0 );
-
   LOGINFO << "Using OpenCL device: " << device_name_buffer;
-  LOGINFO << "Image support: " << ( support_buffer ? "Yes" : "No" );
-  LOGINFO << "Max work group size: " << max_wg_size;
+  LOGDEBUG << "Image support: " << ( support_buffer ? "Yes" : "No" );
 
   device = device_ids[device_number];
 
@@ -218,7 +225,7 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
     0, 0
   };
 
-  LOGINFO << "Creating OpenCL context...";
+  LOGDEBUG << "Creating OpenCL context...";
 
   cl_int error = 0;
   context = clCreateContext ( context_properties, 1,
@@ -229,7 +236,7 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   }
 
   // Create command queue
-  LOGINFO << "Creating OpenCL command queue...";
+  LOGDEBUG << "Creating OpenCL command queue...";
   queue = clCreateCommandQueue ( context, device_ids[device_number], 0, &error );
 
   if ( error != CL_SUCCESS ) {
