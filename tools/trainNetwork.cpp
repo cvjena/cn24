@@ -98,6 +98,7 @@ int main (int argc, char* argv[]) {
   settings.testing_ratio = 1 * it_factor;
 
   // Load dataset
+  LOGINFO << "Loading dataset, this can take a long time depending on the size!" << std::flush;
   Conv::Dataset* dataset = nullptr;
 
   if (patchwise_training) {
