@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cstring>
 
+#include "NetGraph.h"
 #include "DatasetInputLayer.h"
 
 namespace Conv {
@@ -111,7 +112,7 @@ bool DatasetInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inp
 
 bool DatasetInputLayer::Connect (const std::vector< CombinedTensor* >& inputs,
                                  const std::vector< CombinedTensor* >& outputs,
-                                 const Net* net ) {
+                                 const NetStatus* net) {
   // TODO validate
   CombinedTensor* data_output = outputs[0];
   CombinedTensor* label_output = outputs[1];
@@ -174,9 +175,9 @@ void DatasetInputLayer::FeedForward() {
     bool success;
 
     if (testing_)
-      success = dataset_.GetTestingSample (data_output_->data, label_output_->data, localized_error_output_->data, sample, selected_element);
+      success = dataset_.GetTestingSample (data_output_->data, label_output_->data, helper_output_->data, localized_error_output_->data, sample, selected_element);
     else
-      success = dataset_.GetTrainingSample (data_output_->data, label_output_->data, localized_error_output_->data, sample, selected_element);
+      success = dataset_.GetTrainingSample (data_output_->data, label_output_->data, helper_output_->data, localized_error_output_->data, sample, selected_element);
 
     if (!success) {
       FATAL ("Cannot load samples from Dataset!");
@@ -250,6 +251,21 @@ void DatasetInputLayer::SetTestingMode (bool testing) {
   }
 
   testing_ = testing;
+}
+
+void DatasetInputLayer::CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers) {
+	NetGraphBuffer data_buffer;
+	NetGraphBuffer label_buffer;
+	NetGraphBuffer helper_buffer;
+	NetGraphBuffer weight_buffer;
+	data_buffer.description = "Data Output";
+	label_buffer.description = "Label";
+	helper_buffer.description = "Helper";
+	weight_buffer.description = "Weight";
+	buffers.push_back(data_buffer);
+	buffers.push_back(label_buffer);
+	buffers.push_back(helper_buffer);
+	buffers.push_back(weight_buffer);
 }
 
 bool DatasetInputLayer::IsOpenCLAware() {

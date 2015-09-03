@@ -15,7 +15,7 @@
 #ifndef CONV_LOSSFUNCTIONLAYER_H
 #define CONV_LOSSFUNCTIONLAYER_H
 
-#include "Config.h"
+#include "../util/Config.h"
 
 namespace Conv {
 

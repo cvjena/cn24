@@ -20,6 +20,10 @@
 #else
 #include <CL/cl.h>
 #endif
+
+#ifdef BUILD_CLBLAS
+#include <clBLAS.h>
+#endif
 #endif
 
 #include "Init.h"
@@ -31,6 +35,8 @@ public:
                    unsigned int device_number = 0);
 #ifdef BUILD_OPENCL
   static cl_program CreateProgram(const char* file_name);
+  static long bytes_up;
+  static long bytes_down;
   static cl_device_id device;
   static cl_context context;
   static cl_command_queue queue;
@@ -48,10 +54,16 @@ public:
   static cl_kernel k_foldWeights;
   static cl_kernel k_maximumForward;
   static cl_kernel k_maximumBackward;
+  static cl_kernel k_amaximumForward;
+  static cl_kernel k_amaximumBackward;
   static cl_kernel k_nlTanh;
   static cl_kernel k_nlTanhBackward;
   static cl_kernel k_nlSigm;
   static cl_kernel k_nlSigmBackward;
+  static cl_kernel k_setValue;
+  static cl_kernel k_sms;
+  static cl_kernel k_im2col;
+  static cl_kernel k_col2im;
 #endif
 };
   

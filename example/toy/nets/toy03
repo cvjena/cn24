@@ -1,0 +1,33 @@
+# Sample CNN for KITTI Dataset
+manual rfx=2 rfy=2 factorx=1 factory=1
+
+# Network configuration
+
+pusha
+?convolutional kernels=1 size=3x3
+?tanh
+
+pushb
+popa
+
+?convolutional kernels=1 size=3x3
+?tanh
+
+pushb
+
+?concat stack=b
+
+?fullyconnected neurons=(o)
+?output
+
+# Learning settings
+method=patch
+l1=0.000
+l2=0.005
+lr=0.1
+gamma=0.03
+momentum=0.0
+exponent=0.75
+iterations=10000
+sbatchsize=1
+pbatchsize=1

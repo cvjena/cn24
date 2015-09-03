@@ -75,7 +75,7 @@ bool BinaryStatLayer::CreateOutputs ( const std::vector< CombinedTensor* >& inpu
   return true;
 }
 
-bool BinaryStatLayer::Connect ( const std::vector< CombinedTensor* >& inputs, const std::vector< CombinedTensor* >& outputs, const Net* net ) {
+bool BinaryStatLayer::Connect ( const std::vector< CombinedTensor* >& inputs, const std::vector< CombinedTensor* >& outputs, const NetStatus* net ) {
   // Needs exactly three inputs to calculate the stat
   if ( inputs.size() != 3 )
     return false;

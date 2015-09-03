@@ -3,5 +3,8 @@ Contributors from the Computer Vision Group of the Friedrich Schiller University
  Marcel Simon M.Sc.
  Dr. rer. nat. Erik Rodner
 
+FindSQLite3.CMake (New BSD License):
+ Andreas Schneider
+
 GetGitRevisionDescription.cmake (Boost License 1.0):
  Ryan A. Pavlik

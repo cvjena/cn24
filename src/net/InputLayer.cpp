@@ -4,6 +4,8 @@
  *
  * For licensing information, see the LICENSE file included with this project.
  */
+
+#include "NetGraph.h"
 #include "InputLayer.h"
 
 namespace Conv {
@@ -76,7 +78,7 @@ InputLayer::InputLayer ( Tensor& data, Tensor& label, Tensor& helper,
 
 bool InputLayer::Connect ( const std::vector< CombinedTensor* >& inputs,
                            const std::vector< CombinedTensor* >& outputs,
-                           const Net* net ) {
+                           const NetStatus* net ) {
   // Check if inputs were accidentally supplied
   if ( inputs.size() != 0 ) {
     LOGERROR << "Input layer cannot have inputs!";
@@ -152,9 +154,26 @@ bool InputLayer::CreateOutputs ( const std::vector< CombinedTensor* >& inputs,
 
   if ( weight_ != nullptr ) {
     outputs.push_back ( weight_ );
+  } else {
+    outputs.push_back (new CombinedTensor (data_->data.samples(), data_->data.width(), data_->data.height(), data_->data.maps()));
   }
 
   return true;
+}
+
+void InputLayer::CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers) {
+	NetGraphBuffer data_buffer;
+	NetGraphBuffer label_buffer;
+	NetGraphBuffer helper_buffer;
+	NetGraphBuffer weight_buffer;
+	data_buffer.description = "Data Output";
+	label_buffer.description = "Label";
+	helper_buffer.description = "Helper";
+	weight_buffer.description = "Weight";
+	buffers.push_back(data_buffer);
+	buffers.push_back(label_buffer);
+	buffers.push_back(helper_buffer);
+	buffers.push_back(weight_buffer);
 }
 
 }

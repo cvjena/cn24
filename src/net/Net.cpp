@@ -135,8 +135,7 @@ int Net::AddLayer (Layer* layer, const std::vector< Connection >& connections) {
     StatLayer* stat_layer = dynamic_cast<StatLayer*> (layer);
     stat_layers_.push_back (stat_layer);
 
-    LOGDEBUG << "Layer " << layer_id << " added as stat layer: " <<
-             stat_layer->stat_name();
+		LOGDEBUG << "Layer " << layer_id << " added as stat layer. ";
   }
 
   // Return the layer number
@@ -151,7 +150,7 @@ int Net::AddLayer (Layer* layer, const int input_layer) {
 void Net::InitializeWeights() {
   for (int l = weight_connections_.size() - 1; l > 0; l--) {
     std::pair<Layer*, Layer*> p = weight_connections_[l];
-    p.first->OnLayerConnect (p.second);
+		p.first->OnLayerConnect({ p.second });
   }
 }
 

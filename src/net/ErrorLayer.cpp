@@ -13,7 +13,8 @@
 
 namespace Conv {
 
-ErrorLayer::ErrorLayer() {
+ErrorLayer::ErrorLayer(const datum loss_weight) 
+ : loss_weight_(loss_weight) {
   LOGDEBUG << "Instance created.";
 #ifdef ERROR_LAYER_IGNORE_WEIGHTS
   LOGINFO << "Weights are being ignored!";
@@ -59,7 +60,7 @@ bool ErrorLayer::CreateOutputs ( const std::vector< CombinedTensor* >& inputs,
 
 bool ErrorLayer::Connect ( const std::vector< CombinedTensor* >& inputs,
                            const std::vector< CombinedTensor* >& outputs,
-                           const Net* net ) {
+                           const NetStatus* net ) {
   // Needs exactly three inputs to calculate the difference
   if ( inputs.size() != 3 )
     return false;
@@ -107,7 +108,7 @@ void ErrorLayer::FeedForward() {
 		  const datum weight =
             *third_->data.data_ptr_const ( x,y,0,sample );
 #endif
-	  *first_->delta.data_ptr(x,y,map,sample) = diff * weight;
+	  *first_->delta.data_ptr(x,y,map,sample) = diff * weight * loss_weight_;
         }
       }
     }
@@ -155,7 +156,7 @@ datum ErrorLayer::CalculateLossFunction() {
 				  const datum weight = 
 					*third_->data.data_ptr_const ( x,y,0,sample );
 #endif
-				  error += ((long double)diff) * ((long double)diff) * ((long double)weight);
+				  error += ((long double)diff) * ((long double)diff) * ((long double)weight) * ((long double)loss_weight_);
 			  }
 		  }
 	  }

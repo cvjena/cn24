@@ -82,21 +82,28 @@ int main (int argc, char* argv[]) {
   Conv::Tensor::CopySample(original_data_tensor, 0, data_tensor, 0);
 
   // Assemble net
-  Conv::Net net;
+	Conv::NetGraph graph;
   Conv::InputLayer input_layer(data_tensor);
 
-  int data_layer_id = net.AddLayer(&input_layer);
-  int output_layer_id =
-    factory->AddLayers (net, Conv::Connection (data_layer_id), CLASSES);
+	Conv::NetGraphNode input_node(&input_layer);
+  input_node.is_input = true;
+
+	graph.AddNode(&input_node);
+	bool complete = factory->AddLayers(graph, Conv::NetGraphConnection(&input_node), CLASSES);
+	if (!complete)
+    FATAL("Failed completeness check, inspect model!");
+
+	graph.Initialize();
+
 
   // Load network parameters
-  net.DeserializeParameters(param_tensor_file);
+  graph.DeserializeParameters(param_tensor_file);
   
-  net.SetIsTesting(true);
+  graph.SetIsTesting(true);
   LOGINFO << "Classifying..." << std::flush;
-  net.FeedForward();
+  graph.FeedForward();
   
-  Conv::Tensor* net_output_tensor = &net.buffer(output_layer_id)->data;
+	Conv::Tensor* net_output_tensor = &graph.GetDefaultOutputNode()->output_buffers[0].combined_tensor->data; // &net.buffer(output_layer_id)->data;
   Conv::Tensor image_output_tensor(1, net_output_tensor->width(), net_output_tensor->height(), 3);
   
   LOGINFO << "Colorizing..." << std::flush;

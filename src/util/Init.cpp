@@ -38,6 +38,8 @@
 namespace Conv {
 
 #ifdef BUILD_OPENCL
+long CLHelper::bytes_up = 0;
+long CLHelper::bytes_down = 0;
 cl_context CLHelper::context = 0;
 cl_command_queue CLHelper::queue = 0;
 cl_device_id CLHelper::device = 0;
@@ -54,10 +56,16 @@ cl_kernel CLHelper::k_matrixMatrix = 0;
 cl_kernel CLHelper::k_foldWeights = 0;
 cl_kernel CLHelper::k_maximumForward = 0;
 cl_kernel CLHelper::k_maximumBackward = 0;
+cl_kernel CLHelper::k_amaximumForward = 0;
+cl_kernel CLHelper::k_amaximumBackward = 0;
 cl_kernel CLHelper::k_nlTanh = 0;
 cl_kernel CLHelper::k_nlTanhBackward = 0;
 cl_kernel CLHelper::k_nlSigm = 0;
 cl_kernel CLHelper::k_nlSigmBackward = 0;
+cl_kernel CLHelper::k_setValue = 0;
+cl_kernel CLHelper::k_sms = 0;
+cl_kernel CLHelper::k_im2col = 0;
+cl_kernel CLHelper::k_col2im = 0;
 #endif
 
 TensorViewer* System::viewer = nullptr;
@@ -240,7 +248,11 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   cl_program p_biasGradient = CreateProgram ( "kernels/biasGradient.cl" );
   cl_program p_matrixMatrix = CreateProgram ( "kernels/matrixMatrix.cl" );
   cl_program p_maximum = CreateProgram ( "kernels/maximumPooling.cl" );
+  cl_program p_amaximum = CreateProgram ( "kernels/advmaximumPooling.cl" );
   cl_program p_nonLinearFunctions = CreateProgram ( "kernels/nonLinearFunctions.cl" );
+  cl_program p_setValue = CreateProgram ( "kernels/setValue.cl" );
+  cl_program p_sms = CreateProgram ( "kernels/sms.cl" );
+  cl_program p_im2col = CreateProgram ( "kernels/im2col.cl" );
 
   k_crossCorrelation = clCreateKernel ( p_crossCorrelation, "CROSS_CORRELATION", &error );
 
@@ -313,6 +325,18 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   if ( error != CL_SUCCESS ) {
     FATAL ( "Error creating kernel: " << ( signed int ) error );
   }
+  
+  k_amaximumForward = clCreateKernel ( p_amaximum, "AMAXIMUM_POOLING_FWD", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+
+  k_amaximumBackward = clCreateKernel ( p_amaximum, "AMAXIMUM_POOLING_BWD", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
 
   k_nlTanh = clCreateKernel ( p_nonLinearFunctions, "NL_TANH_FWD", &error );
 
@@ -337,6 +361,35 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   if ( error != CL_SUCCESS ) {
     FATAL ( "Error creating kernel: " << ( signed int ) error );
   }
+  
+  k_setValue = clCreateKernel ( p_setValue, "SET_VALUE", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+  
+  k_sms = clCreateKernel ( p_sms, "SMS", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+  
+  k_im2col = clCreateKernel ( p_im2col, "IM2COL", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+  
+  k_col2im = clCreateKernel ( p_im2col, "COL2IM", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+#ifdef BUILD_CLBLAS
+  cl_int err = clblasSetup();
+  if (err!=CL_SUCCESS)
+    FATAL("Call to clblasSetup failed. Error: " << err);
+#endif
 
 #endif
 

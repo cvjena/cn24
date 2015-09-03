@@ -17,10 +17,11 @@
 
 #include <iostream>
 
-#include "Trainer.h"
-#include "Net.h"
-#include "Dataset.h"
-#include "Log.h"
+#include "../net/Net.h"
+#include "../net/NetGraph.h"
+#include "../net/Trainer.h"
+#include "../util/Dataset.h"
+#include "../util/Log.h"
 
 namespace Conv {
 
@@ -43,10 +44,14 @@ public:
 	* @param data_layer_connection Input to the first layer of this configuration
 	* @param output_classes The number of output neurons. This also affects the activation function of
 	* 	 the last layer: for output_classes=1, tanh is used. Otherwise, sigm is used.
+	* @param add_loss_layer If set to true, the factory also adds a matching loss layer
+	* @param graph_output An output stream. The factory will write the layout in graphviz format into this string.
 	* 
 	* @returns The layer id of the output layer
 	*/
-  virtual int AddLayers(Net& net, Connection data_layer_connection, const unsigned int output_classes);
+  virtual int AddLayers(Net& net, Connection data_layer_connection, const unsigned int output_classes, bool add_loss_layer = false, std::ostream& graph_output = std::cout);
+
+  virtual bool AddLayers(NetGraph& graph, NetGraphConnection data_layer_connection, const unsigned int output_classes, bool add_loss_layer = false);
 
   /**
 	* @returns The horizontal size of the receptive field
@@ -62,9 +67,10 @@ public:
 	* @brief Create a loss layer for this configuration
 	*
 	* @param output_classes Number of output neurons
+	* @param loss_weight The weight of the loss function
 	* @returns Pointer to the layer instance of the created loss layer
 	*/
-  virtual Layer* CreateLossLayer(const unsigned int output_classes);
+  virtual Layer* CreateLossLayer(const unsigned int output_classes, const datum loss_weight = 1.0);
 
   /**
 	* @brief Read the optimal training settings from the configuration file
@@ -82,6 +88,7 @@ public:
    */
   Method method() const { return method_; }
 private:
+	void WriteNode(std::ostream& graph_output, Layer* layer, int source_id, int source_port, int node_id, int outputs);
   Method method_;
   
   int receptive_field_x_ = 0;

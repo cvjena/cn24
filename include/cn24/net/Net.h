@@ -27,6 +27,8 @@
 #include "BinaryStatLayer.h"
 #include "ConfusionMatrixLayer.h"
 
+#include "NetStatus.h"
+
 namespace Conv {
 
 class Trainer;
@@ -34,13 +36,14 @@ class GradientTester;
 
 struct Connection {
 public:
+  Connection () : net(0), output(0) {}
   Connection (const int net, const int output = 0) :
     net (net), output (output) { }
   int net;
   int output;
 };
 
-class Net {
+class Net : public NetStatus {
   friend class Trainer;
   friend class GradientTester;
 public:
@@ -177,17 +180,6 @@ public:
   }
   
   /**
-   * @brief Returns true if the net is currently testing
-   */
-  inline bool IsTesting() const { return is_testing_; } 
-  
-  /**
-   * @brief Sets this net's testing status
-   * 
-   * @param is_testing The new testing status
-   */
-  inline void SetIsTesting(bool is_testing) { is_testing_ = is_testing; }
-  /**
    * @brief Enables the built-in layer view GUI. Needs CMake build option.
    */
   inline void SetLayerViewEnabled(const bool enabled = true) {
@@ -211,8 +203,6 @@ private:
   
   std::chrono::duration<double>* forward_durations_ = nullptr;
   std::chrono::duration<double>* backward_durations_ = nullptr;
-  
-  bool is_testing_ = false;
 };
 
 }

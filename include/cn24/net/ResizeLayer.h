@@ -16,6 +16,9 @@
 #ifndef CONV_RESIZELAYER_H
 #define CONV_RESIZELAYER_H
 
+#include <string>
+#include <sstream>
+
 #include "SimpleLayer.h"
 
 namespace Conv {
@@ -35,6 +38,12 @@ public:
   void FeedForward();
   void BackPropagate();
   bool IsOpenCLAware();
+
+	inline std::string GetLayerDescription() {
+		std::ostringstream ss;
+		ss << "Resize Layer (" << borderx_ << "x" << bordery_ << ")";
+		return ss.str();
+	}
 private:
   unsigned int borderx_;
   unsigned int bordery_;

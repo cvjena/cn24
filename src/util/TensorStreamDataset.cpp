@@ -137,6 +137,21 @@ TensorStreamDataset::TensorStreamDataset (std::istream& training_stream,
   if (max_height_ & 4)
     max_height_+=4;
   
+  if (max_width_ & 8)
+    max_width_+=8;
+  if (max_height_ & 8)
+    max_height_+=8;
+  
+  if (max_width_ & 16)
+    max_width_+=16;
+  if (max_height_ & 16)
+    max_height_+=16;
+  
+  if (max_width_ & 32)
+    max_width_+=32;
+  if (max_height_ & 32)
+    max_height_+=32;
+  
   input_maps_ = data_[0].maps();
   label_maps_ = labels_[0].maps();
 
@@ -200,11 +215,29 @@ bool TensorStreamDataset::SupportsTesting() const {
   return tensor_count_testing_ > 0;
 }
 
-bool TensorStreamDataset::GetTrainingSample (Tensor& data_tensor, Tensor& label_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
+bool TensorStreamDataset::GetTrainingSample (Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
   if (index < tensor_count_training_ / 2) {
     bool success = true;
     success &= Tensor::CopySample (data_[index], 0, data_tensor, sample);
     success &= Tensor::CopySample (labels_[index], 0, label_tensor, sample);
+
+		// Write spatial prior data to helper tensor
+		for (unsigned int y = 0; y < data_[index].height(); y++) {
+			for (unsigned int x = 0; x < data_[index].width(); x++) {
+				*helper_tensor.data_ptr(x, y, 0, sample) = ((datum)x) / ((datum)data_[index].width() - 1);
+				*helper_tensor.data_ptr(x, y, 1, sample) = ((datum)y) / ((datum)data_[index].height() - 1);
+			}
+			for (unsigned int x = data_[index].width(); x < GetWidth(); x++) {
+				*helper_tensor.data_ptr(x, y, 0, sample) = 0;
+				*helper_tensor.data_ptr(x, y, 1, sample) = 0;
+			}
+		}
+		for (unsigned int y = data_[index].height(); y < GetHeight(); y++) {
+			for (unsigned int x = 0; x < GetWidth(); x++) {
+				*helper_tensor.data_ptr(x, y, 0, sample) = 0;
+				*helper_tensor.data_ptr(x, y, 1, sample) = 0;
+			}
+		}
 
     //if (data_[index].width() == GetWidth() && data_[index].height() == GetHeight()) {
     //  success &= Tensor::CopySample (error_cache, 0, weight_tensor, sample);
@@ -224,12 +257,30 @@ bool TensorStreamDataset::GetTrainingSample (Tensor& data_tensor, Tensor& label_
   } else return false;
 }
 
-bool TensorStreamDataset::GetTestingSample (Tensor& data_tensor, Tensor& label_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
+bool TensorStreamDataset::GetTestingSample (Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
   if (index < tensor_count_testing_ / 2) {
     bool success = true;
     unsigned int test_index = (tensor_count_training_ / 2) + index;
     success &= Tensor::CopySample (data_[test_index], 0, data_tensor, sample);
     success &= Tensor::CopySample (labels_[test_index], 0, label_tensor, sample);
+
+		// Write spatial prior data to helper tensor
+		for (unsigned int y = 0; y < data_[test_index].height(); y++) {
+			for (unsigned int x = 0; x < data_[test_index].width(); x++) {
+				*helper_tensor.data_ptr(x, y, 0, sample) = ((datum)x) / ((datum)data_[test_index].width() - 1);
+				*helper_tensor.data_ptr(x, y, 1, sample) = ((datum)y) / ((datum)data_[test_index].height() - 1);
+			}
+			for (unsigned int x = data_[test_index].width(); x < GetWidth(); x++) {
+				*helper_tensor.data_ptr(x, y, 0, sample) = 0;
+				*helper_tensor.data_ptr(x, y, 1, sample) = 0;
+			}
+		}
+		for (unsigned int y = data_[test_index].height(); y < GetHeight(); y++) {
+			for (unsigned int x = 0; x < GetWidth(); x++) {
+				*helper_tensor.data_ptr(x, y, 0, sample) = 0;
+				*helper_tensor.data_ptr(x, y, 1, sample) = 0;
+			}
+		}
 
     //if (data_[test_index].width() == GetWidth() && data_[test_index].height() == GetHeight()) {
     //  success &= Tensor::CopySample (error_cache, 0, weight_tensor, sample);

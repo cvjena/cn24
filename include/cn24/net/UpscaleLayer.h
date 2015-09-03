@@ -17,8 +17,9 @@
 #define CONV_UPSCALELAYER_H
 
 #include <vector>
+#include <string>
+#include <sstream>
 
-#include "Tensor.h"
 #include "SimpleLayer.h"
 
 namespace Conv {
@@ -40,6 +41,12 @@ public:
   void FeedForward();
   void BackPropagate();
   
+	inline std::string GetLayerDescription() {
+		std::ostringstream ss;
+		ss << "Upscale Layer (" << region_width_ << "x" << region_height_ << ")";
+		return ss.str();
+	}
+
 private:
   // Settings
   unsigned int region_width_ = 0;

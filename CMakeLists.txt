@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(CN24 C CXX)
 
+set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type")
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 # Get Git SHA1 hash
@@ -13,7 +15,8 @@ add_definitions("-DGIT_SHA1=\"${GIT_SHA1} ${GIT_REFSPEC}\"")
 set(CN24_SRC "${CN24_SOURCE_DIR}/src")
 set(CN24_INC "${CN24_SOURCE_DIR}/include" "${CN24_SOURCE_DIR}/include/cn24"
 "${CN24_SOURCE_DIR}/include/cn24/util" "${CN24_SOURCE_DIR}/include/cn24/net"
-"${CN24_SOURCE_DIR}/include/cn24/factory" "${CN24_SOURCE_DIR}/include/private")
+"${CN24_SOURCE_DIR}/include/cn24/math" "${CN24_SOURCE_DIR}/include/cn24/factory"
+"${CN24_SOURCE_DIR}/include/private")
 set(CN24_TOO "${CN24_SOURCE_DIR}/tools")
 set(CN24_BSH "${CN24_SOURCE_DIR}/scripts")
 set(CN24_KER "${CN24_SOURCE_DIR}/kernels")
@@ -106,8 +109,16 @@ endif()
 file(GLOB_RECURSE CN24_SOURCES ${CN24_SRC}/*.cpp)
 file(GLOB_RECURSE CN24_HEADERS ${CN24_INC}/*.h)
 
+set(CN24_BUILD_SQLITE3 OFF CACHE BOOL "Build CN24 with SQLITE3 logging support")
+if(CN24_BUILD_SQLITE3)
+  include_directories("${CN24_SOURCE_DIR}/external/sqlite3")
+  set(CN24_SOURCES ${CN24_SOURCES} "${CN24_SOURCE_DIR}/external/sqlite3/sqlite3.c")
+  add_definitions("-DBUILD_SQLITE3")
+  message(STATUS "Using integrated SQLite3")
+endif()
+
 include_directories(${CN24_INC})
-add_library(cn24 ${CN24_SOURCES} ${CN24_HEADERS})
+add_library(cn24 STATIC SHARED ${CN24_SOURCES} ${CN24_HEADERS})
 
 # And now for some dependencies
 set(CN24_BUILD_PNG ON CACHE BOOL "Build CN24 with libpng support")
@@ -160,6 +171,18 @@ if(CN24_BUILD_ACMLCBLAS)
   add_definitions("-DBLAS_ACML")
 endif()
 
+set(CN24_BUILD_ACCELERATE OFF CACHE BOOL "Build CN24 with Accelerate BLAS support")
+if(CN24_BUILD_ACCELERATE)
+  find_library(ACCELERATE_BLAS NAMES libBlas.dylib)
+  find_path(ACCELERATE_INCLUDE_DIR Accelerate/Accelerate.h)
+  message(STATUS "Using Accelerate BLAS: ${ACCELERATE_BLAS}")
+  message(STATUS "Using Accelerate include directory: ${ACCELERATE_INCLUDE_DIR}")
+  include_directories(${ACCELERATE_INCLUDE_DIR})
+  set(CN24_LIBS ${CN24_LIBS} ${ACCELERATE_BLAS})
+  add_definitions("-DBUILD_BLAS")
+  add_definitions("-DBLAS_ACCELERATE")
+endif()
+
 set(CN24_BUILD_OPENCL OFF CACHE BOOL "Build CN24 with OpenCL support")
 if(CN24_BUILD_OPENCL)
   find_library(OPENCL_ICDL NAMES OpenCL libOpenCL PATHS $ENV{CUDA_PATH}/lib/x64
@@ -173,6 +196,21 @@ if(CN24_BUILD_OPENCL)
   add_definitions("-DBUILD_OPENCL")
 else()
   message(STATUS "Enable OpenCL with -DCN24_BUILD_OPENCL:BOOL=ON to use your GPU")
+endif()
+
+set(CN24_BUILD_OPENCL_CLBLAS OFF CACHE BOOL "Build CN24 with OpenCL/clBLAS")
+if(CN24_BUILD_OPENCL_CLBLAS)
+  if(CN24_BUILD_OPENCL)
+    find_library(CLBLAS_LIBRARY clBLAS libclBLAS)
+    find_path(CLBLAS_INCLUDE_DIR clBLAS.h)
+    message(STATUS "Using OpenCL/clBLAS library: ${CLBLAS_LIBRARY}")
+    message(STATUS "Using OpenCL/clBLAS include directory: ${CLBLAS_INCLUDE_DIR}")
+    include_directories(${CLBLAS_INCLUDE_DIR})
+    set(CN24_LIBS ${CN24_LIBS} ${CLBLAS_LIBRARY})
+    add_definitions("-DBUILD_CLBLAS")
+  else()
+    message(STATUS "OpenCL needs to be enabled for clBLAS!")
+  endif()
 endif()
 
 set(CN24_BUILD_OPENMP OFF CACHE BOOL "Build CN24 with OpenMP support if possible")
