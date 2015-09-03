@@ -15,8 +15,9 @@
 #ifndef CONV_ERRORLAYER_H
 #define CONV_ERRORLAYER_H
 
-#include "Config.h"
-#include "CombinedTensor.h"
+#include <string>
+#include <sstream>
+
 #include "Layer.h"
 #include "LossFunctionLayer.h"
 
@@ -27,24 +28,31 @@ public:
   /**
    * @brief Constructs an ErrorLayer.
    */
-  ErrorLayer();
+  ErrorLayer(const datum loss_weight = 1.0);
   
   // Implementations for Layer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs,
                       std::vector< CombinedTensor* >& outputs);
   bool Connect (const std::vector< CombinedTensor* >& inputs,
                 const std::vector< CombinedTensor* >& outputs,
-                const Net* net );
+                const NetStatus* net );
   void FeedForward();
   void BackPropagate(); 
   
   // Implementations for LossFunctionLayer
   datum CalculateLossFunction();
   
+	std::string GetLayerDescription() {
+		std::ostringstream ss;
+		ss << "Square Loss Layer (Weight: " << loss_weight_ << ")";
+		return ss.str();
+	}
 private:
   CombinedTensor* first_ = nullptr;
   CombinedTensor* second_ = nullptr;
   CombinedTensor* third_ = nullptr;
+
+	datum loss_weight_ = 1.0;
 };
 
 }

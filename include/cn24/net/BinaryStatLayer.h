@@ -17,12 +17,12 @@
 
 #include <vector>
 
-#include "CombinedTensor.h"
 #include "Layer.h"
+#include "StatLayer.h"	
 
 namespace Conv {
 
-class BinaryStatLayer: public Layer {
+class BinaryStatLayer: public Layer, public StatLayer {
 public:
   /**
 	* @brief Creates a BinaryStatLayer
@@ -52,7 +52,7 @@ public:
                       std::vector< CombinedTensor* >& outputs);
   bool Connect (const std::vector< CombinedTensor* >& inputs,
                 const std::vector< CombinedTensor* >& outputs,
-                const Net* net );
+                const NetStatus* net );
   void FeedForward();
   void BackPropagate(); 
   
@@ -65,6 +65,7 @@ public:
     disabled_ = disabled;
   }
   
+	std::string GetLayerDescription() { return "Binary Statistic Layer"; }
 protected:
   CombinedTensor* first_ = nullptr;
   CombinedTensor* second_ = nullptr;

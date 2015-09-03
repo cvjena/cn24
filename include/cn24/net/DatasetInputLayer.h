@@ -19,13 +19,10 @@
 #include <random>
 #include <iostream>
 
-#include "Tensor.h"
-#include "CombinedTensor.h"
-
 #include "Layer.h"
 #include "TrainingLayer.h"
 
-#include "Dataset.h"
+#include "../util/Dataset.h"
 
 namespace Conv {
 
@@ -49,7 +46,7 @@ public:
                       std::vector< CombinedTensor* >& outputs);
   bool Connect (const std::vector< CombinedTensor* >& inputs,
                 const std::vector< CombinedTensor* >& outputs,
-                const Net* net );
+                const NetStatus* net );
   void FeedForward();
   void BackPropagate();
 
@@ -68,6 +65,8 @@ public:
     return current_element_;
   }
 
+	std::string GetLayerDescription() { return "Dataset Input Layer"; }
+	void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers);
   bool IsOpenCLAware();
 private:
   Dataset& dataset_;

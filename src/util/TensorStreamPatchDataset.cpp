@@ -189,7 +189,7 @@ bool TensorStreamPatchDataset::SupportsTesting() const {
   return tensor_count_testing_ > 0;
 }
 
-bool TensorStreamPatchDataset::GetTrainingSample (Tensor& data_tensor, Tensor& label_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
+bool TensorStreamPatchDataset::GetTrainingSample (Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
   if (index < sample_count_training_) {
     bool success = true;
 
@@ -227,6 +227,17 @@ bool TensorStreamPatchDataset::GetTrainingSample (Tensor& data_tensor, Tensor& l
         *labels_[t].data_ptr_const (col + (patchsize_x_ / 2), row + (patchsize_y_ / 2), map, 0);
     }
 
+		// Copy helper tensor
+		if (data_[t].width() > 1)
+			*helper_tensor.data_ptr(0, 0, 0, sample) = ((datum)col) / ((datum)data_[t].width() - 1);
+		else
+			*helper_tensor.data_ptr(0, 0, 0, sample) = 0;
+
+		if (data_[t].height() > 1)
+			*helper_tensor.data_ptr(0, 0, 1, sample) = ((datum)row) / ((datum)data_[t].height() - 1);
+		else
+			*helper_tensor.data_ptr(0, 0, 1, sample) = 0;
+
 		const datum class_weight = class_weights_[label_tensor.PixelMaximum(0, 0, sample)];
 
     // Copy error
@@ -238,9 +249,65 @@ bool TensorStreamPatchDataset::GetTrainingSample (Tensor& data_tensor, Tensor& l
   } else return false;
 }
 
-bool TensorStreamPatchDataset::GetTestingSample (Tensor& data_tensor, Tensor& label_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
-  LOGERROR << "Patch testing is NIY, please use FCN for testing.";
-  return false;
+bool TensorStreamPatchDataset::GetTestingSample (Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
+  if (index < sample_count_testing_) {
+		index += sample_count_testing_;
+    bool success = true;
+
+    // Find patch
+    unsigned int t = 0;
+
+    while ( (t < tensors_) && (index >= last_sample_[t]))
+      t++;
+
+    if (index >= last_sample_[t])
+      return false;
+
+    unsigned int inner_width = data_[t].width() - (patchsize_x_ - 1);
+    unsigned int inner_height = data_[t].height() - (patchsize_y_ - 1);
+    
+    unsigned int first_sample = last_sample_[t] - inner_width * inner_height;
+    unsigned int sample_offset = index - first_sample;
+
+    // Find x and y coords
+    unsigned int row = sample_offset / (data_[t].width() - (patchsize_x_ - 1));
+    unsigned int col = sample_offset - (row * (data_[t].width() - (patchsize_x_ - 1)));
+
+    // Copy patch
+    for (unsigned int map = 0; map < input_maps_; map++) {
+      for (unsigned int y = 0; y < patchsize_y_; y++) {
+        const datum* row_ptr = data_[t].data_ptr_const (col, row + y, map, 0);
+        datum* target_row_ptr = data_tensor.data_ptr (0, y, map, sample);
+        std::memcpy (target_row_ptr, row_ptr, patchsize_x_ * sizeof(datum) / sizeof (char));
+      }
+    }
+    
+    // Copy label
+    for (unsigned int map = 0; map < label_maps_; map++) {
+      *label_tensor.data_ptr (0, 0, map, sample) =
+        *labels_[t].data_ptr_const (col + (patchsize_x_ / 2), row + (patchsize_y_ / 2), map, 0);
+    }
+
+		// Copy helper tensor
+		if (data_[t].width() > 1)
+			*helper_tensor.data_ptr(0, 0, 0, sample) = ((datum)col) / ((datum)data_[t].width() - 1);
+		else
+			*helper_tensor.data_ptr(0, 0, 0, sample) = 0;
+
+		if (data_[t].height() > 1)
+			*helper_tensor.data_ptr(0, 0, 1, sample) = ((datum)row) / ((datum)data_[t].height() - 1);
+		else
+			*helper_tensor.data_ptr(0, 0, 1, sample) = 0;
+
+		const datum class_weight = class_weights_[label_tensor.PixelMaximum(0, 0, sample)];
+
+    // Copy error
+    *weight_tensor.data_ptr (0, 0, 0, sample) =
+      error_function_ (col + (patchsize_x_ / 2), row + (patchsize_y_ / 2),
+      data_[t].width(), data_[t].height()) * class_weight;
+
+    return success;
+  } else return false;
 }
 
 TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std::istream& file , bool dont_load, DatasetLoadSelection selection, unsigned int patchsize_x, unsigned int patchsize_y) {
@@ -326,14 +393,20 @@ TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std
   std::istream* training_stream = nullptr;
   std::istream* testing_stream = nullptr;
 
-  if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TRAINING_ONLY)) {
+  if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TRAINING_ONLY) && training_file.length() > 0) {
     training_stream = new std::ifstream (training_file, std::ios::in | std::ios::binary);
+    if(!training_stream->good()) {
+      FATAL("Failed to load " << training_file << "!");
+    }
   } else {
     training_stream = new std::istringstream();
   }
 
-  if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TESTING_ONLY)) {
+  if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TESTING_ONLY) && testing_file.length() > 0) {
     testing_stream = new std::ifstream (testing_file, std::ios::in | std::ios::binary);
+    if(!testing_stream->good()) {
+      FATAL("Failed to load " << testing_file << "!");
+    }
   } else {
     testing_stream = new std::istringstream();
   }

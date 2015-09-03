@@ -1,0 +1,20 @@
+# KITTI dataset configuration
+# First, the locations of the image data tensor streams
+
+testing=TOY.Tensor
+training=TOY.Tensor
+
+# For two-class problems where the classes are mutually exclusive,
+# you can specify a single class
+classes=3
+background
+horizontal
+vertical
+
+# Note that for classes=1 you still have to specify a color
+colors
+0xffffff
+0x0000ff
+0xff0000
+
+localized_error=default

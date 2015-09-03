@@ -16,7 +16,6 @@
 #include "PNGUtil.h"
 #include "JPGUtil.h"
 
-#include "MKLHelper.h"
 #ifdef BLAS_MKL
 #include <mkl_service.h>
 #endif
@@ -78,6 +77,13 @@ Tensor::~Tensor() {
 }
 
 void Tensor::Clear ( const datum value, const int sample ) {
+#ifdef BUILD_OPENCL
+  if ( sample == -1 ) {
+    MoveToCPU(true);
+  } else {
+    MoveToCPU();
+  }
+#endif
   if ( sample == -1 ) {
     for ( std::size_t element = 0; element < elements_; element++ ) {
       data_ptr_[element] = value;
@@ -406,6 +412,8 @@ void Tensor::MoveToGPU ( bool no_copy ) {
       if ( error_ret != CL_SUCCESS ) {
         FATAL ( "Error moving to GPU: " << error_ret );
       }
+      
+      CLHelper::bytes_up += elements_ * sizeof(datum);
 
 #ifdef BRUTAL_FINISH
       error_ret = clFinish ( CLHelper::queue );
@@ -447,16 +455,14 @@ void Tensor::MoveToCPU ( bool no_copy ) {
       if ( error_ret != CL_SUCCESS ) {
         FATAL ( "Error moving to CPU: " << error_ret );
       }
+      
+      CLHelper::bytes_down += elements_ * sizeof(datum);
 
-#ifdef BRUTAL_FINISH
       error_ret = clFinish ( CLHelper::queue );
 
       if ( error_ret != CL_SUCCESS ) {
         FATAL ( "Error finishing command queue (2): " << error_ret );
       }
-
-#endif
-
     }
 
     cl_gpu_ = false;
@@ -601,12 +607,45 @@ void Tensor::WriteToFile ( const std::string& filename ) {
 }
 
 
+void Tensor::PrintStats() {
+#ifdef BUILD_OPENCL
+	MoveToCPU();
+#endif
+	datum min = std::numeric_limits<datum>::max();
+	datum max = std::numeric_limits<datum>::lowest();
+	datum sum = 0;
+	datum sum_of_sqares = 0;
+	datum variance = 0;
+
+	for (unsigned int e = 0; e < elements_; e++) {
+		sum_of_sqares += data_ptr_[e] * data_ptr_[e];
+		sum += data_ptr_[e];
+		if (data_ptr_[e] > max)
+			max = data_ptr_[e];
+		if (data_ptr_[e] < min)
+			min = data_ptr_[e];
+	}
+
+	datum avg = sum / (datum)elements_;
+	datum l2 = sqrt(sum_of_sqares);
+
+	for (unsigned int e = 0; e < elements_; e++) {
+		variance += (data_ptr_[e] - avg) * (data_ptr_[e] - avg);
+	}
+
+	variance /= (datum)elements_;
+
+	LOGINFO << "Minimum : " << min;
+	LOGINFO << "Maximum : " << max;
+	LOGINFO << "Average : " << avg;
+	LOGINFO << "L2 Norm : " << l2;
+	LOGINFO << "Variance: " << variance;
+}
 
 std::ostream& operator<< ( std::ostream& output, const Tensor& tensor ) {
   return output << "(" << tensor.samples() << "s@" << tensor.width() <<
          "x" << tensor.height() << "x" << tensor.maps() << "m)";
 }
-
 
 
 }

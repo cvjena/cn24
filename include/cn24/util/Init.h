@@ -20,9 +20,10 @@ namespace Conv {
 class TensorViewer;
 class System {
 public:
-  static void Init();
+  static void Init(int requested_log_level = -1);
   static void GetExecutablePath(std::string& binary_path);
   static TensorViewer* viewer;
+  static int log_level;
 };
 }
 

@@ -38,6 +38,8 @@
 namespace Conv {
 
 #ifdef BUILD_OPENCL
+long CLHelper::bytes_up = 0;
+long CLHelper::bytes_down = 0;
 cl_context CLHelper::context = 0;
 cl_command_queue CLHelper::queue = 0;
 cl_device_id CLHelper::device = 0;
@@ -54,17 +56,33 @@ cl_kernel CLHelper::k_matrixMatrix = 0;
 cl_kernel CLHelper::k_foldWeights = 0;
 cl_kernel CLHelper::k_maximumForward = 0;
 cl_kernel CLHelper::k_maximumBackward = 0;
+cl_kernel CLHelper::k_amaximumForward = 0;
+cl_kernel CLHelper::k_amaximumBackward = 0;
 cl_kernel CLHelper::k_nlTanh = 0;
 cl_kernel CLHelper::k_nlTanhBackward = 0;
 cl_kernel CLHelper::k_nlSigm = 0;
 cl_kernel CLHelper::k_nlSigmBackward = 0;
+cl_kernel CLHelper::k_setValue = 0;
+cl_kernel CLHelper::k_sms = 0;
+cl_kernel CLHelper::k_im2col = 0;
+cl_kernel CLHelper::k_col2im = 0;
 #endif
 
 TensorViewer* System::viewer = nullptr;
+int System::log_level = 0;
 
 #define STRING_SHA1 GIT_SHA1
 
-void System::Init() {
+void System::Init(int requested_log_level) {
+  if(requested_log_level == -1) {
+#ifdef BUILD_VERBOSE
+    log_level = 3;
+#else
+    log_level = 2;
+#endif
+  } else
+    log_level = requested_log_level;
+  
   LOGINFO << "CN24 version " STRING_SHA1;
   LOGINFO << "Copyright (C) 2015 Clemens-Alexander Brust";
   LOGINFO << "For licensing information, see the LICENSE"
@@ -96,7 +114,9 @@ void System::Init() {
       ParseUIntIfPossible(line, "opencl_device", device_number);
     }
   } else {
-    LOGINFO << "Could not find a config file.";
+#ifdef BUILD_OPENCL
+    LOGINFO << "Could not find a config file, using default OpenCL settings.";
+#endif
   }
 
   CLHelper::Init(platform_number, device_number);
@@ -193,13 +213,8 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   clGetDeviceInfo ( device_ids[device_number], CL_DEVICE_IMAGE_SUPPORT, 4,
                     &support_buffer, 0 );
 
-  uint32_t max_wg_size;
-  clGetDeviceInfo ( device_ids[device_number], CL_DEVICE_MAX_WORK_GROUP_SIZE, 4,
-                    &max_wg_size, 0 );
-
   LOGINFO << "Using OpenCL device: " << device_name_buffer;
-  LOGINFO << "Image support: " << ( support_buffer ? "Yes" : "No" );
-  LOGINFO << "Max work group size: " << max_wg_size;
+  LOGDEBUG << "Image support: " << ( support_buffer ? "Yes" : "No" );
 
   device = device_ids[device_number];
 
@@ -210,7 +225,7 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
     0, 0
   };
 
-  LOGINFO << "Creating OpenCL context...";
+  LOGDEBUG << "Creating OpenCL context...";
 
   cl_int error = 0;
   context = clCreateContext ( context_properties, 1,
@@ -221,7 +236,7 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   }
 
   // Create command queue
-  LOGINFO << "Creating OpenCL command queue...";
+  LOGDEBUG << "Creating OpenCL command queue...";
   queue = clCreateCommandQueue ( context, device_ids[device_number], 0, &error );
 
   if ( error != CL_SUCCESS ) {
@@ -240,7 +255,11 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   cl_program p_biasGradient = CreateProgram ( "kernels/biasGradient.cl" );
   cl_program p_matrixMatrix = CreateProgram ( "kernels/matrixMatrix.cl" );
   cl_program p_maximum = CreateProgram ( "kernels/maximumPooling.cl" );
+  cl_program p_amaximum = CreateProgram ( "kernels/advmaximumPooling.cl" );
   cl_program p_nonLinearFunctions = CreateProgram ( "kernels/nonLinearFunctions.cl" );
+  cl_program p_setValue = CreateProgram ( "kernels/setValue.cl" );
+  cl_program p_sms = CreateProgram ( "kernels/sms.cl" );
+  cl_program p_im2col = CreateProgram ( "kernels/im2col.cl" );
 
   k_crossCorrelation = clCreateKernel ( p_crossCorrelation, "CROSS_CORRELATION", &error );
 
@@ -313,6 +332,18 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   if ( error != CL_SUCCESS ) {
     FATAL ( "Error creating kernel: " << ( signed int ) error );
   }
+  
+  k_amaximumForward = clCreateKernel ( p_amaximum, "AMAXIMUM_POOLING_FWD", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+
+  k_amaximumBackward = clCreateKernel ( p_amaximum, "AMAXIMUM_POOLING_BWD", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
 
   k_nlTanh = clCreateKernel ( p_nonLinearFunctions, "NL_TANH_FWD", &error );
 
@@ -337,6 +368,35 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   if ( error != CL_SUCCESS ) {
     FATAL ( "Error creating kernel: " << ( signed int ) error );
   }
+  
+  k_setValue = clCreateKernel ( p_setValue, "SET_VALUE", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+  
+  k_sms = clCreateKernel ( p_sms, "SMS", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+  
+  k_im2col = clCreateKernel ( p_im2col, "IM2COL", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+  
+  k_col2im = clCreateKernel ( p_im2col, "COL2IM", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+#ifdef BUILD_CLBLAS
+  cl_int err = clblasSetup();
+  if (err!=CL_SUCCESS)
+    FATAL("Call to clblasSetup failed. Error: " << err);
+#endif
 
 #endif
 

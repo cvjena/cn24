@@ -19,10 +19,11 @@
 #include <vector>
 
 #include "Layer.h"
+#include "StatLayer.h"	
 
 namespace Conv {
 
-class ConfusionMatrixLayer: public Layer {
+class ConfusionMatrixLayer: public Layer, public StatLayer {
 public:
   /**
 	* @brief Creates a ConfusionMatrixLayer
@@ -51,7 +52,7 @@ public:
                       std::vector< CombinedTensor* >& outputs);
   bool Connect (const std::vector< CombinedTensor* >& inputs,
                 const std::vector< CombinedTensor* >& outputs,
-                const Net* net );
+                const NetStatus* net );
   void FeedForward();
   void BackPropagate();
 
@@ -64,6 +65,7 @@ public:
     disabled_ = disabled;
   }
 
+	std::string GetLayerDescription() { return "Confusion Matrix Layer"; }
   ~ConfusionMatrixLayer();
 private:
   unsigned int classes_;

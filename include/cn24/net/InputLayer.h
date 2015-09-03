@@ -15,9 +15,6 @@
 #ifndef CONV_INPUTLAYER_H
 #define CONV_INPUTLAYER_H
 
-#include "Log.h"
-#include "Tensor.h"
-#include "CombinedTensor.h"
 #include "Layer.h"
 
 namespace Conv {
@@ -54,10 +51,12 @@ public:
                               std::vector< CombinedTensor* >& outputs);
   virtual bool Connect (const std::vector< CombinedTensor* >& inputs,
                         const std::vector< CombinedTensor* >& outputs,
-                        const Net* net );
+                        const NetStatus* net );
   virtual void FeedForward() { }
   virtual void BackPropagate() { }
   
+	std::string GetLayerDescription() { return "Simple Input Layer"; }
+	void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers);
 private:
   CombinedTensor* data_ = nullptr;
   CombinedTensor* label_ = nullptr;

@@ -26,6 +26,8 @@
 #include "cn24/util/Init.h"
 #include "cn24/util/GradientTester.h"
 
+#include "cn24/math/TensorMath.h"
+
 #include "cn24/net/Layer.h"
 #include "cn24/net/InputLayer.h"
 #include "cn24/net/TrainingLayer.h"
@@ -35,6 +37,8 @@
 #include "cn24/net/ResizeLayer.h"
 #include "cn24/net/ConvolutionLayer.h"
 #include "cn24/net/MaxPoolingLayer.h"
+#include "cn24/net/AdvancedMaxPoolingLayer.h"
+#include "cn24/net/LocalResponseNormalizationLayer.h"
 #include "cn24/net/UpscaleLayer.h"
 #include "cn24/net/LossFunctionLayer.h"
 #include "cn24/net/ErrorLayer.h"
@@ -42,8 +46,12 @@
 #include "cn24/net/BinaryStatLayer.h"
 #include "cn24/net/ConfusionMatrixLayer.h"
 #include "cn24/net/SpatialPriorLayer.h"
+#include "cn24/net/ConcatenationLayer.h"
+#include "cn24/net/GradientAccumulationLayer.h"
 #include "cn24/net/Net.h"
 #include "cn24/net/Trainer.h"
+#include "cn24/net/NetGraph.h"
+#include "cn24/net/NetStatus.h"
 
 #include "cn24/factory/ConfigurableFactory.h"
 

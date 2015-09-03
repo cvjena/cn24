@@ -14,7 +14,7 @@
 #ifndef CONV_GRADIENTTESTER_H
 #define CONV_GRADIENTTESTER_H
 
-#include "Net.h"
+#include "../net/NetGraph.h"
 
 namespace Conv {
 class GradientTester {
@@ -24,7 +24,7 @@ public:
    *
    * Only call this function on nets with a constant input!
    */
-  static void TestGradient(Net& net);
+  static void TestGradient(NetGraph& net);
 };
   
   

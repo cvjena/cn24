@@ -16,16 +16,18 @@
 #ifndef CONV_LAYER_H
 #define CONV_LAYER_H
 
+#include <string>
 #include <vector>
 
-#include "Tensor.h"
-#include "CombinedTensor.h"
+#include "../util/Tensor.h"
+#include "../util/CombinedTensor.h"
 
 namespace Conv {
 
-  class Net;
+  class NetStatus;
   class Trainer;
   class GradientTester;
+	class NetGraphBuffer;
 class Layer {
   friend class Trainer;
   friend class GradientTester;
@@ -50,7 +52,7 @@ public:
    */
   virtual bool Connect (const std::vector<CombinedTensor*>& inputs,
                         const std::vector<CombinedTensor*>& outputs,
-                        const Net* net) = 0;
+                        const NetStatus* status) = 0;
                         
   /**
    * @brief Performs a forward pass
@@ -87,8 +89,10 @@ public:
   /**
    * @brief This is called by the net when this layer has a child layer.
    */
-  virtual void OnLayerConnect (Layer* next_layer) {
-    gain = next_layer->Gain();
+  virtual void OnLayerConnect (const std::vector<Layer*> next_layers) {
+		gain = 0;
+		for (Layer* next_layer : next_layers)
+			gain += next_layer->Gain();
   }
 
   /**
@@ -104,6 +108,9 @@ public:
    * the GPU's.
    */
   virtual bool IsOpenCLAware() { return false; }
+
+	virtual std::string GetLayerDescription() { return "Layer"; }
+	virtual void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers) {}
 protected:
   /**
    * @brief These CombinedTensors contain the weights and biases.
@@ -126,5 +133,7 @@ protected:
 };
 
 }
+
+#include "NetGraph.h"
 
 #endif
