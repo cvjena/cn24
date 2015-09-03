@@ -153,8 +153,8 @@ void Trainer::Epoch() {
 	for (NetGraphNode* training_node : graph_.GetTrainingNodes())
 		(dynamic_cast<TrainingLayer*>(training_node->layer))->SetTestingMode(false);
 
-  LOGDEBUG << "Epoch: " << epoch_ << ", it: " << iterations <<
-           ", bsize: " << first_training_layer_->GetBatchSize() * settings_.sbatchsize << ", lr0: " <<
+  LOGINFO << "Epoch: " << epoch_ << ", it: " << iterations <<
+           ", bsize: " << first_training_layer_->GetBatchSize() * settings_.sbatchsize << ", current lr: " <<
            CalculateLR (epoch_ * iterations) << std::endl;
 
   auto t_begin = std::chrono::system_clock::now();
