@@ -66,6 +66,10 @@ bool LocalResponseNormalizationLayer::
   input_height_ = input->data.height();
   maps_ = input->data.maps();
   
+  
+  // Resize region sum buffer
+  region_sums_.Resize(input->data.samples(), input_width_, input_height_, maps_);
+  
   return true;
 }
 
@@ -88,6 +92,7 @@ void LocalResponseNormalizationLayer::FeedForward() {
               }
             }
             
+            (*region_sums_.data_ptr(x,y,map,sample)) = region_sum;
             datum divisor = pow(1.0 + ((alpha_/((datum)region_size))*region_sum), beta_);
             (*output_->data.data_ptr(x,y,map,sample)) = (*input_->data.data_ptr_const(x,y,map,sample)) / divisor;
           }
@@ -105,6 +110,7 @@ void LocalResponseNormalizationLayer::FeedForward() {
               region_size++;
             }
             
+            (*region_sums_.data_ptr(x,y,map,sample)) = region_sum;
             datum divisor = pow(1.0 + ((alpha_/((datum)region_size))*region_sum), beta_);
             (*output_->data.data_ptr(x,y,map,sample)) = (*input_->data.data_ptr_const(x,y,map,sample)) / divisor;
           }
@@ -117,7 +123,6 @@ void LocalResponseNormalizationLayer::FeedForward() {
 }
 
 void LocalResponseNormalizationLayer::BackPropagate() {
-//  FATAL("Backward pass missing, use only for prediction!");
   TensorMath::SETSAMPLE(input_->delta, -1, 0);
   
   
@@ -129,12 +134,10 @@ void LocalResponseNormalizationLayer::BackPropagate() {
       for(unsigned int map = 0; map < maps_; map++) {
         for(unsigned int y = 0; y < input_height_; y++) {
           for(unsigned int x = 0; x < input_height_; x++) {
-            datum region_sum = 0;
+            datum region_sum = (*region_sums_.data_ptr_const(x,y,map,sample));
             unsigned int region_size = 0;
             for(unsigned int iy = (((int)y-sub) > 0 ? (int)y-sub : 0); (iy < input_height_) && (iy <= ((int)y+add)); iy++) {
               for(unsigned int ix = (((int)x-sub) > 0 ? (int)x-sub : 0); (ix < input_width_) && (ix <= ((int)x+add)); ix++) {
-                const datum input_value = (*input_->data.data_ptr_const(ix,iy,map,sample));
-                region_sum += input_value * input_value;
                 region_size++;
               }
             }
@@ -159,11 +162,9 @@ void LocalResponseNormalizationLayer::BackPropagate() {
       for(unsigned int map = 0; map < maps_; map++) {
         for(unsigned int y = 0; y < input_height_; y++) {
           for(unsigned int x = 0; x < input_height_; x++) {
-            datum region_sum = 0;
+            datum region_sum = (*region_sums_.data_ptr_const(x,y,map,sample));
             unsigned int region_size = 0;
             for(unsigned int imap = (((int)map-sub) > 0 ? (int)map-sub : 0); (imap < maps_) && (imap <= ((int)map+add)); imap++) {
-              const datum input_value = (*input_->data.data_ptr_const(x,y,imap,sample));
-              region_sum += input_value * input_value;
               region_size++;
             }
             

@@ -56,6 +56,9 @@ private:
   unsigned int input_width_ = 0;
   unsigned int input_height_ = 0;
   unsigned int maps_ = 0;
+  
+  // Buffers
+  Tensor region_sums_;
 };
 }
 
