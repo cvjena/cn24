@@ -22,6 +22,8 @@ int main ( int argc, char** argv ) {
     LOGEND;
     return -1;
   }
+  
+  Conv::System::Init(3);
 
   // Capture command line arguments
   std::string directRGB ( argv[7] );
