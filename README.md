@@ -1,3 +1,7 @@
+#### Build status:
+stable (production branch): [![Build Status](https://travis-ci.org/cvjena/cn24.svg?branch=stable)](https://travis-ci.org/cvjena/cn24)
+master (development branch): [![Build Status](https://travis-ci.org/cvjena/cn24.svg?branch=master)](https://travis-ci.org/cvjena/cn24)
+
 ## Welcome to the CN24 GitHub repository!
 
 CN24 is a complete semantic segmentation framework using fully convolutional networks. It supports a wide variety of
