@@ -1,16 +1,18 @@
 language: cpp
-
+sudo: false
 addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
     packages:
+      - gcc-4.8
       - g++-4.8
+#      - clang
+      - libjpeg-dev
+      - libpng-dev
 
-before_install:
-  - echo $LANG
-  - echo $LC_ALL
-  - sudo apt-get update && sudo apt-get install -y libjpeg-dev libpng-dev
+install:
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 
 before_script:
   - mkdir build
@@ -23,4 +25,4 @@ os:
   - linux
 
 compiler:
-  - gcc-4.8
+  - gcc
