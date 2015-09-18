@@ -13,12 +13,31 @@ addons:
 
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+
+# See clBLAS CI script
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cd ${TRAVIS_BUILD_DIR}; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then mkdir -p cl12/CL; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cd cl12/CL; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then wget https://www.khronos.org/registry/cl/api/1.2/cl.h; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then wget https://www.khronos.org/registry/cl/api/1.2/cl.hpp; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then wget https://www.khronos.org/registry/cl/api/1.2/cl_d3d10.h; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then wget https://www.khronos.org/registry/cl/api/1.2/cl_d3d11.h; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then wget https://www.khronos.org/registry/cl/api/1.2/cl_dx9_media_sharing.h; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then wget https://www.khronos.org/registry/cl/api/1.2/cl_egl.h; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then wget https://www.khronos.org/registry/cl/api/1.2/cl_ext.h; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then wget https://www.khronos.org/registry/cl/api/1.2/cl_gl.h; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then wget https://www.khronos.org/registry/cl/api/1.2/cl_gl_ext.h; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then wget https://www.khronos.org/registry/cl/api/1.2/cl_platform.h; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then wget https://www.khronos.org/registry/cl/api/1.2/opencl.h; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then ls; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then pwd; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cd ../..; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then sudo apt-get update && sudo apt-get install -y fglrx; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then git clone https://github.com/clMathLibraries/clBLAS.git; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cd clBLAS; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then mkdir build; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cd build; fi; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cmake -DBUILD_TEST:BOOL=OFF ../src; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cmake -DBUILD_TEST:BOOL=OFF -DOPENCL_INCLUDE_DIRS:PATH=$PWD/../../cl12/ ../src; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then sudo make install; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then if [ "$TEST_SUITE" = "opencl" ]; then brew update && brew tap homebrew/science && brew install clblas; fi; fi
 
