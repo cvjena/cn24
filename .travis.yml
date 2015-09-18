@@ -1,5 +1,12 @@
 language: cpp
 
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.8
+
 before_install:
   - echo $LANG
   - echo $LC_ALL
