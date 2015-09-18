@@ -21,3 +21,6 @@ script: make
 
 os:
   - linux
+
+compiler:
+  - gcc-4.8
