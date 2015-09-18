@@ -37,7 +37,7 @@ install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cd clBLAS; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then mkdir build; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cd build; fi; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cmake -DBUILD_TEST:BOOL=OFF -DOPENCL_INCLUDE_DIRS:PATH=$PWD/../../cl12/ ../src; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cmake -DBUILD_TEST:BOOL=OFF -DOPENCL_INCLUDE_DIRS:PATH=$PWD/../../cl12/ -DCMAKE_INSTALL_PREFIX=/usr -DSUFFIX_LIB= ../src; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then sudo make install; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cd ../..; fi; fi
 # A little simple for OS X
