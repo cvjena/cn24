@@ -1,0 +1,16 @@
+language: cpp
+
+before_install:
+  - echo $LANG
+  - echo $LC_ALL
+  - sudo apt-get update && sudo apt-get install -y libjpeg-dev libpng-dev
+
+before_script:
+  - mkdir build
+  - cd build
+  - cmake -DCMAKE_BUILD_TYPE=Release
+
+script: make
+
+os:
+  - linux
