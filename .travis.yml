@@ -13,7 +13,13 @@ addons:
 
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then ci/install-clblas.sh; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; sudo apt-get update && sudo apt-get install -y ocl-icd-opencl-dev; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; git clone https://github.com/clMathLibraries/clBLAS.git; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; cd clBLAS; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; mkdir build; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; cd build; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; cmake -DBUILD_TEST:BOOL=OFF ../src; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; sudo make install; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then if [ "$TEST_SUITE" = "opencl" ]; then brew update && brew tap homebrew/science && brew install clblas; fi; fi
 
 before_script:
