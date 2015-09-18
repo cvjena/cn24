@@ -194,7 +194,7 @@ void TensorMath::IM2COL(const Tensor& source, const int source_width, const int 
       FATAL("Error setting kernel args: " << (signed int) error);
     }
 
-    size_t global_work_size[] = {target_width * target_height, target_maps, samples};
+    size_t global_work_size[] = {(size_t)(target_width * target_height), (size_t)target_maps, (size_t)samples};
 
     error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_im2col, 3, NULL,
         global_work_size, NULL, 0, NULL, NULL);
@@ -294,7 +294,7 @@ void TensorMath::COL2IM(Tensor& source, const int source_width, const int source
       FATAL("Error setting kernel args: " << (signed int) error);
     }
 
-    size_t global_work_size[] = {source_width * source_height, maps, samples};
+    size_t global_work_size[] = {(size_t)(source_width * source_height), (size_t)maps, (size_t)samples};
 
     error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_col2im, 3, NULL,
         global_work_size, NULL, 0, NULL, NULL);
@@ -365,7 +365,7 @@ void TensorMath::SETSAMPLE(Tensor& A, const int smA, const datum value)
       FATAL("Error setting kernel args: " << (signed int) error);
     }
 
-    size_t global_work_size[] = {smA == -1 ? A.elements() : A.width() * A.height() * A.samples()};
+    size_t global_work_size[] = {(size_t)(smA == -1 ? A.elements() : A.width() * A.height() * A.samples())};
 
     error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_setValue, 1, NULL,
         global_work_size, NULL, 0, NULL, NULL);
@@ -416,7 +416,7 @@ void TensorMath::SMS(const Tensor& source, Tensor& target)
       FATAL("Error setting kernel args: " << (signed int) error);
     }
 
-    size_t global_work_size[] = {target.elements()};
+    size_t global_work_size[] = {(size_t)target.elements()};
 
     error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_sms, 1, NULL,
         global_work_size, NULL, 0, NULL, NULL);
