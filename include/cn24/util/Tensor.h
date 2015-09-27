@@ -103,7 +103,8 @@ public:
    * @brief Resizes the Tensor with data loss.
    */
   void Resize (const std::size_t samples, const std::size_t width = 1,
-               const std::size_t height = 1, const std::size_t maps = 1);
+               const std::size_t height = 1, const std::size_t maps = 1,
+               datum* const preallocated_memory = nullptr, bool mmapped = false );
 
   /**
    * @brief Resizes the Tensor to match another Tensor's size.
@@ -151,8 +152,11 @@ public:
    *
    * Note that this resizes the stream if necessary and overwrites its content.
    * @param input The input stream
+   * @param head_only Set to true to only read the dimensions
+   * @param try_mmap Set to true to attempt to memory map the file
+   * @param fd File descriptor for the SAME file as input's underlying
    */
-  void Deserialize (std::istream& input);
+  void Deserialize (std::istream& input, bool head_only = false, bool try_mmap = false, int fd = 0);
   
   /**
    * @brief Loads a file and resizes the Tensor to match its contents
@@ -318,6 +322,12 @@ public:
    * @brief If this is true, the data is currently in the GPU's memory
    */
   bool cl_gpu_ = false;
+  
+  /**
+   * @brief If this is true, the Tensor was memory mapped
+   */
+  bool mmapped_ = false;
+  void* original_mmap_ = nullptr;
   
   
   bool hint_ignore_content_ = false;

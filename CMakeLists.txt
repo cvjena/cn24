@@ -39,6 +39,10 @@ macro (currentdate RESULT)
     endif (WIN32)
 endmacro (currentdate)
 
+if(UNIX)
+  add_definitions("-DBUILD_POSIX")
+endif()
+
 if(CMAKE_COMPILER_IS_GNUCXX)
   # We need C++11
   execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion

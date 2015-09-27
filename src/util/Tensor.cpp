@@ -13,6 +13,13 @@
 #include <cmath>
 #include <string>
 
+
+#ifdef BUILD_POSIX
+#include <sys/mman.h>
+#include <errno.h>
+#include <unistd.h>
+#endif
+
 #include "PNGUtil.h"
 #include "JPGUtil.h"
 
@@ -55,6 +62,10 @@ Tensor::Tensor ( const Tensor& tensor, bool intentional ) {
 }
 
 Tensor::Tensor ( Tensor && tensor ) {
+#ifdef BUILD_OPENCL
+  tensor.MoveToCPU();
+#endif
+  
   data_ptr_ = tensor.data_ptr_;
   samples_ = tensor.samples_;
   maps_ = tensor.maps_;
@@ -118,7 +129,7 @@ void Tensor::Shadow ( Tensor& tensor ) {
 
 
 void Tensor::Resize ( const std::size_t samples, const std::size_t width,
-                      const std::size_t height, const std::size_t maps ) {
+                      const std::size_t height, const std::size_t maps, datum* const preallocated_memory, bool mmapped) {
   // Check if reshaping works
   if ( Reshape ( samples, width, height, maps ) )
     return;
@@ -133,12 +144,17 @@ void Tensor::Resize ( const std::size_t samples, const std::size_t width,
   if ( elements == 0 )
     return;
 
-  // Allocate
+  if(preallocated_memory != nullptr) {
+    data_ptr_ = preallocated_memory;
+    mmapped_ = mmapped;
+  } else {
+    // Allocate
 #ifdef BLAS_MKL
-  data_ptr_ = ( datum* ) MKL_malloc ( elements * sizeof ( datum ) / sizeof ( char ), 32 );
+    data_ptr_ = ( datum* ) MKL_malloc ( elements * sizeof ( datum ) / sizeof ( char ), 32 );
 #else
-  data_ptr_ = new datum[elements];
+    data_ptr_ = new datum[elements];
 #endif
+  }
 
   // Save configuration
   samples_ = samples;
@@ -246,7 +262,7 @@ void Tensor::Serialize ( std::ostream& output, bool convert ) {
   }
 }
 
-void Tensor::Deserialize ( std::istream& input ) {
+void Tensor::Deserialize ( std::istream& input , bool head_only, bool try_mmap, int fd) {
 #ifdef BUILD_OPENCL
   MoveToCPU ( true );
 #endif
@@ -263,11 +279,38 @@ void Tensor::Deserialize ( std::istream& input ) {
   input.read ( ( char* ) &height, sizeof ( uint64_t ) / sizeof ( char ) );
   input.read ( ( char* ) &maps, sizeof ( uint64_t ) / sizeof ( char ) );
 
-  Resize ( samples, width, height, maps );
+#ifdef BUILD_POSIX
+  if(!try_mmap || fd == 0)
+#endif
+    Resize ( samples, width, height, maps );
+  
+  std::size_t elements = samples * maps * width * height;
 
-  if ( elements_ > 0 )
-    input.read ( ( char* ) data_ptr_, ( elements_ * sizeof ( datum ) )
-                 / sizeof ( char ) );
+  if ( elements > 0 && !head_only ) {
+#ifdef BUILD_POSIX
+    if(try_mmap && fd != 0) {
+      // Get page size
+      long int page_size = sysconf(_SC_PAGESIZE);
+      long int current_position = input.tellg();
+      long int offset_in_page = current_position % page_size;
+      
+      void* target_mmap = mmap64(NULL,((elements* sizeof(datum)) / sizeof(char)) + offset_in_page, PROT_READ, MAP_PRIVATE, fd, current_position - offset_in_page);
+      if(target_mmap == MAP_FAILED) {
+        LOGERROR << "Memory map failed: " << errno;
+      }
+      original_mmap_ = target_mmap;
+      
+      target_mmap = (void*)(((long)target_mmap) + offset_in_page);
+      Resize(samples, width, height, maps, (datum*)target_mmap, true);
+      input.seekg(( elements * sizeof ( datum ) ) / sizeof ( char ) , std::ios::cur);
+    } else
+#endif
+      input.read ( ( char* ) data_ptr_, ( elements * sizeof ( datum ) )
+                  / sizeof ( char ) );
+  }
+  else if(head_only)
+    input.seekg(( elements * sizeof ( datum ) ) / sizeof ( char ) , std::ios::cur);
+      
 }
 
 
@@ -346,11 +389,17 @@ bool Tensor::CopyMap ( const Tensor& source, const std::size_t source_sample,
 void Tensor::DeleteIfPossible() {
   if ( data_ptr_ != nullptr ) {
     if ( !is_shadow_ ) {
+      if(mmapped_) {
+        munmap((void*)original_mmap_, (elements_ * sizeof(datum)) / sizeof(char));
+        original_mmap_ = nullptr;
+        mmapped_ = false;
+      } else {
 #ifdef BLAS_MKL
-      mkl_free ( data_ptr_ );
+        mkl_free ( data_ptr_ );
 #else
-      delete[] data_ptr_;
+        delete[] data_ptr_;
 #endif
+      }
 #ifdef BUILD_OPENCL
       if ( cl_data_ptr_ != 0 ) {
         clReleaseMemObject ( (cl_mem)cl_data_ptr_ );

@@ -46,7 +46,7 @@ TensorStreamPatchDataset::TensorStreamPatchDataset(std::istream& training_stream
 	Tensor tensor;
 
 	while (!training_stream.eof()) {
-		tensor.Deserialize(training_stream);
+		tensor.Deserialize(training_stream, true);
 
 		if (tensor.elements() == 0)
 			break;
@@ -65,7 +65,7 @@ TensorStreamPatchDataset::TensorStreamPatchDataset(std::istream& training_stream
 	}
 
 	while (!testing_stream.eof()) {
-		tensor.Deserialize(testing_stream);
+		tensor.Deserialize(testing_stream, true);
 
 		if (tensor.elements() == 0)
 			break;
@@ -104,6 +104,10 @@ TensorStreamPatchDataset::TensorStreamPatchDataset(std::istream& training_stream
 
 	// Read tensors
 	unsigned int e = 0;
+  
+  if((tensor_count_training_ + tensor_count_testing_) > 0) {
+    LOGINFO << "Deserializing " << (tensor_count_training_ + tensor_count_testing_) / 2 << " Tensors..." << std::endl << std::flush;
+  }
 
 	for (unsigned int t = 0; t < (tensor_count_training_ / 2); t++) {
 		data_[t].Deserialize(training_stream);
@@ -119,6 +123,8 @@ TensorStreamPatchDataset::TensorStreamPatchDataset(std::istream& training_stream
 		sample_count_training_ += inner_width * inner_height;
 
 		labels_[t].Deserialize(training_stream);
+    
+    std::cout << "." << std::flush;
 	}
 
 	for (unsigned int t = (tensor_count_training_ / 2); t < tensors_; t++) {
@@ -135,6 +141,8 @@ TensorStreamPatchDataset::TensorStreamPatchDataset(std::istream& training_stream
 		sample_count_testing_ += inner_width * inner_height;
 
 		labels_[t].Deserialize(testing_stream);
+    
+    std::cout << "." << std::flush;
 	}
 
 	input_maps_ = data_[0].maps();
