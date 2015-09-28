@@ -5,6 +5,12 @@
  * For licensing information, see the LICENSE file included with this project.
  */
 
+#ifdef BUILD_POSIX
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
+
 #include <fstream>
 #include <cstdlib>
 #include <cstring>
@@ -30,7 +36,8 @@ TensorStreamPatchDataset::TensorStreamPatchDataset(std::istream& training_stream
 		std::vector<datum> class_weights,
 		unsigned int patchsize_x,
 		unsigned int patchsize_y,
-		dataset_localized_error_function error_function) : 
+		dataset_localized_error_function error_function,
+    int training_fd, int testing_fd ) :
 	classes_(classes), class_names_(class_names), class_colors_(class_colors),
 	class_weights_(class_weights),
 	patchsize_x_(patchsize_x), patchsize_y_(patchsize_y),
@@ -110,7 +117,7 @@ TensorStreamPatchDataset::TensorStreamPatchDataset(std::istream& training_stream
   }
 
 	for (unsigned int t = 0; t < (tensor_count_training_ / 2); t++) {
-		data_[t].Deserialize(training_stream);
+		data_[t].Deserialize(training_stream, false, true, training_fd);
 
 		unsigned int inner_width = data_[t].width() - (patchsize_x_ - 1);
 		unsigned int inner_height = data_[t].height() - (patchsize_y_ - 1);
@@ -122,13 +129,13 @@ TensorStreamPatchDataset::TensorStreamPatchDataset(std::istream& training_stream
 
 		sample_count_training_ += inner_width * inner_height;
 
-		labels_[t].Deserialize(training_stream);
+		labels_[t].Deserialize(training_stream, false, true, training_fd);
     
     std::cout << "." << std::flush;
 	}
 
 	for (unsigned int t = (tensor_count_training_ / 2); t < tensors_; t++) {
-		data_[t].Deserialize(testing_stream);
+		data_[t].Deserialize(testing_stream, false, true, testing_fd);
 
 		unsigned int inner_width = data_[t].width() - (patchsize_x_ - 1);
 		unsigned int inner_height = data_[t].height() - (patchsize_y_ - 1);
@@ -140,7 +147,7 @@ TensorStreamPatchDataset::TensorStreamPatchDataset(std::istream& training_stream
 
 		sample_count_testing_ += inner_width * inner_height;
 
-		labels_[t].Deserialize(testing_stream);
+		labels_[t].Deserialize(testing_stream, false, true, testing_fd);
     
     std::cout << "." << std::flush;
 	}
@@ -326,6 +333,8 @@ TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std
   dataset_localized_error_function error_function = DefaultLocalizedErrorFunction;
   std::string training_file;
   std::string testing_file;
+  int training_fd = 0;
+  int testing_fd = 0;
 
   file.clear();
   file.seekg (0, std::ios::beg);
@@ -406,6 +415,12 @@ TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std
     if(!training_stream->good()) {
       FATAL("Failed to load " << training_file << "!");
     }
+#ifdef BUILD_POSIX
+    training_fd = open(training_file.c_str(), O_RDONLY);
+    if(training_fd < 0) {
+      FATAL("Failed to load " << training_file << "!");
+    }
+#endif
   } else {
     training_stream = new std::istringstream();
   }
@@ -415,6 +430,12 @@ TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std
     if(!testing_stream->good()) {
       FATAL("Failed to load " << testing_file << "!");
     }
+#ifdef BUILD_POSIX
+    testing_fd = open(training_file.c_str(), O_RDONLY);
+    if(testing_fd < 0) {
+      FATAL("Failed to load " << testing_file << "!");
+    }
+#endif
   } else {
     testing_stream = new std::istringstream();
   }
@@ -426,7 +447,7 @@ TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std
 
   return new TensorStreamPatchDataset (*training_stream, *testing_stream, classes,
                                        class_names, class_colors, class_weights, patchsize_x,
-                                       patchsize_y, error_function);
+                                       patchsize_y, error_function, training_fd, testing_fd);
 }
 
 }
