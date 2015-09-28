@@ -5,6 +5,12 @@
  * For licensing information, see the LICENSE file included with this project.
  */
 
+#ifdef BUILD_POSIX
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
+
 #include <fstream>
 #include <cstdlib>
 
@@ -25,7 +31,8 @@ TensorStreamDataset::TensorStreamDataset (std::istream& training_stream,
     std::vector< std::string > class_names,
     std::vector<unsigned int> class_colors,
 		std::vector<datum> class_weights,
-    dataset_localized_error_function error_function) :
+    dataset_localized_error_function error_function,
+    int training_fd, int testing_fd ) :
   classes_ (classes), class_names_ (class_names), class_colors_ (class_colors),
 	class_weights_(class_weights),
   error_function_ (error_function) {
@@ -40,7 +47,7 @@ TensorStreamDataset::TensorStreamDataset (std::istream& training_stream,
   Tensor tensor;
 
   while (!training_stream.eof()) {
-    tensor.Deserialize (training_stream);
+    tensor.Deserialize (training_stream, true);
 
     if (tensor.elements() == 0)
       break;
@@ -59,7 +66,7 @@ TensorStreamDataset::TensorStreamDataset (std::istream& training_stream,
   }
 
   while (!testing_stream.eof()) {
-    tensor.Deserialize (testing_stream);
+    tensor.Deserialize (testing_stream, true);
 
     if (tensor.elements() == 0)
       break;
@@ -97,9 +104,13 @@ TensorStreamDataset::TensorStreamDataset (std::istream& training_stream,
   unsigned int e = 0;
   max_width_ = 0;
   max_height_ = 0;
+  
+  if((tensor_count_training_ + tensor_count_testing_) > 0) {
+    LOGINFO << "Deserializing " << (tensor_count_training_ + tensor_count_testing_) / 2 << " Tensors..." << std::endl << std::flush;
+  }
 
   for (unsigned int t = 0; t < (tensor_count_training_ / 2); t++) {
-    data_[t].Deserialize (training_stream);
+    data_[t].Deserialize (training_stream, false, true, training_fd);
 
     if (data_[t].width() > max_width_)
       max_width_ = data_[t].width();
@@ -107,11 +118,13 @@ TensorStreamDataset::TensorStreamDataset (std::istream& training_stream,
     if (data_[t].height() > max_height_)
       max_height_ = data_[t].height();
 
-    labels_[t].Deserialize (training_stream);
+    labels_[t].Deserialize (training_stream, false, true, training_fd);
+    
+    std::cout << "." << std::flush;
   }
 
   for (unsigned int t = (tensor_count_training_ / 2) ; t < tensors_; t++) {
-    data_[t].Deserialize (testing_stream);
+    data_[t].Deserialize (testing_stream, false, true, testing_fd);
 
     if (data_[t].width() > max_width_)
       max_width_ = data_[t].width();
@@ -119,7 +132,9 @@ TensorStreamDataset::TensorStreamDataset (std::istream& training_stream,
     if (data_[t].height() > max_height_)
       max_height_ = data_[t].height();
 
-    labels_[t].Deserialize (testing_stream);
+    labels_[t].Deserialize (testing_stream, false, true, testing_fd);
+    
+    std::cout << "." << std::flush;
   }
 
   if (max_width_ & 1)
@@ -308,6 +323,9 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
   dataset_localized_error_function error_function = DefaultLocalizedErrorFunction;
   std::string training_file;
   std::string testing_file;
+  int training_fd = 0;
+  int testing_fd = 0;
+  bool no_mmap = false;
 
   file.clear();
   file.seekg (0, std::ios::beg);
@@ -315,6 +333,11 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
   while (! file.eof()) {
     std::string line;
     std::getline (file, line);
+    
+    if (StartsWithIdentifier (line, "nommap")) {
+      LOGDEBUG << "Dataset requested to not be memory mapped.";
+      no_mmap = true;
+    }
 
     if (StartsWithIdentifier (line, "classes")) {
       ParseCountIfPossible (line, "classes", classes);
@@ -388,6 +411,13 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
     if(!training_stream->good()) {
       FATAL("Failed to load " << training_file << "!");
     }
+#ifdef BUILD_POSIX
+    if(!no_mmap)
+      training_fd = open(training_file.c_str(), O_RDONLY);
+    if(training_fd < 0) {
+      FATAL("Failed to load " << training_file << "!");
+    }
+#endif
   } else {
     training_stream = new std::istringstream();
   }
@@ -397,6 +427,13 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
     if(!testing_stream->good()) {
       FATAL("Failed to load " << testing_file << "!");
     }
+#ifdef BUILD_POSIX
+    if(!no_mmap)
+      testing_fd = open(training_file.c_str(), O_RDONLY);
+    if(testing_fd < 0) {
+      FATAL("Failed to load " << testing_file << "!");
+    }
+#endif
   } else {
     testing_stream = new std::istringstream();
   }
@@ -405,9 +442,9 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
 		for (unsigned int c = 0; c < classes; c++)
 			class_weights.push_back(1.0);
 	}
-
+	
   return new TensorStreamDataset (*training_stream, *testing_stream, classes,
-                                  class_names, class_colors, class_weights, error_function);
+                                  class_names, class_colors, class_weights, error_function, training_fd, testing_fd);
 }
 
 }

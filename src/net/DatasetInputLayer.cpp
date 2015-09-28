@@ -49,6 +49,7 @@ DatasetInputLayer::DatasetInputLayer (Dataset& dataset,
 
   // Generate random permutation of the samples
   // First, we need an array of ascending numbers
+  LOGDEBUG << "Generating random permutation..." << std::flush;
   for (unsigned int i = 0; i < elements_training_; i++) {
     perm_.push_back (i);
   }

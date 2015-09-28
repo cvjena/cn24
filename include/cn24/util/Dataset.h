@@ -161,7 +161,8 @@ class TensorStreamPatchDataset : public Dataset {
 		 std::vector<datum> class_weights,
 		 unsigned int patchsize_x,
 		 unsigned int patchsize_y,
-		 dataset_localized_error_function error_function = DefaultLocalizedErrorFunction);
+		 dataset_localized_error_function error_function = DefaultLocalizedErrorFunction,
+    int training_fd = 0, int testing_fd = 0);
  
   // Dataset implementations
   virtual Task GetTask() const;
@@ -219,7 +220,8 @@ public:
     std::vector<std::string> class_names,
     std::vector<unsigned int> class_colors,
 		std::vector<datum> class_weights,
-    dataset_localized_error_function error_function = DefaultLocalizedErrorFunction);
+    dataset_localized_error_function error_function = DefaultLocalizedErrorFunction,
+    int training_fd = 0, int testing_fd = 0);
   
   // Dataset implementations
   virtual Task GetTask() const;
