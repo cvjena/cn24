@@ -335,6 +335,7 @@ TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std
   std::string testing_file;
   int training_fd = 0;
   int testing_fd = 0;
+  bool no_mmap = false;
 
   file.clear();
   file.seekg (0, std::ios::beg);
@@ -342,6 +343,11 @@ TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std
   while (! file.eof()) {
     std::string line;
     std::getline (file, line);
+    
+    if (StartsWithIdentifier (line, "nommap")) {
+      LOGDEBUG << "Dataset requested to not be memory mapped.";
+      no_mmap = true;
+    }
 
     if (StartsWithIdentifier (line, "classes")) {
       ParseCountIfPossible (line, "classes", classes);
@@ -416,7 +422,8 @@ TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std
       FATAL("Failed to load " << training_file << "!");
     }
 #ifdef BUILD_POSIX
-    training_fd = open(training_file.c_str(), O_RDONLY);
+    if(!no_mmap)
+      training_fd = open(training_file.c_str(), O_RDONLY);
     if(training_fd < 0) {
       FATAL("Failed to load " << training_file << "!");
     }
@@ -431,7 +438,8 @@ TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std
       FATAL("Failed to load " << testing_file << "!");
     }
 #ifdef BUILD_POSIX
-    testing_fd = open(training_file.c_str(), O_RDONLY);
+    if(!no_mmap)
+      testing_fd = open(training_file.c_str(), O_RDONLY);
     if(testing_fd < 0) {
       FATAL("Failed to load " << testing_file << "!");
     }
