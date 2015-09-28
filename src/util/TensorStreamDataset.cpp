@@ -118,7 +118,7 @@ TensorStreamDataset::TensorStreamDataset (std::istream& training_stream,
     if (data_[t].height() > max_height_)
       max_height_ = data_[t].height();
 
-    labels_[t].Deserialize (training_stream);
+    labels_[t].Deserialize (training_stream, false, true, training_fd);
     
     std::cout << "." << std::flush;
   }
@@ -132,7 +132,7 @@ TensorStreamDataset::TensorStreamDataset (std::istream& training_stream,
     if (data_[t].height() > max_height_)
       max_height_ = data_[t].height();
 
-    labels_[t].Deserialize (testing_stream);
+    labels_[t].Deserialize (testing_stream, false, true, testing_fd);
     
     std::cout << "." << std::flush;
   }
