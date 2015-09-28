@@ -293,8 +293,12 @@ void Tensor::Deserialize ( std::istream& input , bool head_only, bool try_mmap, 
       long int page_size = sysconf(_SC_PAGESIZE);
       long int current_position = input.tellg();
       long int offset_in_page = current_position % page_size;
-      
+#ifdef BUILD_LINUX
       void* target_mmap = mmap64(NULL,((elements* sizeof(datum)) / sizeof(char)) + offset_in_page, PROT_READ, MAP_PRIVATE, fd, current_position - offset_in_page);
+#elif defined(BUILD_OSX)
+      // OS X is 64-bit by default
+      void* target_mmap = mmap(NULL,((elements* sizeof(datum)) / sizeof(char)) + offset_in_page, PROT_READ, MAP_PRIVATE, fd, current_position - offset_in_page);
+#endif
       if(target_mmap == MAP_FAILED) {
         LOGERROR << "Memory map failed: " << errno;
       }

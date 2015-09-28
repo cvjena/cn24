@@ -39,10 +39,6 @@ macro (currentdate RESULT)
     endif (WIN32)
 endmacro (currentdate)
 
-if(UNIX)
-  add_definitions("-DBUILD_POSIX")
-endif()
-
 if(CMAKE_COMPILER_IS_GNUCXX)
   # We need C++11
   execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion
@@ -103,9 +99,11 @@ if(WIN32)
 else()
   if(APPLE)
     add_definitions("-DBUILD_OSX")
+    add_definitions("-DBUILD_POSIX")
   else()
     if(UNIX)
       add_definitions("-DBUILD_LINUX")
+      add_definitions("-DBUILD_POSIX")
     else()
       message(STATUS "Unsupported OS, good luck!")
     endif()
