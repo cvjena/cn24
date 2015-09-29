@@ -23,16 +23,24 @@
 #include "KITTIData.h"
 #include "ConfigParsing.h"
 
+#include "FloatTensorStream.h"
+
 namespace Conv {
 
-TensorStreamDataset::TensorStreamDataset (std::istream& training_stream,
+TensorStreamDataset::TensorStreamDataset (
+    /*
+    std::istream& training_stream,
     std::istream& testing_stream,
+    */
+    TensorStream* training_stream,
+    TensorStream* testing_stream,
     unsigned int classes,
     std::vector< std::string > class_names,
     std::vector<unsigned int> class_colors,
 		std::vector<datum> class_weights,
     dataset_localized_error_function error_function,
     int training_fd, int testing_fd ) :
+    training_stream_(training_stream), testing_stream_(testing_stream),
   classes_ (classes), class_names_ (class_names), class_colors_ (class_colors),
 	class_weights_(class_weights),
   error_function_ (error_function) {
@@ -43,21 +51,11 @@ TensorStreamDataset::TensorStreamDataset (std::istream& training_stream,
     FATAL ("Class count does not match class information count!");
   }
 
+  
   // Count tensors
   Tensor tensor;
 
-  while (!training_stream.eof()) {
-    tensor.Deserialize (training_stream, true);
-
-    if (tensor.elements() == 0)
-      break;
-
-    // LOGDEBUG << "Tensor " << tensor_count_training_ << ": " << tensor;
-    tensor_count_training_++;
-
-    training_stream.peek();
-  }
-
+  tensor_count_training_ = training_stream_->GetTensorCount();
   LOGDEBUG << tensor_count_training_  / 2 << " training tensors";
 
   // We need alternating label and image tensors, so we need an even count
@@ -65,18 +63,7 @@ TensorStreamDataset::TensorStreamDataset (std::istream& training_stream,
     FATAL ("Odd training tensor count!");
   }
 
-  while (!testing_stream.eof()) {
-    tensor.Deserialize (testing_stream, true);
-
-    if (tensor.elements() == 0)
-      break;
-
-    // LOGDEBUG << "Tensor " << tensor_count_testing_ << ": " << tensor;
-    tensor_count_testing_++;
-
-    testing_stream.peek();
-  }
-
+  tensor_count_testing_ = testing_stream->GetTensorCount();
   LOGDEBUG << tensor_count_testing_ / 2 << " testing tensors";
 
   if (tensor_count_testing_ & 1) {
@@ -85,56 +72,29 @@ TensorStreamDataset::TensorStreamDataset (std::istream& training_stream,
 
   tensors_ = (tensor_count_testing_ + tensor_count_training_) / 2;
 
-  // Reset streams
-  training_stream.clear();
-  testing_stream.clear();
-  training_stream.seekg (0, std::ios::beg);
-  testing_stream.seekg (0, std::ios::beg);
-
-  // Allocate arrays that depend on the tensor count
-  if (tensors_ > 0) {
-    data_ = new Tensor[tensors_];
-    labels_ = new Tensor[tensors_];
-  } else {
-    data_ = new Tensor[1];
-    labels_ = new Tensor[1];
-  }
-
   // Read tensors
   unsigned int e = 0;
   max_width_ = 0;
   max_height_ = 0;
   
   if((tensor_count_training_ + tensor_count_testing_) > 0) {
-    LOGINFO << "Deserializing " << (tensor_count_training_ + tensor_count_testing_) / 2 << " Tensors..." << std::endl << std::flush;
+    LOGINFO << "Loaded " << (tensor_count_training_ + tensor_count_testing_) / 2 << " Tensors.";
   }
 
   for (unsigned int t = 0; t < (tensor_count_training_ / 2); t++) {
-    data_[t].Deserialize (training_stream, false, true, training_fd);
-
-    if (data_[t].width() > max_width_)
-      max_width_ = data_[t].width();
-
-    if (data_[t].height() > max_height_)
-      max_height_ = data_[t].height();
-
-    labels_[t].Deserialize (training_stream, false, true, training_fd);
+    if(training_stream_->GetWidth(2*t) > max_width_)
+      max_width_ = training_stream_->GetWidth(2*t);
     
-    std::cout << "." << std::flush;
+    if(training_stream_->GetHeight(2*t) > max_height_)
+      max_height_ = training_stream_->GetHeight(2*t);
   }
 
   for (unsigned int t = (tensor_count_training_ / 2) ; t < tensors_; t++) {
-    data_[t].Deserialize (testing_stream, false, true, testing_fd);
-
-    if (data_[t].width() > max_width_)
-      max_width_ = data_[t].width();
-
-    if (data_[t].height() > max_height_)
-      max_height_ = data_[t].height();
-
-    labels_[t].Deserialize (testing_stream, false, true, testing_fd);
+    if(testing_stream_->GetWidth(2*t) > max_width_)
+      max_width_ = testing_stream_->GetWidth(2*t);
     
-    std::cout << "." << std::flush;
+    if(testing_stream_->GetHeight(2*t) > max_height_)
+      max_height_ = testing_stream_->GetHeight(2*t);
   }
 
   if (max_width_ & 1)
@@ -167,8 +127,13 @@ TensorStreamDataset::TensorStreamDataset (std::istream& training_stream,
   if (max_height_ & 32)
     max_height_+=32;
   
-  input_maps_ = data_[0].maps();
-  label_maps_ = labels_[0].maps();
+  if(training_stream_->GetTensorCount() > 0) {
+    input_maps_ = training_stream_->GetMaps(0);
+    label_maps_ = training_stream_->GetMaps(1);
+  } else {
+    input_maps_ = testing_stream_->GetMaps(0);
+    label_maps_ = testing_stream_->GetMaps(1);
+  }
 
   // Prepare error cache
   error_cache.Resize (1, max_width_, max_height_, 1);
@@ -233,37 +198,40 @@ bool TensorStreamDataset::SupportsTesting() const {
 bool TensorStreamDataset::GetTrainingSample (Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
   if (index < tensor_count_training_ / 2) {
     bool success = true;
-    success &= Tensor::CopySample (data_[index], 0, data_tensor, sample);
-    success &= Tensor::CopySample (labels_[index], 0, label_tensor, sample);
+    success &= training_stream_->CopySample(2 * index, 0, data_tensor, sample);
+    success &= training_stream_->CopySample(2 * index + 1, 0, label_tensor, sample);
 
+    unsigned int data_width = training_stream_->GetWidth(2 * index);
+    unsigned int data_height = training_stream_->GetHeight(2 * index);
+    
 		// Write spatial prior data to helper tensor
-		for (unsigned int y = 0; y < data_[index].height(); y++) {
-			for (unsigned int x = 0; x < data_[index].width(); x++) {
-				*helper_tensor.data_ptr(x, y, 0, sample) = ((datum)x) / ((datum)data_[index].width() - 1);
-				*helper_tensor.data_ptr(x, y, 1, sample) = ((datum)y) / ((datum)data_[index].height() - 1);
+		for (unsigned int y = 0; y < data_height; y++) {
+			for (unsigned int x = 0; x < data_width; x++) {
+				*helper_tensor.data_ptr(x, y, 0, sample) = ((datum)x) / ((datum)data_width - 1);
+				*helper_tensor.data_ptr(x, y, 1, sample) = ((datum)y) / ((datum)data_height - 1);
 			}
-			for (unsigned int x = data_[index].width(); x < GetWidth(); x++) {
+			for (unsigned int x = data_width; x < GetWidth(); x++) {
 				*helper_tensor.data_ptr(x, y, 0, sample) = 0;
 				*helper_tensor.data_ptr(x, y, 1, sample) = 0;
 			}
 		}
-		for (unsigned int y = data_[index].height(); y < GetHeight(); y++) {
+		for (unsigned int y = data_height; y < GetHeight(); y++) {
 			for (unsigned int x = 0; x < GetWidth(); x++) {
 				*helper_tensor.data_ptr(x, y, 0, sample) = 0;
 				*helper_tensor.data_ptr(x, y, 1, sample) = 0;
 			}
 		}
 
-    //if (data_[index].width() == GetWidth() && data_[index].height() == GetHeight()) {
+    //if (data_width == GetWidth() && data_height == GetHeight()) {
     //  success &= Tensor::CopySample (error_cache, 0, weight_tensor, sample);
     //} else {
       // Reevaluate error function
       weight_tensor.Clear (0.0, sample);
 
-      for (unsigned int y = 0; y < data_[index].height(); y++) {
-        for (unsigned int x = 0; x < data_[index].width(); x++) {
+      for (unsigned int y = 0; y < data_height; y++) {
+        for (unsigned int x = 0; x < data_width; x++) {
 					const datum class_weight = class_weights_[label_tensor.PixelMaximum(x, y, sample)];
-          *weight_tensor.data_ptr (x, y, 0, sample) = error_function_ (x, y, data_[index].width(), data_[index].height()) * class_weight;
+          *weight_tensor.data_ptr (x, y, 0, sample) = error_function_ (x, y, data_width, data_height) * class_weight;
         }
       }
     //}
@@ -275,38 +243,40 @@ bool TensorStreamDataset::GetTrainingSample (Tensor& data_tensor, Tensor& label_
 bool TensorStreamDataset::GetTestingSample (Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
   if (index < tensor_count_testing_ / 2) {
     bool success = true;
-    unsigned int test_index = (tensor_count_training_ / 2) + index;
-    success &= Tensor::CopySample (data_[test_index], 0, data_tensor, sample);
-    success &= Tensor::CopySample (labels_[test_index], 0, label_tensor, sample);
+    success &= testing_stream_->CopySample(2 * index, 0, data_tensor, sample);
+    success &= testing_stream_->CopySample(2 * index + 1, 0, label_tensor, sample);
+    
+    unsigned int data_width = testing_stream_->GetWidth(2 * index);
+    unsigned int data_height = testing_stream_->GetHeight(2 * index);
 
 		// Write spatial prior data to helper tensor
-		for (unsigned int y = 0; y < data_[test_index].height(); y++) {
-			for (unsigned int x = 0; x < data_[test_index].width(); x++) {
-				*helper_tensor.data_ptr(x, y, 0, sample) = ((datum)x) / ((datum)data_[test_index].width() - 1);
-				*helper_tensor.data_ptr(x, y, 1, sample) = ((datum)y) / ((datum)data_[test_index].height() - 1);
+		for (unsigned int y = 0; y < data_height; y++) {
+			for (unsigned int x = 0; x < data_width; x++) {
+				*helper_tensor.data_ptr(x, y, 0, sample) = ((datum)x) / ((datum)data_width - 1);
+				*helper_tensor.data_ptr(x, y, 1, sample) = ((datum)y) / ((datum)data_height - 1);
 			}
-			for (unsigned int x = data_[test_index].width(); x < GetWidth(); x++) {
+			for (unsigned int x = data_width; x < GetWidth(); x++) {
 				*helper_tensor.data_ptr(x, y, 0, sample) = 0;
 				*helper_tensor.data_ptr(x, y, 1, sample) = 0;
 			}
 		}
-		for (unsigned int y = data_[test_index].height(); y < GetHeight(); y++) {
+		for (unsigned int y = data_height; y < GetHeight(); y++) {
 			for (unsigned int x = 0; x < GetWidth(); x++) {
 				*helper_tensor.data_ptr(x, y, 0, sample) = 0;
 				*helper_tensor.data_ptr(x, y, 1, sample) = 0;
 			}
 		}
 
-    //if (data_[test_index].width() == GetWidth() && data_[test_index].height() == GetHeight()) {
+    //if (data_width == GetWidth() && data_height == GetHeight()) {
     //  success &= Tensor::CopySample (error_cache, 0, weight_tensor, sample);
     //} else {
       // Reevaluate error function
       weight_tensor.Clear (0.0, sample);
 
-      for (unsigned int y = 0; y < data_[test_index].height(); y++) {
-        for (unsigned int x = 0; x < data_[test_index].width(); x++) {
+      for (unsigned int y = 0; y < data_height; y++) {
+        for (unsigned int x = 0; x < data_width; x++) {
 					const datum class_weight = class_weights_[label_tensor.PixelMaximum(x, y, sample)];
-          *weight_tensor.data_ptr (x, y, 0, sample) = error_function_ (x, y, data_[test_index].width(), data_[test_index].height()) * class_weight;
+          *weight_tensor.data_ptr (x, y, 0, sample) = error_function_ (x, y, data_width, data_height) * class_weight;
         }
       }
     //}
@@ -326,6 +296,9 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
   int training_fd = 0;
   int testing_fd = 0;
   bool no_mmap = false;
+  
+  FloatTensorStream* training_stream = new FloatTensorStream();
+  FloatTensorStream* testing_stream = new FloatTensorStream();
 
   file.clear();
   file.seekg (0, std::ios::beg);
@@ -403,39 +376,14 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
   LOGDEBUG << "Training tensor: " << training_file;
   LOGDEBUG << "Testing tensor: " << testing_file;
 
-  std::istream* training_stream = nullptr;
-  std::istream* testing_stream = nullptr;
-
   if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TRAINING_ONLY) && training_file.length() > 0) {
-    training_stream = new std::ifstream (training_file, std::ios::in | std::ios::binary);
-    if(!training_stream->good()) {
-      FATAL("Failed to load " << training_file << "!");
-    }
-#ifdef BUILD_POSIX
-    if(!no_mmap)
-      training_fd = open(training_file.c_str(), O_RDONLY);
-    if(training_fd < 0) {
-      FATAL("Failed to load " << training_file << "!");
-    }
-#endif
+    training_stream->LoadFile(training_file);
   } else {
-    training_stream = new std::istringstream();
   }
 
   if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TESTING_ONLY) && testing_file.length() > 0) {
-    testing_stream = new std::ifstream (testing_file, std::ios::in | std::ios::binary);
-    if(!testing_stream->good()) {
-      FATAL("Failed to load " << testing_file << "!");
-    }
-#ifdef BUILD_POSIX
-    if(!no_mmap)
-      testing_fd = open(training_file.c_str(), O_RDONLY);
-    if(testing_fd < 0) {
-      FATAL("Failed to load " << testing_file << "!");
-    }
-#endif
+    testing_stream->LoadFile(testing_file);
   } else {
-    testing_stream = new std::istringstream();
   }
 
 	if (class_weights.size() != classes) {
@@ -443,7 +391,7 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
 			class_weights.push_back(1.0);
 	}
 	
-  return new TensorStreamDataset (*training_stream, *testing_stream, classes,
+  return new TensorStreamDataset (training_stream, testing_stream, classes,
                                   class_names, class_colors, class_weights, error_function, training_fd, testing_fd);
 }
 
