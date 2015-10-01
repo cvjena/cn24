@@ -17,6 +17,7 @@
 #include "cn24/util/Config.h"
 #include "cn24/util/Dataset.h"
 #include "cn24/util/Tensor.h"
+#include "cn24/util/CompressedTensor.h"
 #include "cn24/util/TensorViewer.h"
 #include "cn24/util/CombinedTensor.h"
 #include "cn24/util/TensorStream.h"
