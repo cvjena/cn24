@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
   Conv::System::Init();
   
   if(argc != 3) {
-    FATAL("Needs exactly two arguments");
+    LOGERROR << "USAGE: " << argv[0] << " <input (uncompressed) tensor stream> <output (compressed) tensor stream>";
   }
   
   std::string input_file_name(argv[1]);
@@ -33,6 +33,10 @@ int main(int argc, char** argv) {
   long compressed_total = 0;
   
   Conv::Tensor tensor;
+  
+  uint64_t magic = CN24_CTS_MAGIC;
+  output_tensor_stream.write((char*)&magic, sizeof(uint64_t)/sizeof(char));
+  
   while(!input_tensor_stream.eof()) {
     tensor.Deserialize(input_tensor_stream);
     
