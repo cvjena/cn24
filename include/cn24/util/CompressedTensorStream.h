@@ -16,11 +16,35 @@
 #include "Config.h"
 
 #include "Tensor.h"
+#include "CompressedTensor.h"
+
+#include "TensorStream.h"
+
+#define CN24_CTS_MAGIC 0xC24CC24CC24CC24C
 
 namespace Conv {
-
-class CompressedTensorStream {
   
+class CompressedTensorStream : public TensorStream {
+public: 
+  
+  ~CompressedTensorStream() {
+    for(CompressedTensor* tensor: tensors_) {
+      delete tensor;
+    }
+  }
+  
+  // TensorStream implementations
+  std::size_t GetWidth(unsigned int index) { return index < tensors_.size() ? tensors_[index]->width() : 0; }
+  std::size_t GetHeight(unsigned int index) { return index < tensors_.size() ? tensors_[index]->height() : 0; }
+  std::size_t GetMaps(unsigned int index) { return index < tensors_.size() ? tensors_[index]->maps() : 0; }
+  std::size_t GetSamples(unsigned int index) { return index < tensors_.size() ? tensors_[index]->samples() : 0; }
+  unsigned int GetTensorCount() { return tensors_.size(); }
+  unsigned int LoadFile(std::string path);
+  bool CopySample(const unsigned int source_index, const std::size_t source_sample, Tensor& target, const std::size_t target_sample);
+private:
+  std::vector<CompressedTensor*> tensors_;
+  std::size_t max_elements_ = 0;
+  Tensor temp_tensor_;
 };
 
 }

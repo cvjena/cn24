@@ -97,10 +97,10 @@ private:
   void Resize (const std::size_t samples, const std::size_t width,
                const std::size_t height, const std::size_t maps,
                const std::size_t compressed_length,
-               datum* const preallocated_memory = nullptr, bool mmapped = false );
+               char* const preallocated_memory = nullptr, bool mmapped = false );
 
   // Pointer to the actual data
-  datum* compressed_data_ptr_ = nullptr;
+  char* compressed_data_ptr_ = nullptr;
 
   // Sizes
   std::size_t samples_ = 0;

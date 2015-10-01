@@ -297,8 +297,8 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
   int testing_fd = 0;
   bool no_mmap = false;
   
-  FloatTensorStream* training_stream = new FloatTensorStream();
-  FloatTensorStream* testing_stream = new FloatTensorStream();
+  TensorStream* training_stream = new FloatTensorStream();
+  TensorStream* testing_stream = new FloatTensorStream();
 
   file.clear();
   file.seekg (0, std::ios::beg);
@@ -377,12 +377,12 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
   LOGDEBUG << "Testing tensor: " << testing_file;
 
   if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TRAINING_ONLY) && training_file.length() > 0) {
-    training_stream->LoadFile(training_file);
+    training_stream = TensorStream::FromFile(training_file);
   } else {
   }
 
   if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TESTING_ONLY) && testing_file.length() > 0) {
-    testing_stream->LoadFile(testing_file);
+    testing_stream = TensorStream::FromFile(testing_file);
   } else {
   }
 

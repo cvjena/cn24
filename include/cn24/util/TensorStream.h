@@ -32,6 +32,8 @@ public:
                           Tensor& target, const std::size_t target_sample) = 0;
   
   virtual unsigned int GetTensorCount() = 0;
+  
+  static TensorStream* FromFile(std::string path);
 };
 
 }

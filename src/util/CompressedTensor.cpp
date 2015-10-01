@@ -33,6 +33,8 @@
 #include "CLHelper.h"
 
 namespace Conv {
+  
+const unsigned int chars_per_datum = sizeof(Conv::datum)/sizeof(char);
 
 CompressedTensor::CompressedTensor() {
 
@@ -50,10 +52,10 @@ void CompressedTensor::Compress(Tensor& tensor)
   tensor.MoveToCPU();
 #endif
   
-  void* compressed_buffer = new datum[2 * tensor.elements() + 2];
+  void* compressed_buffer = new char[2 * tensor.elements() * chars_per_datum + 2];
   CompressedTensor::CompressData((void*)tensor.data_ptr(), uncompressed_elements, compressed_buffer, compressed_length);
   
-  Resize(tensor.samples(), tensor.width(), tensor.height(), tensor.maps(), compressed_length, (datum*)compressed_buffer, false);
+  Resize(tensor.samples(), tensor.width(), tensor.height(), tensor.maps(), compressed_length, (char*)compressed_buffer, false);
 }
 
 void CompressedTensor::Decompress(Tensor& tensor, datum* preallocated_buffer)
@@ -75,7 +77,7 @@ void CompressedTensor::Decompress(Tensor& tensor, datum* preallocated_buffer)
 
 
 void CompressedTensor::Resize ( const std::size_t samples, const std::size_t width,
-                      const std::size_t height, const std::size_t maps, const std::size_t compressed_length, datum* const preallocated_memory, bool mmapped) {
+                      const std::size_t height, const std::size_t maps, const std::size_t compressed_length, char* const preallocated_memory, bool mmapped) {
   // Delete the old allocation
   DeleteIfPossible();
 
@@ -88,7 +90,7 @@ void CompressedTensor::Resize ( const std::size_t samples, const std::size_t wid
     mmapped_ = mmapped;
   } else {
     // Allocate
-    compressed_data_ptr_ = new datum[compressed_length];
+    compressed_data_ptr_ = new char[compressed_length];
   }
 
   // Save configuration
@@ -114,8 +116,7 @@ void CompressedTensor::Serialize ( std::ostream& output ) {
   output.write ( ( const char* ) &compressed_length, sizeof ( uint64_t ) / sizeof ( char ) );
 
   if ( elements_ > 0 )
-    output.write ( ( const char* ) compressed_data_ptr_, ( compressed_length_ * sizeof ( datum ) )
-                    / sizeof ( char ) );
+    output.write ( ( const char* ) compressed_data_ptr_, compressed_length_);
 }
 
 void CompressedTensor::Deserialize ( std::istream& input , bool head_only, bool try_mmap, int fd) {
@@ -147,10 +148,10 @@ void CompressedTensor::Deserialize ( std::istream& input , bool head_only, bool 
       long int current_position = input.tellg();
       long int offset_in_page = current_position % page_size;
 #ifdef BUILD_LINUX
-      void* target_mmap = mmap64(NULL,((compressed_length * sizeof(datum)) / sizeof(char)) + offset_in_page, PROT_READ, MAP_PRIVATE, fd, current_position - offset_in_page);
+      void* target_mmap = mmap64(NULL, compressed_length + offset_in_page, PROT_READ, MAP_PRIVATE, fd, current_position - offset_in_page);
 #elif defined(BUILD_OSX)
       // OS X is 64-bit by default
-      void* target_mmap = mmap(NULL,((compressed_length * sizeof(datum)) / sizeof(char)) + offset_in_page, PROT_READ, MAP_PRIVATE, fd, current_position - offset_in_page);
+      void* target_mmap = mmap(NULL, compressed_length + offset_in_page, PROT_READ, MAP_PRIVATE, fd, current_position - offset_in_page);
 #endif
       if(target_mmap == MAP_FAILED) {
         LOGERROR << "Memory map failed: " << errno;
@@ -158,21 +159,20 @@ void CompressedTensor::Deserialize ( std::istream& input , bool head_only, bool 
       original_mmap_ = target_mmap;
       
       target_mmap = (void*)(((long)target_mmap) + offset_in_page);
-      Resize(samples, width, height, maps, compressed_length, (datum*)target_mmap, true);
-      input.seekg(( compressed_length * sizeof ( datum ) ) / sizeof ( char ) , std::ios::cur);
-    } else;
+      Resize(samples, width, height, maps, compressed_length, (char*)target_mmap, true);
+      input.seekg(compressed_length, std::ios::cur);
+    } else
 #endif
-      input.read ( ( char* ) compressed_data_ptr_, ( compressed_length * sizeof ( datum ) )
-                  / sizeof ( char ) );
+      input.read ( ( char* ) compressed_data_ptr_, compressed_length);
   }
   else if(head_only)
-    input.seekg(( compressed_length * sizeof ( datum ) ) / sizeof ( char ) , std::ios::cur);
+    input.seekg(compressed_length, std::ios::cur);
 }
 
 void CompressedTensor::DeleteIfPossible() {
   if ( compressed_data_ptr_ != nullptr ) {
     if(mmapped_) {
-      munmap((void*)original_mmap_, (elements_ * sizeof(datum)) / sizeof(char));
+      munmap((void*)original_mmap_, compressed_length_);
       original_mmap_ = nullptr;
       mmapped_ = false;
     } else {
@@ -206,7 +206,6 @@ const unsigned char rl_marker = 'X';
 const unsigned char rl_doublemarker = 'X';
 const unsigned char rl_rle = 'Y';
 const unsigned int rl_bytes = 1;
-const unsigned int chars_per_datum = sizeof(Conv::datum)/sizeof(char);
 const unsigned int rl_max = (unsigned int)((1L << (8L * (unsigned long)rl_bytes)) - 3L);
 const unsigned int rl_min = 1 + (5 + rl_bytes) / chars_per_datum;
 
@@ -290,7 +289,6 @@ void CompressedTensor::CompressData(void* uncompressed, const std::size_t& uncom
       
     last_symbol = current_symbol;
   }
-  LOGDEBUG << "Bytes out: " << bytes_out;
   compressed_length = bytes_out;
 }
 
@@ -341,7 +339,6 @@ void CompressedTensor::DecompressData(void* uncompressed, std::size_t& uncompres
     FATAL("Compressed length wrong!");
   }
   uncompressed_elements = bytes_out / chars_per_datum;
-  LOGDEBUG << "Bytes out: " << bytes_out;
 }
 
 
