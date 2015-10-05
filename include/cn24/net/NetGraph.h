@@ -20,6 +20,8 @@
 #include "NetStatus.h"
 #include "../util/TensorViewer.h"
 
+#include "StatLayer.h"
+
 #include <vector>
 
 namespace Conv {
@@ -106,6 +108,12 @@ public:
 	// Output
 	void PrintGraph(std::ostream& graph_output);
   void SetLayerViewEnabled(bool enabled) { layerview_enabled_ = enabled; }
+  void SetStatLayersEnabled(bool enabled) {
+    for (unsigned int n = 0; n < GetStatNodes().size(); n++) {
+      StatLayer* stat_layer = dynamic_cast<StatLayer*>(GetStatNodes()[n]->layer);
+      stat_layer->SetDisabled(!enabled);
+    } 
+  }
 	datum AggregateLoss();
 
 	// Status

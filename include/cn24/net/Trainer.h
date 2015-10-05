@@ -41,6 +41,7 @@ public:
   datum mu = 1.75;
   datum eta = 1.5;
   OPTIMIZATION_METHOD optimization_method = GRADIENT_DESCENT;
+  bool stats_during_training = true;
   unsigned int pbatchsize = 1;
   unsigned int sbatchsize = 1;
   unsigned int iterations = 500;
@@ -101,6 +102,8 @@ public:
                                           * (datum) iteration,
                                           -settings_.exponent);
   }
+  
+  inline void SetStatsDuringTraining(bool enable) { settings_.stats_during_training = enable; }
 
 private:
   void ApplyGradients (datum lr);

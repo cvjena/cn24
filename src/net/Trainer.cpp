@@ -62,13 +62,13 @@ namespace Conv {
 }
 
 void Trainer::Train (unsigned int epochs) {
-  // net_.SetTestOnlyStatDisabled (false);
   graph_.SetIsTesting(false);
-
+  graph_.SetStatLayersEnabled(settings_.stats_during_training);
+  
   for (unsigned int e = 0; e < epochs; e++)
     Epoch();
 
-  // net_.SetTestOnlyStatDisabled (false);
+  graph_.SetStatLayersEnabled(true);
 }
 
 void Trainer::Test() {
@@ -242,13 +242,15 @@ void Trainer::Epoch() {
 	}
 	LOGINFO << "Training (Epoch " << epoch_ << ") aggregate lps: " << aggregate_loss / (datum)(iterations * sample_count_ * settings_.sbatchsize * first_training_layer_->GetLossSamplingProbability());
 
-	for (unsigned int n = 0; n < graph_.GetStatNodes().size(); n++) {
-		StatLayer* stat_layer = dynamic_cast<StatLayer*>(graph_.GetStatNodes()[n]->layer);
-    std::stringstream epochname;
-    epochname << "Training  - Epoch " << epoch_ << " -";
-    stat_layer->Print (epochname.str(), true);
-    stat_layer->Reset();
-	}
+  if(settings_.stats_during_training) {
+    for (unsigned int n = 0; n < graph_.GetStatNodes().size(); n++) {
+      StatLayer* stat_layer = dynamic_cast<StatLayer*>(graph_.GetStatNodes()[n]->layer);
+      std::stringstream epochname;
+      epochname << "Training  - Epoch " << epoch_ << " -";
+      stat_layer->Print (epochname.str(), true);
+      stat_layer->Reset();
+    }
+  }
 
   delete[] loss_sums;
   epoch_++;
