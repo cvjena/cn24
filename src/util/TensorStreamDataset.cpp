@@ -228,6 +228,7 @@ bool TensorStreamDataset::GetTrainingSample (Tensor& data_tensor, Tensor& label_
       // Reevaluate error function
       weight_tensor.Clear (0.0, sample);
 
+      #pragma omp parallel for default(shared)
       for (unsigned int y = 0; y < data_height; y++) {
         for (unsigned int x = 0; x < data_width; x++) {
 					const datum class_weight = class_weights_[label_tensor.PixelMaximum(x, y, sample)];
@@ -273,6 +274,7 @@ bool TensorStreamDataset::GetTestingSample (Tensor& data_tensor, Tensor& label_t
       // Reevaluate error function
       weight_tensor.Clear (0.0, sample);
 
+      #pragma omp parallel for default(shared)
       for (unsigned int y = 0; y < data_height; y++) {
         for (unsigned int x = 0; x < data_width; x++) {
 					const datum class_weight = class_weights_[label_tensor.PixelMaximum(x, y, sample)];
