@@ -451,4 +451,70 @@ void TensorMath::SMS(const Tensor& source, Tensor& target)
   target.hint_ignore_content_ = false;
 }
 
+void TensorMath::DOWN(const Tensor& source, Tensor& target, const int region_width, const int region_height, const datum target_factor)
+{
+#ifdef BUILD_OPENCL
+  ((Tensor&)source).MoveToCPU();
+  target.MoveToCPU(true);
+#endif
+  const int target_width = target.width();
+  const int target_height = target.height();
+  const int maps = target.maps();
+  const int samples = target.samples();
+  for(int sample = 0; sample < samples; sample++) {
+    for(int map = 0; map < maps; map++) {
+      for(unsigned int target_y = 0; target_y < target_height; target_y++) {
+        const unsigned int source_y = region_height * target_y;
+        for(unsigned int target_x = 0; target_x < target_width; target_x++) {
+          const unsigned int source_x = region_width * target_x;
+          datum sum = 0;
+          for(unsigned int ry = 0; ry < region_height; ry++) {
+            for(unsigned int rx = 0; rx < region_width; rx++) {
+              const datum* src = source.data_ptr_const(source_x + rx, source_y + ry, map, sample);
+              sum += *src;
+            }
+          }
+          datum* tgt = target.data_ptr(target_x, target_y, map, sample);
+          *tgt = sum * target_factor;
+        }
+      }
+    }
+    }
+
+  target.hint_ignore_content_ = false;
+}
+
+void TensorMath::UP(const Tensor& source, Tensor& target, const int region_width, const int region_height, const datum target_factor)
+{
+#ifdef BUILD_OPENCL
+  ((Tensor&)source).MoveToCPU();
+  target.MoveToCPU(true);
+#endif
+  const datum region_area = (datum)region_width * (datum)region_height;
+  const int width = source.width();
+  const int height = source.height();
+  const int maps = source.maps();
+  const int samples = source.samples();
+  for(int sample = 0; sample < samples; sample++) {
+    for(int map = 0; map < maps; map++) {
+      for(unsigned int y = 0; y < height; y++) {
+        const unsigned int iy = region_height * y;
+        for(unsigned int x = 0; x < width; x++) {
+          const unsigned int ix = region_width * x;
+          const datum* src = source.data_ptr_const(x, y, map, sample);
+          datum sum = *src;
+          for(unsigned int ry = 0; ry < region_height; ry++) {
+            for(unsigned int rx = 0; rx < region_width; rx++) {
+              datum* tgt = target.data_ptr(ix + rx, iy + ry, map, sample);
+              *tgt = sum * target_factor;
+            }
+          }
+        }
+      }
+    }
+    }
+
+  target.hint_ignore_content_ = false;
+}
+
 }
