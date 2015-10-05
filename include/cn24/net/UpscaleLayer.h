@@ -41,6 +41,8 @@ public:
   void FeedForward();
   void BackPropagate();
   
+  bool IsOpenCLAware() { return true; }
+  
 	inline std::string GetLayerDescription() {
 		std::ostringstream ss;
 		ss << "Upscale Layer (" << region_width_ << "x" << region_height_ << ")";
