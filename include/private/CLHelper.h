@@ -64,6 +64,8 @@ public:
   static cl_kernel k_sms;
   static cl_kernel k_im2col;
   static cl_kernel k_col2im;
+  static cl_kernel k_up;
+  static cl_kernel k_down;
 #endif
 };
   
