@@ -186,9 +186,6 @@ void DatasetInputLayer::FeedForward() {
 
     if (!testing_ && !force_no_weight && dataset_.GetMethod() == FCN) {
       // Perform loss sampling
-#ifdef BUILD_OPENCL
-      localized_error_output_->data.MoveToGPU();
-#endif
       const unsigned int block_size = 12;
 
       for (unsigned int y = 0; y < localized_error_output_->data.height(); y += block_size) {
