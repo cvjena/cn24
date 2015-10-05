@@ -13,6 +13,7 @@
 #include "ResizeLayer.h"
 #include "MaxPoolingLayer.h"
 #include "AdvancedMaxPoolingLayer.h"
+#include "InputDownSamplingLayer.h"
 #include "NonLinearityLayer.h"
 #include "UpscaleLayer.h"
 #include "SpatialPriorLayer.h"
@@ -100,6 +101,14 @@ ConfigurableFactory::ConfigurableFactory (std::istream& file, const unsigned int
         factory *= ky;
       }
 
+      if (StartsWithIdentifier (line, "downsampling")) {
+        unsigned int kx, ky;
+        ParseKernelSizeIfPossible (line, "size", kx, ky);
+        LOGDEBUG << "Adding down-sampling layer to receptive field (" << kx << "," << ky << ")";
+        factorx *= kx;
+        factory *= ky;
+      }
+      
       if (StartsWithIdentifier (line, "amaxpooling")) {
         unsigned int kx, ky, sx, sy;
         ParseKernelSizeIfPossible (line, "size", kx, ky);
@@ -543,6 +552,19 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 				last_connection.buffer = 0;
 				last_connection.node = node;
 				last_connection.backprop = true;
+      }
+      
+      if (StartsWithIdentifier (line, "downsampling")) {
+        unsigned int kx = 1, ky = 1;
+        ParseKernelSizeIfPossible (line, "size", kx, ky);
+
+        InputDownSamplingLayer* mp = new InputDownSamplingLayer (kx, ky);
+
+        NetGraphNode* node = new NetGraphNode(mp, last_connection);
+        net.AddNode(node);
+        last_connection.buffer = 0;
+        last_connection.node = node;
+        last_connection.backprop = false;
       }
       
       if (StartsWithIdentifier (line, "amaxpooling")) {

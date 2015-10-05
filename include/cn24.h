@@ -42,6 +42,7 @@
 #include "cn24/net/ConvolutionLayer.h"
 #include "cn24/net/MaxPoolingLayer.h"
 #include "cn24/net/AdvancedMaxPoolingLayer.h"
+#include "cn24/net/InputDownSamplingLayer.h"
 #include "cn24/net/LocalResponseNormalizationLayer.h"
 #include "cn24/net/UpscaleLayer.h"
 #include "cn24/net/LossFunctionLayer.h"
