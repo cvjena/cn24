@@ -104,7 +104,8 @@ public:
    */
   void Resize (const std::size_t samples, const std::size_t width = 1,
                const std::size_t height = 1, const std::size_t maps = 1,
-               datum* const preallocated_memory = nullptr, bool mmapped = false );
+               datum* const preallocated_memory = nullptr, bool mmapped = false,
+               bool dont_delete = false);
 
   /**
    * @brief Resizes the Tensor to match another Tensor's size.

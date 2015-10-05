@@ -129,13 +129,13 @@ void Tensor::Shadow ( Tensor& tensor ) {
 
 
 void Tensor::Resize ( const std::size_t samples, const std::size_t width,
-                      const std::size_t height, const std::size_t maps, datum* const preallocated_memory, bool mmapped) {
+                      const std::size_t height, const std::size_t maps, datum* const preallocated_memory, bool mmapped, bool dont_delete) {
   // Check if reshaping works
   if (preallocated_memory == nullptr && Reshape ( samples, width, height, maps ) )
     return;
 
   // Delete the old allocation if it is different from the new one
-  if(preallocated_memory != data_ptr_)
+  if(preallocated_memory != data_ptr_ && !dont_delete)
     DeleteIfPossible();
 
   // Calculate memory requirement

@@ -69,8 +69,22 @@ bool CompressedTensorStream::CopySample(const unsigned int source, const std::si
 {
   if(source < tensors_.size()) {
     CompressedTensor* const ctensor = tensors_[source];
-    ctensor->Decompress(temp_tensor_, temp_tensor_.data_ptr());
-    return Tensor::CopySample(temp_tensor_, source_sample, target, target_sample);
+    if(source_sample == 0 && ctensor->width() == target.width() && ctensor->height() == target.height() && ctensor->maps() == target.maps() && ctensor->samples() == 1) {
+      // This is a little hack for faster loading of certain datasets
+#ifdef BUILD_OPENCL
+      target.MoveToCPU();
+#endif
+      datum* old_data_ptr = temp_tensor_.data_ptr();
+      datum* direct_ptr = target.data_ptr(0, 0, 0, target_sample);
+      temp_tensor_.Resize(1, max_elements_, 1, 1, direct_ptr, false, true);
+      ctensor->Decompress(temp_tensor_, temp_tensor_.data_ptr());
+      
+      temp_tensor_.Resize(1, max_elements_, 1, 1, old_data_ptr, false, true);
+      return true;
+    } else {
+      ctensor->Decompress(temp_tensor_, temp_tensor_.data_ptr());
+      return Tensor::CopySample(temp_tensor_, source_sample, target, target_sample);
+    }
   } else
     return false;
 }
