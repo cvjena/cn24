@@ -437,6 +437,13 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 			}
 		}
 	}
+	else if (command.compare(0, 5, "tstat") == 0) {
+    unsigned int enable_tstat = 1;
+    Conv::ParseCountIfPossible(command, "enable", enable_tstat);
+    trainer.SetStatsDuringTraining(enable_tstat == 1);
+    testing_trainer.SetStatsDuringTraining(enable_tstat == 1);
+    LOGDEBUG << "Training stats enabled: " << enable_tstat;
+  }
 	else {
     LOGWARN << "Unknown command: " << command;
   }
@@ -460,5 +467,7 @@ void help() {
 			<< "  graph file=<path> {test|train}\n"
 			<< "    Write the network architecture for training/testing to a file in graphviz format\n\n"
       << "  save file=<path>\n"
-      << "    Save parameters to a file\n";
+      << "    Save parameters to a file\n\n"
+      << "  tstat enable=<1|0>\n"
+      << "    Enable statistics during training (1: yes, 0: no)\n";
 }
