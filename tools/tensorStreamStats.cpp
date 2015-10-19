@@ -46,8 +46,7 @@ int main(int argc, char* argv[]) {
     pixel_counts_weighted[clazz] = 0;
   }
   
-//  for(unsigned int sample = 0; sample < dataset->GetTrainingSamples(); sample++) {
-  for(unsigned int sample = 0; sample < 10; sample++) {
+  for(unsigned int sample = 0; sample < dataset->GetTrainingSamples(); sample++) {
     LOGINFO << "Processing sample " << sample+1 << "/" << dataset->GetTrainingSamples() << std::flush;
     dataset->GetTrainingSample(data_tensor, label_tensor, helper_tensor, weight_tensor, 0, sample);
     for(unsigned int y = 0; y < dataset->GetHeight(); y++) {
@@ -93,11 +92,25 @@ int main(int argc, char* argv[]) {
     long double actual_ratio = pixel_counts[clazz]/total_pixels;
     long double correction_ratio = 0;
     if(pixel_counts[clazz] > 0) {
-      correction_ratio = (total_classes * expected_ratio) / (actual_ratio * correction_ratio_sum);
+      correction_ratio = expected_ratio / actual_ratio;
     }
-    LOGINFO << "Class " << std::setw(30) << class_names[clazz] << " | " << std::setw(14) << static_cast<long>(pixel_counts[clazz]) << std::setw(14) << 100.0 * actual_ratio << "%" << std::setw(14) << correction_ratio;
+    LOGINFO << "Class " << std::setw(30) << class_names[clazz] << " | " << std::setw(14) << static_cast<long>(pixel_counts[clazz]) << std::setw(14) << 100.0 * actual_ratio << "%" << std::setw(14) << correction_ratio << std::setw(14) << static_cast<long>(correction_ratio * pixel_counts[clazz]);
   }
-
+  
+  // Not ignoring weights
+  LOGINFO << "Stats when not ignoring weights";
+  LOGINFO << "===========================";
+  LOGINFO << "Classes counted: " << total_classes_weighted;
+  LOGINFO << "Expected ratio: " << 100.0 * expected_ratio_weighted << "%";
+  for(unsigned int clazz = 0; clazz < dataset->GetClasses(); clazz++) {
+    long double actual_ratio = pixel_counts_weighted[clazz]/total_pixels_weighted;
+    long double correction_ratio = 0;
+    if(pixel_counts_weighted[clazz] > 0) {
+      correction_ratio = expected_ratio_weighted / actual_ratio;
+    }
+    LOGINFO << "Class " << std::setw(30) << class_names[clazz] << " | " << std::setw(14) << static_cast<long>(pixel_counts_weighted[clazz]) << std::setw(14) << 100.0 * actual_ratio << "%" << std::setw(14) << correction_ratio << std::setw(14) << static_cast<long>(correction_ratio * pixel_counts_weighted[clazz]);
+  }
+  
 
   LOGINFO << "DONE!";
   LOGEND;
