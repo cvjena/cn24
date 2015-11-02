@@ -24,8 +24,20 @@
 #include "../util/Log.h"
 
 namespace Conv {
+  
+class Factory {
+public: 
+  virtual int AddLayers(Net& net, Connection data_layer_connection, const unsigned int output_classes, bool add_loss_layer = false, std::ostream& graph_output = std::cout) = 0;
+  virtual bool AddLayers(NetGraph& graph, NetGraphConnection data_layer_connection, const unsigned int output_classes, bool add_loss_layer = false) = 0;
+  virtual int patchsizex() = 0;
+  virtual int patchsizey() = 0;
+  virtual Layer* CreateLossLayer(const unsigned int output_classes, const datum loss_weight = 1.0) = 0;
+  virtual void InitOptimalSettings() = 0;
+  virtual TrainerSettings optimal_settings() const = 0;
+  virtual Method method() const = 0;
+};
 
-class ConfigurableFactory {
+class ConfigurableFactory : public Factory {
 public:
   /**
 	* @brief Builds a ConfigurableFactory using an input stream and a random seed
