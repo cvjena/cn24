@@ -69,7 +69,7 @@ int main (int argc, char* argv[]) {
   Conv::Factory* factory;
   
   // Check for hardcoded filenames
-  if(net_config_fname.compare(0, 9, "skiplayer") == 0) {
+  if(net_config_fname.compare(0, 10, ":skiplayer") == 0) {
     factory = new Conv::SkipLayerNetworkFactory();
   } else {
     // Open network and dataset configuration files
