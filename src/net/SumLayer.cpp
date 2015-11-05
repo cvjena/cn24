@@ -7,6 +7,7 @@
 
 #include <cstring>
 
+#include "TensorMath.h"
 #include "SumLayer.h"
 
 namespace Conv {
@@ -101,11 +102,14 @@ bool SumLayer::Connect (const std::vector< CombinedTensor* >& inputs,
 }
 
 void SumLayer::FeedForward() {
-  FATAL("NIY");
+  TensorMath::ADD(input_a_->data, input_b_->data, output_->data);
 }
 
 void SumLayer::BackPropagate() {
-  FATAL("NIY");
+  for(unsigned int sample = 0; sample < samples_; sample++) {
+    Tensor::CopySample(output_->delta, sample, input_a_->delta, sample);
+    Tensor::CopySample(output_->delta, sample, input_b_->delta, sample);
+  }
 }
 
 }
