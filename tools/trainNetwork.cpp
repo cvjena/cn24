@@ -368,8 +368,8 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 		}
 	}
 	else if (command.compare(0, 5, "wstat") == 0) {
-    std::string node_uid = 0;
-		Conv::ParseStringIfPossible(command, "node", node_uid);
+    std::string node_uid;
+		Conv::ParseStringParamIfPossible(command, "node", node_uid);
 		for (Conv::NetGraphNode* node : graph.GetNodes()) {
 			if (node->unique_name.compare(node_uid) == 0) {
 				unsigned int p = 0;
@@ -384,8 +384,8 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 		}
 	}
 	else if (command.compare(0, 5, "dstat") == 0) {
-    std::string node_uid = 0;
-		Conv::ParseStringIfPossible(command, "node", node_uid);
+    std::string node_uid;
+		Conv::ParseStringParamIfPossible(command, "node", node_uid);
 		for (Conv::NetGraphNode* node : graph.GetNodes()) {
 			if (node->unique_name.compare(node_uid) == 0) {
 				unsigned int p = 0;
