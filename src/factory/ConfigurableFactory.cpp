@@ -44,6 +44,9 @@ ConfigurableFactory::ConfigurableFactory (std::istream& file, const unsigned int
   while (! file_.eof()) {
     std::string line;
     std::getline (file_, line);
+    if (line.compare (0, 1, "#") == 0) {
+        continue;
+    }    
 
     std::string method;
     ParseStringParamIfPossible (line, "method", method);
@@ -177,6 +180,9 @@ int ConfigurableFactory::AddLayers (Net& net, Connection data_layer_connection, 
   while (! file_.eof()) {
     std::string line;
     std::getline (file_, line);
+    if (line.compare (0, 1, "#") == 0) {
+        continue;
+    }    
 
     /*
      * PREPROCESSING
@@ -420,7 +426,11 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
   while (! file_.eof()) {
     std::string line;
     std::getline (file_, line);
-		datum loss_weight = 1.0;
+    if (line.compare (0, 1, "#") == 0) {
+        continue;
+    }    
+
+    datum loss_weight = 1.0;
 
     /*
      * PREPROCESSING
@@ -679,6 +689,9 @@ void ConfigurableFactory::InitOptimalSettings() {
   while (!file_.eof()) {
     std::string line;
     std::getline (file_, line);
+    if (line.compare (0, 1, "#") == 0) {
+        continue;
+    }    
 
     ParseDatumIfPossible (line, "l1", optimal_settings_.l1_weight);
     ParseDatumIfPossible (line, "l2", optimal_settings_.l2_weight);
