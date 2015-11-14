@@ -27,42 +27,43 @@ namespace Conv {
 
 bool SkipLayerNetworkFactory::AddLayers(NetGraph& graph, NetGraphConnection data_layer_connection, const unsigned int output_classes, bool add_loss_layer)
 {
-
+  return false;
 }
 
 int SkipLayerNetworkFactory::AddLayers(Net& net, Connection data_layer_connection, const unsigned int output_classes, bool add_loss_layer, std::ostream& graph_output)
 {
-
+  return 0;
 }
 
 Layer* SkipLayerNetworkFactory::CreateLossLayer(const unsigned int output_classes, const datum loss_weight)
 {
-
+  return nullptr;
 }
 
 void SkipLayerNetworkFactory::InitOptimalSettings()
 {
-
+  
 }
 
 Method SkipLayerNetworkFactory::method() const
 {
-
+  return Method::FCN;
 }
 
 TrainerSettings SkipLayerNetworkFactory::optimal_settings() const
 {
-
+  TrainerSettings s;
+  return s;
 }
 
 int SkipLayerNetworkFactory::patchsizex()
 {
-
+  return 0;
 }
 
 int SkipLayerNetworkFactory::patchsizey()
 {
-
+  return 0;
 }
 
 }
