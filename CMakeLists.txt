@@ -204,9 +204,9 @@ endif()
 set(CN24_BUILD_OPENCL OFF CACHE BOOL "Build CN24 with OpenCL support")
 if(CN24_BUILD_OPENCL)
   find_library(OPENCL_ICDL NAMES OpenCL libOpenCL PATHS $ENV{CUDA_PATH}/lib/x64
-    $ENV{INTELOCLSDKROOT}/lib/x64)
+    $ENV{INTELOCLSDKROOT}/lib/x64 $ENV{AMDAPPSDKROOT}/lib/x86_64)
   find_path(OPENCL_INCLUDE_DIR CL/cl.h cl.h PATHS $ENV{CUDA_PATH}/include
-    $ENV{INTELOCLSDKROOT}/include)
+    $ENV{INTELOCLSDKROOT}/include $ENV{AMDAPPSDKROOT}/include)
   message(STATUS "Using OpenCL library: ${OPENCL_ICDL}")
   message(STATUS "Using OpenCL include directory: ${OPENCL_INCLUDE_DIR}")
   include_directories(${OPENCL_INCLUDE_DIR})
