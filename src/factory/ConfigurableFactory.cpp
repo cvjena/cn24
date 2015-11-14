@@ -18,6 +18,7 @@
 #include "UpscaleLayer.h"
 #include "SpatialPriorLayer.h"
 #include "ConcatenationLayer.h"
+#include "SumLayer.h"
 #include "ConfigParsing.h"
 #include "NetGraph.h"
 
@@ -125,6 +126,9 @@ ConfigurableFactory::ConfigurableFactory (std::istream& file, const unsigned int
       }
     }
   }
+  
+  LOGDEBUG << "To achieve this receptive field size manually, start net config with manual rfx=" << receptive_field_x_
+    << " rfy=" << receptive_field_y_ << " factorx=" << factorx << " factory=" << factory;
 
   if (method_ == PATCH) {
     receptive_field_x_ += factorx;
@@ -488,11 +492,11 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
     }
     
     if (line.compare(0, 4, "popa") == 0) {
-      last_connection = stack_a[stack_a_pos];
+      last_connection = stack_a[stack_a_pos--];
     }
     
     if (line.compare(0, 4, "popb") == 0) {
-      last_connection = stack_b[stack_b_pos];
+      last_connection = stack_b[stack_b_pos--];
     }
     
     /*
@@ -666,6 +670,46 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 				last_connection.node = node;
 				last_connection.backprop = true;
 			}
+			
+      if (StartsWithIdentifier(line, "sum")){
+        std::string stack_name;
+        NetGraphConnection* stack_ptr;
+        int stack_pos;
+        ParseStringParamIfPossible(line, "stack", stack_name);
+        if (stack_name.compare(0, 1, "b") == 0){
+          stack_ptr = stack_b;
+          stack_pos = stack_b_pos;
+        }
+        else {
+          stack_ptr = stack_a;
+          stack_pos = stack_a_pos;
+        }
+        SumLayer* l = new SumLayer();
+        NetGraphNode* node = new NetGraphNode(l);
+        for (int p = stack_pos; p >= 0; p--) {
+          node->input_connections.push_back(stack_ptr[p]);
+        }
+        net.AddNode(node);
+        last_connection.buffer = 0;
+        last_connection.node = node;
+        last_connection.backprop = true;
+      }
+      
+      if (StartsWithIdentifier(line, "upscale")){
+        unsigned int ufx = 1, ufy = 1;
+        unsigned int o = 0;
+        ParseKernelSizeIfPossible(line, "factor", ufx, ufy);
+        ParseCountIfPossible(line, "is_output", o);
+        UpscaleLayer* l = new UpscaleLayer(ufx, ufy);
+        NetGraphNode* node = new NetGraphNode(l, last_connection);
+        node->is_output = (o == 1);
+        net.AddNode(node);
+        last_connection.buffer = 0;
+        last_connection.node = node;
+        last_connection.backprop = true; 
+        is_output = (o == 1);
+        already_upscaled = true;
+      }
 
 			if (is_output && !already_upscaled && method_ == FCN && (factorx != 1 || factory != 1)) {
 				UpscaleLayer* l = new UpscaleLayer(factorx, factory);

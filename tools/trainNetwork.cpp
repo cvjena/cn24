@@ -66,16 +66,26 @@ int main (int argc, char* argv[]) {
   std::string dataset_config_fname (argv[1]);
 
   Conv::System::Init(requested_log_level);
+  Conv::Factory* factory;
+  
+  // Check for hardcoded filenames
+  if(net_config_fname.compare(0, 10, ":skiplayer") == 0) {
+    factory = new Conv::SkipLayerNetworkFactory();
+  } else {
+    // Open network and dataset configuration files
+    std::ifstream* net_config_file = new std::ifstream(net_config_fname, std::ios::in);
+    if (!net_config_file->good()) {
+      FATAL ("Cannot open net configuration file!");
+    }
 
-  // Open network and dataset configuration files
-  std::ifstream net_config_file (net_config_fname, std::ios::in);
-  std::ifstream dataset_config_file (dataset_config_fname, std::ios::in);
-
-  if (!net_config_file.good()) {
-    FATAL ("Cannot open net configuration file!");
+    net_config_fname = net_config_fname.substr (net_config_fname.rfind ("/") + 1);
+    
+    // Parse network configuration file
+    factory = new Conv::ConfigurableFactory (*net_config_file, 8347734, true);
   }
 
-  net_config_fname = net_config_fname.substr (net_config_fname.rfind ("/") + 1);
+  // Open dataset configuration file
+  std::ifstream dataset_config_file (dataset_config_fname, std::ios::in);
 
   if (!dataset_config_file.good()) {
     FATAL ("Cannot open dataset configuration file!");
@@ -83,8 +93,6 @@ int main (int argc, char* argv[]) {
 
   dataset_config_fname = dataset_config_fname.substr (net_config_fname.rfind ("/") + 1);
 
-  // Parse network configuration file
-  Conv::ConfigurableFactory* factory = new Conv::ConfigurableFactory (net_config_file, 8347734, true);
   factory->InitOptimalSettings();
   
   // Extract important settings from parsed configuration
@@ -174,52 +182,7 @@ int main (int argc, char* argv[]) {
     Conv::Trainer* testing_trainer;
 
     if (patchwise_training) {
-      // This overrides the batch size for testing in this scope
-      unsigned int BATCHSIZE = 1;
-      
-      // Assemble testing net
-      Conv::TensorStreamDataset* testing_dataset = Conv::TensorStreamDataset::CreateFromConfiguration (dataset_config_file, false, Conv::LOAD_TESTING_ONLY);
-      testing_graph = new Conv::NetGraph();
-
-      int tdata_layer_id = 0;
-
-      Conv::DatasetInputLayer* tdata_layer = nullptr;
-      tdata_layer = new Conv::DatasetInputLayer (*testing_dataset, BATCHSIZE, 1.0, 983923);
-			Conv::NetGraphNode* tinput_node = new Conv::NetGraphNode(tdata_layer);
-			tinput_node->is_input = true;
-			testing_graph->AddNode(tinput_node);
-
-      Conv::ConfigurableFactory* tfactory = new Conv::ConfigurableFactory (net_config_file, 8347734);
-			bool testing_completeness = tfactory->AddLayers(*testing_graph, Conv::NetGraphConnection(tinput_node), CLASSES, true);
-			LOGDEBUG << "Testing graph complete: " << testing_completeness;
-
-			if(!completeness)
-				FATAL("Graph completeness test failed after factory run!");
-
-			addStatLayers(*testing_graph, tinput_node, testing_dataset);
-			
-			if(!completeness)
-				FATAL("Graph completeness test failed after adding stat layer!");
-
-			testing_graph->Initialize();
-
-      // Shadow training net weights
-      std::vector<Conv::CombinedTensor*> training_params;
-      std::vector<Conv::CombinedTensor*> testing_params;
-      graph.GetParameters (training_params);
-      testing_graph->GetParameters (testing_params);
-
-      for (unsigned int p = 0; p < training_params.size(); p++) {
-        Conv::CombinedTensor* training_ct = training_params[p];
-        Conv::CombinedTensor* testing_ct = testing_params[p];
-        testing_ct->data.Shadow (training_ct->data);
-        testing_ct->delta.Shadow (training_ct->delta);
-      }
-
-      Conv::TrainerSettings settings = tfactory->optimal_settings();
-      settings.pbatchsize = 1;
-      settings.sbatchsize = 1;
-      testing_trainer = new Conv::Trainer (*testing_graph, settings);
+      FATAL("Not supported with skip layers!");
     } else {
       testing_graph = &graph;
       testing_trainer = &trainer;
@@ -405,8 +368,8 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 		}
 	}
 	else if (command.compare(0, 5, "wstat") == 0) {
-    std::string node_uid = 0;
-		Conv::ParseStringIfPossible(command, "node", node_uid);
+    std::string node_uid;
+		Conv::ParseStringParamIfPossible(command, "node", node_uid);
 		for (Conv::NetGraphNode* node : graph.GetNodes()) {
 			if (node->unique_name.compare(node_uid) == 0) {
 				unsigned int p = 0;
@@ -421,8 +384,8 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 		}
 	}
 	else if (command.compare(0, 5, "dstat") == 0) {
-    std::string node_uid = 0;
-		Conv::ParseStringIfPossible(command, "node", node_uid);
+    std::string node_uid;
+		Conv::ParseStringParamIfPossible(command, "node", node_uid);
 		for (Conv::NetGraphNode* node : graph.GetNodes()) {
 			if (node->unique_name.compare(node_uid) == 0) {
 				unsigned int p = 0;

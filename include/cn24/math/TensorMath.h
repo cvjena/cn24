@@ -114,6 +114,11 @@ public:
     const int region_width,
     const int region_height,
     const datum target_factor);
+  
+  static void ADD(
+    const Tensor& source_a,
+    const Tensor& source_b,
+    Tensor& target);
 };
   
 }

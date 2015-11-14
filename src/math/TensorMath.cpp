@@ -600,4 +600,31 @@ void TensorMath::UP(const Tensor& source, Tensor& target, const int region_width
   target.hint_ignore_content_ = false;
 }
 
+void TensorMath::ADD(const Tensor& source_a, const Tensor& source_b, Tensor& target)
+{
+#ifdef BUILD_OPENCL
+  ((Tensor&)source_a).MoveToCPU();
+  ((Tensor&)source_b).MoveToCPU();
+  target.MoveToCPU(true);
+#endif
+  if((source_a.samples() != source_b.samples())
+    || (source_b.samples() != target.samples())
+    || (source_a.elements() != source_b.elements())
+    || (source_b.elements() != target.elements())) {
+    FATAL("Dimensions don't match!");
+  }
+  
+  #pragma omp parallel for default(shared)
+  for(unsigned int element = 0; element < source_a.elements(); element++) {
+    const datum* source_a_ptr = &(source_a.data_ptr_const()[element]);
+    const datum* source_b_ptr = &(source_b.data_ptr_const()[element]);
+    datum* target_ptr = &(target.data_ptr()[element]);
+    
+    *target_ptr = *source_a_ptr + *source_b_ptr;
+  }
+  
+  target.hint_ignore_content_ = false;
+}
+
+
 }
