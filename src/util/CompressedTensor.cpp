@@ -171,13 +171,17 @@ void CompressedTensor::Deserialize ( std::istream& input , bool head_only, bool 
 
 void CompressedTensor::DeleteIfPossible() {
   if ( compressed_data_ptr_ != nullptr ) {
+#ifdef BUILD_POSIX
     if(mmapped_) {
       munmap((void*)original_mmap_, compressed_length_);
       original_mmap_ = nullptr;
       mmapped_ = false;
     } else {
+#endif
       delete[] compressed_data_ptr_;
+#ifdef BUILD_POSIX
     }
+#endif
 
     compressed_data_ptr_ = nullptr;
   }

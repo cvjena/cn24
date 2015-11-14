@@ -394,17 +394,21 @@ bool Tensor::CopyMap ( const Tensor& source, const std::size_t source_sample,
 void Tensor::DeleteIfPossible() {
   if ( data_ptr_ != nullptr ) {
     if ( !is_shadow_ ) {
+#ifdef BUILD_POSIX
       if(mmapped_) {
         munmap((void*)original_mmap_, (elements_ * sizeof(datum)) / sizeof(char));
         original_mmap_ = nullptr;
         mmapped_ = false;
       } else {
+#endif
 #ifdef BLAS_MKL
         mkl_free ( data_ptr_ );
 #else
         delete[] data_ptr_;
 #endif
+#ifdef BUILD_POSIX
       }
+#endif
 #ifdef BUILD_OPENCL
       if ( cl_data_ptr_ != 0 ) {
         clReleaseMemObject ( (cl_mem)cl_data_ptr_ );
