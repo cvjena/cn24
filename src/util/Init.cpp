@@ -34,6 +34,7 @@
 #endif
 
 #include "TensorViewer.h"
+#include "StatAggregator.h"
 
 namespace Conv {
 
@@ -71,6 +72,7 @@ cl_kernel CLHelper::k_down = 0;
 #endif
 
 TensorViewer* System::viewer = nullptr;
+StatAggregator* System::stat_aggregator = nullptr;
 int System::log_level = 0;
 
 #define STRING_SHA1 GIT_SHA1
@@ -127,7 +129,12 @@ void System::Init(int requested_log_level) {
     LOGWARN << "Could not initialize GTK!";
   }
 #endif
+
+  // Initialize global TensorViewer
   viewer = new TensorViewer();
+  
+  // Initialize global StatAggregator
+  stat_aggregator = new StatAggregator();
 }
 
 void System::GetExecutablePath(std::string& binary_path) {

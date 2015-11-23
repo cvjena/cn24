@@ -30,6 +30,8 @@
 #include "cn24/util/Init.h"
 #include "cn24/util/GradientTester.h"
 #include "cn24/util/StatAggregator.h"
+#include "cn24/util/StatSink.h"
+#include "cn24/util/ConsoleStatSink.h"
 
 #include "cn24/math/TensorMath.h"
 

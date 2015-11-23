@@ -6,7 +6,7 @@
  */  
 /**
  * @file StatAggregator.h
- * @brief Collects data from varios sources and aggregates them into a statistic
+ * @brief Collects data from various sources and aggregates them into a statistic
  *
  * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
@@ -18,6 +18,7 @@
 #include <vector>
 #include <string>
 #include <chrono>
+#include <climits>
 
 #include "Config.h"
 
@@ -31,6 +32,7 @@ struct HardcodedStats {
   double seconds_elapsed = 0.0;
   unsigned long iterations = 0UL;
   unsigned long weights = 0UL;
+  unsigned long epoch = 0UL;
   
   void Reset() {
     seconds_elapsed = 0.0;
@@ -46,17 +48,27 @@ struct Stat {
 
 struct StatDescriptor {
   bool nullable = false;
+  std::string description = "";
+  std::string unit = "";
   
   // Lambdas for processing
   std::function<void(Stat&)> init_function = [] (Stat& stat) {};
-  std::function<void(Stat&)> update_function = [] (Stat& stat) {};
-  std::function<Stat(Stat&, HardcodedStats&)> output_function =
-    [] (Stat& stat, HardcodedStats& hc_stats) -> Stat {return stat;};
+  std::function<void(Stat&,double)> update_function = [] (Stat& stat, double user_value) {};
+  std::function<Stat(HardcodedStats&, Stat&)> output_function =
+    [] (HardcodedStats& hc_stats, Stat& stat) -> Stat {return stat;};
+    
+  // For easy access
+  unsigned int stat_id = UINT_MAX;
 };
 
 class StatAggregator {
 public:
-  void Update(unsigned int stat_id);
+  unsigned int RegisterStat(StatDescriptor* stat_descriptor);
+  unsigned int RegisterSink(StatSink* stat_sink);
+  void Initialize();
+  
+  void Update(unsigned int stat_id, double user_value);
+  void Generate();
   
   void StartRecording();
   void StopRecording();
@@ -64,7 +76,8 @@ public:
   
 private:
   // State
-  bool is_recording_ = false;
+  enum StatAggregatorState {
+    STOPPED, RECORDING, INIT } state_ = INIT;
   std::chrono::time_point<std::chrono::system_clock> start_time_;
   
   // Stats
@@ -74,6 +87,10 @@ private:
   // Descriptors
   std::vector<StatDescriptor*> stat_descriptors_;
   unsigned int stat_descriptor_count_ = 0;
+  
+  // Sinks
+  std::vector<StatSink*> stat_sinks_;
+  unsigned int stat_sink_count_ = 0;
 };  
 
 }
