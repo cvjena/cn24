@@ -64,7 +64,7 @@ int main (int argc, char* argv[]) {
   fps.unit = "frames/s";
   fps.init_function = [] (Conv::Stat& stat) {
     stat.is_null = false;
-    stat.value = 0.0d;
+    stat.value = 0.0;
   };
   fps.output_function = [] (Conv::HardcodedStats& hc_stats, Conv::Stat& stat) {
     Conv::Stat return_stat = stat;
