@@ -19,7 +19,7 @@ install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then mkdir -p cl12/CL; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cd cl12/CL; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then wget https://www.khronos.org/registry/cl/api/1.2/cl.h; fi; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then wget https://www.khronos.org/registry/cl/api/1.2/cl.hpp; fi; fi
+#  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then wget https://www.khronos.org/registry/cl/api/1.2/cl.hpp; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then wget https://www.khronos.org/registry/cl/api/1.2/cl_d3d10.h; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then wget https://www.khronos.org/registry/cl/api/1.2/cl_d3d11.h; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then wget https://www.khronos.org/registry/cl/api/1.2/cl_dx9_media_sharing.h; fi; fi
