@@ -24,8 +24,10 @@
 
 namespace Conv
 {
-// Forward declaration
+// Forward declarations
 class StatSink;
+class Trainer;
+class NetStatus;
 
 // Hardcoded stats
 struct HardcodedStats {
@@ -33,6 +35,7 @@ struct HardcodedStats {
   unsigned long iterations = 0UL;
   unsigned long weights = 0UL;
   unsigned long epoch = 0UL;
+  bool is_training = false;
   
   void Reset() {
     seconds_elapsed = 0.0;
@@ -62,6 +65,8 @@ struct StatDescriptor {
 };
 
 class StatAggregator {
+  friend class Trainer;
+  friend class NetStatus;
 public:
   unsigned int RegisterStat(StatDescriptor* stat_descriptor);
   unsigned int RegisterSink(StatSink* stat_sink);
