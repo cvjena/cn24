@@ -66,6 +66,8 @@ int main (int argc, char* argv[]) {
   std::string dataset_config_fname (argv[1]);
 
   Conv::System::Init(requested_log_level);
+  Conv::System::stat_aggregator->RegisterSink(new Conv::ConsoleStatSink());
+  
   Conv::Factory* factory;
   
   // Check for hardcoded filenames
@@ -188,6 +190,7 @@ int main (int argc, char* argv[]) {
       testing_trainer = &trainer;
     }
 
+    Conv::System::stat_aggregator->Initialize();
     LOGINFO << "Current training settings: " << factory->optimal_settings();
 
     if (FROM_SCRIPT) {
@@ -248,6 +251,8 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
   if (command.compare ("q") == 0 || command.compare ("quit") == 0) {
     return false;
   } else if (command.compare (0, 5, "train") == 0) {
+    Conv::System::stat_aggregator->StartRecording();
+    
     unsigned int epochs = 1;
     unsigned int layerview = 0;
     unsigned int no_snapshots = 0;
@@ -259,7 +264,14 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
     testing_trainer.SetEpoch (trainer.epoch());
     graph.SetLayerViewEnabled (false);
     LOGINFO << "Training complete.";
+    
+    Conv::System::stat_aggregator->StopRecording();
+    if(no_snapshots == 1)
+      Conv::System::stat_aggregator->Generate();
+    Conv::System::stat_aggregator->Reset();
   } else if (command.compare (0, 4, "test") == 0) {
+    Conv::System::stat_aggregator->StartRecording();
+    
     unsigned int layerview = 0;
     Conv::ParseCountIfPossible (command, "view", layerview);
     testing_graph.SetLayerViewEnabled (layerview == 1);
@@ -267,6 +279,9 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
     testing_trainer.Test();
     testing_graph.SetLayerViewEnabled (false);
     LOGINFO << "Testing complete.";
+    
+    Conv::System::stat_aggregator->Generate();
+    Conv::System::stat_aggregator->Reset();
   } else if (command.compare (0, 4, "load") == 0) {
     std::string param_file_name;
     unsigned int last_layer = 0;
