@@ -98,15 +98,18 @@ Trainer::Trainer(Conv::NetGraph& graph, TrainerSettings settings) :
   InitializeStats();
 }
 
-void Trainer::Train (unsigned int epochs) {
+void Trainer::Train (unsigned int epochs, bool do_snapshots) {
   // Update hardcoded stats
   System::stat_aggregator->hardcoded_stats_.weights = weight_count_;
 
   graph_.SetIsTesting(false);
   graph_.SetStatLayersEnabled(settings_.stats_during_training);
   
-  for (unsigned int e = 0; e < epochs; e++)
+  for (unsigned int e = 0; e < epochs; e++) {
     Epoch();
+    if(do_snapshots)
+      System::stat_aggregator->Snapshot();
+  }
 
   graph_.SetStatLayersEnabled(true);
 }

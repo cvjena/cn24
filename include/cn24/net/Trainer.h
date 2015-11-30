@@ -63,7 +63,7 @@ public:
 	*
 	* @param epochs The number of epochs to train
 	*/
-  void Train (unsigned int epochs);
+  void Train (unsigned int epochs, bool do_snapshot);
 
   /**
 	* @brief Test the net by running every test sample through the net
