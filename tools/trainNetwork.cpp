@@ -250,10 +250,12 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
   } else if (command.compare (0, 5, "train") == 0) {
     unsigned int epochs = 1;
     unsigned int layerview = 0;
+    unsigned int no_snapshots = 0;
     Conv::ParseCountIfPossible (command, "view", layerview);
     graph.SetLayerViewEnabled (layerview == 1);
     Conv::ParseCountIfPossible (command, "epochs", epochs);
-    trainer.Train (epochs);
+    Conv::ParseCountIfPossible(command, "no_snapshots", no_snapshots);
+    trainer.Train (epochs, no_snapshots != 1);
     testing_trainer.SetEpoch (trainer.epoch());
     graph.SetLayerViewEnabled (false);
     LOGINFO << "Training complete.";
