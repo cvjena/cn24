@@ -39,7 +39,8 @@ public:
   virtual void Process(HardcodedStats& hardcoded_stats, std::vector<Stat*>& stats) {
     LOGDEBUG << "Stats for epoch " << hardcoded_stats.epoch << ":";
     for(unsigned int s = 0; s < stat_descriptors_.size(); s++) {
-      LOGDEBUG << std::setw(24) << stat_descriptors_[s]->description << ": " << std::setw(24) << stats[s]->value << " " << stat_descriptors_[s]->unit;
+      if(!stats[s]->is_null)
+        LOGDEBUG << std::setw(24) << stat_descriptors_[s]->description << ": " << std::setw(24) << stats[s]->value << " " << stat_descriptors_[s]->unit;
     }
   }
   
