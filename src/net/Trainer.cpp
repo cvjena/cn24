@@ -29,8 +29,8 @@ void Trainer::InitializeStats() {
 
     stat_aggloss_ = new StatDescriptor;
     stat_aggloss_->nullable = true;
-    stat_aggloss_->description = "Aggregate Loss";
-    stat_aggloss_->unit = "";
+    stat_aggloss_->description = "Average Aggregate Loss";
+    stat_aggloss_->unit = "1/pixel";
     stat_aggloss_->init_function =
       [](Stat& stat) {stat.is_null = true; stat.value = 0.0;};
     stat_aggloss_->update_function =
@@ -136,6 +136,7 @@ void Trainer::Test() {
   auto t_begin = std::chrono::system_clock::now();
 
   for (unsigned int i = 0; i < iterations; i++) {
+    aggregate_loss = 0.0;
     graph_.FeedForward();
     for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
       LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
@@ -143,6 +144,14 @@ void Trainer::Test() {
 			loss_sums[n] += loss;
 			aggregate_loss += loss;
 		}
+    // Batch/Iteration done
+    if (System::stat_aggregator->state_ == StatAggregator::RECORDING)
+      System::stat_aggregator->hardcoded_stats_.iterations++;
+
+    // Update aggregate loss stat
+    System::stat_aggregator->Update(stat_aggloss_->stat_id, aggregate_loss
+      / sample_count_ );
+
 	}
 
   auto t_end = std::chrono::system_clock::now();
@@ -159,7 +168,6 @@ void Trainer::Test() {
 		LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
 		LOGINFO << "Testing (Epoch " << epoch_ << ", node " << n << ") " << graph_.GetLossNodes()[n]->layer->GetLayerDescription() <<  " lps: " << loss_sums[n] / (datum)(iterations * sample_count_);
 	}
-	LOGINFO << "Testing (Epoch " << epoch_ << ") aggregate lps: " << aggregate_loss / (datum)(iterations * sample_count_);
 
 	for (unsigned int n = 0; n < graph_.GetStatNodes().size(); n++) {
 		StatLayer* stat_layer = dynamic_cast<StatLayer*>(graph_.GetStatNodes()[n]->layer);
@@ -178,6 +186,9 @@ void Trainer::Test() {
 }
 
 void Trainer::Epoch() {
+  // Update hardcoded epoch stat
+  System::stat_aggregator->hardcoded_stats_.epoch = epoch_;
+
 	datum aggregate_loss = 0.0;
 	datum* loss_sums = new datum[graph_.GetLossNodes().size()];
 	for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++)
@@ -212,6 +223,7 @@ void Trainer::Epoch() {
       tenth = 10 * i / iterations;
       std::cout << tenth << "0%" << std::flush;
     }
+    aggregate_loss = 0.0;
 
     // Reset gradients
     for (unsigned int np = 0; np < accumulated_gradients_.size(); np++)
@@ -250,13 +262,20 @@ void Trainer::Epoch() {
         }
       }
     }
-
     // Calculate annealed learning rate
     const datum lr =
       CalculateLR (epoch_ * iterations + i);
 
     // Apply gradients with new learning rate
     ApplyGradients (lr);
+
+    // Batch/Iteration done
+    if (System::stat_aggregator->state_ == StatAggregator::RECORDING)
+      System::stat_aggregator->hardcoded_stats_.iterations++;
+
+    // Update aggregate loss stat
+    System::stat_aggregator->Update(stat_aggloss_->stat_id, aggregate_loss
+      / (first_training_layer_->GetLossSamplingProbability() * sample_count_ * settings_.sbatchsize));
   }
 
   auto t_end = std::chrono::system_clock::now();
@@ -283,7 +302,6 @@ void Trainer::Epoch() {
 		LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
 		LOGINFO << "Training (Epoch " << epoch_ << ", node " << n << ") " << graph_.GetLossNodes()[n]->layer->GetLayerDescription() <<  " lps: " << loss_sums[n] / (datum)(iterations * sample_count_ * settings_.sbatchsize * first_training_layer_->GetLossSamplingProbability());
 	}
-	LOGINFO << "Training (Epoch " << epoch_ << ") aggregate lps: " << aggregate_loss / (datum)(iterations * sample_count_ * settings_.sbatchsize * first_training_layer_->GetLossSamplingProbability());
 
   if(settings_.stats_during_training) {
     for (unsigned int n = 0; n < graph_.GetStatNodes().size(); n++) {
