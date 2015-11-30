@@ -133,6 +133,10 @@ private:
   // Global state
   static bool stats_are_initialized_;
   static StatDescriptor* stat_aggloss_;
+  static StatDescriptor* stat_qp_caseA_;
+  static StatDescriptor* stat_qp_caseB_;
+  static StatDescriptor* stat_qp_caseC_;
+  static StatDescriptor* stat_qp_caseM_;
 };
 
 

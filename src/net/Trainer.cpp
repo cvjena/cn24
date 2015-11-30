@@ -22,6 +22,10 @@ namespace Conv {
 
 bool Trainer::stats_are_initialized_ = false;
 StatDescriptor* Trainer::stat_aggloss_ = nullptr;
+StatDescriptor* Trainer::stat_qp_caseA_ = nullptr;
+StatDescriptor* Trainer::stat_qp_caseB_ = nullptr;
+StatDescriptor* Trainer::stat_qp_caseC_ = nullptr;
+StatDescriptor* Trainer::stat_qp_caseM_ = nullptr;
 
 void Trainer::InitializeStats() {
   // Only initialize stats once
@@ -37,18 +41,105 @@ void Trainer::InitializeStats() {
       [](Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
     stat_aggloss_->output_function =
       [](HardcodedStats& hc_stats, Stat& stat) -> Stat {
-        Stat return_stat; return_stat.is_null = true;
-        if (hc_stats.iterations > 0) {
-          double d_iterations = (double)hc_stats.iterations;
-          return_stat.value = stat.value / d_iterations;
-          return_stat.is_null = false;
-        }
-        return return_stat;
-      };
-
+      Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0) {
+        double d_iterations = (double)hc_stats.iterations;
+        return_stat.value = stat.value / d_iterations;
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
+      
+    stat_qp_caseA_ = new StatDescriptor;
+    stat_qp_caseA_->nullable = true;
+    stat_qp_caseA_->description = "QuickProp Case A Percentage";
+    stat_qp_caseA_->unit = "%";
+    stat_qp_caseA_->init_function =
+      [](Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+    stat_qp_caseA_->update_function =
+      [](Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+    stat_qp_caseA_->output_function = 
+      [](HardcodedStats& hc_stats, Stat& stat) -> Stat {
+      Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0 && hc_stats.weights > 0 && !stat.is_null) {
+        double d_iterations = (double)hc_stats.iterations;
+        double d_weights = (double)hc_stats.weights;
+        return_stat.value = 100.0 * stat.value / (d_iterations * d_weights);
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
+    
+    stat_qp_caseB_ = new StatDescriptor;
+    stat_qp_caseB_->nullable = true;
+    stat_qp_caseB_->description = "QuickProp Case B Percentage";
+    stat_qp_caseB_->unit = "%";
+    stat_qp_caseB_->init_function =
+      [](Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+    stat_qp_caseB_->update_function =
+      [](Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+    stat_qp_caseB_->output_function = 
+      [](HardcodedStats& hc_stats, Stat& stat) -> Stat {
+      Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0 && hc_stats.weights > 0 && !stat.is_null) {
+        double d_iterations = (double)hc_stats.iterations;
+        double d_weights = (double)hc_stats.weights;
+        return_stat.value = 100.0 * stat.value / (d_iterations * d_weights);
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
+    
+    stat_qp_caseC_ = new StatDescriptor;
+    stat_qp_caseC_->nullable = true;
+    stat_qp_caseC_->description = "QuickProp Case C Percentage";
+    stat_qp_caseC_->unit = "%";
+    stat_qp_caseC_->init_function =
+      [](Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+    stat_qp_caseC_->update_function =
+      [](Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+    stat_qp_caseC_->output_function = 
+      [](HardcodedStats& hc_stats, Stat& stat) -> Stat {
+      Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0 && hc_stats.weights > 0 && !stat.is_null) {
+        double d_iterations = (double)hc_stats.iterations;
+        double d_weights = (double)hc_stats.weights;
+        return_stat.value = 100.0 * stat.value / (d_iterations * d_weights);
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
+    
+    stat_qp_caseM_ = new StatDescriptor;
+    stat_qp_caseM_->nullable = true;
+    stat_qp_caseM_->description = "QuickProp Case M Percentage";
+    stat_qp_caseM_->unit = "%";
+    stat_qp_caseM_->init_function =
+      [](Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+    stat_qp_caseM_->update_function =
+      [](Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+    stat_qp_caseM_->output_function = 
+      [](HardcodedStats& hc_stats, Stat& stat) -> Stat {
+      Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0 && hc_stats.weights > 0 && !stat.is_null) {
+        double d_iterations = (double)hc_stats.iterations;
+        double d_weights = (double)hc_stats.weights;
+        return_stat.value = 100.0 * stat.value / (d_iterations * d_weights);
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
+    
+    // Register stats
     System::stat_aggregator->RegisterStat(stat_aggloss_);
+    System::stat_aggregator->RegisterStat(stat_qp_caseA_);
+    System::stat_aggregator->RegisterStat(stat_qp_caseB_);
+    System::stat_aggregator->RegisterStat(stat_qp_caseC_);
+    System::stat_aggregator->RegisterStat(stat_qp_caseM_);
     stats_are_initialized_ = true;
   }
+  
+  // Move lambdas with reference captures here
 }
 
 Trainer::Trainer(Conv::NetGraph& graph, TrainerSettings settings) :
@@ -107,8 +198,11 @@ void Trainer::Train (unsigned int epochs, bool do_snapshots) {
   
   for (unsigned int e = 0; e < epochs; e++) {
     Epoch();
-    if(do_snapshots)
+    if(do_snapshots) {
       System::stat_aggregator->Snapshot();
+      // Update hardcoded stats
+      System::stat_aggregator->hardcoded_stats_.weights = weight_count_;
+    }
   }
 
   graph_.SetStatLayersEnabled(true);
@@ -322,7 +416,8 @@ void Trainer::Epoch() {
 
 void Trainer::ApplyGradients (datum lr) {
   unsigned int dp = 0;
-
+  unsigned int qp_caseA = 0, qp_caseB = 0, qp_caseC = 0, qp_caseM = 0;
+  
 	for (unsigned int l = 0; l < graph_.GetNodes().size(); l++) {
 		Layer* const layer = graph_.GetNodes()[l]->layer;
     datum layer_lr;
@@ -379,29 +474,36 @@ void Trainer::ApplyGradients (datum lr) {
             const datum s = settings_.mu / (1.0 + settings_.mu);
             
             datum step = 0;
-            if(last_step > 0.001) {
+            if(last_step > 0.00001) {
               if(delta > 0.0) {
                 step += lr * settings_.eta * delta;
+                qp_caseB++;
               }
               
               if(delta > (s * last_gradient)) {
                 step += settings_.mu * last_step;
+                qp_caseM++;
               } else {
                 step += last_step * delta / (last_gradient - delta);
               }
+              qp_caseA++;
               
-            } else if(last_step < -0.001) {
+            } else if(last_step < -0.00001) {
               if(delta < 0.0) {
                 step += lr * settings_.eta * delta;
+                qp_caseB++;
               }
               
               if(delta < (s * last_gradient)) {
                 step += settings_.mu * last_step;
+                qp_caseM++;
               } else {
                 step += last_step * delta / (last_gradient - delta);
               }
+              qp_caseA++;
             } else {
               step += lr * settings_.eta * delta;
+              qp_caseC++;
             }
             
             if(step > 1000 || step < -1000) {
@@ -423,6 +525,14 @@ void Trainer::ApplyGradients (datum lr) {
 
       dp++;
     }
+  }
+  
+  // Update quickprop stats
+  if(settings_.optimization_method == QUICKPROP) {
+    System::stat_aggregator->Update(stat_qp_caseA_->stat_id, (double)qp_caseA);
+    System::stat_aggregator->Update(stat_qp_caseB_->stat_id, (double)qp_caseB);
+    System::stat_aggregator->Update(stat_qp_caseC_->stat_id, (double)qp_caseC);
+    System::stat_aggregator->Update(stat_qp_caseM_->stat_id, (double)qp_caseM);
   }
 }
 
