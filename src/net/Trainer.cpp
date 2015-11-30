@@ -12,56 +12,96 @@
 #include "Net.h"
 #include "StatLayer.h"
 #include "CLHelper.h"
+#include "StatAggregator.h"
+#include "Init.h"
 
 #include "Trainer.h"
 
+
 namespace Conv {
 
-	Trainer::Trainer(Conv::NetGraph& graph, TrainerSettings settings) :
-		graph_(graph), settings_(settings) {
-		LOGDEBUG << "Instance created";
+bool Trainer::stats_are_initialized_ = false;
+StatDescriptor* Trainer::stat_aggloss_ = nullptr;
 
-		// We need a training layer to select training samples and some kind of
-		// loss function to minimize
-		if (graph_.GetTrainingNodes().size() == 0 || graph_.GetLossNodes().size() == 0) {
-			FATAL("Net doesn't have training layer or loss function layer!");
-		}
+void Trainer::InitializeStats() {
+  // Only initialize stats once
+  if (!stats_are_initialized_) {
 
-		// Ask the Net for parameters
-		graph_.GetParameters(parameters_);
+    stat_aggloss_ = new StatDescriptor;
+    stat_aggloss_->nullable = true;
+    stat_aggloss_->description = "Aggregate Loss";
+    stat_aggloss_->unit = "";
+    stat_aggloss_->init_function =
+      [](Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+    stat_aggloss_->update_function =
+      [](Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+    stat_aggloss_->output_function =
+      [](HardcodedStats& hc_stats, Stat& stat) -> Stat {
+        Stat return_stat; return_stat.is_null = true;
+        if (hc_stats.iterations > 0) {
+          double d_iterations = (double)hc_stats.iterations;
+          return_stat.value = stat.value / d_iterations;
+          return_stat.is_null = false;
+        }
+        return return_stat;
+      };
 
-		LOGDEBUG << "Optimizing " << parameters_.size() << " sets of parameters.";
+    System::stat_aggregator->RegisterStat(stat_aggloss_);
+    stats_are_initialized_ = true;
+  }
+}
 
-		unsigned int w = 0;
+Trainer::Trainer(Conv::NetGraph& graph, TrainerSettings settings) :
+  graph_(graph), settings_(settings) {
+  LOGDEBUG << "Instance created";
 
-		for (unsigned int p = 0; p < parameters_.size(); p++) {
-			w += parameters_[p]->data.elements();
+  // We need a training layer to select training samples and some kind of
+  // loss function to minimize
+  if (graph_.GetTrainingNodes().size() == 0 || graph_.GetLossNodes().size() == 0) {
+    FATAL("Net doesn't have training layer or loss function layer!");
+  }
 
-      // Allocate Tensors for momentum
-      Tensor* last_delta = new Tensor();
-      Tensor* last_gradient = new Tensor();
-      Tensor* accumulated_gradient = new Tensor();
-      last_delta->Resize (parameters_[p]->data);
-      last_delta->Clear();
-      last_gradient->Resize (parameters_[p]->data);
-      last_gradient->Clear();
-      accumulated_gradient->Resize (parameters_[p]->data);
-      accumulated_gradient->Clear();
+  // Ask the Net for parameters
+  graph_.GetParameters(parameters_);
 
-      last_deltas_.push_back (last_delta);
-      last_gradients_.push_back (last_gradient);
-      accumulated_gradients_.push_back (accumulated_gradient);
-    }
+  LOGDEBUG << "Optimizing " << parameters_.size() << " sets of parameters.";
 
-		// Outputs the number of weights
-		LOGDEBUG << "Weights: " << w;
+  unsigned int w = 0;
 
-		first_training_layer_ = dynamic_cast<TrainingLayer*>(graph_.GetTrainingNodes()[0]->layer);
-		sample_count_ = first_training_layer_->GetLabelWidth() * first_training_layer_->GetLabelHeight()
-    * first_training_layer_->GetBatchSize();
+  for (unsigned int p = 0; p < parameters_.size(); p++) {
+    w += parameters_[p]->data.elements();
+
+    // Allocate Tensors for momentum
+    Tensor* last_delta = new Tensor();
+    Tensor* last_gradient = new Tensor();
+    Tensor* accumulated_gradient = new Tensor();
+    last_delta->Resize (parameters_[p]->data);
+    last_delta->Clear();
+    last_gradient->Resize (parameters_[p]->data);
+    last_gradient->Clear();
+    accumulated_gradient->Resize (parameters_[p]->data);
+    accumulated_gradient->Clear();
+
+    last_deltas_.push_back (last_delta);
+    last_gradients_.push_back (last_gradient);
+    accumulated_gradients_.push_back (accumulated_gradient);
+  }
+
+  // Outputs the number of weights
+  LOGDEBUG << "Weights: " << w;
+  weight_count_ = w;
+
+  first_training_layer_ = dynamic_cast<TrainingLayer*>(graph_.GetTrainingNodes()[0]->layer);
+  sample_count_ = first_training_layer_->GetLabelWidth() * first_training_layer_->GetLabelHeight()
+  * first_training_layer_->GetBatchSize();
+
+  InitializeStats();
 }
 
 void Trainer::Train (unsigned int epochs) {
+  // Update hardcoded stats
+  System::stat_aggregator->hardcoded_stats_.weights = weight_count_;
+
   graph_.SetIsTesting(false);
   graph_.SetStatLayersEnabled(settings_.stats_during_training);
   
@@ -72,6 +112,9 @@ void Trainer::Train (unsigned int epochs) {
 }
 
 void Trainer::Test() {
+  // Update hardcoded stats
+  System::stat_aggregator->hardcoded_stats_.weights = weight_count_;
+
 	datum aggregate_loss = 0.0;
 	datum* loss_sums = new datum[graph_.GetLossNodes().size()];
 	for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++)

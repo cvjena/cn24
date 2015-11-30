@@ -18,6 +18,7 @@
 #include <cmath>
 
 #include "../util/CombinedTensor.h"
+#include "../util/StatAggregator.h"
 #include "TrainingLayer.h"
 #include "NetGraph.h"
 
@@ -107,6 +108,8 @@ public:
 
 private:
   void ApplyGradients (datum lr);
+  void InitializeStats();
+
   // References for easy access
   NetGraph& graph_;
   std::vector<CombinedTensor*> parameters_;
@@ -119,12 +122,17 @@ private:
 
   // Sample count
   unsigned int sample_count_ = 0;
+  unsigned int weight_count_ = 0;
 
   // Learning options
   TrainerSettings settings_;
 
   // State
   unsigned int epoch_ = 0;
+
+  // Global state
+  static bool stats_are_initialized_;
+  static StatDescriptor* stat_aggloss_;
 };
 
 
