@@ -15,6 +15,9 @@
 #ifndef CONV_NETSTATUS_H
 #define CONV_NETSTATUS_H
 
+#include "../util/Init.h"
+#include "../util/StatAggregator.h"
+
 namespace Conv {
 
 class NetStatus{
@@ -29,7 +32,10 @@ public:
    * 
    * @param is_testing The new testing status
    */
-  inline void SetIsTesting(bool is_testing) { is_testing_ = is_testing; }
+  inline void SetIsTesting(bool is_testing) { 
+    is_testing_ = is_testing;
+    System::stat_aggregator->hardcoded_stats_.is_training = !is_testing;
+  }
 private:
 	bool is_testing_ = false;
 };
