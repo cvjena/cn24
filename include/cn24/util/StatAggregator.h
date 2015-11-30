@@ -78,6 +78,8 @@ public:
   void StartRecording();
   void StopRecording();
   void Reset();
+
+  void Snapshot();
   
 private:
   // State

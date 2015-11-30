@@ -125,4 +125,15 @@ void StatAggregator::StopRecording()
   state_ = STOPPED;
 }
 
+void StatAggregator::Snapshot() {
+  // Ignore this call if not recording
+  if (state_ != RECORDING)
+    return;
+
+  StopRecording();
+  Generate();
+  Reset();
+  StartRecording();
+}
+
 }
