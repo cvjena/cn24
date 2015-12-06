@@ -280,6 +280,7 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
     testing_graph.SetLayerViewEnabled (false);
     LOGINFO << "Testing complete.";
     
+    Conv::System::stat_aggregator->StopRecording();
     Conv::System::stat_aggregator->Generate();
     Conv::System::stat_aggregator->Reset();
   } else if (command.compare (0, 4, "load") == 0) {
