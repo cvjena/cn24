@@ -270,8 +270,8 @@ void Trainer::Test() {
 		StatLayer* stat_layer = dynamic_cast<StatLayer*>(graph_.GetStatNodes()[n]->layer);
     std::stringstream epochname;
     epochname << "Testing  - Epoch " << epoch_ << " -";
+    stat_layer->UpdateAll();
     stat_layer->Print (epochname.str(), false);
-    stat_layer->Reset();
 	}
 
 	for (NetGraphNode* training_node : graph_.GetTrainingNodes())
@@ -405,8 +405,8 @@ void Trainer::Epoch() {
       StatLayer* stat_layer = dynamic_cast<StatLayer*>(graph_.GetStatNodes()[n]->layer);
       std::stringstream epochname;
       epochname << "Training  - Epoch " << epoch_ << " -";
+      stat_layer->UpdateAll();
       stat_layer->Print (epochname.str(), true);
-      stat_layer->Reset();
     }
   }
 
