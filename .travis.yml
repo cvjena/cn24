@@ -62,3 +62,8 @@ compiler:
 env:
   - TEST_SUITE=opencl
   - TEST_SUITE=reference
+
+matrix:
+  exclude:
+    - os: linux
+      env: TEST_SUITE=opencl
