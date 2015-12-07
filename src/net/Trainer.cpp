@@ -277,8 +277,6 @@ void Trainer::Test() {
 	for (NetGraphNode* training_node : graph_.GetTrainingNodes())
 		(dynamic_cast<TrainingLayer*>(training_node->layer))->SetTestingMode(false);
 
-  graph_.SetIsTesting(false);
-
 	delete[] loss_sums;
 }
 
