@@ -39,6 +39,10 @@ BinaryStatLayer::BinaryStatLayer ( const unsigned int thresholds,
   Reset();
 }
 
+void BinaryStatLayer::UpdateAll() {
+  
+}
+
 bool BinaryStatLayer::CreateOutputs ( const std::vector< CombinedTensor* >& inputs, std::vector< CombinedTensor* >& outputs ) {
   // Validate input node count
   if ( inputs.size() != 3 ) {

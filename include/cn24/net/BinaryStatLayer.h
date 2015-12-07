@@ -33,6 +33,8 @@ public:
 	*/
   BinaryStatLayer(unsigned int thresholds = 24, const datum min_t = -0.458333,
                   const datum max_t = 0.5);
+  
+  void UpdateAll();
 
   /**
 	* @brief Prints the current statistics

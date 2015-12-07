@@ -19,7 +19,9 @@
 #include <vector>
 
 #include "Layer.h"
-#include "StatLayer.h"	
+#include "StatLayer.h"
+
+#include "../util/StatAggregator.h"
 
 namespace Conv {
 
@@ -34,10 +36,11 @@ public:
   explicit ConfusionMatrixLayer(std::vector<std::string> names,
                                 const unsigned int classes);
 
+  void UpdateAll();
   /**
 	* @brief Prints the current statistics
 	*
-	* @param prefix This is printed before every line ouf output
+	* @param prefix This is printed before every line of output
 	* @param training Whether the net is currently training. Affects output color
 	*/
   void Print (std::string prefix, bool training);
@@ -80,6 +83,11 @@ private:
   long double total_ = 0;
   long double right_ = 0;
   long double* per_class_ = nullptr;
+  
+  StatDescriptor* stat_orr_ = nullptr;
+  StatDescriptor* stat_arr_ = nullptr;
+  StatDescriptor* stat_iou_ = nullptr;
+  
 };
 
 }
