@@ -158,12 +158,12 @@ void BinaryStatLayer::UpdateAll() {
           );
 
   // Update stats
-  if(fpr >= 0) System::stat_aggregator->Update(stat_fpr_->stat_id, fpr);
-  if(fnr >= 0) System::stat_aggregator->Update(stat_fnr_->stat_id, fnr);
-  if(precision >= 0) System::stat_aggregator->Update(stat_pre_->stat_id, precision);
-  if(recall >= 0) System::stat_aggregator->Update(stat_rec_->stat_id, recall);
-  if(acc >= 0) System::stat_aggregator->Update(stat_acc_->stat_id, acc);
-  if(f1 >= 0) System::stat_aggregator->Update(stat_f1_->stat_id, f1);
+  if(fpr >= 0) System::stat_aggregator->Update(stat_fpr_->stat_id, 100.0 * fpr);
+  if(fnr >= 0) System::stat_aggregator->Update(stat_fnr_->stat_id, 100.0 * fnr);
+  if(precision >= 0) System::stat_aggregator->Update(stat_pre_->stat_id, 100.0 * precision);
+  if(recall >= 0) System::stat_aggregator->Update(stat_rec_->stat_id, 100.0 * recall);
+  if(acc >= 0) System::stat_aggregator->Update(stat_acc_->stat_id, 100.0 * acc);
+  if(f1 >= 0) System::stat_aggregator->Update(stat_f1_->stat_id, 100.0 * f1);
 }
 
 bool BinaryStatLayer::CreateOutputs ( const std::vector< CombinedTensor* >& inputs, std::vector< CombinedTensor* >& outputs ) {
@@ -268,80 +268,7 @@ void BinaryStatLayer::Reset() {
 }
 
 void BinaryStatLayer::Print ( std::string prefix, bool training ) {
-  // Calculate metrics
-  datum fmax = -2;
-  unsigned int tfmax = -1;
-
-  for ( unsigned int t = 0; t < thresholds_; t++ ) {
-    datum precision = -1;
-    datum recall = -1;
-    datum f1 = -1;
-
-    if ( ( true_positives_[t] + false_positives_[t] ) > 0 )
-      precision = ( true_positives_[t] ) /
-                  ( true_positives_[t] + false_positives_[t] );
-
-    if ( ( true_positives_[t] + false_negatives_[t] ) > 0 )
-      recall = ( true_positives_[t] ) /
-               ( true_positives_[t] + false_negatives_[t] );
-
-    if ( precision >= 0 && recall >= 0 ) {
-      f1 = 2 * precision * recall / ( precision + recall );
-    }
-
-    if ( f1 > fmax ) {
-      fmax = f1;
-      tfmax = t;
-    }
-  }
-
-  datum fpr = -1;
-  datum fnr = -1;
-  datum precision = -1;
-  datum recall = -1;
-  datum f1 = -1;
-  datum acc = -1;
-
-  if ( ( true_positives_[tfmax] + false_positives_[tfmax] ) > 0 )
-    precision = ( true_positives_[tfmax] ) /
-                ( true_positives_[tfmax] + false_positives_[tfmax] );
-
-  if ( ( true_positives_[tfmax] + false_negatives_[tfmax] ) > 0 )
-    recall = ( true_positives_[tfmax] ) /
-             ( true_positives_[tfmax] + false_negatives_[tfmax] );
-
-  if ( ( false_positives_[tfmax] + true_negatives_[tfmax] ) > 0 )
-    fpr = ( false_positives_[tfmax] ) /
-          ( false_positives_[tfmax] + true_negatives_[tfmax] );
-
-  if ( ( true_positives_[tfmax] + false_negatives_[tfmax] ) > 0 )
-    fnr = ( false_negatives_[tfmax] ) /
-          ( true_positives_[tfmax] + false_negatives_[tfmax] );
-
-  if ( precision >= 0 && recall >= 0 )
-    f1 = 2 * precision * recall / ( precision + recall );
-  
-  acc = ( true_positives_[tfmax] + true_negatives_[tfmax] ) /
-          ( true_positives_[tfmax] + true_negatives_[tfmax] +
-            false_negatives_[tfmax] + false_positives_[tfmax]
-          );
-
-  // Display metrics
-  ( training ? LOGTRESULT : LOGRESULT )
-      << prefix << " F1 : " << f1 * 100.0 << "% (t=" << threshold_values_[tfmax]
-      << ")" << LOGRESULTEND;
-  ( training ? LOGTRESULT : LOGRESULT )
-      << prefix << " ACC: " << acc * 100.0 << "%" << LOGRESULTEND;
-  ( training ? LOGTRESULT : LOGRESULT )
-      << prefix << " PRE: " << precision * 100.0 << "%" << LOGRESULTEND;
-  ( training ? LOGTRESULT : LOGRESULT )
-      << prefix << " REC: " << recall * 100.0 << "%" << LOGRESULTEND;
-  ( training ? LOGTRESULT : LOGRESULT )
-      << prefix << " FPR: " << fpr * 100.0 << "%" << LOGRESULTEND;
-  ( training ? LOGTRESULT : LOGRESULT )
-      << prefix << " FNR: " << fnr * 100.0 << "%" << LOGRESULTEND;
-
-
+  // Now deprecated
 }
 
 
