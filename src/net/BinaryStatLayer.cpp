@@ -6,6 +6,7 @@
  */  
 #include "Log.h"
 #include "Init.h"
+#include "StatAggregator.h"
 
 #include "BinaryStatLayer.h"
 
@@ -37,10 +38,132 @@ BinaryStatLayer::BinaryStatLayer ( const unsigned int thresholds,
   }
 
   Reset();
+
+  // Initialize stat descriptors
+  stat_fpr_ = new StatDescriptor;
+  stat_fnr_ = new StatDescriptor;
+  stat_pre_ = new StatDescriptor;
+  stat_rec_ = new StatDescriptor;
+  stat_acc_ = new StatDescriptor;
+  stat_f1_ = new StatDescriptor;
+
+  stat_fpr_->description = "False Positive Rate";
+  stat_fpr_->unit = "%";
+  stat_fpr_->nullable = true;
+  stat_fpr_->init_function = [this] (Stat& stat) { stat.is_null = true; stat.value = 0; Reset(); };
+  stat_fpr_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
+  stat_fpr_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { return stat; };
+
+  stat_fnr_->description = "False Negative Rate";
+  stat_fnr_->unit = "%";
+  stat_fnr_->nullable = true;
+  stat_fnr_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
+  stat_fnr_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
+  stat_fnr_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { return stat; };
+
+  stat_pre_->description = "Precision";
+  stat_pre_->unit = "%";
+  stat_pre_->nullable = true;
+  stat_pre_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
+  stat_pre_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
+  stat_pre_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { return stat; };
+
+  stat_rec_->description = "Recall";
+  stat_rec_->unit = "%";
+  stat_rec_->nullable = true;
+  stat_rec_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
+  stat_rec_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
+  stat_rec_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { return stat; };
+
+  stat_acc_->description = "Accuracy";
+  stat_acc_->unit = "%";
+  stat_acc_->nullable = true;
+  stat_acc_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
+  stat_acc_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
+  stat_acc_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { return stat; };
+
+  stat_f1_->description = "F1 Value";
+  stat_f1_->unit = "%";
+  stat_f1_->nullable = true;
+  stat_f1_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
+  stat_f1_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
+  stat_f1_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { return stat; };
+
+  // Register stats
+  System::stat_aggregator->RegisterStat(stat_fpr_);
+  System::stat_aggregator->RegisterStat(stat_fnr_);
+  System::stat_aggregator->RegisterStat(stat_pre_);
+  System::stat_aggregator->RegisterStat(stat_rec_);
+  System::stat_aggregator->RegisterStat(stat_acc_);
+  System::stat_aggregator->RegisterStat(stat_f1_);
 }
 
 void BinaryStatLayer::UpdateAll() {
+  // Calculate metrics
+  datum fmax = -2;
+  unsigned int tfmax = -1;
+
+  for ( unsigned int t = 0; t < thresholds_; t++ ) {
+    datum precision = -1;
+    datum recall = -1;
+    datum f1 = -1;
+
+    if ( ( true_positives_[t] + false_positives_[t] ) > 0 )
+      precision = ( true_positives_[t] ) /
+                  ( true_positives_[t] + false_positives_[t] );
+
+    if ( ( true_positives_[t] + false_negatives_[t] ) > 0 )
+      recall = ( true_positives_[t] ) /
+               ( true_positives_[t] + false_negatives_[t] );
+
+    if ( precision >= 0 && recall >= 0 ) {
+      f1 = 2 * precision * recall / ( precision + recall );
+    }
+
+    if ( f1 > fmax ) {
+      fmax = f1;
+      tfmax = t;
+    }
+  }
+
+  datum fpr = -1;
+  datum fnr = -1;
+  datum precision = -1;
+  datum recall = -1;
+  datum f1 = -1;
+  datum acc = -1;
+
+  if ( ( true_positives_[tfmax] + false_positives_[tfmax] ) > 0 )
+    precision = ( true_positives_[tfmax] ) /
+                ( true_positives_[tfmax] + false_positives_[tfmax] );
+
+  if ( ( true_positives_[tfmax] + false_negatives_[tfmax] ) > 0 )
+    recall = ( true_positives_[tfmax] ) /
+             ( true_positives_[tfmax] + false_negatives_[tfmax] );
+
+  if ( ( false_positives_[tfmax] + true_negatives_[tfmax] ) > 0 )
+    fpr = ( false_positives_[tfmax] ) /
+          ( false_positives_[tfmax] + true_negatives_[tfmax] );
+
+  if ( ( true_positives_[tfmax] + false_negatives_[tfmax] ) > 0 )
+    fnr = ( false_negatives_[tfmax] ) /
+          ( true_positives_[tfmax] + false_negatives_[tfmax] );
+
+  if ( precision >= 0 && recall >= 0 )
+    f1 = 2 * precision * recall / ( precision + recall );
   
+  acc = ( true_positives_[tfmax] + true_negatives_[tfmax] ) /
+          ( true_positives_[tfmax] + true_negatives_[tfmax] +
+            false_negatives_[tfmax] + false_positives_[tfmax]
+          );
+
+  // Update stats
+  if(fpr >= 0) System::stat_aggregator->Update(stat_fpr_->stat_id, fpr);
+  if(fnr >= 0) System::stat_aggregator->Update(stat_fnr_->stat_id, fnr);
+  if(precision >= 0) System::stat_aggregator->Update(stat_pre_->stat_id, precision);
+  if(recall >= 0) System::stat_aggregator->Update(stat_rec_->stat_id, recall);
+  if(acc >= 0) System::stat_aggregator->Update(stat_acc_->stat_id, acc);
+  if(f1 >= 0) System::stat_aggregator->Update(stat_f1_->stat_id, f1);
 }
 
 bool BinaryStatLayer::CreateOutputs ( const std::vector< CombinedTensor* >& inputs, std::vector< CombinedTensor* >& outputs ) {
@@ -145,6 +268,7 @@ void BinaryStatLayer::Reset() {
 }
 
 void BinaryStatLayer::Print ( std::string prefix, bool training ) {
+  // Calculate metrics
   datum fmax = -2;
   unsigned int tfmax = -1;
 
@@ -160,13 +284,6 @@ void BinaryStatLayer::Print ( std::string prefix, bool training ) {
     if ( ( true_positives_[t] + false_negatives_[t] ) > 0 )
       recall = ( true_positives_[t] ) /
                ( true_positives_[t] + false_negatives_[t] );
-
-    /*acc = ( true_positives_[t] + true_negatives_[t] ) /
-          ( true_positives_[t] + true_negatives_[t] +
-            false_negatives_[t] + false_positives_[t]
-          );
-
-    LOGDEBUG << "Accuracy (" << threshold_values_[t] << "): " << acc;*/
 
     if ( precision >= 0 && recall >= 0 ) {
       f1 = 2 * precision * recall / ( precision + recall );
@@ -209,6 +326,7 @@ void BinaryStatLayer::Print ( std::string prefix, bool training ) {
             false_negatives_[tfmax] + false_positives_[tfmax]
           );
 
+  // Display metrics
   ( training ? LOGTRESULT : LOGRESULT )
       << prefix << " F1 : " << f1 * 100.0 << "% (t=" << threshold_values_[tfmax]
       << ")" << LOGRESULTEND;
