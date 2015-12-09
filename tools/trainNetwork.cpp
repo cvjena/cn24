@@ -337,6 +337,13 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 
       param_file.close();
     }
+  } else if (command.compare (0, 14, "set experiment") == 0) {
+    std::string experiment_name = "";
+    Conv::ParseStringParamIfPossible(command, "name", experiment_name);
+    if(experiment_name.length() > 0)
+      Conv::System::stat_aggregator->SetCurrentExperiment(experiment_name);
+    else
+      LOGINFO << "Experiment name not specified, not changing!";
   } else if (command.compare (0, 9, "set epoch") == 0) {
     unsigned int epoch = 0;
     Conv::ParseCountIfPossible (command, "epoch", epoch);
@@ -440,6 +447,8 @@ void help() {
       << "    Test the network\n\n"
       << "  set epoch=<epoch>\n"
       << "    Sets the current epoch\n\n"
+      << "  set experiment name=<name>\n"
+      << "    Sets the current experiment name for logging and statistics purposes\n\n"
       << "  reset\n"
       << "    Reinitializes the nets parameters\n\n"
       << "  load file=<path> [last_layer=<l>]\n"
