@@ -66,7 +66,12 @@ int main (int argc, char* argv[]) {
   std::string dataset_config_fname (argv[1]);
 
   Conv::System::Init(requested_log_level);
-  Conv::System::stat_aggregator->RegisterSink(new Conv::ConsoleStatSink());
+  
+  // Register stat sinks
+  Conv::ConsoleStatSink console_stat_sink;
+  Conv::CSVStatSink csv_stat_sink;
+  Conv::System::stat_aggregator->RegisterSink(&console_stat_sink);
+  Conv::System::stat_aggregator->RegisterSink(&csv_stat_sink);
   
   Conv::Factory* factory;
   
