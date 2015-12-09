@@ -406,7 +406,6 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 		Conv::ParseStringParamIfPossible(command, "node", node_uid);
 		for (Conv::NetGraphNode* node : graph.GetNodes()) {
 			if (node->unique_name.compare(node_uid) == 0) {
-				unsigned int p = 0;
 				for (Conv::NetGraphBuffer& output_buffer : node->output_buffers) {
 					Conv::CombinedTensor* output_tensor = output_buffer.combined_tensor;
 					LOGINFO << "Reporting stats on buffer " << output_buffer.description;
@@ -435,8 +434,8 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 void help() {
   std::cout << "You can use the following commands:\n";
   std::cout
-      << "  train [epochs=<n>]\n"
-      << "    Train the network for n epochs (default: 1)\n\n"
+      << "  train [epochs=<n>] [no_snapshots=1]\n"
+      << "    Train the network for n epochs (default: 1). no_snapshots=1 accumulates statistics over all n epochs.\n\n"
       << "  test\n"
       << "    Test the network\n\n"
       << "  set epoch=<epoch>\n"
