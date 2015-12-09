@@ -44,6 +44,9 @@ public:
       }
     }
   }
+  virtual void SetCurrentExperiment(std::string current_experiment) {
+    LOGINFO << "Beginning Experiment: " << current_experiment;
+  }
   
 private:
   std::vector<StatDescriptor*> stat_descriptors_;

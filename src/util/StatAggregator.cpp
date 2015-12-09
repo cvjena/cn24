@@ -44,6 +44,9 @@ void StatAggregator::Initialize()
   
   // Reset statistics
   Reset();
+  
+  // Send SetCurrentExperiment "message" to all StatSinks at least once before processing
+  SetCurrentExperiment(hardcoded_stats_.current_experiment);
 }
 
 void StatAggregator::Generate()
@@ -135,5 +138,16 @@ void StatAggregator::Snapshot() {
   Reset();
   StartRecording();
 }
-
+  
+void StatAggregator::SetCurrentExperiment(std::string current_experiment) {
+  // Only change experiment name when not recording and already initialized
+  if(state_!=STOPPED)
+    return;
+  
+  // Call all StatSinks' SetCurrentExperiment method
+  for(unsigned int s = 0; s < stat_sink_count_; s++) {
+    stat_sinks_[s]->SetCurrentExperiment(current_experiment);
+  }
+}
+  
 }
