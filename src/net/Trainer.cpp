@@ -26,6 +26,8 @@ StatDescriptor* Trainer::stat_qp_caseA_ = nullptr;
 StatDescriptor* Trainer::stat_qp_caseB_ = nullptr;
 StatDescriptor* Trainer::stat_qp_caseC_ = nullptr;
 StatDescriptor* Trainer::stat_qp_caseM_ = nullptr;
+StatDescriptor* Trainer::stat_sps_ = nullptr;
+StatDescriptor* Trainer::stat_fps_ = nullptr;
 
 void Trainer::InitializeStats() {
   // Only initialize stats once
@@ -130,12 +132,44 @@ void Trainer::InitializeStats() {
       return return_stat;
     };
     
+    stat_sps_ = new StatDescriptor;
+    stat_sps_->nullable = true;
+    stat_sps_->description = "Pixel Throughput";
+    stat_sps_->unit = "pixels/s";
+    stat_sps_->init_function =
+      [](Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+    stat_sps_->update_function =
+      [](Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+    stat_sps_->output_function =
+      [] (Conv::HardcodedStats& hc_stats, Conv::Stat& stat) {
+        Conv::Stat return_stat = stat;
+        return_stat.value = stat.value / hc_stats.seconds_elapsed;
+        return return_stat;
+      };
+    
+    stat_fps_ = new StatDescriptor;
+    stat_fps_->nullable = true;
+    stat_fps_->description = "Frame Rate";
+    stat_fps_->unit = "frames/s";
+    stat_fps_->init_function =
+      [](Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+    stat_fps_->update_function =
+      [](Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+    stat_fps_->output_function =
+      [] (Conv::HardcodedStats& hc_stats, Conv::Stat& stat) {
+        Conv::Stat return_stat = stat;
+        return_stat.value = stat.value / hc_stats.seconds_elapsed;
+        return return_stat;
+      };
+    
     // Register stats
     System::stat_aggregator->RegisterStat(stat_aggloss_);
     System::stat_aggregator->RegisterStat(stat_qp_caseA_);
     System::stat_aggregator->RegisterStat(stat_qp_caseB_);
     System::stat_aggregator->RegisterStat(stat_qp_caseC_);
     System::stat_aggregator->RegisterStat(stat_qp_caseM_);
+    System::stat_aggregator->RegisterStat(stat_sps_);
+    System::stat_aggregator->RegisterStat(stat_fps_);
     stats_are_initialized_ = true;
   }
   
@@ -230,8 +264,6 @@ void Trainer::Test() {
   LOGDEBUG << "Testing, iterations: " << iterations <<
            ", batch size: " << first_training_layer_->GetBatchSize();
 
-  auto t_begin = std::chrono::system_clock::now();
-
   for (unsigned int i = 0; i < iterations; i++) {
     aggregate_loss = 0.0;
     graph_.FeedForward();
@@ -251,15 +283,9 @@ void Trainer::Test() {
 
 	}
 
-  auto t_end = std::chrono::system_clock::now();
-  std::chrono::duration<double> t_diff = t_end - t_begin;
-  LOGDEBUG << "Testing, sps: " <<
-          (datum) (sample_count_ * iterations)
-          / (datum) t_diff.count();
-
-  LOGDEBUG << "Testing, tps: " <<
-          1000000.0f * (datum) t_diff.count() /
-          (datum) (sample_count_ * iterations) << " us";
+  // Submit performance statistics
+  System::stat_aggregator->Update(stat_sps_->stat_id, (double)sample_count_ * (double)iterations);
+  System::stat_aggregator->Update(stat_fps_->stat_id, (double)(first_training_layer_->GetBatchSize()) * (double)iterations);
 
 	for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
 		LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
@@ -305,8 +331,6 @@ void Trainer::Epoch() {
   LOGINFO << "Epoch: " << epoch_ << ", it: " << iterations <<
            ", bsize: " << first_training_layer_->GetBatchSize() * settings_.sbatchsize << ", current lr: " <<
            CalculateLR (epoch_ * iterations) << std::endl;
-
-  auto t_begin = std::chrono::system_clock::now();
 
   for (unsigned int i = 0; i < iterations; i++) {
     if ( (50 * i / iterations) > fiftieth) {
@@ -373,18 +397,10 @@ void Trainer::Epoch() {
       / (first_training_layer_->GetLossSamplingProbability() * sample_count_ * settings_.sbatchsize));
   }
 
-  auto t_end = std::chrono::system_clock::now();
-  std::chrono::duration<double> t_diff = t_end - t_begin;
-  LOGDEBUG << "Training, sps: " <<
-          (datum) (sample_count_ * settings_.sbatchsize
-                   * first_training_layer_->GetLossSamplingProbability() * iterations)
-          / (datum) t_diff.count();
-
-  LOGDEBUG << "Training, tps: " <<
-          1000000.0f * (datum) t_diff.count() /
-          (datum) (sample_count_ * settings_.sbatchsize
-                   * first_training_layer_->GetLossSamplingProbability() * iterations) << " us";
-                  
+  // Submit performance statistics
+  System::stat_aggregator->Update(stat_sps_->stat_id, (double)sample_count_ * (double)iterations * (double)(settings_.sbatchsize));
+  System::stat_aggregator->Update(stat_fps_->stat_id, (double)(first_training_layer_->GetBatchSize()) * (double)iterations * (double)(settings_.sbatchsize));
+  
 #ifdef BUILD_OPENCL
   LOGDEBUG << "Training, GB/s   up: " << ((datum)CLHelper::bytes_up)/(1073741824.0 * (datum)t_diff.count());
   LOGDEBUG << "Training, GB/s down: " << ((datum)CLHelper::bytes_down)/(1073741824.0 * (datum)t_diff.count());

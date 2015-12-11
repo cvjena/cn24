@@ -137,6 +137,8 @@ private:
   static StatDescriptor* stat_qp_caseB_;
   static StatDescriptor* stat_qp_caseC_;
   static StatDescriptor* stat_qp_caseM_;
+  static StatDescriptor* stat_fps_;
+  static StatDescriptor* stat_sps_;
 };
 
 
