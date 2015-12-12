@@ -8,12 +8,15 @@
 #include <string>
 #include <iomanip>
 #include <sstream>
+#include "../util/StatAggregator.h"
+
 #include "ConfusionMatrixLayer.h"
 
 namespace Conv {
 ConfusionMatrixLayer::ConfusionMatrixLayer (
   std::vector<std::string> names, const unsigned int classes ) :
-  classes_ ( classes ), names_ ( names ) {
+  classes_ ( classes ), names_ ( names )
+{
   LOGDEBUG << "Instance created, " << classes << " classes.";
   for(unsigned int n = 0; n < names_.size(); n++) {
     if(names_[n].length() > 11) {
@@ -21,6 +24,91 @@ ConfusionMatrixLayer::ConfusionMatrixLayer (
       names_[n] = original.substr(0,8) + "...";
     }
   }
+  // Initialize stat descriptors
+  stat_orr_ = new StatDescriptor;
+  stat_arr_ = new StatDescriptor;
+  stat_iou_ = new StatDescriptor;
+  
+  stat_orr_->description = "Overall Recognition Rate";
+  stat_orr_->unit = "%";
+  stat_orr_->nullable = true;
+  stat_orr_->init_function = [this] (Stat& stat) { stat.is_null = true; stat.value = 0; Reset();};
+  stat_orr_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
+  stat_orr_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat {
+    return stat;
+  };
+  
+  stat_arr_->description = "Average Recognition Rate";
+  stat_arr_->unit = "%";
+  stat_arr_->nullable = true;
+  stat_arr_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
+  stat_arr_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
+  stat_arr_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat {
+    return stat;
+  };
+  
+  stat_iou_->description = "Average Intersection over Union";
+  stat_iou_->unit = "%";
+  stat_iou_->nullable = true;
+  stat_iou_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
+  stat_iou_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
+  stat_iou_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat {
+    return stat;
+  };
+  
+  // Register with StatAggregator
+  System::stat_aggregator->RegisterStat(stat_orr_);
+  System::stat_aggregator->RegisterStat(stat_arr_);
+  System::stat_aggregator->RegisterStat(stat_iou_);
+}
+  
+void ConfusionMatrixLayer::UpdateAll() {
+  // Don't call Update(...) when there are no samples to keep the null property of the value
+  if (total_ < 1.0)
+    return;
+  
+  long double orr = 0, arr = 0, iou = 0;
+  
+  // Calculate metrics...
+  
+  // Overall recognition rate
+  orr = 100.0L * right_ / total_;
+
+  // Average recognition rate
+  long double ccount = 0;
+  long double sum = 0;
+
+  for ( unsigned int c = 0; c < classes_; c++ ) {
+    if ( per_class_[c] > 0 ) {
+      sum += matrix_[ ( c * classes_ ) + c] / per_class_[c];
+      ccount += 1.0L;
+    }
+  }
+
+  arr = 100.0L * sum / ccount;
+
+  // Intersection over union
+  long double IU_sum = 0;
+  for(unsigned int t = 0; t < classes_; t++) {
+    // Calculate IU measure for class T
+    long double unionn = 0;
+    for(unsigned int c = 0; c < classes_; c++) {
+      if(c!=t) {
+        unionn += matrix_[ ( t * classes_ ) + c];
+        unionn += matrix_[ ( c * classes_ ) + t];
+      }
+    }
+    unionn += matrix_[ ( t * classes_) + t];
+    long double IU = (unionn > 0.0) ? (matrix_[ ( t * classes_) + t] / unionn) : 0.0;
+    IU_sum += IU;
+  }
+
+  iou = 100.0L * IU_sum / (long double)classes_;
+  
+  // Submit metrics to StatAggregator
+  System::stat_aggregator->Update(stat_orr_->stat_id, (double)orr);
+  System::stat_aggregator->Update(stat_arr_->stat_id, (double)arr);
+  System::stat_aggregator->Update(stat_iou_->stat_id, (double)iou);
 }
 
 bool ConfusionMatrixLayer::CreateOutputs (
@@ -128,6 +216,7 @@ void ConfusionMatrixLayer::Reset() {
 }
 
 void ConfusionMatrixLayer::Print ( std::string prefix, bool training ) {
+  // Print confusion matrix
   std::stringstream caption;
   caption << std::setw ( 12 ) << "vCLS  ACT>";
 
@@ -151,24 +240,9 @@ void ConfusionMatrixLayer::Print ( std::string prefix, bool training ) {
     caption.str ( "" );
   }
 
-
-  (training?LOGTRESULT:LOGRESULT) << prefix << " Overall recognition rate (not normalized): "
-            << 100.0L * right_ / total_ << "%";
-
-  long double ccount = 0;
-  long double sum = 0;
-
-  for ( unsigned int c = 0; c < classes_; c++ ) {
-    if ( per_class_[c] > 0 ) {
-      sum += matrix_[ ( c * classes_ ) + c] / per_class_[c];
-      ccount += 1.0L;
-    }
-  }
-
-  (training?LOGTRESULT:LOGRESULT) << prefix << " Average recognition rate (normalized)    : "
-            << 100.0 * sum / ccount << "%" << LOGRESULTEND;
-
+  // Print IOU
   long double IU_sum = 0;
+  
   for(unsigned int t = 0; t < classes_; t++) {
     // Calculate IU measure for class T
     long double unionn = 0;
@@ -183,14 +257,14 @@ void ConfusionMatrixLayer::Print ( std::string prefix, bool training ) {
     IU_sum += IU;
     caption << std::setw(12) << names_[t];
     caption << " IU: ";
-    caption << std::setw(12) << IU * 100.0;
+    caption << std::setw(12) << IU * 100.0L;
     caption << "%";
     (training?LOGTRESULT:LOGRESULT) << prefix << caption.str() << LOGRESULTEND;
     caption.str ( "" );
   }
 
   (training?LOGTRESULT:LOGRESULT) << prefix << " Average intersection over union          : "
-            << 100.0 * IU_sum / (long double)classes_ << "%" << LOGRESULTEND;
+            << 100.0L * IU_sum / (long double)classes_ << "%" << LOGRESULTEND;
 }
 
 ConfusionMatrixLayer::~ConfusionMatrixLayer() {

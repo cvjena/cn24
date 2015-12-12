@@ -19,6 +19,7 @@
 
 #include "Layer.h"
 #include "StatLayer.h"	
+#include "../util/StatAggregator.h"
 
 namespace Conv {
 
@@ -33,6 +34,8 @@ public:
 	*/
   BinaryStatLayer(unsigned int thresholds = 24, const datum min_t = -0.458333,
                   const datum max_t = 0.5);
+  
+  void UpdateAll();
 
   /**
 	* @brief Prints the current statistics
@@ -80,6 +83,13 @@ protected:
   datum* false_negatives_ = nullptr;
   
   bool disabled_ = false;
+
+  StatDescriptor* stat_fpr_ = nullptr;
+  StatDescriptor* stat_fnr_ = nullptr;
+  StatDescriptor* stat_pre_ = nullptr;
+  StatDescriptor* stat_rec_ = nullptr;
+  StatDescriptor* stat_acc_ = nullptr;
+  StatDescriptor* stat_f1_ = nullptr;
 };
 
 }

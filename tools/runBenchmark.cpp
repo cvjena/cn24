@@ -57,8 +57,33 @@ eta=0.1 \n\
 ";
 
 int main (int argc, char* argv[]) {
+  // Initialize stat descriptor
+  Conv::StatDescriptor fps;
+  fps.nullable = false;
+  fps.description = "Throughput";
+  fps.unit = "frames/s";
+  fps.init_function = [] (Conv::Stat& stat) {
+    stat.is_null = false;
+    stat.value = 0.0;
+  };
+  fps.output_function = [] (Conv::HardcodedStats& hc_stats, Conv::Stat& stat) {
+    Conv::Stat return_stat = stat;
+    return_stat.value = stat.value / hc_stats.seconds_elapsed;
+    return return_stat;
+  };
+  fps.update_function = [] (Conv::Stat& stat, double user_value) {
+    stat.value += user_value;
+  };
+  
   // Initialize CN24
-  Conv::System::Init();
+  Conv::System::Init(3);
+  
+  // Register ConsoleStatSink
+  Conv::ConsoleStatSink sink;
+  Conv::System::stat_aggregator->RegisterSink(&sink);
+  
+  // Register fps counter
+  Conv::System::stat_aggregator->RegisterStat(&fps);
   
   // Capture command line arguments
   std::string net_config_fname;
@@ -70,7 +95,6 @@ int main (int argc, char* argv[]) {
   unsigned int INPUTMAPS = 3;
 	unsigned int BENCHMARK_PASSES_FWD = 30;
 	unsigned int BENCHMARK_PASSES_BWD = 15;
-  
 
   std::istream* net_config_stream;
   
@@ -114,6 +138,10 @@ int main (int argc, char* argv[]) {
 	LOGINFO << "Initializing net, this may take a while..." << std::flush;
 	graph.Initialize();
   graph.SetIsTesting(true);
+  
+  // Initialize StatAggregator
+  Conv::System::stat_aggregator->Initialize();
+  
   graph.FeedForward();
 	graph.BackPropagate();
 	
@@ -125,12 +153,13 @@ int main (int argc, char* argv[]) {
 	LOGINFO << "Parallel inputs: " << factory->optimal_settings().pbatchsize;
 	LOGINFO << "=====================";
 	
-	
 	LOGINFO << "Running forward benchmark...\n" << std::flush;
+  Conv::System::stat_aggregator->StartRecording();
 	{
 		auto t_begin = std::chrono::system_clock::now();
 		for(unsigned int p = 0; p < BENCHMARK_PASSES_FWD; p++) {
 			graph.FeedForward();
+      Conv::System::stat_aggregator->Update(fps.stat_id, (double)(factory->optimal_settings().pbatchsize));
 			std::cout << "." << std::flush;
 		}
 		std::cout << "\n";
@@ -146,14 +175,19 @@ int main (int argc, char* argv[]) {
 		LOGINFO << "Forward speed: " << frames_per_second << " fps";
 		LOGINFO << "=====================";
 	}
-	
+  Conv::System::stat_aggregator->StopRecording();
+  Conv::System::stat_aggregator->Generate();
+	Conv::System::stat_aggregator->Reset();
+  
   graph.SetIsTesting(false);
 	LOGINFO << "Running forward+backward benchmark...\n" << std::flush;
+  Conv::System::stat_aggregator->StartRecording();
 	{
 		auto t_begin = std::chrono::system_clock::now();
 		for(unsigned int p = 0; p < BENCHMARK_PASSES_BWD; p++) {
 			graph.FeedForward();
 			graph.BackPropagate();
+      Conv::System::stat_aggregator->Update(fps.stat_id, (double)(factory->optimal_settings().pbatchsize));
 			std::cout << "." << std::flush;
 		}
 		std::cout << "\n";
@@ -169,15 +203,10 @@ int main (int argc, char* argv[]) {
 		LOGINFO << "F+B speed    : " << frames_per_second << " fps";
 		LOGINFO << "=====================";
 	}
-	
+  Conv::System::stat_aggregator->StopRecording();
+  Conv::System::stat_aggregator->Generate();
+  Conv::System::stat_aggregator->Reset();
   
-	Conv::Tensor* net_output_tensor = &graph.GetDefaultOutputNode()->output_buffers[0].combined_tensor->data;
-  Conv::Tensor image_output_tensor(1, net_output_tensor->width(), net_output_tensor->height(), 3);
-  
-  //LOGINFO << "Colorizing..." << std::flush;
-  //dataset->Colorize(*net_output_tensor, image_output_tensor);
-  
-
   LOGINFO << "DONE!";
   LOGEND;
   return 0;

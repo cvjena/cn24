@@ -66,6 +66,13 @@ int main (int argc, char* argv[]) {
   std::string dataset_config_fname (argv[1]);
 
   Conv::System::Init(requested_log_level);
+  
+  // Register stat sinks
+  Conv::ConsoleStatSink console_stat_sink;
+  Conv::CSVStatSink csv_stat_sink;
+  Conv::System::stat_aggregator->RegisterSink(&console_stat_sink);
+  Conv::System::stat_aggregator->RegisterSink(&csv_stat_sink);
+  
   Conv::Factory* factory;
   
   // Open network and dataset configuration files
@@ -228,6 +235,7 @@ int main (int argc, char* argv[]) {
       testing_trainer = &trainer;
     }
 
+    Conv::System::stat_aggregator->Initialize();
     LOGINFO << "Current training settings: " << factory->optimal_settings();
 
     if (FROM_SCRIPT) {
@@ -288,16 +296,27 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
   if (command.compare ("q") == 0 || command.compare ("quit") == 0) {
     return false;
   } else if (command.compare (0, 5, "train") == 0) {
+    Conv::System::stat_aggregator->StartRecording();
+    
     unsigned int epochs = 1;
     unsigned int layerview = 0;
+    unsigned int no_snapshots = 0;
     Conv::ParseCountIfPossible (command, "view", layerview);
     graph.SetLayerViewEnabled (layerview == 1);
     Conv::ParseCountIfPossible (command, "epochs", epochs);
-    trainer.Train (epochs);
+    Conv::ParseCountIfPossible(command, "no_snapshots", no_snapshots);
+    trainer.Train (epochs, no_snapshots != 1);
     testing_trainer.SetEpoch (trainer.epoch());
     graph.SetLayerViewEnabled (false);
     LOGINFO << "Training complete.";
+    
+    Conv::System::stat_aggregator->StopRecording();
+    if(no_snapshots == 1)
+      Conv::System::stat_aggregator->Generate();
+    Conv::System::stat_aggregator->Reset();
   } else if (command.compare (0, 4, "test") == 0) {
+    Conv::System::stat_aggregator->StartRecording();
+    
     unsigned int layerview = 0;
     Conv::ParseCountIfPossible (command, "view", layerview);
     testing_graph.SetLayerViewEnabled (layerview == 1);
@@ -305,6 +324,10 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
     testing_trainer.Test();
     testing_graph.SetLayerViewEnabled (false);
     LOGINFO << "Testing complete.";
+    
+    Conv::System::stat_aggregator->StopRecording();
+    Conv::System::stat_aggregator->Generate();
+    Conv::System::stat_aggregator->Reset();
   } else if (command.compare (0, 4, "load") == 0) {
     std::string param_file_name;
     unsigned int last_layer = 0;
@@ -359,6 +382,13 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 
       param_file.close();
     }
+  } else if (command.compare (0, 14, "set experiment") == 0) {
+    std::string experiment_name = "";
+    Conv::ParseStringParamIfPossible(command, "name", experiment_name);
+    if(experiment_name.length() > 0)
+      Conv::System::stat_aggregator->SetCurrentExperiment(experiment_name);
+    else
+      LOGINFO << "Experiment name not specified, not changing!";
   } else if (command.compare (0, 9, "set epoch") == 0) {
     unsigned int epoch = 0;
     Conv::ParseCountIfPossible (command, "epoch", epoch);
@@ -428,7 +458,6 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 		Conv::ParseStringParamIfPossible(command, "node", node_uid);
 		for (Conv::NetGraphNode* node : graph.GetNodes()) {
 			if (node->unique_name.compare(node_uid) == 0) {
-				unsigned int p = 0;
 				for (Conv::NetGraphBuffer& output_buffer : node->output_buffers) {
 					Conv::CombinedTensor* output_tensor = output_buffer.combined_tensor;
 					LOGINFO << "Reporting stats on buffer " << output_buffer.description;
@@ -457,12 +486,14 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 void help() {
   std::cout << "You can use the following commands:\n";
   std::cout
-      << "  train [epochs=<n>]\n"
-      << "    Train the network for n epochs (default: 1)\n\n"
+      << "  train [epochs=<n>] [no_snapshots=1]\n"
+      << "    Train the network for n epochs (default: 1). no_snapshots=1 accumulates statistics over all n epochs.\n\n"
       << "  test\n"
       << "    Test the network\n\n"
       << "  set epoch=<epoch>\n"
       << "    Sets the current epoch\n\n"
+      << "  set experiment name=<name>\n"
+      << "    Sets the current experiment name for logging and statistics purposes\n\n"
       << "  reset\n"
       << "    Reinitializes the nets parameters\n\n"
       << "  load file=<path> [last_layer=<l>]\n"
