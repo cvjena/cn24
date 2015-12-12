@@ -45,6 +45,7 @@ void CSVStatSink::Process(Conv::HardcodedStats &hardcoded_stats, std::vector<Sta
       (*csv_stream_) << ",";
   }
   (*csv_stream_) << "\n";
+  (*csv_stream_) << std::flush;
   
 }
   
@@ -87,6 +88,7 @@ void CSVStatSink::SetCurrentExperiment(std::string current_experiment) {
       (*csv_stream_) << ",";
   }
   (*csv_stream_) << "\n";
+  (*csv_stream_) << std::flush;
 }
   
 }
