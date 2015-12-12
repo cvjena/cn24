@@ -3,15 +3,16 @@ DATASET=$1
 NETFILE=$2
 EPOCHS=$3
 ITERATIONS=$4
+MODEL=$5
 TIMESTAMP=`date +%s`
 
 mkdir tmp 2&> /dev/null
 mkdir logs 2&> /dev/null
 mkdir csv 2&> /dev/null
 
-echo "Running $ITERATIONS iterations ($EPOCHS epochs each, testing every 10th epoch) of network $NETFILE on dataset $DATASET..."
+echo "Running $ITERATIONS iterations ($EPOCHS * 10 epochs each, testing every 10th epoch) of network $NETFILE on dataset $DATASET, loading model $MODEL..."
 
-SIGNATURE=$(basename "$DATASET")_$(basename "$NETFILE")_${EPOCHS}_${ITERATIONS}_$TIMESTAMP
+SIGNATURE=$(basename "$DATASET")_$(basename "$NETFILE")_model${MODEL}_${EPOCHS}_${ITERATIONS}_$TIMESTAMP
 SCRFILE=tmp/scr_$SIGNATURE
 LOGFILE=tmp/log_$SIGNATURE
 OLOGFILE=logs/log_$SIGNATURE
@@ -19,6 +20,7 @@ CSVFILE=csv/csv_$SIGNATURE
 
 echo "set experiment name=$SIGNATURE" > $SCRFILE
 echo "reset" >> $SCRFILE
+echo "load file=$MODEL" >> $SCRFILE
 echo "set epoch=0" >> $SCRFILE
 
 for i in $(seq 1 $ITERATIONS)
@@ -34,6 +36,7 @@ do
     echo "test" >> $SCRFILE
   done
   echo "reset" >> $SCRFILE
+  echo "load file=$MODEL" >> $SCRFILE
   echo "set epoch=0" >> $SCRFILE
 done
 
@@ -42,6 +45,3 @@ done
 
 mv $LOGFILE $OLOGFILE
 echo "Training done, output log file: $OLOGFILE"
-
-#./logtocsv_multiclass.sh $OLOGFILE > $CSVFILE
-#echo "Output CSV file: $CSVFILE"
