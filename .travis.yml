@@ -49,7 +49,9 @@ before_script:
   - if [ "$TEST_SUITE" = "reference" ]; then cmake -DCMAKE_BUILD_TYPE=Release ..; fi
   - if [ "$TEST_SUITE" = "opencl" ]; then cmake -DCMAKE_BUILD_TYPE=Release -DCN24_BUILD_OPENCL:BOOL=ON -DCN24_BUILD_OPENCL_CLBLAS:BOOL=ON ..; fi
 
-script: make
+script:
+  - make
+  - ./runBenchmark
 
 os:
   - linux
