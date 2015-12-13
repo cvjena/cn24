@@ -76,7 +76,7 @@ int main (int argc, char* argv[]) {
   };
   
   // Initialize CN24
-  Conv::System::Init(3);
+  Conv::System::Init();
   
   // Register ConsoleStatSink
   Conv::ConsoleStatSink sink;
@@ -156,24 +156,12 @@ int main (int argc, char* argv[]) {
 	LOGINFO << "Running forward benchmark...\n" << std::flush;
   Conv::System::stat_aggregator->StartRecording();
 	{
-		auto t_begin = std::chrono::system_clock::now();
 		for(unsigned int p = 0; p < BENCHMARK_PASSES_FWD; p++) {
 			graph.FeedForward();
       Conv::System::stat_aggregator->Update(fps.stat_id, (double)(factory->optimal_settings().pbatchsize));
 			std::cout << "." << std::flush;
 		}
 		std::cout << "\n";
-		auto t_end = std::chrono::system_clock::now();
-		std::chrono::duration<double> t_diff = t_end - t_begin;
-		
-		double total_pixels = (double)width * (double)height
-			* (double)(factory->optimal_settings().pbatchsize) * (double)BENCHMARK_PASSES_FWD;
-		double total_frames = (double)BENCHMARK_PASSES_FWD * (double)(factory->optimal_settings().pbatchsize);
-		double pixels_per_second = total_pixels / t_diff.count();
-		double frames_per_second = total_frames / t_diff.count();
-		LOGINFO << "Forward speed: " << pixels_per_second << " pixel/s";
-		LOGINFO << "Forward speed: " << frames_per_second << " fps";
-		LOGINFO << "=====================";
 	}
   Conv::System::stat_aggregator->StopRecording();
   Conv::System::stat_aggregator->Generate();
@@ -183,7 +171,6 @@ int main (int argc, char* argv[]) {
 	LOGINFO << "Running forward+backward benchmark...\n" << std::flush;
   Conv::System::stat_aggregator->StartRecording();
 	{
-		auto t_begin = std::chrono::system_clock::now();
 		for(unsigned int p = 0; p < BENCHMARK_PASSES_BWD; p++) {
 			graph.FeedForward();
 			graph.BackPropagate();
@@ -191,21 +178,19 @@ int main (int argc, char* argv[]) {
 			std::cout << "." << std::flush;
 		}
 		std::cout << "\n";
-		auto t_end = std::chrono::system_clock::now();
-		std::chrono::duration<double> t_diff = t_end - t_begin;
-		
-		double total_pixels = (double)width * (double)height
-			* (double)(factory->optimal_settings().pbatchsize) * (double)BENCHMARK_PASSES_BWD;
-		double total_frames = (double)BENCHMARK_PASSES_BWD * (double)(factory->optimal_settings().pbatchsize);
-		double pixels_per_second = total_pixels / t_diff.count();
-		double frames_per_second = total_frames / t_diff.count();
-		LOGINFO << "F+B speed    : " << pixels_per_second << " pixel/s";
-		LOGINFO << "F+B speed    : " << frames_per_second << " fps";
-		LOGINFO << "=====================";
 	}
   Conv::System::stat_aggregator->StopRecording();
   Conv::System::stat_aggregator->Generate();
   Conv::System::stat_aggregator->Reset();
+  
+  // Gradient check
+	LOGINFO << "Running sparse gradient check..." << std::flush;
+  auto start_time = std::chrono::system_clock::now();
+  Conv::GradientTester::TestGradient(graph, 999);
+  
+  auto stop_time = std::chrono::system_clock::now();
+  std::chrono::duration<double> t_diff = stop_time - start_time;
+  LOGRESULT << "Gradient check took " << t_diff.count() << " seconds." << LOGRESULTEND;
   
   LOGINFO << "DONE!";
   LOGEND;
