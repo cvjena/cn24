@@ -37,10 +37,10 @@ public:
     }
   }
   virtual void Process(HardcodedStats& hardcoded_stats, std::vector<Stat*>& stats) {
-    (hardcoded_stats.is_training ? LOGTRESULT : LOGRESULT) << "Stats for epoch " << hardcoded_stats.epoch << ":";
+    (hardcoded_stats.is_training ? LOGTRESULT : LOGRESULT) << "Stats for epoch " << hardcoded_stats.epoch << ":" << LOGRESULTEND;
     for(unsigned int s = 0; s < stat_descriptors_.size(); s++) {
       if(!stats[s]->is_null) {
-        (hardcoded_stats.is_training ? LOGTRESULT : LOGRESULT) << std::setw(32) << stat_descriptors_[s]->description << ": " << std::setw(24) << stats[s]->value << " " << stat_descriptors_[s]->unit;
+        (hardcoded_stats.is_training ? LOGTRESULT : LOGRESULT) << std::setw(32) << stat_descriptors_[s]->description << ": " << std::setw(24) << stats[s]->value << " " << stat_descriptors_[s]->unit << LOGRESULTEND;
       }
     }
   }
