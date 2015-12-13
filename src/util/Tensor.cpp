@@ -129,13 +129,14 @@ void Tensor::Shadow ( Tensor& tensor ) {
 
 
 void Tensor::Resize ( const std::size_t samples, const std::size_t width,
-                      const std::size_t height, const std::size_t maps, datum* const preallocated_memory, bool mmapped) {
+                      const std::size_t height, const std::size_t maps, datum* const preallocated_memory, bool mmapped, bool dont_delete) {
   // Check if reshaping works
-  if ( Reshape ( samples, width, height, maps ) )
+  if (preallocated_memory == nullptr && Reshape ( samples, width, height, maps ) )
     return;
 
-  // Delete the old allocation
-  DeleteIfPossible();
+  // Delete the old allocation if it is different from the new one
+  if(preallocated_memory != data_ptr_ && !dont_delete)
+    DeleteIfPossible();
 
   // Calculate memory requirement
   std::size_t elements = samples * maps * width * height;
@@ -393,17 +394,21 @@ bool Tensor::CopyMap ( const Tensor& source, const std::size_t source_sample,
 void Tensor::DeleteIfPossible() {
   if ( data_ptr_ != nullptr ) {
     if ( !is_shadow_ ) {
+#ifdef BUILD_POSIX
       if(mmapped_) {
         munmap((void*)original_mmap_, (elements_ * sizeof(datum)) / sizeof(char));
         original_mmap_ = nullptr;
         mmapped_ = false;
       } else {
+#endif
 #ifdef BLAS_MKL
         mkl_free ( data_ptr_ );
 #else
         delete[] data_ptr_;
 #endif
+#ifdef BUILD_POSIX
       }
+#endif
 #ifdef BUILD_OPENCL
       if ( cl_data_ptr_ != 0 ) {
         clReleaseMemObject ( (cl_mem)cl_data_ptr_ );

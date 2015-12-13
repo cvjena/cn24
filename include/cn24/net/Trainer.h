@@ -18,6 +18,7 @@
 #include <cmath>
 
 #include "../util/CombinedTensor.h"
+#include "../util/StatAggregator.h"
 #include "TrainingLayer.h"
 #include "NetGraph.h"
 
@@ -41,6 +42,7 @@ public:
   datum mu = 1.75;
   datum eta = 1.5;
   OPTIMIZATION_METHOD optimization_method = GRADIENT_DESCENT;
+  bool stats_during_training = true;
   unsigned int pbatchsize = 1;
   unsigned int sbatchsize = 1;
   unsigned int iterations = 500;
@@ -61,7 +63,7 @@ public:
 	*
 	* @param epochs The number of epochs to train
 	*/
-  void Train (unsigned int epochs);
+  void Train (unsigned int epochs, bool do_snapshot);
 
   /**
 	* @brief Test the net by running every test sample through the net
@@ -101,9 +103,13 @@ public:
                                           * (datum) iteration,
                                           -settings_.exponent);
   }
+  
+  inline void SetStatsDuringTraining(bool enable) { settings_.stats_during_training = enable; }
 
 private:
   void ApplyGradients (datum lr);
+  void InitializeStats();
+
   // References for easy access
   NetGraph& graph_;
   std::vector<CombinedTensor*> parameters_;
@@ -116,12 +122,23 @@ private:
 
   // Sample count
   unsigned int sample_count_ = 0;
+  unsigned int weight_count_ = 0;
 
   // Learning options
   TrainerSettings settings_;
 
   // State
   unsigned int epoch_ = 0;
+
+  // Global state
+  static bool stats_are_initialized_;
+  static StatDescriptor* stat_aggloss_;
+  static StatDescriptor* stat_qp_caseA_;
+  static StatDescriptor* stat_qp_caseB_;
+  static StatDescriptor* stat_qp_caseC_;
+  static StatDescriptor* stat_qp_caseM_;
+  static StatDescriptor* stat_fps_;
+  static StatDescriptor* stat_sps_;
 };
 
 

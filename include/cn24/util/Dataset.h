@@ -18,6 +18,7 @@
 
 #include "Config.h"
 #include "Tensor.h"
+#include "TensorStream.h"
 
 namespace Conv
 {
@@ -214,8 +215,10 @@ private:
 
 class TensorStreamDataset : public Dataset {
 public:
-  TensorStreamDataset(std::istream& training_stream,
-    std::istream& testing_stream,
+  TensorStreamDataset(/*std::istream& training_stream,
+    std::istream& testing_stream,*/
+    TensorStream* training_stream,
+    TensorStream* testing_stream,
     unsigned int classes,
     std::vector<std::string> class_names,
     std::vector<unsigned int> class_colors,
@@ -244,8 +247,12 @@ public:
   
 private:
   // Stored data
+  /*
   Tensor* data_ = nullptr;
   Tensor* labels_ = nullptr;
+  */
+  TensorStream* training_stream_;
+  TensorStream* testing_stream_;
   
   Tensor error_cache;
   

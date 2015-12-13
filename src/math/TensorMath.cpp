@@ -451,4 +451,180 @@ void TensorMath::SMS(const Tensor& source, Tensor& target)
   target.hint_ignore_content_ = false;
 }
 
+void TensorMath::DOWN(const Tensor& source, Tensor& target, const int region_width, const int region_height, const datum target_factor)
+{
+#ifdef BUILD_OPENCL
+  if(source.cl_gpu_ || target.cl_gpu_) {
+    ((Tensor&)source).MoveToGPU();
+    target.MoveToGPU(true);
+    const int target_width = target.width();
+    const int target_height = target.height();
+    const int source_width = source.width();
+    const int source_height = source.height();
+    const int maps = target.maps();
+    const int samples = target.samples();
+    cl_uint error = 0;
+
+    error |= clSetKernelArg (CLHelper::k_down, 0, sizeof (cl_mem), &(((Tensor&)source).cl_data_ptr_));
+    error |= clSetKernelArg (CLHelper::k_down, 1, sizeof (cl_mem), &(target.cl_data_ptr_));
+    error |= clSetKernelArg (CLHelper::k_down, 2, sizeof (cl_uint), &target_width);
+    error |= clSetKernelArg (CLHelper::k_down, 3, sizeof (cl_uint), &target_height);
+    error |= clSetKernelArg (CLHelper::k_down, 4, sizeof (cl_uint), &source_width);
+    error |= clSetKernelArg (CLHelper::k_down, 5, sizeof (cl_uint), &source_height);
+    error |= clSetKernelArg (CLHelper::k_down, 6, sizeof (cl_uint), &region_width);
+    error |= clSetKernelArg (CLHelper::k_down, 7, sizeof (cl_uint), &region_height);
+    error |= clSetKernelArg (CLHelper::k_down, 8, sizeof (cl_float), &target_factor);
+
+    if (error != CL_SUCCESS) {
+      FATAL("Error setting kernel args: " << (signed int) error);
+    }
+
+    size_t global_work_size[] = {(size_t)target.width(), (size_t)target.height(), (size_t)(target.maps() * target.samples())};
+
+    error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_down, 3, NULL,
+        global_work_size, NULL, 0, NULL, NULL);
+    if (error != CL_SUCCESS) {
+      FATAL("Error enqueueing kernel: " << (signed int) error);
+    }
+
+#ifdef BRUTAL_FINISH
+    error = clFinish (CLHelper::queue);
+    if (error != CL_SUCCESS) {
+      FATAL("Error finishing command queue: " << (signed int) error);
+    }
+#endif
+  } else {
+#endif
+    const int target_width = target.width();
+    const int target_height = target.height();
+    const int maps = target.maps();
+    const int samples = target.samples();
+    for(int sample = 0; sample < samples; sample++) {
+      for(int map = 0; map < maps; map++) {
+        for(unsigned int target_y = 0; target_y < target_height; target_y++) {
+          const unsigned int source_y = region_height * target_y;
+          for(unsigned int target_x = 0; target_x < target_width; target_x++) {
+            const unsigned int source_x = region_width * target_x;
+            datum sum = 0;
+            for(unsigned int ry = 0; ry < region_height; ry++) {
+              for(unsigned int rx = 0; rx < region_width; rx++) {
+                const datum* src = source.data_ptr_const(source_x + rx, source_y + ry, map, sample);
+                sum += *src;
+              }
+            }
+            datum* tgt = target.data_ptr(target_x, target_y, map, sample);
+            *tgt = sum * target_factor;
+          }
+        }
+      }
+    }
+    
+#ifdef BUILD_OPENCL
+  }
+#endif
+
+  target.hint_ignore_content_ = false;
+}
+
+void TensorMath::UP(const Tensor& source, Tensor& target, const int region_width, const int region_height, const datum target_factor)
+{
+#ifdef BUILD_OPENCL
+  if(source.cl_gpu_ || target.cl_gpu_) {
+    ((Tensor&)source).MoveToGPU();
+    target.MoveToGPU(true);
+    const int target_width = target.width();
+    const int target_height = target.height();
+    const int source_width = source.width();
+    const int source_height = source.height();
+    const int maps = target.maps();
+    const int samples = target.samples();
+    cl_uint error = 0;
+
+    error |= clSetKernelArg (CLHelper::k_up, 0, sizeof (cl_mem), &(((Tensor&)source).cl_data_ptr_));
+    error |= clSetKernelArg (CLHelper::k_up, 1, sizeof (cl_mem), &(target.cl_data_ptr_));
+    error |= clSetKernelArg (CLHelper::k_up, 2, sizeof (cl_uint), &target_width);
+    error |= clSetKernelArg (CLHelper::k_up, 3, sizeof (cl_uint), &target_height);
+    error |= clSetKernelArg (CLHelper::k_up, 4, sizeof (cl_uint), &source_width);
+    error |= clSetKernelArg (CLHelper::k_up, 5, sizeof (cl_uint), &source_height);
+    error |= clSetKernelArg (CLHelper::k_up, 6, sizeof (cl_uint), &region_width);
+    error |= clSetKernelArg (CLHelper::k_up, 7, sizeof (cl_uint), &region_height);
+    error |= clSetKernelArg (CLHelper::k_up, 8, sizeof (cl_float), &target_factor);
+
+    if (error != CL_SUCCESS) {
+      FATAL("Error setting kernel args: " << (signed int) error);
+    }
+
+    size_t global_work_size[] = {(size_t)target.width(), (size_t)target.height(), (size_t)(target.maps() * target.samples())};
+
+    error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_up, 3, NULL,
+        global_work_size, NULL, 0, NULL, NULL);
+    if (error != CL_SUCCESS) {
+      FATAL("Error enqueueing kernel: " << (signed int) error);
+    }
+
+#ifdef BRUTAL_FINISH
+    error = clFinish (CLHelper::queue);
+    if (error != CL_SUCCESS) {
+      FATAL("Error finishing command queue: " << (signed int) error);
+    }
+#endif
+  } else {
+#endif
+    const datum region_area = (datum)region_width * (datum)region_height;
+    const int width = source.width();
+    const int height = source.height();
+    const int maps = source.maps();
+    const int samples = source.samples();
+    for(int sample = 0; sample < samples; sample++) {
+      for(int map = 0; map < maps; map++) {
+        for(unsigned int y = 0; y < height; y++) {
+          const unsigned int iy = region_height * y;
+          for(unsigned int x = 0; x < width; x++) {
+            const unsigned int ix = region_width * x;
+            const datum* src = source.data_ptr_const(x, y, map, sample);
+            datum sum = *src;
+            for(unsigned int ry = 0; ry < region_height; ry++) {
+              for(unsigned int rx = 0; rx < region_width; rx++) {
+                datum* tgt = target.data_ptr(ix + rx, iy + ry, map, sample);
+                *tgt = sum * target_factor;
+              }
+            }
+          }
+        }
+      }
+    }
+#ifdef BUILD_OPENCL
+  }
+#endif
+
+  target.hint_ignore_content_ = false;
+}
+
+void TensorMath::ADD(const Tensor& source_a, const Tensor& source_b, Tensor& target)
+{
+#ifdef BUILD_OPENCL
+  ((Tensor&)source_a).MoveToCPU();
+  ((Tensor&)source_b).MoveToCPU();
+  target.MoveToCPU(true);
+#endif
+  if((source_a.samples() != source_b.samples())
+    || (source_b.samples() != target.samples())
+    || (source_a.elements() != source_b.elements())
+    || (source_b.elements() != target.elements())) {
+    FATAL("Dimensions don't match!");
+  }
+  
+  #pragma omp parallel for default(shared)
+  for(unsigned int element = 0; element < source_a.elements(); element++) {
+    const datum* source_a_ptr = &(source_a.data_ptr_const()[element]);
+    const datum* source_b_ptr = &(source_b.data_ptr_const()[element]);
+    datum* target_ptr = &(target.data_ptr()[element]);
+    
+    *target_ptr = *source_a_ptr + *source_b_ptr;
+  }
+  
+  target.hint_ignore_content_ = false;
+}
+
+
 }

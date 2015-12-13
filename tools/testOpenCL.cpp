@@ -18,7 +18,8 @@
 
 #ifdef BUILD_OPENCL
 int main() {
-  
+  Conv::System::Init();
+
   cl_uint platform_count = 0;
   clGetPlatformIDs(0, 0, &platform_count);
   LOGINFO << "OpenCL platform(s) available: " << platform_count;
@@ -47,8 +48,6 @@ int main() {
     }
     
   }
-
-  Conv::System::Init();
   
   LOGEND;
   

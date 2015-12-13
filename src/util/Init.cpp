@@ -34,6 +34,7 @@
 #endif
 
 #include "TensorViewer.h"
+#include "StatAggregator.h"
 
 namespace Conv {
 
@@ -66,9 +67,12 @@ cl_kernel CLHelper::k_setValue = 0;
 cl_kernel CLHelper::k_sms = 0;
 cl_kernel CLHelper::k_im2col = 0;
 cl_kernel CLHelper::k_col2im = 0;
+cl_kernel CLHelper::k_up = 0;
+cl_kernel CLHelper::k_down = 0;
 #endif
 
 TensorViewer* System::viewer = nullptr;
+StatAggregator* System::stat_aggregator = nullptr;
 int System::log_level = 0;
 
 #define STRING_SHA1 GIT_SHA1
@@ -83,7 +87,7 @@ void System::Init(int requested_log_level) {
   } else
     log_level = requested_log_level;
   
-  LOGINFO << "CN24 version " STRING_SHA1;
+  LOGINFO << "CN24 v2.0.0 at " STRING_SHA1;
   LOGINFO << "Copyright (C) 2015 Clemens-Alexander Brust";
   LOGINFO << "For licensing information, see the LICENSE"
           << " file included with this project.";
@@ -125,7 +129,12 @@ void System::Init(int requested_log_level) {
     LOGWARN << "Could not initialize GTK!";
   }
 #endif
+
+  // Initialize global TensorViewer
   viewer = new TensorViewer();
+  
+  // Initialize global StatAggregator
+  stat_aggregator = new StatAggregator();
 }
 
 void System::GetExecutablePath(std::string& binary_path) {
@@ -257,6 +266,7 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   cl_program p_maximum = CreateProgram ( "kernels/maximumPooling.cl" );
   cl_program p_amaximum = CreateProgram ( "kernels/advmaximumPooling.cl" );
   cl_program p_nonLinearFunctions = CreateProgram ( "kernels/nonLinearFunctions.cl" );
+  cl_program p_scaling = CreateProgram ( "kernels/scaling.cl" );
   cl_program p_setValue = CreateProgram ( "kernels/setValue.cl" );
   cl_program p_sms = CreateProgram ( "kernels/sms.cl" );
   cl_program p_im2col = CreateProgram ( "kernels/im2col.cl" );
@@ -388,6 +398,18 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   }
   
   k_col2im = clCreateKernel ( p_im2col, "COL2IM", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+  
+  k_up = clCreateKernel ( p_scaling, "UP", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+  
+  k_down = clCreateKernel ( p_scaling, "DOWN", &error );
 
   if ( error != CL_SUCCESS ) {
     FATAL ( "Error creating kernel: " << ( signed int ) error );

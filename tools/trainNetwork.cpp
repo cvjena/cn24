@@ -35,7 +35,7 @@ int main (int argc, char* argv[]) {
   const Conv::datum it_factor = 0.01;
 #else
   const Conv::datum it_factor = 1;
-  const Conv::datum loss_sampling_p = 0.25;
+  const Conv::datum loss_sampling_p = 0.5;
 #endif
   
   if(argc > 1) {
@@ -66,16 +66,28 @@ int main (int argc, char* argv[]) {
   std::string dataset_config_fname (argv[1]);
 
   Conv::System::Init(requested_log_level);
-
+  
+  // Register stat sinks
+  Conv::ConsoleStatSink console_stat_sink;
+  Conv::CSVStatSink csv_stat_sink;
+  Conv::System::stat_aggregator->RegisterSink(&console_stat_sink);
+  Conv::System::stat_aggregator->RegisterSink(&csv_stat_sink);
+  
+  Conv::Factory* factory;
+  
   // Open network and dataset configuration files
-  std::ifstream net_config_file (net_config_fname, std::ios::in);
-  std::ifstream dataset_config_file (dataset_config_fname, std::ios::in);
-
-  if (!net_config_file.good()) {
+  std::ifstream* net_config_file = new std::ifstream(net_config_fname, std::ios::in);
+  if (!net_config_file->good()) {
     FATAL ("Cannot open net configuration file!");
   }
 
   net_config_fname = net_config_fname.substr (net_config_fname.rfind ("/") + 1);
+  
+  // Parse network configuration file
+  factory = new Conv::ConfigurableFactory (*net_config_file, 8347734, true);
+
+  // Open dataset configuration file
+  std::ifstream dataset_config_file (dataset_config_fname, std::ios::in);
 
   if (!dataset_config_file.good()) {
     FATAL ("Cannot open dataset configuration file!");
@@ -83,8 +95,6 @@ int main (int argc, char* argv[]) {
 
   dataset_config_fname = dataset_config_fname.substr (net_config_fname.rfind ("/") + 1);
 
-  // Parse network configuration file
-  Conv::ConfigurableFactory* factory = new Conv::ConfigurableFactory (net_config_file, 8347734, true);
   factory->InitOptimalSettings();
   
   // Extract important settings from parsed configuration
@@ -185,23 +195,23 @@ int main (int argc, char* argv[]) {
 
       Conv::DatasetInputLayer* tdata_layer = nullptr;
       tdata_layer = new Conv::DatasetInputLayer (*testing_dataset, BATCHSIZE, 1.0, 983923);
-			Conv::NetGraphNode* tinput_node = new Conv::NetGraphNode(tdata_layer);
-			tinput_node->is_input = true;
-			testing_graph->AddNode(tinput_node);
+      Conv::NetGraphNode* tinput_node = new Conv::NetGraphNode(tdata_layer);
+      tinput_node->is_input = true;
+      testing_graph->AddNode(tinput_node);
 
-      Conv::ConfigurableFactory* tfactory = new Conv::ConfigurableFactory (net_config_file, 8347734);
-			bool testing_completeness = tfactory->AddLayers(*testing_graph, Conv::NetGraphConnection(tinput_node), CLASSES, true);
-			LOGDEBUG << "Testing graph complete: " << testing_completeness;
+      Conv::ConfigurableFactory* tfactory = new Conv::ConfigurableFactory (*net_config_file, 8347734);
+      bool testing_completeness = tfactory->AddLayers(*testing_graph, Conv::NetGraphConnection(tinput_node), CLASSES, true);
+      LOGDEBUG << "Testing graph complete: " << testing_completeness;
 
-			if(!completeness)
-				FATAL("Graph completeness test failed after factory run!");
+      if(!completeness)
+        FATAL("Graph completeness test failed after factory run!");
 
-			addStatLayers(*testing_graph, tinput_node, testing_dataset);
-			
-			if(!completeness)
-				FATAL("Graph completeness test failed after adding stat layer!");
+      addStatLayers(*testing_graph, tinput_node, testing_dataset);
+      
+      if(!completeness)
+        FATAL("Graph completeness test failed after adding stat layer!");
 
-			testing_graph->Initialize();
+      testing_graph->Initialize();
 
       // Shadow training net weights
       std::vector<Conv::CombinedTensor*> training_params;
@@ -225,6 +235,7 @@ int main (int argc, char* argv[]) {
       testing_trainer = &trainer;
     }
 
+    Conv::System::stat_aggregator->Initialize();
     LOGINFO << "Current training settings: " << factory->optimal_settings();
 
     if (FROM_SCRIPT) {
@@ -285,16 +296,27 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
   if (command.compare ("q") == 0 || command.compare ("quit") == 0) {
     return false;
   } else if (command.compare (0, 5, "train") == 0) {
+    Conv::System::stat_aggregator->StartRecording();
+    
     unsigned int epochs = 1;
     unsigned int layerview = 0;
+    unsigned int no_snapshots = 0;
     Conv::ParseCountIfPossible (command, "view", layerview);
     graph.SetLayerViewEnabled (layerview == 1);
     Conv::ParseCountIfPossible (command, "epochs", epochs);
-    trainer.Train (epochs);
+    Conv::ParseCountIfPossible(command, "no_snapshots", no_snapshots);
+    trainer.Train (epochs, no_snapshots != 1);
     testing_trainer.SetEpoch (trainer.epoch());
     graph.SetLayerViewEnabled (false);
     LOGINFO << "Training complete.";
+    
+    Conv::System::stat_aggregator->StopRecording();
+    if(no_snapshots == 1)
+      Conv::System::stat_aggregator->Generate();
+    Conv::System::stat_aggregator->Reset();
   } else if (command.compare (0, 4, "test") == 0) {
+    Conv::System::stat_aggregator->StartRecording();
+    
     unsigned int layerview = 0;
     Conv::ParseCountIfPossible (command, "view", layerview);
     testing_graph.SetLayerViewEnabled (layerview == 1);
@@ -302,6 +324,10 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
     testing_trainer.Test();
     testing_graph.SetLayerViewEnabled (false);
     LOGINFO << "Testing complete.";
+    
+    Conv::System::stat_aggregator->StopRecording();
+    Conv::System::stat_aggregator->Generate();
+    Conv::System::stat_aggregator->Reset();
   } else if (command.compare (0, 4, "load") == 0) {
     std::string param_file_name;
     unsigned int last_layer = 0;
@@ -356,6 +382,13 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 
       param_file.close();
     }
+  } else if (command.compare (0, 14, "set experiment") == 0) {
+    std::string experiment_name = "";
+    Conv::ParseStringParamIfPossible(command, "name", experiment_name);
+    if(experiment_name.length() > 0)
+      Conv::System::stat_aggregator->SetCurrentExperiment(experiment_name);
+    else
+      LOGINFO << "Experiment name not specified, not changing!";
   } else if (command.compare (0, 9, "set epoch") == 0) {
     unsigned int epoch = 0;
     Conv::ParseCountIfPossible (command, "epoch", epoch);
@@ -405,8 +438,8 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 		}
 	}
 	else if (command.compare(0, 5, "wstat") == 0) {
-    std::string node_uid = 0;
-		Conv::ParseStringIfPossible(command, "node", node_uid);
+    std::string node_uid;
+		Conv::ParseStringParamIfPossible(command, "node", node_uid);
 		for (Conv::NetGraphNode* node : graph.GetNodes()) {
 			if (node->unique_name.compare(node_uid) == 0) {
 				unsigned int p = 0;
@@ -421,11 +454,10 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 		}
 	}
 	else if (command.compare(0, 5, "dstat") == 0) {
-    std::string node_uid = 0;
-		Conv::ParseStringIfPossible(command, "node", node_uid);
+    std::string node_uid;
+		Conv::ParseStringParamIfPossible(command, "node", node_uid);
 		for (Conv::NetGraphNode* node : graph.GetNodes()) {
 			if (node->unique_name.compare(node_uid) == 0) {
-				unsigned int p = 0;
 				for (Conv::NetGraphBuffer& output_buffer : node->output_buffers) {
 					Conv::CombinedTensor* output_tensor = output_buffer.combined_tensor;
 					LOGINFO << "Reporting stats on buffer " << output_buffer.description;
@@ -437,6 +469,13 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 			}
 		}
 	}
+	else if (command.compare(0, 5, "tstat") == 0) {
+    unsigned int enable_tstat = 1;
+    Conv::ParseCountIfPossible(command, "enable", enable_tstat);
+    trainer.SetStatsDuringTraining(enable_tstat == 1);
+    testing_trainer.SetStatsDuringTraining(enable_tstat == 1);
+    LOGDEBUG << "Training stats enabled: " << enable_tstat;
+  }
 	else {
     LOGWARN << "Unknown command: " << command;
   }
@@ -447,12 +486,14 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 void help() {
   std::cout << "You can use the following commands:\n";
   std::cout
-      << "  train [epochs=<n>]\n"
-      << "    Train the network for n epochs (default: 1)\n\n"
+      << "  train [epochs=<n>] [no_snapshots=1]\n"
+      << "    Train the network for n epochs (default: 1). no_snapshots=1 accumulates statistics over all n epochs.\n\n"
       << "  test\n"
       << "    Test the network\n\n"
       << "  set epoch=<epoch>\n"
       << "    Sets the current epoch\n\n"
+      << "  set experiment name=<name>\n"
+      << "    Sets the current experiment name for logging and statistics purposes\n\n"
       << "  reset\n"
       << "    Reinitializes the nets parameters\n\n"
       << "  load file=<path> [last_layer=<l>]\n"
@@ -460,5 +501,7 @@ void help() {
 			<< "  graph file=<path> {test|train}\n"
 			<< "    Write the network architecture for training/testing to a file in graphviz format\n\n"
       << "  save file=<path>\n"
-      << "    Save parameters to a file\n";
+      << "    Save parameters to a file\n\n"
+      << "  tstat enable=<1|0>\n"
+      << "    Enable statistics during training (1: yes, 0: no)\n";
 }

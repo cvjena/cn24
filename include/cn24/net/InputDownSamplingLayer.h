@@ -4,36 +4,35 @@
  *
  * For licensing information, see the LICENSE file included with this project.
  */  
-
 /**
- * @file UpscaleLayer.h
- * @class UpscaleLayer
- * @brief Layer that scales samples up after MaxPooling downscaled them.
+ * @file InputDownSamplingLayer.h
+ * @class InputDownSamplingLayer
+ * @brief Layer that scales input down
  * 
  * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
  */
 
-#ifndef CONV_UPSCALELAYER_H
-#define CONV_UPSCALELAYER_H
+#ifndef CONV_INPUTDOWNSAMPLINGLAYER_H
+#define CONV_INPUTDOWNSAMPLINGLAYER_H
 
-#include <vector>
 #include <string>
 #include <sstream>
 
 #include "SimpleLayer.h"
 
+
 namespace Conv {
   
-class UpscaleLayer : public SimpleLayer {
+class InputDownSamplingLayer : public SimpleLayer {
 public:
   /**
-	* @brief Create an UpscaleLayer with the specified borders
-	*
-	* @param region_width The horizontal border size
-	* @param region_height The vertical border size
-	*/
-  UpscaleLayer(const unsigned int region_width,
-	       const unsigned int region_height);
+   * @brief Constructs a max-pooling Layer.
+   * 
+   * @param region_width Width of the pooling regions
+   * @param region_height Height of the pooling regions
+   */
+  InputDownSamplingLayer(const unsigned int region_width,
+                  const unsigned int region_height);
   
   // Implementations for SimpleLayer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs, std::vector< CombinedTensor* >& outputs);
@@ -41,14 +40,17 @@ public:
   void FeedForward();
   void BackPropagate();
   
-  bool IsOpenCLAware() { return true; }
+  inline unsigned int Gain() {
+    return gain / (region_width_ * region_height_);
+  }
   
 	inline std::string GetLayerDescription() {
 		std::ostringstream ss;
-		ss << "Upscale Layer (" << region_width_ << "x" << region_height_ << ")";
+		ss << "Input Down-Sampling Layer (" << region_width_ << "x" << region_height_ << ")";
 		return ss.str();
 	}
 
+  bool IsOpenCLAware();
 private:
   // Settings
   unsigned int region_width_ = 0;
@@ -62,6 +64,7 @@ private:
   
   unsigned int maps_ = 0;
 };
-  
+
 }
+
 #endif

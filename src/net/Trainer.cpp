@@ -12,66 +12,240 @@
 #include "Net.h"
 #include "StatLayer.h"
 #include "CLHelper.h"
+#include "StatAggregator.h"
+#include "Init.h"
 
 #include "Trainer.h"
 
+
 namespace Conv {
 
-	Trainer::Trainer(Conv::NetGraph& graph, TrainerSettings settings) :
-		graph_(graph), settings_(settings) {
-		LOGDEBUG << "Instance created";
+bool Trainer::stats_are_initialized_ = false;
+StatDescriptor* Trainer::stat_aggloss_ = nullptr;
+StatDescriptor* Trainer::stat_qp_caseA_ = nullptr;
+StatDescriptor* Trainer::stat_qp_caseB_ = nullptr;
+StatDescriptor* Trainer::stat_qp_caseC_ = nullptr;
+StatDescriptor* Trainer::stat_qp_caseM_ = nullptr;
+StatDescriptor* Trainer::stat_sps_ = nullptr;
+StatDescriptor* Trainer::stat_fps_ = nullptr;
 
-		// We need a training layer to select training samples and some kind of
-		// loss function to minimize
-		if (graph_.GetTrainingNodes().size() == 0 || graph_.GetLossNodes().size() == 0) {
-			FATAL("Net doesn't have training layer or loss function layer!");
-		}
+void Trainer::InitializeStats() {
+  // Only initialize stats once
+  if (!stats_are_initialized_) {
 
-		// Ask the Net for parameters
-		graph_.GetParameters(parameters_);
-
-		LOGDEBUG << "Optimizing " << parameters_.size() << " sets of parameters.";
-
-		unsigned int w = 0;
-
-		for (unsigned int p = 0; p < parameters_.size(); p++) {
-			w += parameters_[p]->data.elements();
-
-      // Allocate Tensors for momentum
-      Tensor* last_delta = new Tensor();
-      Tensor* last_gradient = new Tensor();
-      Tensor* accumulated_gradient = new Tensor();
-      last_delta->Resize (parameters_[p]->data);
-      last_delta->Clear();
-      last_gradient->Resize (parameters_[p]->data);
-      last_gradient->Clear();
-      accumulated_gradient->Resize (parameters_[p]->data);
-      accumulated_gradient->Clear();
-
-      last_deltas_.push_back (last_delta);
-      last_gradients_.push_back (last_gradient);
-      accumulated_gradients_.push_back (accumulated_gradient);
-    }
-
-		// Outputs the number of weights
-		LOGDEBUG << "Weights: " << w;
-
-		first_training_layer_ = dynamic_cast<TrainingLayer*>(graph_.GetTrainingNodes()[0]->layer);
-		sample_count_ = first_training_layer_->GetLabelWidth() * first_training_layer_->GetLabelHeight()
-    * first_training_layer_->GetBatchSize();
+    stat_aggloss_ = new StatDescriptor;
+    stat_aggloss_->nullable = true;
+    stat_aggloss_->description = "Average Aggregate Loss";
+    stat_aggloss_->unit = "1/pixel";
+    stat_aggloss_->init_function =
+      [](Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+    stat_aggloss_->update_function =
+      [](Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+    stat_aggloss_->output_function =
+      [](HardcodedStats& hc_stats, Stat& stat) -> Stat {
+      Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0) {
+        double d_iterations = (double)hc_stats.iterations;
+        return_stat.value = stat.value / d_iterations;
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
+      
+    stat_qp_caseA_ = new StatDescriptor;
+    stat_qp_caseA_->nullable = true;
+    stat_qp_caseA_->description = "QuickProp Case A Percentage";
+    stat_qp_caseA_->unit = "%";
+    stat_qp_caseA_->init_function =
+      [](Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+    stat_qp_caseA_->update_function =
+      [](Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+    stat_qp_caseA_->output_function = 
+      [](HardcodedStats& hc_stats, Stat& stat) -> Stat {
+      Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0 && hc_stats.weights > 0 && !stat.is_null) {
+        double d_iterations = (double)hc_stats.iterations;
+        double d_weights = (double)hc_stats.weights;
+        return_stat.value = 100.0 * stat.value / (d_iterations * d_weights);
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
+    
+    stat_qp_caseB_ = new StatDescriptor;
+    stat_qp_caseB_->nullable = true;
+    stat_qp_caseB_->description = "QuickProp Case B Percentage";
+    stat_qp_caseB_->unit = "%";
+    stat_qp_caseB_->init_function =
+      [](Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+    stat_qp_caseB_->update_function =
+      [](Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+    stat_qp_caseB_->output_function = 
+      [](HardcodedStats& hc_stats, Stat& stat) -> Stat {
+      Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0 && hc_stats.weights > 0 && !stat.is_null) {
+        double d_iterations = (double)hc_stats.iterations;
+        double d_weights = (double)hc_stats.weights;
+        return_stat.value = 100.0 * stat.value / (d_iterations * d_weights);
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
+    
+    stat_qp_caseC_ = new StatDescriptor;
+    stat_qp_caseC_->nullable = true;
+    stat_qp_caseC_->description = "QuickProp Case C Percentage";
+    stat_qp_caseC_->unit = "%";
+    stat_qp_caseC_->init_function =
+      [](Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+    stat_qp_caseC_->update_function =
+      [](Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+    stat_qp_caseC_->output_function = 
+      [](HardcodedStats& hc_stats, Stat& stat) -> Stat {
+      Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0 && hc_stats.weights > 0 && !stat.is_null) {
+        double d_iterations = (double)hc_stats.iterations;
+        double d_weights = (double)hc_stats.weights;
+        return_stat.value = 100.0 * stat.value / (d_iterations * d_weights);
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
+    
+    stat_qp_caseM_ = new StatDescriptor;
+    stat_qp_caseM_->nullable = true;
+    stat_qp_caseM_->description = "QuickProp Case M Percentage";
+    stat_qp_caseM_->unit = "%";
+    stat_qp_caseM_->init_function =
+      [](Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+    stat_qp_caseM_->update_function =
+      [](Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+    stat_qp_caseM_->output_function = 
+      [](HardcodedStats& hc_stats, Stat& stat) -> Stat {
+      Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0 && hc_stats.weights > 0 && !stat.is_null) {
+        double d_iterations = (double)hc_stats.iterations;
+        double d_weights = (double)hc_stats.weights;
+        return_stat.value = 100.0 * stat.value / (d_iterations * d_weights);
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
+    
+    stat_sps_ = new StatDescriptor;
+    stat_sps_->nullable = true;
+    stat_sps_->description = "Pixel Throughput";
+    stat_sps_->unit = "pixels/s";
+    stat_sps_->init_function =
+      [](Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+    stat_sps_->update_function =
+      [](Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+    stat_sps_->output_function =
+      [] (Conv::HardcodedStats& hc_stats, Conv::Stat& stat) {
+        Conv::Stat return_stat = stat;
+        return_stat.value = stat.value / hc_stats.seconds_elapsed;
+        return return_stat;
+      };
+    
+    stat_fps_ = new StatDescriptor;
+    stat_fps_->nullable = true;
+    stat_fps_->description = "Frame Rate";
+    stat_fps_->unit = "frames/s";
+    stat_fps_->init_function =
+      [](Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+    stat_fps_->update_function =
+      [](Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+    stat_fps_->output_function =
+      [] (Conv::HardcodedStats& hc_stats, Conv::Stat& stat) {
+        Conv::Stat return_stat = stat;
+        return_stat.value = stat.value / hc_stats.seconds_elapsed;
+        return return_stat;
+      };
+    
+    // Register stats
+    System::stat_aggregator->RegisterStat(stat_aggloss_);
+    System::stat_aggregator->RegisterStat(stat_qp_caseA_);
+    System::stat_aggregator->RegisterStat(stat_qp_caseB_);
+    System::stat_aggregator->RegisterStat(stat_qp_caseC_);
+    System::stat_aggregator->RegisterStat(stat_qp_caseM_);
+    System::stat_aggregator->RegisterStat(stat_sps_);
+    System::stat_aggregator->RegisterStat(stat_fps_);
+    stats_are_initialized_ = true;
+  }
+  
+  // Move lambdas with reference captures here
 }
 
-void Trainer::Train (unsigned int epochs) {
-  // net_.SetTestOnlyStatDisabled (false);
+Trainer::Trainer(Conv::NetGraph& graph, TrainerSettings settings) :
+  graph_(graph), settings_(settings) {
+  LOGDEBUG << "Instance created";
+
+  // We need a training layer to select training samples and some kind of
+  // loss function to minimize
+  if (graph_.GetTrainingNodes().size() == 0 || graph_.GetLossNodes().size() == 0) {
+    FATAL("Net doesn't have training layer or loss function layer!");
+  }
+
+  // Ask the Net for parameters
+  graph_.GetParameters(parameters_);
+
+  LOGDEBUG << "Optimizing " << parameters_.size() << " sets of parameters.";
+
+  unsigned int w = 0;
+
+  for (unsigned int p = 0; p < parameters_.size(); p++) {
+    w += parameters_[p]->data.elements();
+
+    // Allocate Tensors for momentum
+    Tensor* last_delta = new Tensor();
+    Tensor* last_gradient = new Tensor();
+    Tensor* accumulated_gradient = new Tensor();
+    last_delta->Resize (parameters_[p]->data);
+    last_delta->Clear();
+    last_gradient->Resize (parameters_[p]->data);
+    last_gradient->Clear();
+    accumulated_gradient->Resize (parameters_[p]->data);
+    accumulated_gradient->Clear();
+
+    last_deltas_.push_back (last_delta);
+    last_gradients_.push_back (last_gradient);
+    accumulated_gradients_.push_back (accumulated_gradient);
+  }
+
+  // Outputs the number of weights
+  LOGDEBUG << "Weights: " << w;
+  weight_count_ = w;
+
+  first_training_layer_ = dynamic_cast<TrainingLayer*>(graph_.GetTrainingNodes()[0]->layer);
+  sample_count_ = first_training_layer_->GetLabelWidth() * first_training_layer_->GetLabelHeight()
+  * first_training_layer_->GetBatchSize();
+
+  InitializeStats();
+}
+
+void Trainer::Train (unsigned int epochs, bool do_snapshots) {
+  // Update hardcoded stats
+  System::stat_aggregator->hardcoded_stats_.weights = weight_count_;
+
   graph_.SetIsTesting(false);
-
-  for (unsigned int e = 0; e < epochs; e++)
+  graph_.SetStatLayersEnabled(settings_.stats_during_training);
+  
+  for (unsigned int e = 0; e < epochs; e++) {
     Epoch();
+    if(do_snapshots) {
+      System::stat_aggregator->Snapshot();
+      // Update hardcoded stats
+      System::stat_aggregator->hardcoded_stats_.weights = weight_count_;
+    }
+  }
 
-  // net_.SetTestOnlyStatDisabled (false);
+  graph_.SetStatLayersEnabled(true);
 }
 
 void Trainer::Test() {
+  // Update hardcoded stats
+  System::stat_aggregator->hardcoded_stats_.weights = weight_count_;
+
 	datum aggregate_loss = 0.0;
 	datum* loss_sums = new datum[graph_.GetLossNodes().size()];
 	for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++)
@@ -90,9 +264,8 @@ void Trainer::Test() {
   LOGDEBUG << "Testing, iterations: " << iterations <<
            ", batch size: " << first_training_layer_->GetBatchSize();
 
-  auto t_begin = std::chrono::system_clock::now();
-
   for (unsigned int i = 0; i < iterations; i++) {
+    aggregate_loss = 0.0;
     graph_.FeedForward();
     for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
       LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
@@ -100,41 +273,43 @@ void Trainer::Test() {
 			loss_sums[n] += loss;
 			aggregate_loss += loss;
 		}
+    // Batch/Iteration done
+    if (System::stat_aggregator->state_ == StatAggregator::RECORDING)
+      System::stat_aggregator->hardcoded_stats_.iterations++;
+
+    // Update aggregate loss stat
+    System::stat_aggregator->Update(stat_aggloss_->stat_id, aggregate_loss
+      / sample_count_ );
+
 	}
 
-  auto t_end = std::chrono::system_clock::now();
-  std::chrono::duration<double> t_diff = t_end - t_begin;
-  LOGDEBUG << "Testing, sps: " <<
-          (datum) (sample_count_ * iterations)
-          / (datum) t_diff.count();
-
-  LOGDEBUG << "Testing, tps: " <<
-          1000000.0f * (datum) t_diff.count() /
-          (datum) (sample_count_ * iterations) << " us";
+  // Submit performance statistics
+  System::stat_aggregator->Update(stat_sps_->stat_id, (double)sample_count_ * (double)iterations);
+  System::stat_aggregator->Update(stat_fps_->stat_id, (double)(first_training_layer_->GetBatchSize()) * (double)iterations);
 
 	for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
 		LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
 		LOGINFO << "Testing (Epoch " << epoch_ << ", node " << n << ") " << graph_.GetLossNodes()[n]->layer->GetLayerDescription() <<  " lps: " << loss_sums[n] / (datum)(iterations * sample_count_);
 	}
-	LOGINFO << "Testing (Epoch " << epoch_ << ") aggregate lps: " << aggregate_loss / (datum)(iterations * sample_count_);
 
 	for (unsigned int n = 0; n < graph_.GetStatNodes().size(); n++) {
 		StatLayer* stat_layer = dynamic_cast<StatLayer*>(graph_.GetStatNodes()[n]->layer);
     std::stringstream epochname;
     epochname << "Testing  - Epoch " << epoch_ << " -";
+    stat_layer->UpdateAll();
     stat_layer->Print (epochname.str(), false);
-    stat_layer->Reset();
 	}
 
 	for (NetGraphNode* training_node : graph_.GetTrainingNodes())
 		(dynamic_cast<TrainingLayer*>(training_node->layer))->SetTestingMode(false);
 
-  graph_.SetIsTesting(false);
-
 	delete[] loss_sums;
 }
 
 void Trainer::Epoch() {
+  // Update hardcoded epoch stat
+  System::stat_aggregator->hardcoded_stats_.epoch = epoch_;
+
 	datum aggregate_loss = 0.0;
 	datum* loss_sums = new datum[graph_.GetLossNodes().size()];
 	for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++)
@@ -157,8 +332,6 @@ void Trainer::Epoch() {
            ", bsize: " << first_training_layer_->GetBatchSize() * settings_.sbatchsize << ", current lr: " <<
            CalculateLR (epoch_ * iterations) << std::endl;
 
-  auto t_begin = std::chrono::system_clock::now();
-
   for (unsigned int i = 0; i < iterations; i++) {
     if ( (50 * i / iterations) > fiftieth) {
       fiftieth = 50 * i / iterations;
@@ -169,6 +342,7 @@ void Trainer::Epoch() {
       tenth = 10 * i / iterations;
       std::cout << tenth << "0%" << std::flush;
     }
+    aggregate_loss = 0.0;
 
     // Reset gradients
     for (unsigned int np = 0; np < accumulated_gradients_.size(); np++)
@@ -207,48 +381,41 @@ void Trainer::Epoch() {
         }
       }
     }
-
     // Calculate annealed learning rate
     const datum lr =
       CalculateLR (epoch_ * iterations + i);
 
     // Apply gradients with new learning rate
     ApplyGradients (lr);
+
+    // Batch/Iteration done
+    if (System::stat_aggregator->state_ == StatAggregator::RECORDING)
+      System::stat_aggregator->hardcoded_stats_.iterations++;
+
+    // Update aggregate loss stat
+    System::stat_aggregator->Update(stat_aggloss_->stat_id, aggregate_loss
+      / (first_training_layer_->GetLossSamplingProbability() * sample_count_ * settings_.sbatchsize));
   }
 
-  auto t_end = std::chrono::system_clock::now();
-  std::chrono::duration<double> t_diff = t_end - t_begin;
-  LOGDEBUG << "Training, sps: " <<
-          (datum) (sample_count_ * settings_.sbatchsize
-                   * first_training_layer_->GetLossSamplingProbability() * iterations)
-          / (datum) t_diff.count();
-
-  LOGDEBUG << "Training, tps: " <<
-          1000000.0f * (datum) t_diff.count() /
-          (datum) (sample_count_ * settings_.sbatchsize
-                   * first_training_layer_->GetLossSamplingProbability() * iterations) << " us";
-                  
-#ifdef BUILD_OPENCL
-  LOGDEBUG << "Training, GB/s   up: " << ((datum)CLHelper::bytes_up)/(1073741824.0 * (datum)t_diff.count());
-  LOGDEBUG << "Training, GB/s down: " << ((datum)CLHelper::bytes_down)/(1073741824.0 * (datum)t_diff.count());
-  CLHelper::bytes_up = 0;
-  CLHelper::bytes_down = 0;
-#endif
-
+  // Submit performance statistics
+  System::stat_aggregator->Update(stat_sps_->stat_id, (double)sample_count_ * (double)iterations * (double)(settings_.sbatchsize));
+  System::stat_aggregator->Update(stat_fps_->stat_id, (double)(first_training_layer_->GetBatchSize()) * (double)iterations * (double)(settings_.sbatchsize));
+  
   // Display training epoch_error
 	for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
 		LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
 		LOGINFO << "Training (Epoch " << epoch_ << ", node " << n << ") " << graph_.GetLossNodes()[n]->layer->GetLayerDescription() <<  " lps: " << loss_sums[n] / (datum)(iterations * sample_count_ * settings_.sbatchsize * first_training_layer_->GetLossSamplingProbability());
 	}
-	LOGINFO << "Training (Epoch " << epoch_ << ") aggregate lps: " << aggregate_loss / (datum)(iterations * sample_count_ * settings_.sbatchsize * first_training_layer_->GetLossSamplingProbability());
 
-	for (unsigned int n = 0; n < graph_.GetStatNodes().size(); n++) {
-		StatLayer* stat_layer = dynamic_cast<StatLayer*>(graph_.GetStatNodes()[n]->layer);
-    std::stringstream epochname;
-    epochname << "Training  - Epoch " << epoch_ << " -";
-    stat_layer->Print (epochname.str(), true);
-    stat_layer->Reset();
-	}
+  if(settings_.stats_during_training) {
+    for (unsigned int n = 0; n < graph_.GetStatNodes().size(); n++) {
+      StatLayer* stat_layer = dynamic_cast<StatLayer*>(graph_.GetStatNodes()[n]->layer);
+      std::stringstream epochname;
+      epochname << "Training  - Epoch " << epoch_ << " -";
+      stat_layer->UpdateAll();
+      stat_layer->Print (epochname.str(), true);
+    }
+  }
 
   delete[] loss_sums;
   epoch_++;
@@ -256,7 +423,8 @@ void Trainer::Epoch() {
 
 void Trainer::ApplyGradients (datum lr) {
   unsigned int dp = 0;
-
+  unsigned int qp_caseA = 0, qp_caseB = 0, qp_caseC = 0, qp_caseM = 0;
+  
 	for (unsigned int l = 0; l < graph_.GetNodes().size(); l++) {
 		Layer* const layer = graph_.GetNodes()[l]->layer;
     datum layer_lr;
@@ -290,7 +458,7 @@ void Trainer::ApplyGradients (datum lr) {
         datum delta =
         
           // Average of gradient over minibatch
-          layer_lr * (w_gradient / (datum) (sample_count_ * settings_.sbatchsize)) +
+          layer_lr * (w_gradient / ((datum) (sample_count_ * settings_.sbatchsize)) * first_training_layer_->GetLossSamplingProbability()) +
           // Regularization
           layer_lr * (settings_.l2_weight * l2_gradient + settings_.l1_weight * l1_gradient);
         
@@ -313,29 +481,36 @@ void Trainer::ApplyGradients (datum lr) {
             const datum s = settings_.mu / (1.0 + settings_.mu);
             
             datum step = 0;
-            if(last_step > 0.001) {
+            if(last_step > 0.00001) {
               if(delta > 0.0) {
                 step += lr * settings_.eta * delta;
+                qp_caseB++;
               }
               
               if(delta > (s * last_gradient)) {
                 step += settings_.mu * last_step;
+                qp_caseM++;
               } else {
                 step += last_step * delta / (last_gradient - delta);
               }
+              qp_caseA++;
               
-            } else if(last_step < -0.001) {
+            } else if(last_step < -0.00001) {
               if(delta < 0.0) {
                 step += lr * settings_.eta * delta;
+                qp_caseB++;
               }
               
               if(delta < (s * last_gradient)) {
                 step += settings_.mu * last_step;
+                qp_caseM++;
               } else {
                 step += last_step * delta / (last_gradient - delta);
               }
+              qp_caseA++;
             } else {
               step += lr * settings_.eta * delta;
+              qp_caseC++;
             }
             
             if(step > 1000 || step < -1000) {
@@ -357,6 +532,14 @@ void Trainer::ApplyGradients (datum lr) {
 
       dp++;
     }
+  }
+  
+  // Update quickprop stats
+  if(settings_.optimization_method == QUICKPROP) {
+    System::stat_aggregator->Update(stat_qp_caseA_->stat_id, (double)qp_caseA);
+    System::stat_aggregator->Update(stat_qp_caseB_->stat_id, (double)qp_caseB);
+    System::stat_aggregator->Update(stat_qp_caseC_->stat_id, (double)qp_caseC);
+    System::stat_aggregator->Update(stat_qp_caseM_->stat_id, (double)qp_caseM);
   }
 }
 

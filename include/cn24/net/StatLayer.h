@@ -23,6 +23,7 @@ namespace Conv {
   
 class StatLayer {
 public:
+  virtual void UpdateAll() = 0;
   virtual void Print(std::string prefix, bool training) = 0;
   virtual void Reset() = 0;
 	virtual void SetDisabled(bool disabled) = 0;

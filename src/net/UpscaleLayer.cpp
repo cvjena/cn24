@@ -8,6 +8,7 @@
 
 #include "Log.h"
 #include "Init.h"
+#include "TensorMath.h"
 
 #include "UpscaleLayer.h"
 
@@ -70,48 +71,11 @@ bool UpscaleLayer::Connect ( const CombinedTensor* input,
 }
 
 void UpscaleLayer::FeedForward() {
-  #pragma omp parallel for default(shared)
-
-  for ( std::size_t sample = 0; sample < input_->data.samples(); sample++ ) {
-    for ( unsigned int map = 0; map < maps_; map++ ) {
-      for ( unsigned int ox = 0; ox < output_width_; ox++ ) {
-        for ( unsigned int oy = 0; oy < output_height_; oy++ ) {
-          const unsigned int ix = ox / region_width_;
-          const unsigned int iy = oy / region_height_;
-          const datum ival = *input_->data.data_ptr_const ( ix, iy, map, sample );
-          // Feed forward
-          *output_->data.data_ptr ( ox, oy, map, sample ) = ival;
-        }
-      }
-    }
-  }
+ TensorMath::UP(input_->data, output_->data, region_width_, region_height_, 1.0f);
 }
 
 void UpscaleLayer::BackPropagate() {
-  #pragma omp parallel for default(shared)
-
-  for ( std::size_t sample = 0; sample < input_->data.samples(); sample++ ) {
-    for ( unsigned int map = 0; map < maps_; map++ ) {
-      for ( unsigned int ix = 0; ix < input_width_; ix++ ) {
-        for ( unsigned int iy = 0; iy < input_height_; iy++ ) {
-          const unsigned int ox = ix * region_width_;
-          const unsigned int oy = iy * region_height_;
-          datum sum = 0;
-
-          for ( unsigned int ry = 0; ry < region_height_; ry++ ) {
-            for ( unsigned int rx = 0; rx < region_width_; rx++ ) {
-              sum += *output_->delta.data_ptr_const ( ox + rx, oy +ry, map, sample );
-            }
-          }
-
-          *input_->delta.data_ptr ( ix,iy,map,sample ) = sum; // (datum)(region_width_ * region_height_);
-        }
-      }
-    }
-  }
-
-  return;
-
+  TensorMath::DOWN(output_->delta, input_->delta, region_width_, region_height_, 1.0f);
 }
 
 }
