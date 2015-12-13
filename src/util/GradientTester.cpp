@@ -11,7 +11,7 @@
 
 namespace Conv {
   
-void GradientTester::TestGradient ( NetGraph& graph ) {
+void GradientTester::TestGradient ( NetGraph& graph, unsigned int skip_weights ) {
   const double epsilon = 0.005;
   LOGDEBUG << "Testing gradient. FeedForward...";
 	graph.FeedForward();
@@ -37,8 +37,10 @@ void GradientTester::TestGradient ( NetGraph& graph ) {
       unsigned int okay = 0;
       unsigned int tolerable = 0;
       unsigned int failed = 0;
-      for(unsigned int e = 0; e < param->data.elements(); e++)
+      unsigned int total = 0;
+      for(unsigned int e = 0; e < param->data.elements(); e+=(skip_weights + 1))
       {
+        total++;
 #ifdef BUILD_OPENCL
 	param->data.MoveToCPU();
 	param->delta.MoveToCPU();
@@ -83,23 +85,23 @@ graph.FeedForward();
       }
       // std::cout << "\n";
       if(passed) {
-	LOGINFO << "Okay!";
+	LOGDEBUG << "Okay!";
       } else {
 	LOGERROR << "Failed!";
       }
-			LOGINFO << okay << " of " << param->data.elements() << " gradients okay (delta < 2%)";
-			LOGINFO << tolerable << " of " << param->data.elements() << " gradients tolerable (delta < 20%)";
-			LOGINFO << failed << " of " << param->data.elements() << " gradients failed (delta >= 20%)";
+			LOGDEBUG << okay << " of " << total << " gradients okay (delta < 2%)";
+			LOGDEBUG << tolerable << " of " << total << " gradients tolerable (delta < 20%)";
+			LOGDEBUG << failed << " of " << total << " gradients failed (delta >= 20%)";
 			global_okay += okay;
 			global_tolerable += tolerable;
 			global_failed += failed;
-			global_weights += param->data.elements();
+			global_weights += total;
     }
   }
 
-	LOGINFO << global_okay << " of " << global_weights << " gradients okay (delta < 2%)";
-	LOGINFO << global_tolerable << " of " << global_weights << " gradients tolerable (delta < 20%)";
-	LOGINFO << global_failed << " of " << global_weights << " gradients failed (delta >= 20%)";
+	LOGRESULT << global_okay << " of " << global_weights << " tested gradients okay (delta < 2%)" << LOGRESULTEND;
+	LOGRESULT << global_tolerable << " of " << global_weights << " tested gradients tolerable (delta < 20%)" << LOGRESULTEND;
+	LOGRESULT << global_failed << " of " << global_weights << " tested gradients failed (delta >= 20%)" << LOGRESULTEND;
 
 }
 

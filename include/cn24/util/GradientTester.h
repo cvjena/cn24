@@ -22,9 +22,9 @@ public:
   /**
    * @brief Tests the gradients computed by the net numerically
    *
-   * Only call this function on nets with a constant input!
+   * Only call this function on nets with a constant input, not a DatasetInputLayer!
    */
-  static void TestGradient(NetGraph& net);
+  static void TestGradient(NetGraph& net, unsigned int skip_weights = 0);
 };
   
   
