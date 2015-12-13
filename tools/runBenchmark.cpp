@@ -56,6 +56,39 @@ mu=1.75 \n\
 eta=0.1 \n\
 ";
 
+std::string hardcoded_net_ci = "# Sample CNN for LabelMeFacade Dataset \n\
+#anual rfx=34 rfy=34 factorx=4 factory=4 \n\
+ \n\
+# Network configuration \n\
+?convolutional kernels=8 size=7x7 \n\
+?maxpooling size=2x2 \n\
+ \n\
+?convolutional kernels=4 size=5x5 \n\
+?tanh \n\
+ \n\
+?convolutional kernels=12 size=5x5 \n\
+?tanh \n\
+ \n\
+?fullyconnected neurons=64 \n\
+?tanh \n\
+ \n\
+?fullyconnected neurons=(o) \n\
+?output \n\
+ \n\
+# Learning settings \n\
+l1=0.000 \n\
+l2=0.0008 \n\
+lr=0.02 \n\
+gamma=0.003 \n\
+momentum=0.9 \n\
+exponent=0.75 \n\
+iterations=100 \n\
+sbatchsize=24 \n\
+pbatchsize=2 \n\
+mu=1.75 \n\
+eta=0.1 \n\
+";
+
 int main (int argc, char* argv[]) {
   // Initialize stat descriptor
   Conv::StatDescriptor fps;
@@ -91,14 +124,18 @@ int main (int argc, char* argv[]) {
     net_config_fname = std::string(argv[1]);
     LOGDEBUG << "Using user specified net: " << net_config_fname;
   }
+  
+  // Set benchmark arguments
   unsigned int CLASSES = 10;
   unsigned int INPUTMAPS = 3;
 	unsigned int BENCHMARK_PASSES_FWD = 30;
 	unsigned int BENCHMARK_PASSES_BWD = 15;
+  unsigned int width = 512;
+  unsigned int height = 512;
 
   std::istream* net_config_stream;
   
-  if(argc > 1) {
+  if(argc > 1 && net_config_fname.compare(0,4,"--ci") != 0) {
     // Open network and dataset configuration files
     std::ifstream* net_config_file = new std::ifstream(net_config_fname,std::ios::in);
     
@@ -107,17 +144,22 @@ int main (int argc, char* argv[]) {
     }
       net_config_stream = net_config_file;
   } else {
-    LOGINFO << "Using hardcoded net.";
-    std::stringstream* ss = new std::stringstream(hardcoded_net);
-    net_config_stream = ss;
+    if(net_config_fname.compare(0,4,"--ci") == 0) {
+      LOGINFO << "Using hardcoded net for continuous integration.";
+      std::stringstream* ss = new std::stringstream(hardcoded_net_ci);
+      net_config_stream = ss;
+      width = 64;
+      height = 64;
+    } else {
+      LOGINFO << "Using hardcoded net.";
+      std::stringstream* ss = new std::stringstream(hardcoded_net);
+      net_config_stream = ss;
+    }
   }
   
   // Parse network configuration file
   Conv::ConfigurableFactory* factory = new Conv::ConfigurableFactory(*net_config_stream, 238238, false);
   
-  // Set image dimensions
-  unsigned int width = 512;
-  unsigned int height = 512;
 
   Conv::Tensor data_tensor(factory->optimal_settings().pbatchsize, width, height, INPUTMAPS);
   data_tensor.Clear();
