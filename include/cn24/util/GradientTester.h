@@ -24,7 +24,7 @@ public:
    *
    * Only call this function on nets with a constant input, not a DatasetInputLayer!
    */
-  static void TestGradient(NetGraph& net, unsigned int skip_weights = 0);
+  static void TestGradient(NetGraph& net, unsigned int skip_weights = 0, bool fatal_fail = false);
 };
   
   

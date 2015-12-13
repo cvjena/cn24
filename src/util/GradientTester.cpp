@@ -11,7 +11,7 @@
 
 namespace Conv {
   
-void GradientTester::TestGradient ( NetGraph& graph, unsigned int skip_weights ) {
+void GradientTester::TestGradient ( NetGraph& graph, unsigned int skip_weights, bool fatal_fail ) {
   const double epsilon = 0.005;
   LOGDEBUG << "Testing gradient. FeedForward...";
 	graph.FeedForward();
@@ -102,6 +102,10 @@ graph.FeedForward();
 	LOGRESULT << global_okay << " of " << global_weights << " tested gradients okay (delta < 2%)" << LOGRESULTEND;
 	LOGRESULT << global_tolerable << " of " << global_weights << " tested gradients tolerable (delta < 20%)" << LOGRESULTEND;
 	LOGRESULT << global_failed << " of " << global_weights << " tested gradients failed (delta >= 20%)" << LOGRESULTEND;
+  
+  if (global_failed > 0 && fatal_fail) {
+    FATAL("Failed gradient check!");
+  }
 
 }
 

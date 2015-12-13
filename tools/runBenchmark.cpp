@@ -228,7 +228,7 @@ int main (int argc, char* argv[]) {
   // Gradient check
 	LOGINFO << "Running sparse gradient check..." << std::flush;
   auto start_time = std::chrono::system_clock::now();
-  Conv::GradientTester::TestGradient(graph, 999);
+  Conv::GradientTester::TestGradient(graph, 999, true);
   
   auto stop_time = std::chrono::system_clock::now();
   std::chrono::duration<double> t_diff = stop_time - start_time;
