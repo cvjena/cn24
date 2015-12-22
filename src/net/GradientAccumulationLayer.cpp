@@ -40,6 +40,7 @@ bool GradientAccumulationLayer::CreateOutputs (const std::vector< CombinedTensor
 bool GradientAccumulationLayer::Connect (const std::vector< CombinedTensor* >& inputs,
                            const std::vector< CombinedTensor* >& outputs,
                            const NetStatus* status ) {
+  UNREFERENCED_PARAMETER(status);
   if(inputs.size() != 1) {
     LOGERROR << "Needs one input!";
     return false;

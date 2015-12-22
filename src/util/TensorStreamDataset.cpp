@@ -38,8 +38,7 @@ TensorStreamDataset::TensorStreamDataset (
     std::vector< std::string > class_names,
     std::vector<unsigned int> class_colors,
 		std::vector<datum> class_weights,
-    dataset_localized_error_function error_function,
-    int training_fd, int testing_fd ) :
+    dataset_localized_error_function error_function) :
     training_stream_(training_stream), testing_stream_(testing_stream),
   classes_ (classes), class_names_ (class_names), class_colors_ (class_colors),
 	class_weights_(class_weights),
@@ -73,7 +72,6 @@ TensorStreamDataset::TensorStreamDataset (
   tensors_ = (tensor_count_testing_ + tensor_count_training_) / 2;
 
   // Read tensors
-  unsigned int e = 0;
   max_width_ = 0;
   max_height_ = 0;
   
@@ -295,9 +293,6 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
   dataset_localized_error_function error_function = DefaultLocalizedErrorFunction;
   std::string training_file;
   std::string testing_file;
-  int training_fd = 0;
-  int testing_fd = 0;
-  bool no_mmap = false;
   
   TensorStream* training_stream = new FloatTensorStream();
   TensorStream* testing_stream = new FloatTensorStream();
@@ -309,11 +304,6 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
     std::string line;
     std::getline (file, line);
     
-    if (StartsWithIdentifier (line, "nommap")) {
-      LOGDEBUG << "Dataset requested to not be memory mapped.";
-      no_mmap = true;
-    }
-
     if (StartsWithIdentifier (line, "classes")) {
       ParseCountIfPossible (line, "classes", classes);
 
@@ -394,7 +384,7 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
 	}
 	
   return new TensorStreamDataset (training_stream, testing_stream, classes,
-                                  class_names, class_colors, class_weights, error_function, training_fd, testing_fd);
+                                  class_names, class_colors, class_weights, error_function);
 }
 
 }

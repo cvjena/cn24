@@ -122,6 +122,7 @@ bool JPGUtil::WriteToFile ( const std::string& file, Tensor& tensor ) {
 
 
 bool JPGUtil::CheckSignature (std::istream& stream) {
+  UNREFERENCED_PARAMETER(stream);
   return true;
 }
 

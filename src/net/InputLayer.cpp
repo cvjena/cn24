@@ -79,6 +79,7 @@ InputLayer::InputLayer ( Tensor& data, Tensor& label, Tensor& helper,
 bool InputLayer::Connect ( const std::vector< CombinedTensor* >& inputs,
                            const std::vector< CombinedTensor* >& outputs,
                            const NetStatus* net ) {
+  UNREFERENCED_PARAMETER(net);
   // Check if inputs were accidentally supplied
   if ( inputs.size() != 0 ) {
     LOGERROR << "Input layer cannot have inputs!";

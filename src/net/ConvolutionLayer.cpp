@@ -17,7 +17,6 @@
 
 #include "Config.h"
 #include "Log.h"
-#include "Net.h"
 #include "CLHelper.h"
 #include "TensorMath.h"
 

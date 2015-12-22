@@ -23,6 +23,7 @@ ErrorLayer::ErrorLayer(const datum loss_weight)
 
 bool ErrorLayer::CreateOutputs ( const std::vector< CombinedTensor* >& inputs,
                                  std::vector< CombinedTensor* >& outputs ) {
+  UNREFERENCED_PARAMETER(outputs);
   // Validate input node count
   if ( inputs.size() != 3 ) {
     LOGERROR << "Need exactly 3 inputs to calculate loss function!";
@@ -61,6 +62,7 @@ bool ErrorLayer::CreateOutputs ( const std::vector< CombinedTensor* >& inputs,
 bool ErrorLayer::Connect ( const std::vector< CombinedTensor* >& inputs,
                            const std::vector< CombinedTensor* >& outputs,
                            const NetStatus* net ) {
+  UNREFERENCED_PARAMETER(net);
   // Needs exactly three inputs to calculate the difference
   if ( inputs.size() != 3 )
     return false;
