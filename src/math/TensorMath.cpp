@@ -171,9 +171,6 @@ void TensorMath::IM2COL(const Tensor& source, const int source_width, const int 
     const int target_height = (2 * pad_height + source_height - kernel_height) / stride_height + 1;
     const int target_maps = kernel_width * kernel_height * maps;
     
-    const int target_size = samples * target_width * target_height * target_maps;
-    const int actual_target_size = target.samples() * target.width() * target.height() * target.maps();
-
     error |= clSetKernelArg (CLHelper::k_im2col, 0, sizeof (cl_mem), &(((Tensor&)source).cl_data_ptr_));
     error |= clSetKernelArg (CLHelper::k_im2col, 1, sizeof (cl_mem), &(target.cl_data_ptr_));
     error |= clSetKernelArg (CLHelper::k_im2col, 2, sizeof (cl_int), &source_width);
@@ -271,9 +268,6 @@ void TensorMath::COL2IM(Tensor& source, const int source_width, const int source
     const int target_height = (2 * pad_height + source_height - kernel_height) / stride_height + 1;
     const int target_maps = kernel_width * kernel_height * maps;
     
-    const int target_size = samples * target_width * target_height * target_maps;
-    const int actual_target_size = target.samples() * target.width() * target.height() * target.maps();
-
     error |= clSetKernelArg (CLHelper::k_col2im, 0, sizeof (cl_mem), &(((Tensor&)source).cl_data_ptr_));
     error |= clSetKernelArg (CLHelper::k_col2im, 1, sizeof (cl_mem), &(target.cl_data_ptr_));
     error |= clSetKernelArg (CLHelper::k_col2im, 2, sizeof (cl_int), &source_width);
@@ -461,8 +455,6 @@ void TensorMath::DOWN(const Tensor& source, Tensor& target, const int region_wid
     const int target_height = target.height();
     const int source_width = source.width();
     const int source_height = source.height();
-    const int maps = target.maps();
-    const int samples = target.samples();
     cl_uint error = 0;
 
     error |= clSetKernelArg (CLHelper::k_down, 0, sizeof (cl_mem), &(((Tensor&)source).cl_data_ptr_));
@@ -536,8 +528,6 @@ void TensorMath::UP(const Tensor& source, Tensor& target, const int region_width
     const int target_height = target.height();
     const int source_width = source.width();
     const int source_height = source.height();
-    const int maps = target.maps();
-    const int samples = target.samples();
     cl_uint error = 0;
 
     error |= clSetKernelArg (CLHelper::k_up, 0, sizeof (cl_mem), &(((Tensor&)source).cl_data_ptr_));
@@ -570,7 +560,6 @@ void TensorMath::UP(const Tensor& source, Tensor& target, const int region_width
 #endif
   } else {
 #endif
-    const datum region_area = (datum)region_width * (datum)region_height;
     const int width = source.width();
     const int height = source.height();
     const int maps = source.maps();

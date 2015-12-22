@@ -6,7 +6,6 @@
  */  
 
 #include "Log.h"
-#include "Net.h"
 #include "GradientTester.h"
 
 namespace Conv {

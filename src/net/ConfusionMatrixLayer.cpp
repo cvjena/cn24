@@ -35,6 +35,7 @@ ConfusionMatrixLayer::ConfusionMatrixLayer (
   stat_orr_->init_function = [this] (Stat& stat) { stat.is_null = true; stat.value = 0; Reset();};
   stat_orr_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
   stat_orr_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat {
+    UNREFERENCED_PARAMETER(hc_stats);
     return stat;
   };
   
@@ -44,6 +45,7 @@ ConfusionMatrixLayer::ConfusionMatrixLayer (
   stat_arr_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
   stat_arr_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
   stat_arr_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat {
+    UNREFERENCED_PARAMETER(hc_stats);
     return stat;
   };
   
@@ -53,6 +55,7 @@ ConfusionMatrixLayer::ConfusionMatrixLayer (
   stat_iou_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
   stat_iou_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
   stat_iou_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat {
+    UNREFERENCED_PARAMETER(hc_stats);
     return stat;
   };
   
@@ -114,6 +117,7 @@ void ConfusionMatrixLayer::UpdateAll() {
 bool ConfusionMatrixLayer::CreateOutputs (
   const std::vector< CombinedTensor* >& inputs,
   std::vector< CombinedTensor* >& outputs ) {
+  UNREFERENCED_PARAMETER(outputs);
   // Validate input node count
   if ( inputs.size() != 3 ) {
     LOGERROR << "Need exactly 3 inputs to calculate confusion matrix!";
@@ -148,6 +152,7 @@ bool ConfusionMatrixLayer::Connect
 ( const std::vector< CombinedTensor* >& inputs,
   const std::vector< CombinedTensor* >& outputs,
   const NetStatus* net ) {
+  UNREFERENCED_PARAMETER(net);
   // Needs exactly three inputs to calculate the stat
   if ( inputs.size() != 3 )
     return false;

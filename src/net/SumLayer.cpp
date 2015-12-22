@@ -61,6 +61,7 @@ bool SumLayer::CreateOutputs (const std::vector< CombinedTensor* >& inputs,
 bool SumLayer::Connect (const std::vector< CombinedTensor* >& inputs,
                            const std::vector< CombinedTensor* >& outputs,
                            const NetStatus* status ) {
+  UNREFERENCED_PARAMETER(status);
   if(inputs.size() != 2) {
     LOGERROR << "Needs two inputs!";
     return false;

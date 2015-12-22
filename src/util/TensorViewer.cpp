@@ -86,6 +86,9 @@ void TensorViewer::show ( Tensor* tensor, const std::string& title, bool autoclo
 
   t1.join();
 #else
+  UNREFERENCED_PARAMETER(autoclose);
+  UNREFERENCED_PARAMETER(map);
+  UNREFERENCED_PARAMETER(sample);
   LOGWARN << "Cannot show Tensor: " << tensor << ", " << title;
 #endif
 }

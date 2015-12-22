@@ -52,42 +52,42 @@ BinaryStatLayer::BinaryStatLayer ( const unsigned int thresholds,
   stat_fpr_->nullable = true;
   stat_fpr_->init_function = [this] (Stat& stat) { stat.is_null = true; stat.value = 0; Reset(); };
   stat_fpr_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
-  stat_fpr_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { return stat; };
+  stat_fpr_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
 
   stat_fnr_->description = "False Negative Rate";
   stat_fnr_->unit = "%";
   stat_fnr_->nullable = true;
   stat_fnr_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
   stat_fnr_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
-  stat_fnr_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { return stat; };
+  stat_fnr_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
 
   stat_pre_->description = "Precision";
   stat_pre_->unit = "%";
   stat_pre_->nullable = true;
   stat_pre_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
   stat_pre_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
-  stat_pre_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { return stat; };
+  stat_pre_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
 
   stat_rec_->description = "Recall";
   stat_rec_->unit = "%";
   stat_rec_->nullable = true;
   stat_rec_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
   stat_rec_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
-  stat_rec_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { return stat; };
+  stat_rec_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
 
   stat_acc_->description = "Accuracy";
   stat_acc_->unit = "%";
   stat_acc_->nullable = true;
   stat_acc_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
   stat_acc_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
-  stat_acc_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { return stat; };
+  stat_acc_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
 
   stat_f1_->description = "F1 Value";
   stat_f1_->unit = "%";
   stat_f1_->nullable = true;
   stat_f1_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
   stat_f1_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
-  stat_f1_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { return stat; };
+  stat_f1_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
 
   // Register stats
   System::stat_aggregator->RegisterStat(stat_fpr_);
@@ -167,6 +167,7 @@ void BinaryStatLayer::UpdateAll() {
 }
 
 bool BinaryStatLayer::CreateOutputs ( const std::vector< CombinedTensor* >& inputs, std::vector< CombinedTensor* >& outputs ) {
+  UNREFERENCED_PARAMETER(outputs);
   // Validate input node count
   if ( inputs.size() != 3 ) {
     LOGERROR << "Need exactly 3 inputs to calculate binary stat!";
@@ -203,6 +204,7 @@ bool BinaryStatLayer::CreateOutputs ( const std::vector< CombinedTensor* >& inpu
 }
 
 bool BinaryStatLayer::Connect ( const std::vector< CombinedTensor* >& inputs, const std::vector< CombinedTensor* >& outputs, const NetStatus* net ) {
+  UNREFERENCED_PARAMETER(net);
   // Needs exactly three inputs to calculate the stat
   if ( inputs.size() != 3 )
     return false;
@@ -268,6 +270,8 @@ void BinaryStatLayer::Reset() {
 }
 
 void BinaryStatLayer::Print ( std::string prefix, bool training ) {
+  UNREFERENCED_PARAMETER(prefix);
+  UNREFERENCED_PARAMETER(training);
   // Now deprecated
 }
 

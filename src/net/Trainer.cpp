@@ -9,8 +9,9 @@
 #include <chrono>
 
 #include "Log.h"
-#include "Net.h"
+#include "NetGraph.h"
 #include "StatLayer.h"
+#include "LossFunctionLayer.h"
 #include "CLHelper.h"
 #include "StatAggregator.h"
 #include "Init.h"
@@ -288,7 +289,6 @@ void Trainer::Test() {
   System::stat_aggregator->Update(stat_fps_->stat_id, (double)(first_training_layer_->GetBatchSize()) * (double)iterations);
 
 	for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
-		LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
 		LOGINFO << "Testing (Epoch " << epoch_ << ", node " << n << ") " << graph_.GetLossNodes()[n]->layer->GetLayerDescription() <<  " lps: " << loss_sums[n] / (datum)(iterations * sample_count_);
 	}
 
@@ -403,7 +403,6 @@ void Trainer::Epoch() {
   
   // Display training epoch_error
 	for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
-		LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
 		LOGINFO << "Training (Epoch " << epoch_ << ", node " << n << ") " << graph_.GetLossNodes()[n]->layer->GetLayerDescription() <<  " lps: " << loss_sums[n] / (datum)(iterations * sample_count_ * settings_.sbatchsize * first_training_layer_->GetLossSamplingProbability());
 	}
 

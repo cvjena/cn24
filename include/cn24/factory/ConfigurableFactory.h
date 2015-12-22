@@ -17,7 +17,6 @@
 
 #include <iostream>
 
-#include "../net/Net.h"
 #include "../net/NetGraph.h"
 #include "../net/Trainer.h"
 #include "../util/Dataset.h"
@@ -27,7 +26,6 @@ namespace Conv {
   
 class Factory {
 public: 
-  virtual int AddLayers(Net& net, Connection data_layer_connection, const unsigned int output_classes, bool add_loss_layer = false, std::ostream& graph_output = std::cout) = 0;
   virtual bool AddLayers(NetGraph& graph, NetGraphConnection data_layer_connection, const unsigned int output_classes, bool add_loss_layer = false) = 0;
   virtual int patchsizex() = 0;
   virtual int patchsizey() = 0;
@@ -52,17 +50,14 @@ public:
   /**
 	* @brief Adds the configured layers to a network using the specified input layer
 	*
-	* @param net The net to add the layers to
+	* @param graph The NetGraph to add the layers to
 	* @param data_layer_connection Input to the first layer of this configuration
 	* @param output_classes The number of output neurons. This also affects the activation function of
 	* 	 the last layer: for output_classes=1, tanh is used. Otherwise, sigm is used.
 	* @param add_loss_layer If set to true, the factory also adds a matching loss layer
-	* @param graph_output An output stream. The factory will write the layout in graphviz format into this string.
 	* 
-	* @returns The layer id of the output layer
+	* @returns Whether the net is complete
 	*/
-  virtual int AddLayers(Net& net, Connection data_layer_connection, const unsigned int output_classes, bool add_loss_layer = false, std::ostream& graph_output = std::cout);
-
   virtual bool AddLayers(NetGraph& graph, NetGraphConnection data_layer_connection, const unsigned int output_classes, bool add_loss_layer = false);
 
   /**

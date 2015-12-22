@@ -40,6 +40,9 @@ typedef u_int32_t duint;
 #define UCHAR_FROM_DATUM(x) ((unsigned char) (255.0f * ((Conv::datum)x) ) )
 #define MCHAR_FROM_DATUM(x) ((unsigned char) (127.0f + 127.0f * ((Conv::datum)x) ) )
 
+// use this macro to suppress compiler warnings for unused variables
+#define UNREFERENCED_PARAMETER(x) (void)x
+
 }
 
 

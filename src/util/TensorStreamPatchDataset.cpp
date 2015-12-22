@@ -26,6 +26,10 @@
 
 namespace Conv {
 datum DefaultLocalizedErrorFunction (unsigned int x, unsigned int y, unsigned int w, unsigned int h) {
+  UNREFERENCED_PARAMETER(x);
+  UNREFERENCED_PARAMETER(y);
+  UNREFERENCED_PARAMETER(w);
+  UNREFERENCED_PARAMETER(h);
   return 1;
 }
 TensorStreamPatchDataset::TensorStreamPatchDataset(std::istream& training_stream,
@@ -110,8 +114,6 @@ TensorStreamPatchDataset::TensorStreamPatchDataset(std::istream& training_stream
 	}
 
 	// Read tensors
-	unsigned int e = 0;
-  
   if((tensor_count_training_ + tensor_count_testing_) > 0) {
     LOGINFO << "Deserializing " << (tensor_count_training_ + tensor_count_testing_) / 2 << " Tensors..." << std::endl << std::flush;
   }

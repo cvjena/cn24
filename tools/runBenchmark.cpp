@@ -4,6 +4,7 @@
  *
  * For licensing information, see the LICENSE file included with this project.
  */  
+
 /**
  * @file runBenchmark.cpp
  *
@@ -15,6 +16,7 @@
 #include <cstring>
 #include <sstream>
 #include <chrono>
+#include <random>
 
 #include <cn24.h>
 
@@ -163,6 +165,13 @@ int main (int argc, char* argv[]) {
 
   Conv::Tensor data_tensor(factory->optimal_settings().pbatchsize, width, height, INPUTMAPS);
   data_tensor.Clear();
+
+  // Generate random contents
+  std::mt19937 rand(1337);
+  std::uniform_real_distribution<Conv::datum> dist (0.0, 1.0);
+  for(unsigned int e = 0; e < data_tensor.elements(); e++) {
+    (data_tensor.data_ptr())[e] = dist(rand);
+  }
 
   // Assemble net
 	Conv::NetGraph graph;

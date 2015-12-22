@@ -53,6 +53,7 @@ bool LocalResponseNormalizationLayer::
 
 bool LocalResponseNormalizationLayer::
   Connect(const CombinedTensor* input, CombinedTensor* output) {
+  UNREFERENCED_PARAMETER(output);
   // TODO Validate dimensions
   bool valid = true;
 

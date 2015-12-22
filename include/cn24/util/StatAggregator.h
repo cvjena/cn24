@@ -56,10 +56,10 @@ struct StatDescriptor {
   std::string unit = "";
   
   // Lambdas for processing
-  std::function<void(Stat&)> init_function = [] (Stat& stat) {};
-  std::function<void(Stat&,double)> update_function = [] (Stat& stat, double user_value) {};
+  std::function<void(Stat&)> init_function = [] (Stat& stat) {UNREFERENCED_PARAMETER(stat);};
+  std::function<void(Stat&,double)> update_function = [] (Stat& stat, double user_value) {UNREFERENCED_PARAMETER(stat); UNREFERENCED_PARAMETER(user_value);};
   std::function<Stat(HardcodedStats&, Stat&)> output_function =
-    [] (HardcodedStats& hc_stats, Stat& stat) -> Stat {return stat;};
+    [] (HardcodedStats& hc_stats, Stat& stat) -> Stat {UNREFERENCED_PARAMETER(hc_stats); return stat;};
     
   // For easy access
   unsigned int stat_id = UINT_MAX;

@@ -191,8 +191,6 @@ int main (int argc, char* argv[]) {
       Conv::TensorStreamDataset* testing_dataset = Conv::TensorStreamDataset::CreateFromConfiguration (dataset_config_file, false, Conv::LOAD_TESTING_ONLY);
       testing_graph = new Conv::NetGraph();
 
-      int tdata_layer_id = 0;
-
       Conv::DatasetInputLayer* tdata_layer = nullptr;
       tdata_layer = new Conv::DatasetInputLayer (*testing_dataset, BATCHSIZE, 1.0, 983923);
       Conv::NetGraphNode* tinput_node = new Conv::NetGraphNode(tdata_layer);

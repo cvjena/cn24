@@ -110,7 +110,7 @@ public:
   virtual bool IsOpenCLAware() { return false; }
 
 	virtual std::string GetLayerDescription() { return "Layer"; }
-	virtual void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers) {}
+	virtual void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers) {UNREFERENCED_PARAMETER(buffers);}
 protected:
   /**
    * @brief These CombinedTensors contain the weights and biases.
