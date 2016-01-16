@@ -62,6 +62,8 @@ int main (int argc, char* argv[]) {
   // Rescale image
   unsigned int width = original_data_tensor.width();
   unsigned int height = original_data_tensor.height();
+  unsigned int original_width = original_data_tensor.width();
+  unsigned int original_height = original_data_tensor.height();
   if(width & 1)
     width++;
   if(height & 1)
@@ -78,12 +80,37 @@ int main (int argc, char* argv[]) {
     height+=4;
   
   Conv::Tensor data_tensor(1, width, height, original_data_tensor.maps());
+  Conv::Tensor helper_tensor(1, width, height, 2);
   data_tensor.Clear();
+  helper_tensor.Clear();
+
+  // Copy sample because data_tensor may be slightly larger
   Conv::Tensor::CopySample(original_data_tensor, 0, data_tensor, 0);
+
+  // Initialize helper (spatial prior) tensor
+
+  // Write spatial prior data to helper tensor
+  for (unsigned int y = 0; y < original_height; y++) {
+    for (unsigned int x = 0; x < original_width; x++) {
+      *helper_tensor.data_ptr(x, y, 0, 0) = ((Conv::datum)x) / ((Conv::datum)original_width - 1);
+      *helper_tensor.data_ptr(x, y, 1, 0) = ((Conv::datum)y) / ((Conv::datum)original_height - 1);
+    }
+    for (unsigned int x = original_width; x < width; x++) {
+      *helper_tensor.data_ptr(x, y, 0, 0) = 0;
+      *helper_tensor.data_ptr(x, y, 1, 0) = 0;
+    }
+  }
+  for (unsigned int y = original_height; y < height; y++) {
+    for (unsigned int x = 0; x < height; x++) {
+      *helper_tensor.data_ptr(x, y, 0, 0) = 0;
+      *helper_tensor.data_ptr(x, y, 1, 0) = 0;
+    }
+  }
+  
 
   // Assemble net
 	Conv::NetGraph graph;
-  Conv::InputLayer input_layer(data_tensor);
+  Conv::InputLayer input_layer(data_tensor, helper_tensor);
 
 	Conv::NetGraphNode input_node(&input_layer);
   input_node.is_input = true;
