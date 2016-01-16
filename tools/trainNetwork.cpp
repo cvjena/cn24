@@ -35,8 +35,8 @@ int main (int argc, char* argv[]) {
   const Conv::datum it_factor = 0.01;
 #else
   const Conv::datum it_factor = 1;
-  const Conv::datum loss_sampling_p = 0.5;
 #endif
+  const Conv::datum loss_sampling_p = 0.5;
   
   if(argc > 1) {
     if(std::string(argv[1]).compare("-v") == 0) {
