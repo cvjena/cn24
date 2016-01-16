@@ -300,6 +300,10 @@ void NetGraph::FeedForward(NetGraphNode* node) {
 		for (NetGraphConnection connection : node->input_connections)
 			FeedForward(connection.node);
 
+#ifdef LAYERTIME
+    auto t_begin = std::chrono::system_clock::now();
+#endif
+
 		PrepareNode(node);
 		// Call the Layer::FeedForward method and set the visited flag
 		node->layer->FeedForward();
@@ -318,6 +322,12 @@ void NetGraph::FeedForward(NetGraphNode* node) {
       }
     
 		node->flag_ff_visited = true;
+
+#ifdef LAYERTIME
+    auto t_end = std::chrono::system_clock::now();
+    std::chrono::duration<double> pass_duration = t_end - t_begin;
+    LOGINFO << "FeedFwd Layer " << node->unique_name << " (" << node->layer->GetLayerDescription() << ") time:\t" << pass_duration.count() << "s";
+#endif
 	}
 }
 
@@ -344,11 +354,21 @@ void NetGraph::BackPropagate(NetGraphNode* node) {
 		for (NetGraphConnection connection : node->input_connections)
 			do_backprop |= connection.backprop;
 
+#ifdef LAYERTIME
+    auto t_begin = std::chrono::system_clock::now();
+#endif
+
 		PrepareNode(node);
 		node->layer->SetBackpropagationEnabled(do_backprop);
 		// Call the Layer::FeedForward method and set the visited flag
 		node->layer->BackPropagate();
 		node->flag_bp_visited = true;
+
+#ifdef LAYERTIME
+    auto t_end = std::chrono::system_clock::now();
+    std::chrono::duration<double> pass_duration = t_end - t_begin;
+    LOGINFO << "BackProp Layer " << node->unique_name << " (" << node->layer->GetLayerDescription() << ") time:\t" << pass_duration.count() << "s";
+#endif
 	}
 }
 
