@@ -111,6 +111,11 @@ public:
    * the GPU's.
    */
   virtual bool IsOpenCLAware() { return false; }
+  
+  /**
+   * @brief Returns true if the layer should be ignored during gradient checks
+   */
+  virtual bool IsNotGradientSafe() { return false; }
 
   virtual std::string GetLayerConfiguration() { return configuration_; }
 	virtual std::string GetLayerDescription() { return "Layer"; }
