@@ -32,6 +32,8 @@ void GradientTester::TestGradient ( NetGraph& graph, unsigned int skip_weights, 
   for(unsigned int l = 0; l < graph.GetNodes().size(); l++) {
 		NetGraphNode* node = graph.GetNodes()[l];
 		Layer* layer = node->layer;
+    if(layer->IsNotGradientSafe())
+      continue;
     for(unsigned int p = 0; p < layer->parameters().size(); p++) {
 			CombinedTensor* const param = layer->parameters()[p];
       LOGDEBUG << "Testing layer " << l << " (" << layer->GetLayerDescription() << "), parameter set " << p;
