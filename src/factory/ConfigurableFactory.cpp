@@ -15,6 +15,7 @@
 #include "AdvancedMaxPoolingLayer.h"
 #include "InputDownSamplingLayer.h"
 #include "NonLinearityLayer.h"
+#include "HMaxActivationFunction.h"
 #include "UpscaleLayer.h"
 #include "SpatialPriorLayer.h"
 #include "ConcatenationLayer.h"
@@ -343,6 +344,19 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
 				last_connection.backprop = true;
       }
 
+      if (StartsWithIdentifier (line, "hmax")) {
+        datum mu = 1;
+        ParseDatumParamIfPossible(line, "mu", mu);
+        HMaxActivationFunction* l = new HMaxActivationFunction(mu);
+        l->SetLocalLearningRate(1.0);
+				NetGraphNode* node = new NetGraphNode(l, last_connection);
+				node->is_output = is_output && (method_ == PATCH || already_upscaled);
+				net.AddNode(node);
+				last_connection.buffer = 0;
+				last_connection.node = node;
+				last_connection.backprop = true;
+      }
+      
       if (StartsWithIdentifier (line, "relu")) {
         ReLULayer* l = new ReLULayer();
 				NetGraphNode* node = new NetGraphNode(l, last_connection);
