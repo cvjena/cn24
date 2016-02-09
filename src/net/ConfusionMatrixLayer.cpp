@@ -244,6 +244,20 @@ void ConfusionMatrixLayer::Print ( std::string prefix, bool training ) {
     (training?LOGTRESULT:LOGRESULT) << caption.str() << LOGRESULTEND;
     caption.str ( "" );
   }
+  
+  // Average recognition rate
+  for ( unsigned int c = 0; c < classes_; c++ ) {
+    if ( per_class_[c] > 0 ) {
+      long double classrr = matrix_[ ( c * classes_ ) + c] / per_class_[c];
+      caption << std::setw(12) << names_[c];
+      caption << " RR: ";
+      caption << std::setw(12) << classrr * 100.0L;
+      caption << "%";
+      (training?LOGTRESULT:LOGRESULT) << prefix << caption.str() << LOGRESULTEND;
+      caption.str ( "" );
+    }
+  }
+
 
   // Print IOU
   long double IU_sum = 0;
