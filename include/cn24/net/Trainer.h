@@ -84,6 +84,8 @@ public:
       t->Clear();
     for(Tensor* t : last_deltas_)
       t->Clear();
+    
+    first_iteration = true;
   }
 
   /**
@@ -129,6 +131,7 @@ private:
 
   // State
   unsigned int epoch_ = 0;
+  bool first_iteration = true;
 
   // Global state
   static bool stats_are_initialized_;

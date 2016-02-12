@@ -30,6 +30,10 @@ StatDescriptor* Trainer::stat_qp_caseM_ = nullptr;
 StatDescriptor* Trainer::stat_sps_ = nullptr;
 StatDescriptor* Trainer::stat_fps_ = nullptr;
 
+template <typename T> int sgn(T val) {
+  return (T(0) < val) - (val < T(0));
+}
+
 void Trainer::InitializeStats() {
   // Only initialize stats once
   if (!stats_are_initialized_) {
@@ -426,7 +430,7 @@ void Trainer::ApplyGradients (datum lr) {
   
 	for (unsigned int l = 0; l < graph_.GetNodes().size(); l++) {
 		Layer* const layer = graph_.GetNodes()[l]->layer;
-    datum layer_lr;
+    datum layer_lr = 1;
     switch (settings_.optimization_method) {
       case GRADIENT_DESCENT:
         layer_lr = layer->local_lr_;
@@ -476,53 +480,56 @@ void Trainer::ApplyGradients (datum lr) {
             break;
           case QUICKPROP:
           {
-            const datum last_gradient = (*last_gradients_[dp]) (w);
-            const datum s = settings_.mu / (1.0 + settings_.mu);
-            
-            datum step = 0;
-            if(last_step > 0.00001) {
-              if(delta > 0.0) {
-                step += lr * settings_.eta * delta;
-                qp_caseB++;
-              }
-              
-              if(delta > (s * last_gradient)) {
-                step += settings_.mu * last_step;
-                qp_caseM++;
-              } else {
-                step += last_step * delta / (last_gradient - delta);
-              }
-              qp_caseA++;
-              
-            } else if(last_step < -0.00001) {
-              if(delta < 0.0) {
-                step += lr * settings_.eta * delta;
-                qp_caseB++;
-              }
-              
-              if(delta < (s * last_gradient)) {
-                step += settings_.mu * last_step;
-                qp_caseM++;
-              } else {
-                step += last_step * delta / (last_gradient - delta);
-              }
-              qp_caseA++;
+            // TODO Unhardcode these
+            const datum epsilon = lr;
+            const datum mu = settings_.mu;
+            const datum epsilon_flat = 1e-15;
+            const datum epsilon_zero = 0.1;
+
+            // Renaming to "avoid confusion"
+            const datum current_slope = delta;
+            const datum last_slope = (*last_gradients_[dp])(w);
+            datum quadratic_step = 0;
+            datum current_step = 0;
+
+
+            LOGDEBUG << "Current slope: " << current_slope;
+
+            if(first_iteration) {
+              current_step = - epsilon_zero * current_slope;
+              first_iteration=false;
             } else {
-              step += lr * settings_.eta * delta;
-              qp_caseC++;
+              // A0
+              if(std::abs(current_slope) <= epsilon_flat) {
+//                LOGDEBUG << "Current slope <" << epsilon_flat << ": " << current_slope;
+                qp_caseC++;
+                current_step = -current_slope * epsilon;
+              } else {
+                // A
+                if( // Not too large or infinite
+                    std::abs(current_slope) < std::abs(mu * (last_slope - current_slope))
+                    // Not uphill on the current slope
+                    && sgn(last_step) != sgn(last_slope - current_slope)) {
+                  quadratic_step = last_step * current_slope / (last_slope - current_slope);
+                  qp_caseB++;
+                } else {
+                  quadratic_step = mu * last_step;
+                  qp_caseA++;
+                }
+                // B
+                if(sgn(current_slope) == sgn(last_slope)) {
+                  current_step = quadratic_step - epsilon * current_slope;
+                } else {
+                  current_step = quadratic_step;
+                }
+              }
             }
-            
-            if(step > 1000 || step < -1000) {
-              if(step>1000)
-                step=1000;
-              else
-                step=-1000;
-            }
-            
-            param->data[w] -= step;
+
+            // Weight update
+            param->data[w] += current_step;
 
             // Backup steps and gradient
-            (*last_deltas_[dp]) [w] = step;
+            (*last_deltas_[dp]) [w] = current_step;
             (*last_gradients_[dp]) [w] = delta;
           }
             break;
