@@ -72,7 +72,7 @@ void HMaxActivationFunction::FeedForward() {
     const datum input_data = input_->data.data_ptr_const() [element];
 
     // Calculate sigmoid function
-    const datum output_data = 1.0 / 1.0 + exp(-(a * input_data + b));
+    const datum output_data = 1.0 / (1.0 + exp(-(a * input_data + b)));
     output_->data.data_ptr() [element] = output_data;
   }
 }
