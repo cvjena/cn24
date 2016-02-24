@@ -19,10 +19,11 @@
 #include <sstream>
 
 #include "SimpleLayer.h"
+#include "LossFunctionLayer.h"
 
 namespace Conv {
   
-class HMaxActivationFunction : public SimpleLayer {
+class HMaxActivationFunction : public SimpleLayer, public LossFunctionLayer {
 public:
   HMaxActivationFunction(const datum mu) : mu_(mu) {};
   // Implementations for SimpleLayer
@@ -32,6 +33,9 @@ public:
   void FeedForward();
   void BackPropagate();
   
+  // Implementations for LossFunctionLayer
+  datum CalculateLossFunction();
+  
   std::string GetLayerDescription() {
     std::stringstream ss;
     ss << "H-Max Activation Function (mu: " << mu_ << ")";
@@ -40,6 +44,9 @@ public:
   
   CombinedTensor* weights_;
   datum mu_ = 1;
+  
+  datum sum_of_activations_ = 0;
+  datum total_activations_ = 0;
 };
 }
 

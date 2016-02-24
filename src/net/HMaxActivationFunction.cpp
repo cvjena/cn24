@@ -67,12 +67,16 @@ void HMaxActivationFunction::FeedForward() {
   
   LOGDEBUG << "a: " << a << ", b:" << b;
   
+  total_activations_ = (datum)(input_->data.elements());
+  sum_of_activations_ = 0;
+  
 #pragma omp parallel for default(shared)
   for (std::size_t element = 0; element < input_->data.elements(); element++) {
     const datum input_data = input_->data.data_ptr_const() [element];
 
     // Calculate sigmoid function
     const datum output_data = 1.0 / (1.0 + exp(-(a * input_data + b)));
+    sum_of_activations_ += output_data;
     output_->data.data_ptr() [element] = output_data;
   }
 }
@@ -132,6 +136,11 @@ void HMaxActivationFunction::BackPropagate() {
   weights_->delta.data_ptr()[0] = local_lr_ * delta_a;
   weights_->delta.data_ptr()[1] = local_lr_ * delta_b;
   LOGDEBUG << "delta a: " << delta_a << ", delta b:" << delta_b;
+}
+  
+datum HMaxActivationFunction::CalculateLossFunction() {
+  datum total_loss = logf(mu_) + (sum_of_activations_/(total_activations_ * mu_)); // - H(y)
+  return total_loss;
 }
 
 
