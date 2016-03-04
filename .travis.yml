@@ -51,7 +51,6 @@ before_script:
 
 script:
   - make
-  - make test
 # OpenCL on Mac OS X supports a maximum work group size of (1,1,1) on CPUs, so we only do a sanity check in that case
   - if [ "$TEST_SUITE" == "opencl" ] && [ "$TRAVIS_OS_NAME" == "osx" ]; then ./testOpenCL; else make test;fi
 
