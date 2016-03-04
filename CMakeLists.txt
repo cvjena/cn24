@@ -5,6 +5,8 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Build type: Select either Debug, RelWithDebInfo or Release" FORCE)
 endif()
 
+enable_testing()
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 # Get Git SHA1 hash
@@ -19,6 +21,7 @@ set(CN24_INC "${CN24_SOURCE_DIR}/include" "${CN24_SOURCE_DIR}/include/cn24"
 "${CN24_SOURCE_DIR}/include/cn24/util" "${CN24_SOURCE_DIR}/include/cn24/net"
 "${CN24_SOURCE_DIR}/include/cn24/math" "${CN24_SOURCE_DIR}/include/cn24/factory"
 "${CN24_SOURCE_DIR}/include/private")
+SET(CN24_TES "${CN24_SOURCE_DIR}/tests")
 set(CN24_TOO "${CN24_SOURCE_DIR}/tools")
 set(CN24_BSH "${CN24_SOURCE_DIR}/scripts")
 set(CN24_KER "${CN24_SOURCE_DIR}/kernels")
@@ -317,6 +320,18 @@ foreach(TOOL_SOURCE ${CN24_TOOL_SOURCES})
   add_executable(${TOOL_NAME} ${TOOL_SOURCE})
   target_link_libraries(${TOOL_NAME} cn24 ${CN24_LIBS})
   message(STATUS "Added ${TOOL_NAME} tool.")
+endforeach()
+
+# Tests
+# Recurse over files
+file(GLOB_RECURSE CN24_TEST_SOURCES ${CN24_TES}/*.cpp)
+
+foreach(TEST_SOURCE ${CN24_TEST_SOURCES})
+  get_filename_component(TEST_NAME ${TEST_SOURCE} NAME_WE)
+  add_executable(${TEST_NAME} ${TEST_SOURCE})
+  add_test(${TEST_NAME} ${TEST_NAME})
+  target_link_libraries(${TEST_NAME} cn24 ${CN24_LIBS})
+  message(STATUS "Added ${TEST_NAME} test.")
 endforeach()
 
 # Scripts
