@@ -50,34 +50,6 @@ public:
 	CombinedTensor* combined_tensor = nullptr;
 };
 
-class NetGraphNode {
-public:
-	explicit NetGraphNode(Layer* layer) : layer(layer) {
-		layer->CreateBufferDescriptors(output_buffers);
-	}
-	NetGraphNode(Layer* layer, NetGraphConnection first_connection) : layer(layer) {
-		input_connections.push_back(first_connection);
-		layer->CreateBufferDescriptors(output_buffers);
-	}
-
-	Layer* layer;
-	std::vector<NetGraphConnection> input_connections;
-	std::vector<NetGraphBackpropConnection> backprop_connections;
-	std::vector<NetGraphBuffer> output_buffers;
-
-	//int unique_id = -1;
-  std::string unique_name = "";
-	bool is_output = false;
-	bool is_input = false;
-
-	// Status
-	bool initialized = false;
-
-	// Flags used by NetGraph functions
-	bool flag_ff_visited = false;
-	bool flag_bp_visited = false;
-};
-
 class NetGraph : public NetStatus {
 public:
 	// Graph manipulation
@@ -108,12 +80,7 @@ public:
 	// Output
 	void PrintGraph(std::ostream& graph_output);
   void SetLayerViewEnabled(bool enabled) { layerview_enabled_ = enabled; }
-  void SetStatLayersEnabled(bool enabled) {
-    for (unsigned int n = 0; n < GetStatNodes().size(); n++) {
-      StatLayer* stat_layer = dynamic_cast<StatLayer*>(GetStatNodes()[n]->layer);
-      stat_layer->SetDisabled(!enabled);
-    } 
-  }
+  void SetStatLayersEnabled(bool enabled);
 	datum AggregateLoss();
 
 	// Status

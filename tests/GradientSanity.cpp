@@ -54,8 +54,6 @@ int main (int argc, char* argv[]) {
   // Set benchmark arguments
   unsigned int CLASSES = 10;
   unsigned int INPUTMAPS = 3;
-	unsigned int BENCHMARK_PASSES_FWD = 30;
-	unsigned int BENCHMARK_PASSES_BWD = 15;
   unsigned int width = 64;
   unsigned int height = 64;
 

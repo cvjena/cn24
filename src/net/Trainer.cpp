@@ -10,6 +10,7 @@
 
 #include "Log.h"
 #include "NetGraph.h"
+#include "NetGraphNode.h"
 #include "StatLayer.h"
 #include "LossFunctionLayer.h"
 #include "CLHelper.h"

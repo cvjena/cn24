@@ -15,6 +15,7 @@
 #include "StatLayer.h"
 
 #include "NetGraph.h"
+#include "NetGraphNode.h"
 
 #include "TensorViewer.h"
 
@@ -64,6 +65,13 @@ void NetGraph::AddNode(NetGraphNode* node) {
     else if (connection.backprop && connection.node->is_input) {
       connection.backprop = false;
     }
+  }
+}
+  
+void NetGraph::SetStatLayersEnabled(bool enabled) {
+  for (unsigned int n = 0; n < GetStatNodes().size(); n++) {
+    StatLayer* stat_layer = dynamic_cast<StatLayer*>(GetStatNodes()[n]->layer);
+    stat_layer->SetDisabled(!enabled);
   }
 }
 

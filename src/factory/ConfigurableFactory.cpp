@@ -21,6 +21,7 @@
 #include "SumLayer.h"
 #include "ConfigParsing.h"
 #include "NetGraph.h"
+#include "NetGraphNode.h"
 
 #include "ConfigurableFactory.h"
 
