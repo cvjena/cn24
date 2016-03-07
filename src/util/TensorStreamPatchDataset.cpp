@@ -42,9 +42,10 @@ TensorStreamPatchDataset::TensorStreamPatchDataset(std::istream& training_stream
 		unsigned int patchsize_y,
 		dataset_localized_error_function error_function,
     int training_fd, int testing_fd ) :
-	classes_(classes), class_names_(class_names), class_colors_(class_colors),
+  patchsize_x_(patchsize_x), patchsize_y_(patchsize_y),
+	class_names_(class_names), class_colors_(class_colors),
 	class_weights_(class_weights),
-	patchsize_x_(patchsize_x), patchsize_y_(patchsize_y),
+  classes_(classes),
 	error_function_(error_function) {
 	LOGDEBUG << "Instance created.";
 

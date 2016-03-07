@@ -28,7 +28,7 @@ DatasetInputLayer::DatasetInputLayer (Dataset& dataset,
                                       const unsigned int seed) :
   dataset_ (dataset), batch_size_ (batch_size),
   loss_sampling_p_ (loss_sampling_p),
-  seed_ (seed), generator_ (seed), dist_ (0.0, 1.0) {
+  generator_ (seed), dist_ (0.0, 1.0) {
   LOGDEBUG << "Instance created.";
 
   label_maps_ = dataset_.GetLabelMaps();
@@ -38,8 +38,9 @@ DatasetInputLayer::DatasetInputLayer (Dataset& dataset,
     LOGWARN << "Random seed is zero";
   }
 
-  if(dataset_.GetMethod() == FCN)
+  if(dataset_.GetMethod() == FCN) {
     LOGDEBUG << "Using loss sampling probability: " << loss_sampling_p_;
+  }
 
   elements_training_ = dataset_.GetTrainingSamples();
   elements_testing_ = dataset_.GetTestingSamples();

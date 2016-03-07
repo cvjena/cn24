@@ -57,8 +57,9 @@ Tensor::Tensor ( const Tensor& tensor, bool intentional ) {
   // Copy
   std::memcpy ( target_data, source_data, bytes_to_copy );
 
-  if ( !intentional )
+  if ( !intentional ) {
     LOGDEBUG << "Tensor copied! Is this intentional?";
+  }
 }
 
 Tensor::Tensor ( Tensor && tensor ) {

@@ -85,14 +85,11 @@ private:
   unsigned int elements_testing_ = 0;
   unsigned int elements_total_ = 0;
   
-  unsigned int tensors_ = 0;
-  
   bool testing_ = false;
 
   datum loss_sampling_p_ = 1.0;
 
-  // Random seed
-  int seed_;
+  // Random generation
   std::mt19937 generator_;
   std::uniform_real_distribution<datum> dist_;
 

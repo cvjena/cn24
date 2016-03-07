@@ -30,7 +30,7 @@ namespace Conv {
 
 
 ConfigurableFactory::ConfigurableFactory (std::istream& file, const unsigned int seed, bool is_training_factory) :
-  seed_ (seed), file_ (file), method_ (FCN) {
+  method_ (FCN), file_ (file), seed_(seed) {
   bool used_pad = false;
   file_.clear();
   file_.seekg (0, std::ios::beg);
@@ -134,8 +134,9 @@ ConfigurableFactory::ConfigurableFactory (std::istream& file, const unsigned int
   if (method_ == PATCH) {
     receptive_field_x_ += factorx;
     receptive_field_y_ += factory;
-    if(used_pad)
+    if(used_pad) {
       LOGWARN << "Using padding in hybrid mode may have undesired consequences!";
+    }
   LOGDEBUG << "Patch size would be " << receptive_field_x_ << "x" << receptive_field_y_;
   }
 

@@ -40,8 +40,8 @@ TensorStreamDataset::TensorStreamDataset (
 		std::vector<datum> class_weights,
     dataset_localized_error_function error_function) :
     training_stream_(training_stream), testing_stream_(testing_stream),
-  classes_ (classes), class_names_ (class_names), class_colors_ (class_colors),
-	class_weights_(class_weights),
+  class_names_ (class_names), class_colors_ (class_colors),
+	class_weights_(class_weights),classes_ (classes),
   error_function_ (error_function) {
   LOGDEBUG << "Instance created.";
 
