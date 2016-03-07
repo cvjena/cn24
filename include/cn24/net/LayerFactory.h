@@ -25,6 +25,8 @@ namespace Conv {
 class LayerFactory {
 public:
   static Layer* ConstructLayer(std::string descriptor);
+  static bool IsValidDescriptor(std::string descriptor);
+  static std::string ExtractConfiguration(std::string descriptor);
 };
   
 }
