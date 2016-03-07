@@ -54,6 +54,9 @@ script:
 # OpenCL on Mac OS X supports a maximum work group size of (1,1,1) on CPUs, so we only do a sanity check in that case
   - if [ "$TEST_SUITE" == "opencl" ] && [ "$TRAVIS_OS_NAME" == "osx" ]; then ./testOpenCL; else make test;fi
 
+after_failure:
+  - if [ "$TEST_SUITE" != "opencl" ] && [ "$TRAVIS_OS_NAME" != "osx" ]; then ctest -V --rerun-failed; fi
+
 os:
   - linux
   - osx
