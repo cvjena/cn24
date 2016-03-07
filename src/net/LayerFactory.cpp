@@ -31,6 +31,16 @@ std::string LayerFactory::ExtractConfiguration(std::string descriptor) {
   }
 }
   
+std::string LayerFactory::ExtractLayerType(std::string descriptor) {
+  std::smatch config_match;
+  bool has_layertype = std::regex_match(descriptor, config_match, std::regex("([a-z]+)(\\(.*\\))?",std::regex::extended));
+  if(has_layertype && config_match.size() > 1) {
+    return config_match[1];
+  } else {
+    return "";
+  }
+}
+  
 Layer* LayerFactory::ConstructLayer(std::string descriptor) {
   if (!IsValidDescriptor(descriptor))
     return nullptr;
