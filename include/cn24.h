@@ -62,6 +62,7 @@
 #include "cn24/net/NetGraph.h"
 #include "cn24/net/NetGraphNode.h"
 #include "cn24/net/NetStatus.h"
+#include "cn24/net/LayerFactory.h"
 
 #include "cn24/factory/ConfigurableFactory.h"
 

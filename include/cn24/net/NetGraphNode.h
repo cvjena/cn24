@@ -1,4 +1,3 @@
-
 /*
  * This file is part of the CN24 semantic segmentation software,
  * copyright (C) 2015 Clemens-Alexander Brust (ikosa dot de at gmail dot com).
@@ -25,6 +24,7 @@
 #include "NetGraph.h"
 
 #include <vector>
+#include <string>
 
 namespace Conv {
 
@@ -33,10 +33,16 @@ public:
 	explicit NetGraphNode(Layer* layer) : layer(layer) {
 		layer->CreateBufferDescriptors(output_buffers);
 	}
+  explicit NetGraphNode(std::string);
+  
 	NetGraphNode(Layer* layer, NetGraphConnection first_connection) : layer(layer) {
 		input_connections.push_back(first_connection);
 		layer->CreateBufferDescriptors(output_buffers);
 	}
+  
+  NetGraphNode(std::string configuration, NetGraphConnection first_connection) {
+    
+  }
 
 	Layer* layer;
 	std::vector<NetGraphConnection> input_connections;
