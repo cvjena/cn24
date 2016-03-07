@@ -8,6 +8,8 @@
 #include "Log.h"
 #include "GradientTester.h"
 
+#include "NetGraphNode.h"
+
 namespace Conv {
   
 void GradientTester::TestGradient ( NetGraph& graph, unsigned int skip_weights, bool fatal_fail ) {
