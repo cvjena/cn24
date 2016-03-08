@@ -1,6 +1,4 @@
 language: cpp
-sudo: required
-dist: trusty
 addons:
   apt:
     sources:
@@ -8,7 +6,6 @@ addons:
     packages:
       - gcc-4.9
       - g++-4.9
-      - clang-3.5
       - libjpeg-dev
       - libpng-dev
       - opencl-headers
@@ -75,3 +72,5 @@ matrix:
   exclude:
     - os: linux
       env: TEST_SUITE=opencl
+    - os: linux
+      compiler: clang
