@@ -202,7 +202,7 @@ void AdvancedMaxPoolingLayer::BackPropagate() {
   for(std::size_t sample = 0; sample < input_->data.samples(); sample++) {
     for (unsigned int map = 0; map < maps_; map++) {
       for (unsigned int ix = 0; ix < input_width_; ix++) {
-        for(unsigned int iy = 0; iy < input_width_; iy++) {
+        for(unsigned int iy = 0; iy < input_height_; iy++) {
           const unsigned int mask_index = ix + input_width_ * iy;
           const unsigned int oxstart = (ix < region_width_) ? 
             0 : (ix - region_width_) / stride_width_+ 1;
