@@ -9,6 +9,7 @@
 #include "Log.h"
 #include "CLHelper.h"
 #include "AdvancedMaxPoolingLayer.h"
+#include "ConfigParsing.h"
 
 #ifdef BUILD_OPENCL
 #define BUILD_OPENCL_MAX
@@ -24,6 +25,19 @@ AdvancedMaxPoolingLayer::AdvancedMaxPoolingLayer (const unsigned int region_widt
   stride_width_ (stride_width), stride_height_ (stride_height) {
   LOGDEBUG << "Instance created: " << region_width_ << "x" << region_height_ <<
            " pooling.";
+}
+
+AdvancedMaxPoolingLayer::AdvancedMaxPoolingLayer(std::string configuration) : SimpleLayer(configuration) {
+  region_width_ = 1;
+  region_height_ = 1;
+  stride_width_ = 1;
+  stride_height_ = 1;
+  
+  ParseKernelSizeIfPossible(configuration, "size", region_width_, region_height_);
+  stride_width_ = region_width_;
+  stride_height_ = region_height_;
+  
+  ParseKernelSizeIfPossible(configuration, "stride", stride_width_, stride_height_);
 }
 
 bool AdvancedMaxPoolingLayer::CreateOutputs (
@@ -57,7 +71,7 @@ bool AdvancedMaxPoolingLayer::CreateOutputs (
 
   return true;
 }
-
+  
 bool AdvancedMaxPoolingLayer::Connect (const CombinedTensor* input,
                                CombinedTensor* output) {
   // TODO Validate dimensions
