@@ -28,6 +28,7 @@ public:
   static bool IsValidDescriptor(std::string descriptor);
   static std::string ExtractConfiguration(std::string descriptor);
   static std::string ExtractLayerType(std::string descriptor);
+  static std::string InjectSeed(std::string descriptor, unsigned int seed);
 };
   
 }

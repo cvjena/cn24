@@ -6,6 +6,7 @@
  */
 
 #include <string>
+#include <sstream>
 #include <regex>
 
 #include "ConvolutionLayer.h"
@@ -64,6 +65,33 @@ Layer* LayerFactory::ConstructLayer(std::string descriptor) {
   CONV_LAYER_TYPE("relu", ReLULayer)
   
   return layer;
+}
+  
+std::string LayerFactory::InjectSeed(std::string descriptor, unsigned int seed) {
+  if(IsValidDescriptor(descriptor)) {
+    std::string configuration = ExtractConfiguration(descriptor);
+    std::string layertype = ExtractLayerType(descriptor);
+    
+    std::stringstream seed_ss;
+    seed_ss << "seed=" << seed;
+    
+    bool already_has_seed = std::regex_match(configuration, std::regex(".*seed=[0-9]+.*", std::regex::extended));
+    if(already_has_seed) {
+      std::string new_descriptor = std::regex_replace(descriptor, std::regex("seed=([0-9])+", std::regex::extended), seed_ss.str());
+      return new_descriptor;
+    } else {
+      std::stringstream new_descriptor_ss;
+      new_descriptor_ss << layertype << "(";
+      if(configuration.length() > 0) {
+        new_descriptor_ss << configuration << " ";
+      }
+      new_descriptor_ss << seed_ss.str() << ")";
+      std::string new_descriptor = new_descriptor_ss.str();
+      return new_descriptor;
+    }
+  } else {
+    return descriptor;
+  }
 }
   
 }
