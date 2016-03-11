@@ -32,6 +32,8 @@ class Layer {
   friend class Trainer;
   friend class GradientTester;
 public:
+  Layer() : configuration_("") {};
+  explicit Layer(std::string configuration) : configuration_(configuration) {};
   /**
    * @brief Creates a CombinedTensor vector given an input.
    *
@@ -130,6 +132,11 @@ protected:
   bool backprop_enabled_ = true;
 
   unsigned int gain = 0;
+  
+  /**
+   * @brief Layer configuration string
+   */
+  std::string configuration_;
 };
 
 }
