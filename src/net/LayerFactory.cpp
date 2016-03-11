@@ -8,6 +8,9 @@
 #include <string>
 #include <regex>
 
+#include "ConvolutionLayer.h"
+#include "NonLinearityLayer.h"
+
 #include "LayerFactory.h"
 
 namespace Conv {
@@ -41,12 +44,25 @@ std::string LayerFactory::ExtractLayerType(std::string descriptor) {
   }
 }
   
+#define CONV_LAYER_TYPE(ltype,lclass) else if (layertype.compare(ltype) == 0) { \
+layer = new lclass (configuration) ; \
+}
+  
 Layer* LayerFactory::ConstructLayer(std::string descriptor) {
   if (!IsValidDescriptor(descriptor))
     return nullptr;
   std::string configuration = ExtractConfiguration(descriptor);
+  std::string layertype = ExtractLayerType(descriptor);
   
   Layer* layer = nullptr;
+  if(layertype.length() == 0) {
+    // Leave layer a nullptr
+  }
+  CONV_LAYER_TYPE("convolution", ConvolutionLayer)
+  CONV_LAYER_TYPE("tanh", TanhLayer)
+  CONV_LAYER_TYPE("sigm", SigmoidLayer)
+  CONV_LAYER_TYPE("relu", ReLULayer)
+  
   return layer;
 }
   
