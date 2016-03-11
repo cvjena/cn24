@@ -19,6 +19,7 @@
 #include "Log.h"
 #include "CLHelper.h"
 #include "TensorMath.h"
+#include "ConfigParsing.h"
 
 #include "TensorViewer.h"
 
@@ -65,6 +66,33 @@ ConvolutionLayer::ConvolutionLayer (const unsigned int kwidth,
            kernel_width_ << "x" << kernel_height_ << " kernels, stride: "<<  stride_width << "x" << stride_height_ << 
            ", padding: " << pad_width_ << "x" << pad_height_ << ", group: " << group_ << ".";
   LOGDEBUG << "Dropout fraction: " << dropout_fraction_;
+}
+
+ConvolutionLayer::ConvolutionLayer(std::string configuration) {
+  unsigned int seed = 0;
+  kernel_width_ = 0;
+  kernel_height_ = 0;
+  output_maps_ = 0;
+  stride_width_ = 1;
+  stride_height_ = 1;
+  pad_width_ = 0;
+  pad_height_ = 0;
+  group_ = 1;
+  dropout_fraction_ = 0.0;
+  datum local_lr = 1.0;
+  
+  ParseKernelSizeIfPossible(configuration, "size", kernel_width_ , kernel_height_);
+  ParseKernelSizeIfPossible (configuration, "stride", stride_width_, stride_height_);
+  ParseKernelSizeIfPossible (configuration, "pad", pad_width_, pad_height_);
+  ParseCountIfPossible (configuration, "kernels", output_maps_);
+  ParseCountIfPossible (configuration, "group", group_);
+  ParseDatumParamIfPossible (configuration, "dropout", dropout_fraction_);
+  ParseDatumParamIfPossible (configuration, "llr", local_lr);
+  ParseCountIfPossible(configuration, "seed", seed);
+  
+  // TODO Validation like in large constructor
+  
+  SetLocalLearningRate(local_lr);
 }
 
 bool ConvolutionLayer::CreateOutputs (

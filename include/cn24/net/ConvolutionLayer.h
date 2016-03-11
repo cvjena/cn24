@@ -17,6 +17,7 @@
 
 #include <random>
 #include <sstream>
+#include <string>
 
 #include "Layer.h"
 #include "SimpleLayer.h"
@@ -40,6 +41,8 @@ public:
                    const unsigned int stride_height = 1, const unsigned int pad_width = 0,
                    const unsigned int pad_height = 0, const unsigned int group = 1,
                    const int seed = 0, const datum dropout_fraction = 0.0 );
+  
+  explicit ConvolutionLayer(std::string configuration);
   
   // Implementations for SimpleLayer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs,
