@@ -11,6 +11,7 @@
 
 #include "ConvolutionLayer.h"
 #include "NonLinearityLayer.h"
+#include "AdvancedMaxPoolingLayer.h"
 
 #include "LayerFactory.h"
 
@@ -60,6 +61,7 @@ Layer* LayerFactory::ConstructLayer(std::string descriptor) {
     // Leave layer a nullptr
   }
   CONV_LAYER_TYPE("convolution", ConvolutionLayer)
+  CONV_LAYER_TYPE("amaxpooling", AdvancedMaxPoolingLayer)
   CONV_LAYER_TYPE("tanh", TanhLayer)
   CONV_LAYER_TYPE("sigm", SigmoidLayer)
   CONV_LAYER_TYPE("relu", ReLULayer)
