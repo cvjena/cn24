@@ -93,12 +93,13 @@ namespace Conv {
       }
     }
     if(okay != elements) {
-      LOGDEBUG << okay << " of " << elements << " gradients okay - " << std::setprecision(3) << 100.0 * (double)okay/(double)elements << "%";
       double success_rate = (double)okay/(double)elements;
       if(success_rate > 0.95)
         return true;
-      else
+      else {
+        LOGERROR << okay << " of " << elements << " gradients okay - " << std::setprecision(3) << 100.0 * (double)okay/(double)elements << "%";
         return false;
+      }
     } else {
       return true;
     }
@@ -143,45 +144,45 @@ int main(int argc, char* argv[]) {
       continue;
     }
     
-    LOGINFO << "    Description: " << layer->GetLayerDescription();
+    LOGDEBUG << "    Description: " << layer->GetLayerDescription();
     
-    LOGINFO << "    Creating outputs...";
     std::vector<Conv::CombinedTensor*> outputs;
     bool createoutputs_success = layer->CreateOutputs({&input_data}, outputs);
     if(!createoutputs_success) {
       test_failed = true;
+      LOGINFO << "    Creating outputs...";
       LOGERROR << "       FAILED";
       continue;
     }
     
     for(Conv::CombinedTensor* output : outputs) {
-      LOGINFO << "        " << output->data;
+      LOGDEBUG << "        Output: " << output->data;
     }
     
-    LOGINFO << "    Connecting...";
     bool connect_success = layer->Connect({&input_data}, outputs, &net_status);
     if(!connect_success) {
       test_failed = true;
+      LOGINFO << "    Connecting...";
       LOGERROR << "        FAILED";
       continue;
     }
     
     layer->OnLayerConnect({});
     
-    LOGINFO << "    Gradient test (weights)...";
     for(Conv::CombinedTensor* weights : layer->parameters()) {
       bool gradient_success = Conv::DoGradientTest(layer, weights->data, weights->delta, outputs, epsilon);
       if(!gradient_success) {
         test_failed = true;
+        LOGINFO << "    Gradient test (weights)...";
         LOGERROR << "        FAILED";
         continue;
       }
     }
     
-    LOGINFO << "    Gradient test (inputs)...";
     bool gradient_success = Conv::DoGradientTest(layer, input_data.data, input_data.delta, outputs, epsilon);
     if(!gradient_success) {
       test_failed = true;
+      LOGINFO << "    Gradient test (inputs)...";
       LOGERROR << "        FAILED";
       continue;
     }
