@@ -14,13 +14,16 @@
 
 // TEST SETUP
 std::vector<std::string> test_layers_noseed = {
+  "maxpooling(size=3x3)",
+  "amaxpooling(size=3x3)",
+  "amaxpooling(size=3x3 stride=2x2)",
   "convolution(size=3x3 kernels=3)",
   "convolution(size=3x3 stride=2x2 kernels=3)",
   "convolution(size=3x3 group=3 kernels=9)",
   "tanh","sigm","relu"
 };
 
-unsigned int SAMPLES = 2, WIDTH = 8, HEIGHT = 7, MAPS = 3;
+unsigned int SAMPLES = 2, WIDTH = 9, HEIGHT = 6, MAPS = 3;
 unsigned int SEEDS = 3;
 Conv::datum epsilon = 0.005;
 
@@ -86,8 +89,10 @@ namespace Conv {
 
       const Conv::datum ratio = fd_gradient / gradient;
       if(ratio > 1.2 || ratio < 0.8) {
-        LOGDEBUG << "Expected: " << gradient << ", FD Grad : " << fd_gradient;
-        LOGDEBUG << "Ratio: " << ratio;
+        LOGDEBUG << "BP Grad : " << gradient;
+        LOGDEBUG << "FD Grad : " << fd_gradient;
+        LOGDEBUG << "Ratio   : " << ratio;
+        LOGDEBUG << "Diff    : " << gradient - fd_gradient;
       } else {
         okay++;
       }
@@ -107,10 +112,13 @@ namespace Conv {
 }
 
 int main(int argc, char* argv[]) {
-  Conv::System::Init();
+  if(argc > 1)
+    Conv::System::Init(3);
+  else
+    Conv::System::Init();
   
   std::mt19937 seed_generator(93023);
-  std::uniform_real_distribution<Conv::datum> dist(-1.0, 1.0);
+  std::uniform_real_distribution<Conv::datum> dist(1.0, 2.0);
   
   Conv::NetStatus net_status;
   net_status.SetIsTesting(true);
@@ -130,10 +138,13 @@ int main(int argc, char* argv[]) {
   }
   
   for (std::string& layer_descriptor : test_layers) {
+    bool data_sign = seed_generator() % 2 == 0;
     for(unsigned int e = 0; e < input_data.data.elements(); e++) {
-      input_data.data.data_ptr()[e] = dist(seed_generator);
+      if(data_sign)
+        input_data.data.data_ptr()[e] = dist(seed_generator);
+      else
+        input_data.data.data_ptr()[e] = -dist(seed_generator);
     }
-    input_data.data.Clear(2.0);
     input_data.delta.Clear(0.0);
     
     LOGINFO << "Testing layer: " << layer_descriptor;
