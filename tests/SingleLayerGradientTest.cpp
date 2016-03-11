@@ -54,7 +54,6 @@ void SimpleSumLossGradient(const std::vector<Conv::CombinedTensor*>& outputs) {
 namespace Conv {
   bool DoGradientTest(Conv::Layer* layer, Conv::Tensor& data, Conv::Tensor& delta, std::vector<Conv::CombinedTensor*>& outputs, Conv::datum epsilon) {
     layer->FeedForward();
-    Conv::datum initial_loss = SimpleSumLoss(outputs);
     SimpleSumLossGradient(outputs);
     layer->BackPropagate();
     
