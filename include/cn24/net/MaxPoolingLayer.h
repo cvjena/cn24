@@ -34,6 +34,8 @@ public:
   MaxPoolingLayer(const unsigned int region_width,
                   const unsigned int region_height);
   
+  MaxPoolingLayer(std::string configuration);
+  
   // Implementations for SimpleLayer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs, std::vector< CombinedTensor* >& outputs);
   bool Connect (const CombinedTensor* input, CombinedTensor* output);

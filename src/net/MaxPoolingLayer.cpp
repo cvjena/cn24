@@ -9,6 +9,7 @@
 #include "Log.h"
 #include "CLHelper.h"
 #include "MaxPoolingLayer.h"
+#include "ConfigParsing.h"
 
 #ifdef BUILD_OPENCL
 #define BUILD_OPENCL_MAX
@@ -23,6 +24,13 @@ MaxPoolingLayer::MaxPoolingLayer (const unsigned int region_width,
            " pooling.";
 }
 
+MaxPoolingLayer::MaxPoolingLayer(std::string configuration) {
+  region_width_ = 1;
+  region_height_ = 1;
+  
+  ParseKernelSizeIfPossible(configuration, "size", region_width_, region_height_);
+}
+  
 bool MaxPoolingLayer::CreateOutputs (
   const std::vector< CombinedTensor* >& inputs,
   std::vector< CombinedTensor* >& outputs) {
