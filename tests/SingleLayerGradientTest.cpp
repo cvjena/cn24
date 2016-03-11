@@ -10,14 +10,21 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <random>
 
-std::vector<std::string> test_layers = {
-  "convolution(size=3x3 kernels=3 seed=5)",
-  "convolution(size=3x3 stride=2x2 kernels=3 seed=5)",
-  "convolution(size=3x3 group=3 kernels=9 seed=5)",
+// TEST SETUP
+std::vector<std::string> test_layers_noseed = {
+  "convolution(size=3x3 kernels=3)",
+  "convolution(size=3x3 stride=2x2 kernels=3)",
+  "convolution(size=3x3 group=3 kernels=9)",
   "tanh","sigm","relu"
 };
 
+unsigned int SAMPLES = 2, WIDTH = 8, HEIGHT = 7, MAPS = 3;
+unsigned int SEEDS = 3;
+Conv::datum epsilon = 0.005;
+
+// UTILITIES
 Conv::datum SimpleSumLoss(const Conv::Tensor& tensor) {
   Conv::datum sum = 0;
   
@@ -101,17 +108,30 @@ namespace Conv {
 int main(int argc, char* argv[]) {
   Conv::System::Init();
   
+  std::mt19937 seed_generator(93023);
+  std::uniform_real_distribution<Conv::datum> dist(-1.0, 1.0);
+  
   Conv::NetStatus net_status;
   net_status.SetIsTesting(true);
-  
-  unsigned int SAMPLES = 2, WIDTH = 7, HEIGHT = 7, MAPS = 3;
-  Conv::datum epsilon = 0.005;
   
   bool test_failed = false;
   
   Conv::CombinedTensor input_data(SAMPLES, WIDTH, HEIGHT, MAPS);
   
+  std::vector<std::string> test_layers;
+  
+  // Inject random seeds
+  for (std::string& layer_descriptor : test_layers_noseed) {
+    for(unsigned int i = 0; i < SEEDS; i++) {
+      std::string injected_descriptor = Conv::LayerFactory::InjectSeed(layer_descriptor, seed_generator());
+      test_layers.push_back(injected_descriptor);
+    }
+  }
+  
   for (std::string& layer_descriptor : test_layers) {
+    for(unsigned int e = 0; e < input_data.data.elements(); e++) {
+      input_data.data.data_ptr()[e] = dist(seed_generator);
+    }
     input_data.data.Clear(2.0);
     input_data.delta.Clear(0.0);
     
