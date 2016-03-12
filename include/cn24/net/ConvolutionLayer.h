@@ -44,6 +44,13 @@ public:
   
   explicit ConvolutionLayer(std::string configuration);
   
+  ~ConvolutionLayer() {
+    if(weights_ != nullptr)
+      delete weights_;
+    if(bias_ != nullptr)
+      delete bias_;
+  }
+  
   // Implementations for SimpleLayer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs,
                       std::vector< CombinedTensor* >& outputs);
