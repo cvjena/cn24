@@ -32,6 +32,7 @@ class Layer {
   friend class Trainer;
   friend class GradientTester;
 public:
+  virtual ~Layer() {};
   Layer() : configuration_("") {};
   explicit Layer(std::string configuration) : configuration_(configuration) {};
   /**
