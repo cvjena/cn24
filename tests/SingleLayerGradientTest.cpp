@@ -197,6 +197,10 @@ int main(int argc, char* argv[]) {
       LOGERROR << "        FAILED";
       continue;
     }
+    
+    delete layer;
+    for(Conv::CombinedTensor* output : outputs)
+      delete output;
   }
   
   LOGEND;
