@@ -7,7 +7,7 @@
 
 #include "SpatialPriorLayer.h"
 namespace Conv {
-SpatialPriorLayer::SpatialPriorLayer() {
+  SpatialPriorLayer::SpatialPriorLayer() : SimpleLayer("") {
   LOGDEBUG << "Instance created.";
 }
 

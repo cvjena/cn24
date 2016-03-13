@@ -17,7 +17,8 @@ LocalResponseNormalizationLayer::
   LocalResponseNormalizationLayer(const unsigned int size,
     const datum alpha, const datum beta,
     const LocalResponseNormalizationLayer::NormalizationMethod normalization_method) :
-    size_(size), alpha_(alpha), beta_(beta), normalization_method_(normalization_method) {
+  SimpleLayer(""),
+  size_(size), alpha_(alpha), beta_(beta), normalization_method_(normalization_method) {
   LOGDEBUG << "Instance created, size: " << size_ << ", alpha: " << alpha_ 
   << ", beta: " << beta_ << ", method: " << ((normalization_method_ == ACROSS_CHANNELS) ? "across" : "within");
 

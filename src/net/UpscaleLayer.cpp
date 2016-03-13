@@ -15,7 +15,7 @@
 namespace Conv {
 
 UpscaleLayer::UpscaleLayer ( const unsigned int region_width, const unsigned int region_height )
-  :  region_width_ ( region_width ), region_height_ ( region_height ) {
+  : SimpleLayer(""), region_width_ ( region_width ), region_height_ ( region_height ) {
   LOGDEBUG << "Instance created: " << region_width_ << "x" << region_height_ <<
            " upscaling.";
 }

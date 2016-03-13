@@ -26,7 +26,7 @@ namespace Conv {
   
 class SimpleLayer : public Layer {
 public:
-  SimpleLayer() : Layer("") {};
+  //SimpleLayer() : Layer("") {};
   SimpleLayer(std::string configuration) : Layer(configuration) {};
   bool Connect(const std::vector<CombinedTensor*>& inputs,
                const std::vector<CombinedTensor*>& outputs,

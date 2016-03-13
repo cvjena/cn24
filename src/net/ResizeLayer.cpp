@@ -21,7 +21,8 @@ namespace Conv {
 
 ResizeLayer::ResizeLayer (const unsigned int borderx,
 			  const unsigned int bordery) :
-			  borderx_(borderx), bordery_(bordery) {
+  SimpleLayer(""),
+  borderx_(borderx), bordery_(bordery) {
   LOGDEBUG << "Instance created, border size: (" << borderx << ", "
   << bordery << ")";
 }

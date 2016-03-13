@@ -26,6 +26,7 @@ DatasetInputLayer::DatasetInputLayer (Dataset& dataset,
                                       const unsigned int batch_size,
                                       const datum loss_sampling_p,
                                       const unsigned int seed) :
+  Layer(""),
   dataset_ (dataset), batch_size_ (batch_size),
   loss_sampling_p_ (loss_sampling_p),
   generator_ (seed), dist_ (0.0, 1.0) {

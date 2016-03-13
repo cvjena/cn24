@@ -13,7 +13,7 @@
 
 namespace Conv {
   
-NonLinearityLayer::NonLinearityLayer() {
+NonLinearityLayer::NonLinearityLayer() : SimpleLayer ("") {
 }
 
 

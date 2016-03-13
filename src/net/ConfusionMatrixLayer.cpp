@@ -15,6 +15,7 @@
 namespace Conv {
 ConfusionMatrixLayer::ConfusionMatrixLayer (
   std::vector<std::string> names, const unsigned int classes ) :
+  Layer(""),
   classes_ ( classes ), names_ ( names )
 {
   LOGDEBUG << "Instance created, " << classes << " classes.";

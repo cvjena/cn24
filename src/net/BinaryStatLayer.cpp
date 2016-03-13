@@ -14,7 +14,7 @@ namespace Conv {
 
 BinaryStatLayer::BinaryStatLayer ( const unsigned int thresholds,
                                    const datum min_t, const datum max_t )
-  : thresholds_ ( thresholds ) {
+  : Layer(""), thresholds_ ( thresholds ) {
   if ( thresholds < 1 ) {
     FATAL ( "Binary classification needs at least one threshold value!" );
   }

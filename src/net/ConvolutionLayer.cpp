@@ -36,6 +36,7 @@ ConvolutionLayer::ConvolutionLayer (const unsigned int kwidth,
                                     const unsigned int pad_height,
                                     const unsigned int group,
                                     const int seed, const datum dropout_fraction) :
+  SimpleLayer(""),
   output_maps_ (output_maps), kernel_width_ (kwidth), kernel_height_ (kheight),
   rand_ (seed), stride_width_(stride_width), stride_height_(stride_height),
   pad_width_(pad_width), pad_height_(pad_height),
@@ -68,7 +69,8 @@ ConvolutionLayer::ConvolutionLayer (const unsigned int kwidth,
   LOGDEBUG << "Dropout fraction: " << dropout_fraction_;
 }
 
-ConvolutionLayer::ConvolutionLayer(std::string configuration) {
+ConvolutionLayer::ConvolutionLayer(std::string configuration) :
+  SimpleLayer(configuration) {
   unsigned int seed = 0;
   kernel_width_ = 0;
   kernel_height_ = 0;

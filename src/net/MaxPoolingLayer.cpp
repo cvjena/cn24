@@ -19,12 +19,14 @@ namespace Conv {
 
 MaxPoolingLayer::MaxPoolingLayer (const unsigned int region_width,
                                   const unsigned int region_height) :
+  SimpleLayer(""),
   region_width_ (region_width), region_height_ (region_height) {
   LOGDEBUG << "Instance created: " << region_width_ << "x" << region_height_ <<
            " pooling.";
 }
 
-MaxPoolingLayer::MaxPoolingLayer(std::string configuration) {
+MaxPoolingLayer::MaxPoolingLayer(std::string configuration) :
+  SimpleLayer(configuration) {
   region_width_ = 1;
   region_height_ = 1;
   

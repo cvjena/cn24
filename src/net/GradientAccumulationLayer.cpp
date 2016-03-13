@@ -16,7 +16,7 @@ namespace Conv {
 
 
 GradientAccumulationLayer::GradientAccumulationLayer
-  (unsigned int output_count) : output_count_(output_count) {
+  (unsigned int output_count) : Layer (""), output_count_(output_count) {
   LOGDEBUG << "Instance created.";
 }
   

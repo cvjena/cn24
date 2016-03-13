@@ -33,7 +33,7 @@ class Layer {
   friend class GradientTester;
 public:
   virtual ~Layer() {};
-  Layer() : configuration_("") {};
+  // Layer() : configuration_("") {};
   explicit Layer(std::string configuration) : configuration_(configuration) {};
   /**
    * @brief Creates a CombinedTensor vector given an input.

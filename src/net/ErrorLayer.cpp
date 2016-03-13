@@ -14,7 +14,7 @@
 namespace Conv {
 
 ErrorLayer::ErrorLayer(const datum loss_weight) 
- : loss_weight_(loss_weight) {
+ : Layer(""), loss_weight_(loss_weight) {
   LOGDEBUG << "Instance created.";
 #ifdef ERROR_LAYER_IGNORE_WEIGHTS
   LOGINFO << "Weights are being ignored!";

@@ -12,7 +12,7 @@
 namespace Conv {
 
 
-ConcatenationLayer::ConcatenationLayer() {
+ConcatenationLayer::ConcatenationLayer() : Layer("") {
   LOGDEBUG << "Instance created.";
 }
 

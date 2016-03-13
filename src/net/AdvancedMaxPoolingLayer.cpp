@@ -21,8 +21,9 @@ AdvancedMaxPoolingLayer::AdvancedMaxPoolingLayer (const unsigned int region_widt
                                   const unsigned int region_height,
                                   const unsigned int stride_width,
                                   const unsigned int stride_height ) :
+  SimpleLayer(""),
   region_width_ (region_width), region_height_ (region_height),
-  stride_width_ (stride_width), stride_height_ (stride_height) {
+  stride_width_ (stride_width), stride_height_ (stride_height){
   LOGDEBUG << "Instance created: " << region_width_ << "x" << region_height_ <<
            " pooling.";
 }
