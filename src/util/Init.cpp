@@ -189,6 +189,12 @@ void System::GetExecutablePath(std::string& binary_path) {
 #endif
 #endif
 }
+  
+void System::Shutdown() {
+  delete stat_aggregator;
+  delete viewer;
+  LOGEND;
+}
 
 void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
 #ifdef BUILD_OPENCL
