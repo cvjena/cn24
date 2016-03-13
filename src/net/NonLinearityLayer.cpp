@@ -13,10 +13,6 @@
 
 namespace Conv {
   
-NonLinearityLayer::NonLinearityLayer() : SimpleLayer ("") {
-}
-
-
 bool NonLinearityLayer::CreateOutputs (
   const std::vector< CombinedTensor* >& inputs,
   std::vector< CombinedTensor* >& outputs) {

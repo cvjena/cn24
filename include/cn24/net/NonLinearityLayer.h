@@ -24,7 +24,7 @@ namespace Conv {
 // This macro is a class declaration for a typical nonlinearity layer
 #define NL_LAYER(name) class name##Layer : public NonLinearityLayer {\
 public: \
-name##Layer() { LOGDEBUG << "Instance created, nl: " << #name; } \
+name##Layer() : NonLinearityLayer("") { LOGDEBUG << "Instance created, nl: " << #name; } \
 explicit name##Layer(std::string configuration) : NonLinearityLayer(configuration) { LOGDEBUG << "Instance created, nl: " << #name; } \
 std::string GetLayerDescription() { return #name " Layer";}\
 void FeedForward(); \
@@ -34,7 +34,7 @@ bool IsOpenCLAware(); \
 
 #define NL_LAYER_NOCL(name) class name##Layer : public NonLinearityLayer {\
 public: \
-name##Layer() { LOGDEBUG << "Instance created, nl: " << #name; } \
+name##Layer() : NonLinearityLayer("") { LOGDEBUG << "Instance created, nl: " << #name; } \
 explicit name##Layer(std::string configuration) : NonLinearityLayer(configuration) { LOGDEBUG << "Instance created, nl: " << #name; } \
 std::string GetLayerDescription() { return #name " Layer";}\
 void FeedForward(); \
@@ -45,8 +45,7 @@ bool IsOpenCLAware() { return false; } \
 
 class NonLinearityLayer : public SimpleLayer {
 public:
-  NonLinearityLayer();
-  explicit NonLinearityLayer(std::string configuration) : NonLinearityLayer() {};
+  explicit NonLinearityLayer(std::string configuration) : SimpleLayer(configuration) {};
   
   // Implementations for SimpleLayer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs,
