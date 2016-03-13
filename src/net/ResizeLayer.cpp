@@ -11,6 +11,8 @@
 #include "ResizeLayer.h"
 #include "Init.h"
 
+#include "ConfigParsing.h"
+
 #ifdef BUILD_OPENMP
 #include <omp.h>
 #endif
@@ -24,6 +26,13 @@ ResizeLayer::ResizeLayer (const unsigned int borderx,
   << bordery << ")";
 }
 
+ResizeLayer::ResizeLayer (std::string configuration)
+: SimpleLayer(configuration) {
+  borderx_ = 0;
+  bordery_ = 0;
+  ParseKernelSizeIfPossible(configuration, "border", borderx_, bordery_);
+}
+  
 bool ResizeLayer::CreateOutputs (const std::vector< CombinedTensor* >& inputs,
                                   std::vector< CombinedTensor* >& outputs) {
   // This is a simple layer, only one input
