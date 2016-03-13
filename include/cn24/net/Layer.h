@@ -112,6 +112,7 @@ public:
    */
   virtual bool IsOpenCLAware() { return false; }
 
+  virtual std::string GetLayerConfiguration() { return configuration_; }
 	virtual std::string GetLayerDescription() { return "Layer"; }
 	virtual void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers) {UNREFERENCED_PARAMETER(buffers);}
 protected:
