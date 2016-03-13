@@ -115,10 +115,11 @@ namespace Conv {
 }
 
 int main(int argc, char* argv[]) {
-  if(argc > 1)
+  if((argc > 1 && std::string("-v").compare(argv[1]) == 0) || argc > 2) {
     Conv::System::Init(3);
-  else
+  } else {
     Conv::System::Init();
+  }
   
   std::mt19937 seed_generator(93023);
   std::uniform_real_distribution<Conv::datum> dist(1.0, 2.0);
@@ -132,13 +133,18 @@ int main(int argc, char* argv[]) {
   
   std::vector<std::string> test_layers;
   
-  // Inject random seeds
-  for (std::pair<std::string, unsigned int>& layer_pair : test_layers_and_runs) {
-    std::string& layer_descriptor = layer_pair.first;
-    unsigned int runs = layer_pair.second;
-    for(unsigned int i = 0; i < runs; i++) {
-      std::string injected_descriptor = Conv::LayerFactory::InjectSeed(layer_descriptor, seed_generator());
-      test_layers.push_back(injected_descriptor);
+  if (argc > 1) {
+    std::string test_layer = argv[1];
+    test_layers.push_back(test_layer);
+  } else {
+    for (std::pair<std::string, unsigned int>& layer_pair : test_layers_and_runs) {
+      std::string& layer_descriptor = layer_pair.first;
+      unsigned int runs = layer_pair.second;
+      for(unsigned int i = 0; i < runs; i++) {
+        // Inject random seeds
+        std::string injected_descriptor = Conv::LayerFactory::InjectSeed(layer_descriptor, seed_generator());
+        test_layers.push_back(injected_descriptor);
+      }
     }
   }
   
@@ -185,6 +191,10 @@ int main(int argc, char* argv[]) {
     
     layer->OnLayerConnect({});
     
+    if(layer->parameters().size() == 0) {
+      LOGDEBUG << "    Layer has no weights";
+    }
+    
     for(Conv::CombinedTensor* weights : layer->parameters()) {
       bool gradient_success = Conv::DoGradientTest(layer, weights->data, weights->delta, outputs, epsilon);
       if(!gradient_success) {
@@ -208,6 +218,7 @@ int main(int argc, char* argv[]) {
       delete output;
   }
   
-  LOGEND;
+  Conv::System::Shutdown();
+  
   return test_failed ? -1 : 0;
 }
