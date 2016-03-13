@@ -66,56 +66,6 @@ void SimpleSumLossGradient(const std::vector<Conv::CombinedTensor*>& outputs) {
   }
 }
 
-namespace Conv {
-  bool DoGradientTest(Conv::Layer* layer, Conv::Tensor& data, Conv::Tensor& delta, std::vector<Conv::CombinedTensor*>& outputs, Conv::datum epsilon) {
-    layer->FeedForward();
-    SimpleSumLossGradient(outputs);
-    layer->BackPropagate();
-    
-    unsigned int elements = data.elements();
-    unsigned int okay = 0;
-
-    // Weight gradient test
-    for (unsigned int w = 0; w < data.elements(); w++) {
-      const Conv::datum weight = data.data_ptr_const()[w];
-      const Conv::datum gradient = delta.data_ptr_const()[w];
-
-      // Using central diff
-      data.data_ptr()[w] = weight + epsilon;
-      layer->FeedForward();
-      const Conv::datum forward_loss = SimpleSumLoss(outputs);
-
-      data.data_ptr()[w] = weight - epsilon;
-      layer->FeedForward();
-      const Conv::datum backward_loss = SimpleSumLoss(outputs);
-
-      const Conv::datum fd_gradient = (forward_loss - backward_loss) / (2.0 * epsilon);
-      data.data_ptr()[w] = weight;
-
-      const Conv::datum ratio = fd_gradient / gradient;
-      if(ratio > 1.2 || ratio < 0.8) {
-        LOGDEBUG << "BP Grad : " << gradient;
-        LOGDEBUG << "FD Grad : " << fd_gradient;
-        LOGDEBUG << "Ratio   : " << ratio;
-        LOGDEBUG << "Diff    : " << gradient - fd_gradient;
-      } else {
-        okay++;
-      }
-    }
-    if(okay != elements) {
-      double success_rate = (double)okay/(double)elements;
-      if(success_rate > 0.85)
-        return true;
-      else {
-        LOGERROR << okay << " of " << elements << " gradients okay - " << std::setprecision(3) << 100.0 * (double)okay/(double)elements << "%";
-        return false;
-      }
-    } else {
-      return true;
-    }
-  }
-}
-
 int main(int argc, char* argv[]) {
   if((argc > 1 && std::string("-v").compare(argv[1]) == 0) || argc > 2) {
     Conv::System::Init(3);
@@ -197,8 +147,14 @@ int main(int argc, char* argv[]) {
       LOGDEBUG << "    Layer has no weights";
     }
     
+    // Function pointers for external gradient check
+    void (*WriteLossDeltas)(const std::vector<Conv::CombinedTensor*>&) =
+      SimpleSumLossGradient;
+    Conv::datum (*CalculateLoss)(const std::vector<Conv::CombinedTensor*>&) =
+      SimpleSumLoss;
+    
     for(Conv::CombinedTensor* weights : layer->parameters()) {
-      bool gradient_success = Conv::DoGradientTest(layer, weights->data, weights->delta, outputs, epsilon);
+      bool gradient_success = Conv::GradientTester::DoGradientTest(layer, weights->data, weights->delta, outputs, epsilon, WriteLossDeltas, CalculateLoss);
       if(!gradient_success) {
         test_failed = true;
         LOGINFO << "    Gradient test (weights)...";
@@ -207,7 +163,7 @@ int main(int argc, char* argv[]) {
       }
     }
     
-    bool gradient_success = Conv::DoGradientTest(layer, input_data.data, input_data.delta, outputs, epsilon);
+    bool gradient_success = Conv::GradientTester::DoGradientTest(layer, input_data.data, input_data.delta, outputs, epsilon, WriteLossDeltas, CalculateLoss);
     if(!gradient_success) {
       test_failed = true;
       LOGINFO << "    Gradient test (inputs)...";
