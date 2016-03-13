@@ -8,24 +8,27 @@
 #include <cn24.h>
 
 #include <vector>
+#include <utility>
 #include <string>
 #include <cmath>
 #include <random>
 
 // TEST SETUP
-std::vector<std::string> test_layers_noseed = {
-  "maxpooling(size=3x3)",
-  "amaxpooling(size=3x3)",
-  "amaxpooling(size=3x3 stride=2x2)",
-  "convolution(size=3x3 kernels=3)",
-  "convolution(size=3x3 stride=2x2 kernels=3)",
-  "convolution(size=3x3 group=3 kernels=9)",
-  "tanh","sigm","relu"
-};
-
+unsigned int RANDOM_RUNS = 15;
 unsigned int SAMPLES = 2, WIDTH = 9, HEIGHT = 6, MAPS = 3;
-unsigned int SEEDS = 3;
 Conv::datum epsilon = 0.005;
+
+std::vector<std::pair<std::string, unsigned int>> test_layers_and_runs = {
+  {"maxpooling(size=3x3)",1},
+  {"maxpooling(size=3x2)",1},
+  {"amaxpooling(size=3x3)",1},
+  {"amaxpooling(size=3x2)",1},
+  {"amaxpooling(size=3x3 stride=2x2)",1},
+  {"convolution(size=3x3 kernels=3)",RANDOM_RUNS},
+  {"convolution(size=3x3 stride=2x2 kernels=3)",RANDOM_RUNS},
+  {"convolution(size=3x3 group=3 kernels=9)",RANDOM_RUNS},
+  {"tanh",1},{"sigm",1},{"relu",1}
+};
 
 // UTILITIES
 Conv::datum SimpleSumLoss(const Conv::Tensor& tensor) {
@@ -99,7 +102,7 @@ namespace Conv {
     }
     if(okay != elements) {
       double success_rate = (double)okay/(double)elements;
-      if(success_rate > 0.95)
+      if(success_rate > 0.85)
         return true;
       else {
         LOGERROR << okay << " of " << elements << " gradients okay - " << std::setprecision(3) << 100.0 * (double)okay/(double)elements << "%";
@@ -130,8 +133,10 @@ int main(int argc, char* argv[]) {
   std::vector<std::string> test_layers;
   
   // Inject random seeds
-  for (std::string& layer_descriptor : test_layers_noseed) {
-    for(unsigned int i = 0; i < SEEDS; i++) {
+  for (std::pair<std::string, unsigned int>& layer_pair : test_layers_and_runs) {
+    std::string& layer_descriptor = layer_pair.first;
+    unsigned int runs = layer_pair.second;
+    for(unsigned int i = 0; i < runs; i++) {
       std::string injected_descriptor = Conv::LayerFactory::InjectSeed(layer_descriptor, seed_generator());
       test_layers.push_back(injected_descriptor);
     }
