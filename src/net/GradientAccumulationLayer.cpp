@@ -7,7 +7,10 @@
 
 #include <cstring>
 
+#include "Config.h"
+#include "ConfigParsing.h"
 #include "GradientAccumulationLayer.h"
+
 
 namespace Conv {
 
@@ -15,6 +18,12 @@ namespace Conv {
 GradientAccumulationLayer::GradientAccumulationLayer
   (unsigned int output_count) : output_count_(output_count) {
   LOGDEBUG << "Instance created.";
+}
+  
+GradientAccumulationLayer::GradientAccumulationLayer
+  (std::string configuration) : Layer(configuration) {
+  output_count_ = 0;
+  ParseCountIfPossible(configuration, "outputs", output_count_);
 }
 
 bool GradientAccumulationLayer::CreateOutputs (const std::vector< CombinedTensor* >& inputs,
