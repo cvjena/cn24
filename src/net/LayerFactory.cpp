@@ -13,6 +13,8 @@
 #include "NonLinearityLayer.h"
 #include "MaxPoolingLayer.h"
 #include "AdvancedMaxPoolingLayer.h"
+#include "GradientAccumulationLayer.h"
+#include "ResizeLayer.h"
 
 #include "LayerFactory.h"
 
@@ -67,6 +69,8 @@ Layer* LayerFactory::ConstructLayer(std::string descriptor) {
   CONV_LAYER_TYPE("tanh", TanhLayer)
   CONV_LAYER_TYPE("sigm", SigmoidLayer)
   CONV_LAYER_TYPE("relu", ReLULayer)
+  CONV_LAYER_TYPE("gradientaccumulation", GradientAccumulationLayer)
+  CONV_LAYER_TYPE("resize", ResizeLayer)
   
   return layer;
 }
