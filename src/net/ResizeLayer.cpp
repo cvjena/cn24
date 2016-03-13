@@ -103,6 +103,28 @@ void ResizeLayer::FeedForward() {
 
 void ResizeLayer::BackPropagate() {
   // Nothing to do here
+  if(backprop_enabled_) {
+#ifdef BUILD_OPENCL
+    input_->delta.MoveToCPU(true);
+    output_->delta.MoveToCPU();
+#endif
+    
+    input_->delta.Clear(0.0);
+#pragma omp parallel for default(shared)
+    for(unsigned int sample = 0; sample < input_->data.samples(); sample++) {
+      for(unsigned int map = 0; map < input_->data.maps(); map++) {
+        for(unsigned int y = 0; y < input_->data.height(); y++) {
+  	datum* const target =
+  	  input_->delta.data_ptr(0, y, map, sample);
+  	const datum* const source =
+  	  output_->delta.data_ptr_const(borderx_ / 2, y + (bordery_ / 2), map, sample);
+  	  
+  	std::memcpy(target, source, sizeof(datum) * input_->delta.width());
+        }
+      }
+    }
+      
+  }
 }
 
 bool ResizeLayer::IsOpenCLAware() {
