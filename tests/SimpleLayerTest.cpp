@@ -119,6 +119,15 @@ int main(int argc, char* argv[]) {
     }
     
     LOGDEBUG << "    Description: " << layer->GetLayerDescription();
+    LOGDEBUG << "    Configuration: " << layer->GetLayerConfiguration();
+    
+    if (Conv::LayerFactory::ExtractConfiguration(layer_descriptor).length() > 0
+        && layer->GetLayerConfiguration().length() == 0) {
+      test_failed = true;
+      LOGINFO << "    Testing configuration loss...";
+      LOGERROR << "       FAILED";
+      continue;
+    }
     
     std::vector<Conv::CombinedTensor*> outputs;
     bool createoutputs_success = layer->CreateOutputs({&input_data}, outputs);
