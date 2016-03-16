@@ -7,7 +7,12 @@
 
 #include <string>
 #include <sstream>
+
+#ifdef BUILD_BOOST
+#include <boost/regex.hpp>
+#else
 #include <regex>
+#endif
 
 #include "ConvolutionLayer.h"
 #include "NonLinearityLayer.h"
@@ -20,18 +25,30 @@
 
 namespace Conv {
 bool LayerFactory::IsValidDescriptor(std::string descriptor) {
-  bool valid = std::regex_match(descriptor, std::regex("^[a-z]+(\\("
+  const std::string valid_descriptor_regex =
+    "^[a-z]+(\\("
     "("
     "[a-z]+=[a-zA-Z0-9]+"
     "( [a-z]+=[a-zA-Z0-9]+)*"
     ")?"
-    "\\))?$",std::regex::extended));
+    "\\))?$";
+#ifdef BUILD_BOOST
+  bool valid = boost::regex_match(descriptor, boost::regex(valid_descriptor_regex,boost::regex::extended));
+#else
+  bool valid = std::regex_match(descriptor, std::regex(valid_descriptor_regex,std::regex::extended));
+#endif
   return valid;
 }
   
 std::string LayerFactory::ExtractConfiguration(std::string descriptor) {
+  const std::string config_regex = "[a-z]+\\((.+)\\)";
+#ifdef BUILD_BOOST
+  boost::smatch config_match;
+  bool has_nonempty_configuration = boost::regex_match(descriptor, config_match, boost::regex(config_regex, boost::regex::extended));
+#else
   std::smatch config_match;
-  bool has_nonempty_configuration = std::regex_match(descriptor, config_match, std::regex("[a-z]+\\((.+)\\)",std::regex::extended));
+  bool has_nonempty_configuration = std::regex_match(descriptor, config_match, std::regex(config_regex, std::regex::extended));
+#endif
   if(has_nonempty_configuration && config_match.size() == 2) {
     return config_match[1];
   } else {
@@ -40,8 +57,14 @@ std::string LayerFactory::ExtractConfiguration(std::string descriptor) {
 }
   
 std::string LayerFactory::ExtractLayerType(std::string descriptor) {
+  std::string layertype_regex = "([a-z]+)(\\(.*\\))?";
+#ifdef BUILD_BOOST
+  boost::smatch config_match;
+  bool has_layertype = boost::regex_match(descriptor, config_match, boost::regex(layertype_regex, boost::regex::extended));
+#else
   std::smatch config_match;
-  bool has_layertype = std::regex_match(descriptor, config_match, std::regex("([a-z]+)(\\(.*\\))?",std::regex::extended));
+  bool has_layertype = std::regex_match(descriptor, config_match, std::regex(layertype_regex, std::regex::extended));
+#endif
   if(has_layertype && config_match.size() > 1) {
     return config_match[1];
   } else {
@@ -77,15 +100,25 @@ Layer* LayerFactory::ConstructLayer(std::string descriptor) {
   
 std::string LayerFactory::InjectSeed(std::string descriptor, unsigned int seed) {
   if(IsValidDescriptor(descriptor)) {
+    const std::string has_seed_regex = ".*seed=[0-9]+.*";
+    const std::string new_seed_regex = "seed=([0-9])+";
     std::string configuration = ExtractConfiguration(descriptor);
     std::string layertype = ExtractLayerType(descriptor);
     
     std::stringstream seed_ss;
     seed_ss << "seed=" << seed;
     
-    bool already_has_seed = std::regex_match(configuration, std::regex(".*seed=[0-9]+.*", std::regex::extended));
+#ifdef BUILD_BOOST
+    bool already_has_seed = boost::regex_match(configuration, boost::regex(has_seed_regex, boost::regex::extended));
+#else
+    bool already_has_seed = std::regex_match(configuration, std::regex(has_seed_regex, std::regex::extended));
+#endif
     if(already_has_seed) {
-      std::string new_descriptor = std::regex_replace(descriptor, std::regex("seed=([0-9])+", std::regex::extended), seed_ss.str());
+#ifdef BUILD_BOOST
+      std::string new_descriptor = boost::regex_replace(descriptor, boost::regex(new_seed_regex, boost::regex::extended), seed_ss.str());
+#else
+      std::string new_descriptor = std::regex_replace(descriptor, std::regex(new_seed_regex, std::regex::extended), seed_ss.str());
+#endif
       return new_descriptor;
     } else {
       std::stringstream new_descriptor_ss;
