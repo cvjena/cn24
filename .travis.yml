@@ -9,6 +9,7 @@ addons:
       - libjpeg-dev
       - libpng-dev
       - opencl-headers
+      - libboost-regex-dev
 
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.9" CC="gcc-4.9"; fi
@@ -72,5 +73,3 @@ matrix:
   exclude:
     - os: linux
       env: TEST_SUITE=opencl
-    - os: linux
-      compiler: clang
