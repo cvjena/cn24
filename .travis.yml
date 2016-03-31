@@ -41,7 +41,6 @@ install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cd ../..; fi; fi
   
 # A little more simple for OS X
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update && brew uninstall boost && brew install boost; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then if [ "$TEST_SUITE" = "opencl" ]; then brew update && brew tap homebrew/science && brew install clblas; fi; fi
 
 before_script:
