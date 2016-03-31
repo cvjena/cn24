@@ -4,8 +4,6 @@ language: cpp
 addons:
   apt:
     packages:
-      - gcc-4.8
-      - g++-4.8
       - libjpeg-dev
       - libpng-dev
       - opencl-headers
@@ -13,6 +11,7 @@ addons:
 
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$CXX" = "g++" ]; then sudo apt-get update && sudo apt-get install -y gcc-4.8 g++-4.8; fi; fi
 
 # See clBLAS CI script
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cd ${TRAVIS_BUILD_DIR}; fi; fi
@@ -40,7 +39,9 @@ install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cmake -DBUILD_TEST:BOOL=OFF -DOPENCL_INCLUDE_DIRS:PATH=$PWD/../../cl12/ -DCMAKE_INSTALL_PREFIX=/usr -DSUFFIX_LIB= ../src; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then sudo make install; fi; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cd ../..; fi; fi
-# A little simple for OS X
+  
+# A little more simple for OS X
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update && brew install boost; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then if [ "$TEST_SUITE" = "opencl" ]; then brew update && brew tap homebrew/science && brew install clblas; fi; fi
 
 before_script:
