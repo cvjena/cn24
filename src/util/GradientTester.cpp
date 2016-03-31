@@ -124,6 +124,10 @@ bool GradientTester::DoGradientTest(Conv::Layer* layer, Conv::Tensor& data, Conv
 
   // Weight gradient test
   for (unsigned int w = 0; w < data.elements(); w++) {
+#ifdef BUILD_OPENCL
+    data.MoveToCPU();
+    delta.MoveToCPU();
+#endif
     const Conv::datum weight = data.data_ptr_const()[w];
     const Conv::datum gradient = delta.data_ptr_const()[w];
 
@@ -132,11 +136,18 @@ bool GradientTester::DoGradientTest(Conv::Layer* layer, Conv::Tensor& data, Conv
     layer->FeedForward();
     const Conv::datum forward_loss = CalculateLoss(outputs);
 
+#ifdef BUILD_OPENCL
+    data.MoveToCPU();
+#endif
     data.data_ptr()[w] = weight - epsilon;
     layer->FeedForward();
     const Conv::datum backward_loss = CalculateLoss(outputs);
 
     const Conv::datum fd_gradient = (forward_loss - backward_loss) / (2.0 * epsilon);
+
+#ifdef BUILD_OPENCL
+    data.MoveToCPU();
+#endif
     data.data_ptr()[w] = weight;
 
     const Conv::datum ratio = fd_gradient / gradient;
