@@ -35,7 +35,7 @@ std::vector<std::pair<std::string, unsigned int>> test_layers_and_runs = {
 // UTILITIES
 Conv::datum SimpleSumLoss(const Conv::Tensor& tensor) {
 #ifdef BUILD_OPENCL
-  ((Tensor&)tensor).MoveToCPU();
+  ((Conv::Tensor&)tensor).MoveToCPU();
 #endif
   Conv::datum sum = 0;
   
