@@ -10,8 +10,8 @@ addons:
       - libboost-regex-dev
 
 install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$CXX" = "g++" ]; then sudo apt-get update && sudo apt-get install -y gcc-4.8 g++-4.8; fi; fi
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.7" CC="gcc-4.7"; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$CXX" = "g++" ]; then sudo apt-get update && sudo apt-get install -y gcc-4.7 g++-4.7; fi; fi
 
 # See clBLAS CI script
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cd ${TRAVIS_BUILD_DIR}; fi; fi
