@@ -34,6 +34,9 @@ std::vector<std::pair<std::string, unsigned int>> test_layers_and_runs = {
 
 // UTILITIES
 Conv::datum SimpleSumLoss(const Conv::Tensor& tensor) {
+#ifdef BUILD_OPENCL
+  tensor.MoveToCPU();
+#endif
   Conv::datum sum = 0;
   
   for (unsigned int e = 0; e < tensor.elements(); e++) {
@@ -58,6 +61,10 @@ void SimpleSumLossGradient(const std::vector<Conv::CombinedTensor*>& outputs) {
   for (unsigned int o = 0; o < outputs.size(); o++) {
     Conv::Tensor& tensor = outputs[o]->data;
     Conv::Tensor& delta_tensor = outputs[o]->delta;
+#ifdef BUILD_OPENCL
+    tensor.MoveToCPU();
+    delta_tensor.MoveToCPU();
+#endif
     for (unsigned int e = 0; e < tensor.elements(); e++) {
       const Conv::datum element = tensor.data_ptr_const()[e];
       const Conv::datum gradient = element > 0.0 ? 1.0 : -1.0;
