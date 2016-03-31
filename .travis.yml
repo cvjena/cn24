@@ -8,6 +8,7 @@ addons:
       - libpng-dev
       - opencl-headers
       - libboost-regex-dev
+      - libatlas-base-dev
 
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.7" CC="gcc-4.7"; fi
@@ -49,6 +50,7 @@ before_script:
   - if [ "$TEST_SUITE" = "reference" ]; then cmake -DCMAKE_BUILD_TYPE=Release ..; fi
   - if [ "$TEST_SUITE" = "opencl" ]; then cmake -DCMAKE_BUILD_TYPE=Release -DCN24_BUILD_OPENCL:BOOL=ON -DCN24_BUILD_OPENCL_CLBLAS:BOOL=$USE_CLBLAS ..; fi
   - if [ "$TEST_SUITE" = "accelerate" ]; then cmake -DCMAKE_BUILD_TYPE=Release -DCN24_BUILD_ACCELERATE=ON ..; fi
+  - if [ "$TEST_SUITE" = "atlas" ]; then cmake -DCMAKE_BUILD_TYPE=Release -DCN24_BUILD_ATLASBLAS=ON ..; fi
 
 script:
   - make
@@ -62,6 +64,9 @@ matrix:
   include:
     - os: linux
       env: TEST_SUITE=reference
+      compiler: gcc
+    - os: linux
+      env: TEST_SUITE=atlas
       compiler: gcc
     - os: linux
       env: TEST_SUITE=reference
