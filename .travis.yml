@@ -58,19 +58,14 @@ script:
 after_failure:
   - if [ "$TEST_SUITE" != "opencl" ] && [ "$TRAVIS_OS_NAME" != "osx" ]; then ctest -V --rerun-failed; fi
 
-os:
-  - linux
-  - osx
-
-compiler:
-  - gcc
-  - clang
-
-env:
-  - TEST_SUITE=opencl
-  - TEST_SUITE=reference
-
 matrix:
-  exclude:
+  include:
     - os: linux
+      env: TEST_SUITE=reference
+      compiler: gcc
+    - os: osx
+      env: TEST_SUITE=reference
+      compiler: clang
+    - os: osx
       env: TEST_SUITE=opencl
+      compiler: clang
