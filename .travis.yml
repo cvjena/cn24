@@ -41,7 +41,7 @@ install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then if [ "$TEST_SUITE" = "opencl" ]; then cd ../..; fi; fi
   
 # A little more simple for OS X
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then if [ "$USE_CLBLAS" = "yes" ]; then brew update && brew tap homebrew/science && brew install clblas; fi; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then if [ "$USE_CLBLAS" = "ON" ]; then brew update && brew tap homebrew/science && brew install clblas; fi; fi
 
 before_script:
   - mkdir build
@@ -52,10 +52,10 @@ before_script:
 script:
   - make
 # OpenCL on Mac OS X supports a maximum work group size of (1,1,1) on CPUs, so we only do a sanity check in that case
-  - if [ "$USE_CLBLAS" == "yes" ] && [ "$TRAVIS_OS_NAME" == "osx" ]; then ./testOpenCL; else make test;fi
+  - if [ "$USE_CLBLAS" == "ON" ] && [ "$TRAVIS_OS_NAME" == "osx" ]; then ./testOpenCL; else make test;fi
 
 after_failure:
-  - if [ "$USE_CLBLAS" != "yes" ] && [ "$TRAVIS_OS_NAME" != "osx" ]; then ctest -V --rerun-failed; fi
+  - if [ "$USE_CLBLAS" != "ON" ] && [ "$TRAVIS_OS_NAME" != "osx" ]; then ctest -V --rerun-failed; fi
 
 matrix:
   include:
