@@ -493,7 +493,7 @@ void Trainer::ApplyGradients (datum lr) {
             datum current_step = 0;
 
 
-            LOGDEBUG << "Current slope: " << current_slope;
+//            LOGDEBUG << "Current slope: " << current_slope;
 
             if(first_iteration) {
               current_step = - epsilon_zero * current_slope;
