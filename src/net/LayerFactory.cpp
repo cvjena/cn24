@@ -20,7 +20,7 @@
 #include "AdvancedMaxPoolingLayer.h"
 #include "GradientAccumulationLayer.h"
 #include "ResizeLayer.h"
-
+#include "HMaxActivationFunction.h"
 #include "LayerFactory.h"
 
 namespace Conv {
@@ -28,8 +28,8 @@ bool LayerFactory::IsValidDescriptor(std::string descriptor) {
   const std::string valid_descriptor_regex =
     "^[a-z]+(\\("
     "("
-    "[a-z]+=[a-zA-Z0-9]+"
-    "( [a-z]+=[a-zA-Z0-9]+)*"
+    "[a-z]+=[a-zA-Z0-9\\.]+"
+    "( [a-z]+=[a-zA-Z0-9\\.]+)*"
     ")?"
     "\\))?$";
 #ifdef BUILD_BOOST
@@ -94,6 +94,7 @@ Layer* LayerFactory::ConstructLayer(std::string descriptor) {
   CONV_LAYER_TYPE("relu", ReLULayer)
   CONV_LAYER_TYPE("gradientaccumulation", GradientAccumulationLayer)
   CONV_LAYER_TYPE("resize", ResizeLayer)
+  CONV_LAYER_TYPE("hmax", HMaxActivationFunction);
   
   return layer;
 }
