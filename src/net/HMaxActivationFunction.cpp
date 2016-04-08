@@ -87,7 +87,7 @@ void HMaxActivationFunction::BackPropagate() {
   const datum b = weights_->data.data_ptr_const()[1];
   
   // weights the regularization term
-  const datum lambda_sparse_regularization = 0.1;
+  const datum lambda_sparse_regularization = 0.2;
 
   // TODO: This layer needs to produce a loss (aka regularizer) as well
   // that is added directly to the objective
@@ -139,8 +139,9 @@ void HMaxActivationFunction::BackPropagate() {
 }
   
 datum HMaxActivationFunction::CalculateLossFunction() {
-  datum total_loss = logf(mu_) + (sum_of_activations_/(total_activations_ * mu_)); // - H(y)
-  return total_loss;
+  //datum total_loss = logf(mu_) + (sum_of_activations_/(total_activations_ * mu_)); // - H(y)
+  //return total_loss;
+  return 0;
 }
 
 
