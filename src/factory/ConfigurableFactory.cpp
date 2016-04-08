@@ -345,9 +345,11 @@ bool ConfigurableFactory::AddLayers(NetGraph& net, NetGraphConnection data_layer
       }
 
       if (StartsWithIdentifier (line, "hmax")) {
-        datum mu = 1;
+        datum mu = 1; datum loss_weight_ = 0;
         ParseDatumParamIfPossible(line, "mu", mu);
-        HMaxActivationFunction* l = new HMaxActivationFunction(mu);
+        ParseDatumParamIfPossible(line, "weight", loss_weight_);
+        
+        HMaxActivationFunction* l = new HMaxActivationFunction(mu, loss_weight_);
         l->SetLocalLearningRate(1.0);
 				NetGraphNode* node = new NetGraphNode(l, last_connection);
 				node->is_output = is_output && (method_ == PATCH || already_upscaled);
