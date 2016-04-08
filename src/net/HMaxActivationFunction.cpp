@@ -8,10 +8,23 @@
 #include <cmath>
 
 #include "CombinedTensor.h"
+#include "ConfigParsing.h"
 
 #include "HMaxActivationFunction.h"
 
 namespace Conv {
+  
+HMaxActivationFunction::HMaxActivationFunction(const datum mu, const datum loss_weight)
+  : SimpleLayer(""), mu_(mu), loss_weight_(loss_weight) {};
+  
+HMaxActivationFunction::HMaxActivationFunction(std::string configuration)
+  : SimpleLayer(configuration) {
+  mu_ = 1;
+  loss_weight_ = 0;
+  ParseDatumParamIfPossible(configuration, "mu", mu_);
+  ParseDatumParamIfPossible(configuration, "weight", loss_weight_);
+}
+  
 bool HMaxActivationFunction::CreateOutputs (
                                        const std::vector< CombinedTensor* >& inputs,
                                        std::vector< CombinedTensor* >& outputs) {
@@ -87,7 +100,7 @@ void HMaxActivationFunction::BackPropagate() {
   const datum b = weights_->data.data_ptr_const()[1];
   
   // weights the regularization term
-  const datum lambda_sparse_regularization = 0.2;
+  const datum lambda_sparse_regularization = loss_weight_;
 
   // TODO: This layer needs to produce a loss (aka regularizer) as well
   // that is added directly to the objective
@@ -135,13 +148,13 @@ void HMaxActivationFunction::BackPropagate() {
   
   weights_->delta.data_ptr()[0] = local_lr_ * delta_a;
   weights_->delta.data_ptr()[1] = local_lr_ * delta_b;
-  LOGDEBUG << "delta a: " << delta_a << ", delta b:" << delta_b;
+  // LOGDEBUG << "delta a: " << delta_a << ", delta b:" << delta_b;
 }
   
 datum HMaxActivationFunction::CalculateLossFunction() {
-  //datum total_loss = logf(mu_) + (sum_of_activations_/(total_activations_ * mu_)); // - H(y)
-  //return total_loss;
-  return 0;
+  datum total_loss = logf(mu_) + (sum_of_activations_/(total_activations_ * mu_)); // - H(y)
+  return total_loss * loss_weight_;
+  //return 0;
 }
 
 
