@@ -14,6 +14,7 @@ int main(int argc, char* argv[]) {
   Conv::System::Init();
   
   std::vector<std::string> working_descriptors = {
+    "hmax(mu=0.1 weight=1.0)",
     "convolution(size=3x3 pad=3x4)",
     "convolution(size=3x3)",
     "convolution()",

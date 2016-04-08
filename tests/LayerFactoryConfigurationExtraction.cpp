@@ -14,12 +14,14 @@ int main(int argc, char* argv[]) {
   Conv::System::Init();
   
   std::vector<std::string> descriptors = {
+    "hmax(mu=0.0)",
     "convolution(size=3x3 pad=3x4)",
     "convolution(size=3x3)",
     "convolution()",
     "convolution"
   };
   std::vector<std::string> expected_configurations = {
+    "mu=0.0",
     "size=3x3 pad=3x4",
     "size=3x3",
     "",
