@@ -116,7 +116,7 @@ graph.FeedForward();
 
 }
   
-bool GradientTester::DoGradientTest(Conv::Layer* layer, Conv::Tensor& data, Conv::Tensor& delta, std::vector<Conv::CombinedTensor*>& outputs, Conv::datum epsilon, void (*WriteLossDeltas)(const std::vector<CombinedTensor*>&), datum (*CalculateLoss)(const std::vector<CombinedTensor*>&)) {
+  bool GradientTester::DoGradientTest(Conv::Layer* layer, Conv::Tensor& data, Conv::Tensor& delta, std::vector<Conv::CombinedTensor*>& outputs, Conv::datum epsilon, void (*WriteLossDeltas)(const std::vector<CombinedTensor*>&), datum (*CalculateLoss)(Conv::Layer*, const std::vector<CombinedTensor*>&)) {
   layer->FeedForward();
   WriteLossDeltas(outputs);
   layer->BackPropagate();
@@ -136,14 +136,14 @@ bool GradientTester::DoGradientTest(Conv::Layer* layer, Conv::Tensor& data, Conv
     // Using central diff
     data.data_ptr()[w] = weight + epsilon;
     layer->FeedForward();
-    const Conv::datum forward_loss = CalculateLoss(outputs);
+    const Conv::datum forward_loss = CalculateLoss(layer,outputs);
 
 #ifdef BUILD_OPENCL
     data.MoveToCPU();
 #endif
     data.data_ptr()[w] = weight - epsilon;
     layer->FeedForward();
-    const Conv::datum backward_loss = CalculateLoss(outputs);
+    const Conv::datum backward_loss = CalculateLoss(layer,outputs);
 
     const Conv::datum fd_gradient = (forward_loss - backward_loss) / (2.0 * epsilon);
 

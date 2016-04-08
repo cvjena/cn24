@@ -26,7 +26,7 @@ public:
    */
   static void TestGradient(NetGraph& net, unsigned int skip_weights = 0, bool fatal_fail = false);
   
-  static bool DoGradientTest(Conv::Layer* layer, Conv::Tensor& data, Conv::Tensor& delta, std::vector<Conv::CombinedTensor*>& outputs, Conv::datum epsilon, void (*WriteLossDeltas)(const std::vector<CombinedTensor*>&), datum (*CalculateLoss)(const std::vector<CombinedTensor*>&));
+  static bool DoGradientTest(Conv::Layer* layer, Conv::Tensor& data, Conv::Tensor& delta, std::vector<Conv::CombinedTensor*>& outputs, Conv::datum epsilon, void (*WriteLossDeltas)(const std::vector<CombinedTensor*>&), datum (*CalculateLoss)(Conv::Layer*, const std::vector<CombinedTensor*>&));
 };
   
   

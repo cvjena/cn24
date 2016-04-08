@@ -27,13 +27,15 @@ std::vector<std::pair<std::string, unsigned int>> test_layers_and_runs = {
   {"convolution(size=3x3 kernels=3)",RANDOM_RUNS},
   {"convolution(size=3x3 stride=2x2 kernels=3)",RANDOM_RUNS},
   {"convolution(size=3x3 group=3 kernels=9)",RANDOM_RUNS},
+  {"hmax(mu=0.1 weight=0.0)",1},
+  {"hmax(mu=0.1 weight=0.2)",1},
   {"tanh",1},{"sigm",1},{"relu",1},
   {"gradientaccumulation(outputs=2)",1},
   {"resize(border=2x2)",1}
 };
 
 // UTILITIES
-Conv::datum SimpleSumLoss(const Conv::Tensor& tensor) {
+Conv::datum SimpleSumLoss(Conv::Layer* layer, const Conv::Tensor& tensor) {
 #ifdef BUILD_OPENCL
   ((Conv::Tensor&)tensor).MoveToCPU();
 #endif
@@ -47,12 +49,16 @@ Conv::datum SimpleSumLoss(const Conv::Tensor& tensor) {
   return sum;
 }
 
-Conv::datum SimpleSumLoss(const std::vector<Conv::CombinedTensor*>& outputs) {
+Conv::datum SimpleSumLoss(Conv::Layer* layer, const std::vector<Conv::CombinedTensor*>& outputs) {
   Conv::datum sum = 0;
   
   for (unsigned int o = 0; o < outputs.size(); o++) {
-    sum += SimpleSumLoss(outputs[o]->data);
+    sum += SimpleSumLoss(layer, outputs[o]->data);
   }
+  
+  Conv::LossFunctionLayer* loss_layer = dynamic_cast<Conv::LossFunctionLayer*>(layer);
+  if (loss_layer != NULL)
+    sum += loss_layer->CalculateLossFunction();
   
   return sum;
 }
@@ -121,6 +127,7 @@ int main(int argc, char* argv[]) {
     Conv::Layer* layer = Conv::LayerFactory::ConstructLayer(layer_descriptor);
     if(layer == nullptr) {
       test_failed = true;
+      LOGINFO << "    Constructing...";
       LOGERROR << "        FAILED";
       continue;
     }
@@ -166,7 +173,7 @@ int main(int argc, char* argv[]) {
     // Function pointers for external gradient check
     void (*WriteLossDeltas)(const std::vector<Conv::CombinedTensor*>&) =
       SimpleSumLossGradient;
-    Conv::datum (*CalculateLoss)(const std::vector<Conv::CombinedTensor*>&) =
+    Conv::datum (*CalculateLoss)(Conv::Layer*, const std::vector<Conv::CombinedTensor*>&) =
       SimpleSumLoss;
     
     for(Conv::CombinedTensor* weights : layer->parameters()) {
