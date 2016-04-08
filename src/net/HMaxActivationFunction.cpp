@@ -14,8 +14,47 @@
 
 namespace Conv {
   
+int HMaxActivationFunction::stat_id_a = -1;
+int HMaxActivationFunction::stat_id_b = -1;
+  
 HMaxActivationFunction::HMaxActivationFunction(const datum mu, const datum loss_weight)
-  : SimpleLayer(""), mu_(mu), loss_weight_(loss_weight) {};
+  : SimpleLayer(""), mu_(mu), loss_weight_(loss_weight) {
+    if(stat_id_a >= 0)
+      return;
+  // Prepare stats
+    
+    desc_a.nullable = true;
+    desc_a.description = "HMaxA";
+    desc_a.unit = "1";
+    desc_a.init_function = [](Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+    desc_a.update_function = [](Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+    desc_a.output_function = [](HardcodedStats& hc_stats, Stat& stat) -> Stat {
+      Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0) {
+        double d_iterations = (double)hc_stats.iterations;
+        return_stat.value = stat.value / d_iterations;
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
+    desc_b.nullable = true;
+    desc_b.description = "HMaxB";
+    desc_b.unit = "1";
+    desc_b.init_function = [](Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+    desc_b.update_function = [](Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+    desc_b.output_function = [](HardcodedStats& hc_stats, Stat& stat) -> Stat {
+      Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0) {
+        double d_iterations = (double)hc_stats.iterations;
+        return_stat.value = stat.value / d_iterations;
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
+
+    stat_id_a = System::stat_aggregator->RegisterStat(&desc_a);
+    stat_id_b = System::stat_aggregator->RegisterStat(&desc_b);
+}
   
 HMaxActivationFunction::HMaxActivationFunction(std::string configuration)
   : SimpleLayer(configuration) {
@@ -78,6 +117,9 @@ void HMaxActivationFunction::FeedForward() {
   const datum a = *(weights_->data.data_ptr(0));
   const datum b = *(weights_->data.data_ptr(1));
   
+  System::stat_aggregator->Update(stat_id_a, a);
+  System::stat_aggregator->Update(stat_id_b, b);
+  
   LOGDEBUG << "a: " << a << ", b:" << b;
   
   total_activations_ = (datum)(input_->data.elements());
@@ -95,6 +137,7 @@ void HMaxActivationFunction::FeedForward() {
 }
   
 void HMaxActivationFunction::BackPropagate() {
+  
   // Calculate gradient w.r.t. input
   const datum a = weights_->data.data_ptr_const()[0];
   const datum b = weights_->data.data_ptr_const()[1];
@@ -152,9 +195,9 @@ void HMaxActivationFunction::BackPropagate() {
 }
   
 datum HMaxActivationFunction::CalculateLossFunction() {
-  datum total_loss = logf(mu_) + (sum_of_activations_/(total_activations_ * mu_)); // - H(y)
-  return total_loss * loss_weight_;
-  //return 0;
+  //datum total_loss = logf(mu_) + (sum_of_activations_/(total_activations_ * mu_)); // - H(y)
+  //return total_loss * loss_weight_;
+  return 0;
 }
 
 

@@ -20,6 +20,7 @@
 
 #include "SimpleLayer.h"
 #include "LossFunctionLayer.h"
+#include "util/StatAggregator.h"
 
 namespace Conv {
   
@@ -50,6 +51,11 @@ public:
   
   datum sum_of_activations_ = 0;
   datum total_activations_ = 0;
+  
+  StatDescriptor desc_a, desc_b;
+  
+  static int stat_id_a;
+  static int stat_id_b;
 };
 }
 
