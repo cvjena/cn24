@@ -45,6 +45,12 @@ public:
     return ss.str();
   }
   
+  // Implementations for Layer
+  bool IsNotGradientSafe() {
+    return true;
+  }
+  
+  
   CombinedTensor* weights_;
   datum mu_ = 1;
   datum loss_weight_ = 0;
