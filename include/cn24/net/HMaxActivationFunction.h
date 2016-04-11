@@ -47,7 +47,7 @@ public:
   
   // Implementations for Layer
   bool IsNotGradientSafe() {
-    return true;
+    return loss_weight_ > 0.0;
   }
   
   
