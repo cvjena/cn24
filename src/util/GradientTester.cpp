@@ -117,6 +117,10 @@ graph.FeedForward();
 }
   
   bool GradientTester::DoGradientTest(Conv::Layer* layer, Conv::Tensor& data, Conv::Tensor& delta, std::vector<Conv::CombinedTensor*>& outputs, Conv::datum epsilon, void (*WriteLossDeltas)(const std::vector<CombinedTensor*>&), datum (*CalculateLoss)(Conv::Layer*, const std::vector<CombinedTensor*>&)) {
+  if(layer->IsNotGradientSafe()) {
+    LOGINFO << "Skipping gradient test for " << layer->GetLayerDescription();
+    return true;
+  }
   layer->FeedForward();
   WriteLossDeltas(outputs);
   layer->BackPropagate();
