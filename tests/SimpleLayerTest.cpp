@@ -28,7 +28,7 @@ std::vector<std::pair<std::string, unsigned int>> test_layers_and_runs = {
   {"convolution(size=3x3 stride=2x2 kernels=3)",RANDOM_RUNS},
   {"convolution(size=3x3 group=3 kernels=9)",RANDOM_RUNS},
   {"hmax(mu=0.1 weight=0.0)",1},
-  // {"hmax(mu=0.1 weight=0.2)",1},
+  {"hmax(mu=0.1 weight=0.2)",1},
   {"tanh",1},{"sigm",1},{"relu",1},
   {"gradientaccumulation(outputs=2)",1},
   {"resize(border=2x2)",1}
