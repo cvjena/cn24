@@ -1,6 +1,6 @@
 #### Build status:
-stable (production branch): [![Build Status](https://travis-ci.org/cvjena/cn24.svg?branch=stable)](https://travis-ci.org/cvjena/cn24)
-master (development branch): [![Build Status](https://travis-ci.org/cvjena/cn24.svg?branch=master)](https://travis-ci.org/cvjena/cn24)
+master (production branch): [![Build Status](https://travis-ci.org/cvjena/cn24.svg?branch=master)](https://travis-ci.org/cvjena/cn24)
+develop (development branch): [![Build Status](https://travis-ci.org/cvjena/cn24.svg?branch=develop)](https://travis-ci.org/cvjena/cn24)
 
 ## Welcome to the CN24 GitHub repository!
 
