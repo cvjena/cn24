@@ -18,10 +18,17 @@
 #include "TensorStream.h"
 #include "FloatTensorStream.h"
 #include "CompressedTensorStream.h"
+#include "ListTensorStream.h"
 
 namespace Conv {
   
 TensorStream* TensorStream::FromFile(std::string path) {
+  if(path.compare(0,5,"list:") == 0) {
+    LOGDEBUG << "Is list tensor, loading...";
+    ListTensorStream* lts = new ListTensorStream();
+    lts->LoadFile(path.replace(0,5,""));
+    return lts;
+  }
   std::ifstream input_stream(path, std::ios::in | std::ios::binary);
   if(!input_stream.good()) {
     FATAL("Cannot open file: " << path);
