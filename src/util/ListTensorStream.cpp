@@ -52,7 +52,8 @@ namespace Conv {
   unsigned int ListTensorStream::LoadFile(std::string path) {
 		std::string listtensor_regex = "list:(.*);(.*);(.*);(.*)";
 #ifdef BUILD_BOOST
-		
+		boost::smatch listtensor_match;
+		bool has_matches = boost::regex_match(path, listtensor_match, boost::regex(listtensor_regex, boost::regex::extended));
 #else
 		std::smatch listtensor_match;
 		bool has_matches = std::regex_match(path, listtensor_match, std::regex(listtensor_regex, std::regex::extended));
