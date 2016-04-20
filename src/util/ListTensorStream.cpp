@@ -13,6 +13,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <cmath>
 
 #include "ListTensorStream.h"
 
