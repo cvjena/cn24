@@ -87,8 +87,8 @@ void System::Init(int requested_log_level) {
   } else
     log_level = requested_log_level;
   
-  LOGINFO << "CN24 v2.0.4 at " STRING_SHA1;
-  LOGINFO << "Copyright (C) 2015 Clemens-Alexander Brust";
+  LOGINFO << "CN24 version 2.0.5 @" STRING_SHA1;
+  LOGINFO << "Copyright (C) 2016 Clemens-Alexander Brust";
   LOGINFO << "For licensing information, see the LICENSE"
           << " file included with this project.";
           

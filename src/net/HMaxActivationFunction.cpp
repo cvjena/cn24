@@ -125,7 +125,6 @@ void HMaxActivationFunction::FeedForward() {
   total_activations_ = (datum)(input_->data.elements());
   sum_of_activations_ = 0;
   
-#pragma omp parallel for default(shared)
   for (std::size_t element = 0; element < input_->data.elements(); element++) {
     const datum input_data = input_->data.data_ptr_const() [element];
 
@@ -153,7 +152,7 @@ void HMaxActivationFunction::BackPropagate() {
   // https://figss.uni-frankfurt.de/~triesch/publications/Triesch-ICANN2005.pdf
   datum delta_a = -((datum)(input_->data.elements()))/a * lambda_sparse_regularization;
   datum delta_b = -(datum)(input_->data.elements()) * lambda_sparse_regularization;
-#pragma omp parallel for default(shared)
+	
   for (std::size_t element = 0; element < input_->data.elements(); element++) {
     const datum input_data = input_->data.data_ptr_const() [element];
     const datum output_data = output_->data.data_ptr_const() [element];
