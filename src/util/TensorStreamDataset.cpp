@@ -367,22 +367,22 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
   LOGDEBUG << "Loading dataset with " << classes << " classes";
   LOGDEBUG << "Training tensor: " << training_file;
   LOGDEBUG << "Testing tensor: " << testing_file;
-
-  if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TRAINING_ONLY) && training_file.length() > 0) {
-    training_stream = TensorStream::FromFile(training_file);
-  } else {
-  }
-
-  if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TESTING_ONLY) && testing_file.length() > 0) {
-    testing_stream = TensorStream::FromFile(testing_file);
-  } else {
-  }
-
+	
 	if (class_weights.size() != classes) {
 		for (unsigned int c = 0; c < classes; c++)
 			class_weights.push_back(1.0);
 	}
 	
+  if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TRAINING_ONLY) && training_file.length() > 0) {
+    training_stream = TensorStream::FromFile(training_file, class_colors);
+  } else {
+  }
+
+  if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TESTING_ONLY) && testing_file.length() > 0) {
+    testing_stream = TensorStream::FromFile(testing_file, class_colors);
+  } else {
+  }
+
   return new TensorStreamDataset (training_stream, testing_stream, classes,
                                   class_names, class_colors, class_weights, error_function);
 }

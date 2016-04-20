@@ -23,6 +23,7 @@
 #include "cn24/util/TensorStream.h"
 #include "cn24/util/CompressedTensorStream.h"
 #include "cn24/util/FloatTensorStream.h"
+#include "cn24/util/ListTensorStream.h"
 #include "cn24/util/PNGUtil.h"
 #include "cn24/util/JPGUtil.h"
 #include "cn24/util/Log.h"
