@@ -33,7 +33,7 @@ public:
   
   virtual unsigned int GetTensorCount() = 0;
   
-  static TensorStream* FromFile(std::string path);
+  static TensorStream* FromFile(std::string path, std::vector<unsigned int> class_colors = {});
 };
 
 }

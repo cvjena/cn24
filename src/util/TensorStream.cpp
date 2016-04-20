@@ -20,13 +20,25 @@
 #include "CompressedTensorStream.h"
 #include "ListTensorStream.h"
 
+#ifdef BUILD_BOOST
+#include <boost/regex.hpp>
+#else
+#include <regex>
+#endif
+
 namespace Conv {
   
-TensorStream* TensorStream::FromFile(std::string path) {
-  if(path.compare(0,5,"list:") == 0) {
+TensorStream* TensorStream::FromFile(std::string path, std::vector<unsigned int> class_colors) {
+	std::string listtensor_regex = "list:.*;.*;.*;.*";
+#ifdef BUILD_BOOST
+	bool is_listtensor = boost::regex_match(path, boost::regex(listtensor_regex, boost::regex::extended));
+#else
+	bool is_listtensor = std::regex_match(path, std::regex(listtensor_regex, std::regex::extended));
+#endif
+  if(is_listtensor) {
     LOGDEBUG << "Is list tensor, loading...";
-    ListTensorStream* lts = new ListTensorStream();
-    lts->LoadFile(path.replace(0,5,""));
+    ListTensorStream* lts = new ListTensorStream(class_colors);
+    lts->LoadFile(path);
     return lts;
   }
   std::ifstream input_stream(path, std::ios::in | std::ios::binary);
