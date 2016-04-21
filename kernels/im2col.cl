@@ -55,10 +55,10 @@ __kernel void COL2IM ( __global float* X, __global float* Y,
   float sum = 0;
   for(int ky = 0; ky < kernel_height; ky++) {
     const int oy = (pad_height + iy - ky) / stride_height;
-    if(oy >= 0 && oy < target_height) {
+    if(oy >= 0 && oy < target_height && ((pad_height + iy - ky) % stride_height == 0)) {
       for(int kx = 0; kx < kernel_width; kx++) {
         const int ox = (pad_width + ix - kx) / stride_width;
-        if(ox >= 0 && ox < target_width) {
+        if(ox >= 0 && ox < target_width && ((pad_width + ix - kx) % stride_width == 0)) {
           const int target_map = (kernel_width * kernel_height) * source_map +
             (kernel_width * ky) + kx;
           
