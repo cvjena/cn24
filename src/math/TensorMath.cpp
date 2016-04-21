@@ -206,6 +206,8 @@ void TensorMath::IM2COL(const Tensor& source, const int source_width, const int 
     }
 #endif
   } else {
+    ((Tensor&)source).MoveToCPU();
+    target.MoveToCPU(true);
 #endif
   
     const int target_width = (2 * pad_width + source_width - kernel_width) / stride_width + 1;
@@ -303,6 +305,8 @@ void TensorMath::COL2IM(Tensor& source, const int source_width, const int source
     }
 #endif
   } else {
+    ((Tensor&)target).MoveToCPU();
+    source.MoveToCPU(true);
 #endif    
     SETSAMPLE(source, -1, 0.0);
     
