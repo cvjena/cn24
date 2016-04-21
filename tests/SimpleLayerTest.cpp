@@ -191,7 +191,6 @@ int main(int argc, char* argv[]) {
       test_failed = true;
       LOGINFO << "    Gradient test (inputs)...";
       LOGERROR << "        FAILED";
-      continue;
     }
     
     delete layer;
