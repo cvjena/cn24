@@ -3,6 +3,8 @@ dist: trusty
 language: cpp
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
       - libjpeg-dev
       - libpng-dev
@@ -67,9 +69,6 @@ matrix:
     - os: linux
       env: TEST_SUITE=atlas
       compiler: gcc
-    - os: linux
-      env: TEST_SUITE=reference
-      compiler: clang
     - os: osx
       env: TEST_SUITE=reference
       compiler: clang
