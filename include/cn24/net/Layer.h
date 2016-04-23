@@ -21,6 +21,7 @@
 
 #include "../util/Tensor.h"
 #include "../util/CombinedTensor.h"
+#include "../util/JSONParsing.h"
 
 namespace Conv {
 

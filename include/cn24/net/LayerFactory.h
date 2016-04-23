@@ -29,6 +29,13 @@ public:
   static std::string ExtractConfiguration(std::string descriptor);
   static std::string ExtractLayerType(std::string descriptor);
   static std::string InjectSeed(std::string descriptor, unsigned int seed);
+	
+	// New JSON methods
+  static Layer* ConstructLayer(JSON descriptor);
+  static bool IsValidDescriptor(JSON descriptor);
+  static JSON ExtractConfiguration(JSON descriptor);
+  static std::string ExtractLayerType(JSON descriptor);
+	static JSON InjectSeed(JSON descriptor, unsigned int seed);
 };
   
 }

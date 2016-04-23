@@ -135,5 +135,31 @@ std::string LayerFactory::InjectSeed(std::string descriptor, unsigned int seed) 
     return descriptor;
   }
 }
+
+Layer* LayerFactory::ConstructLayer(JSON descriptor)
+{
+	return nullptr;
+}
+
+bool LayerFactory::IsValidDescriptor(JSON descriptor)
+{
+	return false;
+}
+
+JSON LayerFactory::ExtractConfiguration(JSON descriptor)
+{
+	return JSON::parse("");
+}
+
+std::string LayerFactory::ExtractLayerType(JSON descriptor)
+{
+	return "";
+}
+
+
+JSON LayerFactory::InjectSeed(JSON descriptor, unsigned int seed) {
+	return descriptor;
+}
+
   
 }
