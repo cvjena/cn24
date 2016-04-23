@@ -29,11 +29,12 @@ ResizeLayer::ResizeLayer (const unsigned int borderx,
 
 ResizeLayer::ResizeLayer (JSON configuration)
 : SimpleLayer(configuration) {
-	/*
-  borderx_ = 0;
-  bordery_ = 0;
-  ParseKernelSizeIfPossible(configuration, "border", borderx_, bordery_);
-  */
+	if(configuration.count("border") != 1 || !configuration["border"].is_array() || configuration["border"].size() != 2) {
+		FATAL("Invalid configuration (no size): " << configuration.dump());
+	} else {
+		borderx_ = configuration["border"][0];
+		bordery_ = configuration["border"][0];
+	}
 }
   
 bool ResizeLayer::CreateOutputs (const std::vector< CombinedTensor* >& inputs,
