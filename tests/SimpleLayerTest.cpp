@@ -16,7 +16,7 @@
 #include <cstdlib>
 
 // TEST SETUP
-unsigned int RANDOM_RUNS = 5;
+unsigned int RANDOM_RUNS = 50;
 unsigned int SAMPLES = 2, WIDTH = 9, HEIGHT = 6, MAPS = 3;
 Conv::datum epsilon = 0.005;
 
