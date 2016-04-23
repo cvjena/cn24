@@ -138,27 +138,99 @@ std::string LayerFactory::InjectSeed(std::string descriptor, unsigned int seed) 
 
 Layer* LayerFactory::ConstructLayer(JSON descriptor)
 {
-	return nullptr;
+	if (!IsValidDescriptor(descriptor))
+    return nullptr;
+  JSON configuration = ExtractConfiguration(descriptor);
+  std::string layertype = ExtractLayerType(descriptor);
+  
+  Layer* layer = nullptr;
+  if(layertype.length() == 0) {
+    // Leave layer a nullptr
+  }
+  CONV_LAYER_TYPE("convolution", ConvolutionLayer)
+  CONV_LAYER_TYPE("simple_maxpooling", MaxPoolingLayer)
+  CONV_LAYER_TYPE("advanced_maxpooling", AdvancedMaxPoolingLayer)
+  CONV_LAYER_TYPE("tanh", TanhLayer)
+  CONV_LAYER_TYPE("sigm", SigmoidLayer)
+  CONV_LAYER_TYPE("relu", ReLULayer)
+  CONV_LAYER_TYPE("gradient_accumulation", GradientAccumulationLayer)
+  CONV_LAYER_TYPE("resize", ResizeLayer)
+  CONV_LAYER_TYPE("hmax", HMaxActivationFunction);
+  
+  return layer;
 }
 
 bool LayerFactory::IsValidDescriptor(JSON descriptor)
 {
+	if(descriptor.is_object()) {
+		if(descriptor.count("layer") == 1) {
+			if(descriptor["layer"].is_string()) {
+				return true;
+			} else if(descriptor["layer"].is_object()) {
+				if(descriptor["layer"].count("type") == 1) {
+					if(descriptor["layer"]["type"].is_string()) {
+						return true;
+					} else {
+						LOGWARN << "Invalid descriptor (layer.type is not a string)";
+					}
+				} else {
+					LOGWARN << "Invalid descriptor (no type or more than one layer.type)";
+				}
+			} else {
+				LOGWARN << "Invalid descriptor (layer is not a string or object)";
+			}
+		} else {
+			LOGWARN << "Invalid descriptor (no layer or more than one layer)";
+		}
+	} else {
+		LOGWARN << "Invalid descriptor (not an object)";
+	}
 	return false;
 }
 
 JSON LayerFactory::ExtractConfiguration(JSON descriptor)
 {
-	return JSON::parse("");
+	if(IsValidDescriptor(descriptor)) {
+		if(descriptor["layer"].is_string()) {
+			std::string original_type = descriptor["layer"];
+			return {{"type", original_type}};
+		} else {
+			return descriptor["layer"];
+		}	
+	} else {
+		return JSON::object();
+	}
 }
 
 std::string LayerFactory::ExtractLayerType(JSON descriptor)
 {
-	return "";
+	if(IsValidDescriptor(descriptor)) {
+		if(descriptor["layer"].is_string()) {
+			return descriptor["layer"];
+		} else {
+			return descriptor["layer"]["type"];
+		}
+	} else {
+		return "";
+	}
 }
 
 
 JSON LayerFactory::InjectSeed(JSON descriptor, unsigned int seed) {
-	return descriptor;
+	if(IsValidDescriptor(descriptor)) {
+		if(descriptor["layer"].is_string()) {
+			JSON new_descriptor = descriptor;
+			std::string original_type = descriptor["layer"];
+			new_descriptor["layer"] = { {"type", original_type}, {"seed", seed }};
+			return new_descriptor;
+		} else {
+			JSON new_descriptor = descriptor;
+			new_descriptor["layer"]["seed"] = seed;
+			return new_descriptor;
+		}
+	} else {
+		return descriptor;
+	}
 }
 
   

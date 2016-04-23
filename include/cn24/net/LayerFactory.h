@@ -36,6 +36,8 @@ public:
   static JSON ExtractConfiguration(JSON descriptor);
   static std::string ExtractLayerType(JSON descriptor);
 	static JSON InjectSeed(JSON descriptor, unsigned int seed);
+  private:
+  void descript();
 };
   
 }
