@@ -19,19 +19,21 @@ unsigned int SAMPLES = 2, WIDTH = 9, HEIGHT = 6, MAPS = 3;
 Conv::datum epsilon = 0.005;
 
 std::vector<std::pair<std::string, unsigned int>> test_layers_and_runs = {
-  {"maxpooling(size=3x3)",1},
-  {"maxpooling(size=3x2)",1},
-  {"amaxpooling(size=3x3)",1},
-  {"amaxpooling(size=3x2)",1},
-  {"amaxpooling(size=3x3 stride=2x2)",1},
-  {"convolution(size=3x3 kernels=3)",RANDOM_RUNS},
-  {"convolution(size=3x3 stride=2x2 kernels=3)",RANDOM_RUNS},
-  {"convolution(size=3x3 group=3 kernels=9)",RANDOM_RUNS},
-  {"hmax(mu=0.1 weight=0.0)",1},
-  {"hmax(mu=0.1 weight=0.2)",1},
-  {"tanh",1},{"sigm",1},{"relu",1},
-  {"gradientaccumulation(outputs=2)",1},
-  {"resize(border=2x2)",1}
+  {"{\"layer\":{\"type\":\"simple_maxpooling\",\"size\":[3,3]}}",1},
+  {"{\"layer\":{\"type\":\"simple_maxpooling\",\"size\":[3,2]}}",1},
+  {"{\"layer\":{\"type\":\"advanced_maxpooling\",\"size\":[3,3]}}",1},
+  {"{\"layer\":{\"type\":\"advanced_maxpooling\",\"size\":[3,2]}}",1},
+  {"{\"layer\":{\"type\":\"advanced_maxpooling\",\"size\":[3,3],\"stride\":[2,2]}}",1},
+  {"{\"layer\":{\"type\":\"convolution\",\"size\":[3,3],\"kernels\":3}}",RANDOM_RUNS},
+  {"{\"layer\":{\"type\":\"convolution\",\"size\":[3,3],\"stride\":[2,2],\"kernels\":3}}",RANDOM_RUNS},
+  {"{\"layer\":{\"type\":\"convolution\",\"size\":[3,3],\"group\":3,\"kernels\":9}}",RANDOM_RUNS},
+  {"{\"layer\":{\"type\":\"hmax\",\"mu\":0.1,\"weight\":0.0}}",1},
+  {"{\"layer\":{\"type\":\"hmax\",\"mu\":0.1,\"weight\":0.2}}",1},
+  {"{\"layer\":\"tanh\"}",1},
+  {"{\"layer\":\"sigm\"}",1},
+  {"{\"layer\":\"relu\"}",1},
+  {"{\"layer\":{\"type\":\"gradient_accumulation\",\"outputs\":2}}",1},
+  {"{\"layer\":{\"type\":\"resize\",\"border\":[2,2]}}",1},
 };
 
 // UTILITIES
@@ -96,24 +98,24 @@ int main(int argc, char* argv[]) {
   
   Conv::CombinedTensor input_data(SAMPLES, WIDTH, HEIGHT, MAPS);
   
-  std::vector<std::string> test_layers;
+  std::vector<Conv::JSON> test_layers;
   
   if (argc > 1) {
     std::string test_layer = argv[1];
-    test_layers.push_back(test_layer);
+    test_layers.push_back(Conv::JSON::parse(test_layer));
   } else {
     for (std::pair<std::string, unsigned int>& layer_pair : test_layers_and_runs) {
       std::string& layer_descriptor = layer_pair.first;
       unsigned int runs = layer_pair.second;
       for(unsigned int i = 0; i < runs; i++) {
         // Inject random seeds
-        std::string injected_descriptor = Conv::LayerFactory::InjectSeed(layer_descriptor, seed_generator());
+        Conv::JSON injected_descriptor = Conv::LayerFactory::InjectSeed(Conv::JSON::parse(layer_descriptor), seed_generator());
         test_layers.push_back(injected_descriptor);
       }
     }
   }
   
-  for (std::string& layer_descriptor : test_layers) {
+  for (Conv::JSON& layer_descriptor : test_layers) {
     bool data_sign = seed_generator() % 2 == 0;
     for(unsigned int e = 0; e < input_data.data.elements(); e++) {
       if(data_sign)
@@ -123,7 +125,7 @@ int main(int argc, char* argv[]) {
     }
     input_data.delta.Clear(0.0);
     
-    LOGINFO << "Testing layer: " << layer_descriptor;
+    LOGINFO << "Testing layer: " << layer_descriptor.dump();
     Conv::Layer* layer = Conv::LayerFactory::ConstructLayer(layer_descriptor);
     if(layer == nullptr) {
       test_failed = true;
@@ -134,14 +136,6 @@ int main(int argc, char* argv[]) {
     
     LOGDEBUG << "    Description: " << layer->GetLayerDescription();
     LOGDEBUG << "    Configuration: " << layer->GetLayerConfiguration();
-    
-    if (Conv::LayerFactory::ExtractConfiguration(layer_descriptor).length() > 0
-        && layer->GetLayerConfiguration().length() == 0) {
-      test_failed = true;
-      LOGINFO << "    Testing configuration loss...";
-      LOGERROR << "       FAILED";
-      continue;
-    }
     
     std::vector<Conv::CombinedTensor*> outputs;
     bool createoutputs_success = layer->CreateOutputs({&input_data}, outputs);

@@ -14,10 +14,10 @@ int main(int argc, char* argv[]) {
   Conv::System::Init();
   
   std::vector<std::string> descriptors = {
-    "convolution(size=3x3 pad=3x4)",
-    "convolution(size=3x3)",
-    "convolution()",
-    "convolution"
+    "{\"layer\":{\"type\":\"convolution\", \"size\":[3,3], \"padding\":[3,4]}}",
+    "{\"layer\":{\"type\":\"convolution\", \"padding\":[3,4]}}",
+    "{\"layer\":{\"type\":\"convolution\"}}",
+    "{\"layer\":\"convolution\"}"
   };
   std::vector<std::string> expected_layertypes = {
     "convolution",
