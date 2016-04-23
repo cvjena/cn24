@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
   bool failed = false;
   
   for(unsigned int s = 0; s < descriptors.size(); s++) {
-    std::string& descriptor = descriptors[s];
+    Conv::JSON descriptor = Conv::JSON::parse(descriptors[s]);
     std::string& excpected_layertype = expected_layertypes[s];
     std::string actual_layertype = Conv::LayerFactory::ExtractLayerType(descriptor);
     if(actual_layertype.compare(excpected_layertype) != 0) {
