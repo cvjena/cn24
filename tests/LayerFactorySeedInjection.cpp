@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
     Conv::JSON descriptor = Conv::JSON::parse(descriptors[s]);
     Conv::JSON actual_descriptor = Conv::LayerFactory::InjectSeed(descriptor, inject_seed);
 		try{
-			if(actual_descriptor["layer"]["seed"] != inject_seed) {
+			if((unsigned int)actual_descriptor["layer"]["seed"] != inject_seed) {
 				LOGERROR << "Injecting into descriptor " << descriptor << ", expected seed not present. Actual seed: " << actual_descriptor["layer"]["seed"]
 				<< ", actual: " << actual_descriptor;
 				failed = 1;
