@@ -18,7 +18,7 @@ int HMaxActivationFunction::stat_id_a = -1;
 int HMaxActivationFunction::stat_id_b = -1;
   
 HMaxActivationFunction::HMaxActivationFunction(const datum mu, const datum loss_weight)
-  : SimpleLayer(""), mu_(mu), loss_weight_(loss_weight) {
+  : SimpleLayer(JSON::object()), mu_(mu), loss_weight_(loss_weight) {
     if(stat_id_a >= 0)
       return;
   // Prepare stats
@@ -56,12 +56,18 @@ HMaxActivationFunction::HMaxActivationFunction(const datum mu, const datum loss_
     stat_id_b = System::stat_aggregator->RegisterStat(&desc_b);
 }
   
-HMaxActivationFunction::HMaxActivationFunction(std::string configuration)
+HMaxActivationFunction::HMaxActivationFunction(JSON configuration)
   : SimpleLayer(configuration) {
   mu_ = 1;
   loss_weight_ = 0;
-  ParseDatumParamIfPossible(configuration, "mu", mu_);
-  ParseDatumParamIfPossible(configuration, "weight", loss_weight_);
+	
+	if(configuration.count("mu") == 1 && configuration["mu"].is_number()) {
+		mu_ = configuration["mu"];
+	}
+	
+	if(configuration.count("weight") == 1 && configuration["weight"].is_number()) {
+		loss_weight_ = configuration["weight"];
+	}
 }
   
 bool HMaxActivationFunction::CreateOutputs (

@@ -13,7 +13,7 @@
 namespace Conv {
 
 
-SumLayer::SumLayer() : Layer("") {
+SumLayer::SumLayer() : Layer(JSON::object()) {
   LOGDEBUG << "Instance created.";
 }
 

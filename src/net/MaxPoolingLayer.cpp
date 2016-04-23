@@ -19,18 +19,25 @@ namespace Conv {
 
 MaxPoolingLayer::MaxPoolingLayer (const unsigned int region_width,
                                   const unsigned int region_height) :
-  SimpleLayer(""),
+  SimpleLayer(JSON::object()),
   region_width_ (region_width), region_height_ (region_height) {
   LOGDEBUG << "Instance created: " << region_width_ << "x" << region_height_ <<
            " pooling.";
 }
 
-MaxPoolingLayer::MaxPoolingLayer(std::string configuration) :
+MaxPoolingLayer::MaxPoolingLayer(JSON configuration) :
   SimpleLayer(configuration) {
-  region_width_ = 1;
+	region_width_ = 1;
   region_height_ = 1;
   
-  ParseKernelSizeIfPossible(configuration, "size", region_width_, region_height_);
+	if(configuration.count("size") != 1 || !configuration["size"].is_array() || configuration["size"].size() != 2) {
+		FATAL("Invalid configuration (no size): " << configuration.dump());
+	} else {
+		region_width_ = configuration["size"][0];
+		region_height_ = configuration["size"][0];
+	}
+	
+	// TODO Validation of actual values	
 }
   
 bool MaxPoolingLayer::CreateOutputs (

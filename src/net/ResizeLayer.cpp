@@ -21,17 +21,19 @@ namespace Conv {
 
 ResizeLayer::ResizeLayer (const unsigned int borderx,
 			  const unsigned int bordery) :
-  SimpleLayer(""),
+  SimpleLayer(JSON::object()),
   borderx_(borderx), bordery_(bordery) {
   LOGDEBUG << "Instance created, border size: (" << borderx << ", "
   << bordery << ")";
 }
 
-ResizeLayer::ResizeLayer (std::string configuration)
+ResizeLayer::ResizeLayer (JSON configuration)
 : SimpleLayer(configuration) {
+	/*
   borderx_ = 0;
   bordery_ = 0;
   ParseKernelSizeIfPossible(configuration, "border", borderx_, bordery_);
+  */
 }
   
 bool ResizeLayer::CreateOutputs (const std::vector< CombinedTensor* >& inputs,

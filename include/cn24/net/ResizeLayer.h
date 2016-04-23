@@ -32,7 +32,7 @@ public:
    */
   ResizeLayer(const unsigned int borderx, const unsigned int bordery);
   
-  explicit ResizeLayer(std::string configuration);
+  explicit ResizeLayer(JSON configuration);
   
   // Implementations for SimpleLayer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs, std::vector< CombinedTensor* >& outputs);

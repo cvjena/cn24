@@ -34,8 +34,8 @@ class Layer {
   friend class GradientTester;
 public:
   virtual ~Layer() {};
-  // Layer() : configuration_("") {};
-  explicit Layer(std::string configuration) : configuration_(configuration) {};
+	
+  explicit Layer(JSON configuration) : configuration_(configuration) {};
   /**
    * @brief Creates a CombinedTensor vector given an input.
    *
@@ -118,7 +118,7 @@ public:
    */
   virtual bool IsNotGradientSafe() { return false; }
 
-  virtual std::string GetLayerConfiguration() { return configuration_; }
+  virtual JSON GetLayerConfiguration() { return configuration_; }
 	virtual std::string GetLayerDescription() { return "Layer"; }
 	virtual void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers) {UNREFERENCED_PARAMETER(buffers);}
 protected:
@@ -142,9 +142,9 @@ protected:
   unsigned int gain = 0;
   
   /**
-   * @brief Layer configuration string
+   * @brief Layer configuration
    */
-  std::string configuration_;
+  JSON configuration_;
 };
 
 }

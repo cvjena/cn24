@@ -36,7 +36,7 @@ public:
                   const unsigned int stride_width,
                   const unsigned int stride_height );
   
-  explicit AdvancedMaxPoolingLayer(std::string configuration);
+  explicit AdvancedMaxPoolingLayer(JSON configuration);
   
   // Implementations for SimpleLayer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs, std::vector< CombinedTensor* >& outputs);

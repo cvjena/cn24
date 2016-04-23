@@ -42,7 +42,7 @@ public:
                    const unsigned int pad_height = 0, const unsigned int group = 1,
                    const int seed = 0, const datum dropout_fraction = 0.0 );
   
-  explicit ConvolutionLayer(std::string configuration);
+  explicit ConvolutionLayer(JSON configuration);
   
   ~ConvolutionLayer() {
     if(weights_ != nullptr)

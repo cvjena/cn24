@@ -16,14 +16,18 @@ namespace Conv {
 
 
 GradientAccumulationLayer::GradientAccumulationLayer
-  (unsigned int output_count) : Layer (""), output_count_(output_count) {
+  (unsigned int output_count) : Layer (JSON::object()), output_count_(output_count) {
   LOGDEBUG << "Instance created.";
 }
   
 GradientAccumulationLayer::GradientAccumulationLayer
-  (std::string configuration) : Layer(configuration) {
+  (JSON configuration) : Layer(configuration) {
   output_count_ = 0;
-  ParseCountIfPossible(configuration, "outputs", output_count_);
+	if(configuration.count("outputs") != 1 || !configuration["outputs"].is_number()) {
+		FATAL("Invalid configuration (no outputs): " << configuration.dump());
+	} else {
+		output_count_ = configuration["outputs"];
+	}
 }
 
 bool GradientAccumulationLayer::CreateOutputs (const std::vector< CombinedTensor* >& inputs,
