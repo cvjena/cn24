@@ -115,7 +115,9 @@ int main (int argc, char* argv[]) {
     dataset = Conv::TensorStreamPatchDataset::CreateFromConfiguration (dataset_config_file, false, (patchwise_training && !GRADIENT_CHECK) ? Conv::LOAD_TRAINING_ONLY : Conv::LOAD_BOTH,
               factory->patchsizex(), factory->patchsizey());
   } else {
-    dataset = Conv::TensorStreamDataset::CreateFromConfiguration (dataset_config_file, false, Conv::LOAD_BOTH);
+//    dataset = Conv::TensorStreamDataset::CreateFromConfiguration (dataset_config_file, false, Conv::LOAD_BOTH);
+		dataset = new Conv::JSONDataset;
+		((Conv::JSONDataset*)dataset)->LoadFile(dataset_config_file, false, Conv::LOAD_BOTH);
   }
 
   unsigned int CLASSES = dataset->GetClasses();
