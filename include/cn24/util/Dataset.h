@@ -275,7 +275,8 @@ private:
 
 class JSONDataset : public Dataset {
 public:
-	JSONDataset() {};
+	JSONDataset();
+	~JSONDataset();
   // Dataset implementations
   virtual Task GetTask() const { return SEMANTIC_SEGMENTATION; }
   virtual Method GetMethod() const { return FCN; }

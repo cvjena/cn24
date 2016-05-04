@@ -11,6 +11,14 @@
 
 namespace Conv {
 
+	
+JSONDataset::JSONDataset() {
+	
+}
+
+JSONDataset::~JSONDataset() {
+	
+}
 
 void JSONDataset::LoadFile(std::istream& file, bool dont_load, DatasetLoadSelection selection) {
 	// TODO Validate JSON
@@ -24,11 +32,11 @@ void JSONDataset::LoadFile(std::istream& file, bool dont_load, DatasetLoadSelect
 }	
 
 
-bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
+bool JSONDataset::GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
 	return false;
 }
 
-bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index) {
+bool JSONDataset::GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index) {
 	return false;
 }
 
