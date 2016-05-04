@@ -9,6 +9,7 @@
 
 #include "Dataset.h"
 #include "TensorStream.h"
+#include "ListTensorStream.h"
 
 namespace Conv {
 
@@ -31,6 +32,7 @@ void JSONDataset::LoadFile(std::istream& file, bool dont_load, DatasetLoadSelect
 	
 	// Load metadata
 	if(is_first_dataset) {
+    // TODO Enable better error function
 		// Set error function
 		error_function_ = DefaultLocalizedErrorFunction;
 		
@@ -67,10 +69,24 @@ void JSONDataset::LoadFile(std::istream& file, bool dont_load, DatasetLoadSelect
 	for(unsigned int d = 0; d < data_elements; d++) {
 		JSON element_json = dataset_json["data"][d];
 		std::string element_type = element_json["type"];
-		if(element_type.compare("tensor_stream") == 0) {
+		if(element_type.compare("tensor_stream") == 0 || element_type.compare("list") == 0) {
+      TensorStream* tensor_stream = nullptr;
+      std::string filename = "";
 			std::string segment = element_json["segment"];
-			std::string filename = element_json["filename"];
-			TensorStream* tensor_stream = TensorStream::FromFile(filename, class_colors_);
+
+      if(element_type.compare("tensor_stream") == 0) {
+        filename = element_json["filename"];
+        tensor_stream = TensorStream::FromFile(filename, class_colors_);
+      } else if(element_type.compare("list") == 0) {
+        filename = "LISTTENSORSTREAM";
+        std::string imagelist_path = element_json["imagelist"];
+        std::string labellist_path = element_json["labellist"];
+        std::string images = element_json["imagepath"];
+        std::string labels = element_json["labelpath"];
+        tensor_stream = new ListTensorStream(class_colors_);
+        dynamic_cast<ListTensorStream*>(tensor_stream)->LoadFiles(imagelist_path, images, labellist_path, labels);
+      }
+
 			unsigned int tensor_count = tensor_stream->GetTensorCount();
 			
       // Validate tensor count
@@ -216,7 +232,9 @@ bool JSONDataset::GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Ten
     unsigned int index_label = testing_accessors_[2 * index + 1].sample_in_stream;
 
     success &= testing_stream->CopySample(index_image, 0, data_tensor, sample);
+    if(!success){LOGDEBUG << "Cannot load sample index " << index << ", image in stream: " << index_image;}
     success &= testing_stream->CopySample(index_label, 0, label_tensor, sample);
+    if(!success){LOGDEBUG << "Cannot load sample index " << index << ", label in stream: " << index_label;}
     
     unsigned int data_width = testing_stream->GetWidth(index_image);
     unsigned int data_height = testing_stream->GetHeight(index_image);
