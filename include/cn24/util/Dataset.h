@@ -293,8 +293,8 @@ public:
   virtual std::vector< std::string > GetClassNames() const { return class_names_; }
   virtual std::vector< unsigned int > GetClassColors() const { return class_colors_; }
   virtual std::vector< datum > GetClassWeights() const { return class_weights_; }
-  virtual unsigned int GetTrainingSamples() const { return tensor_count_training_; }
-  virtual unsigned int GetTestingSamples() const { return tensor_count_testing_; }
+  virtual unsigned int GetTrainingSamples() const { return tensor_count_training_ / 2; }
+  virtual unsigned int GetTestingSamples() const { return tensor_count_testing_ / 2; }
   virtual bool SupportsTesting() const { return tensor_count_testing_ > 0; }
   virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
   virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index);
@@ -306,7 +306,6 @@ private:
 	
 	unsigned int input_maps_ = 0;
   unsigned int label_maps_ = 0;
-  unsigned int tensors_ = 0;
   
   unsigned int tensor_count_training_ = 0;
   unsigned int tensor_count_testing_ = 0;

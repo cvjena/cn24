@@ -72,20 +72,56 @@ void JSONDataset::LoadFile(std::istream& file, bool dont_load, DatasetLoadSelect
 			std::string filename = element_json["filename"];
 			TensorStream* tensor_stream = TensorStream::FromFile(filename, class_colors_);
 			unsigned int tensor_count = tensor_stream->GetTensorCount();
-			TensorStreamAccessor accessor;
 			
-			// Iterate through tensors to determine max dimensions
-			for (unsigned int t = 0; t < (tensor_count_training_ / 2); t++) {
-				if(tensor_stream->GetWidth(2*t) > max_width_)
-					max_width_ = tensor_stream->GetWidth(2*t);
-				
-				if(tensor_stream->GetHeight(2*t) > max_height_)
-					max_height_ = tensor_stream->GetHeight(2*t);
-			}
-			
+      // Validate tensor count
 			if(tensor_count == 0) {
 				LOGWARN << "Empty tensor stream for segment \"" << segment << "\", filename: " << filename;
 			}
+
+      if(tensor_count % 2 == 1) {
+        FATAL("Wrong count (not divisible by 2) in tensor stream for segment \"" << segment << "\", filename: " << filename);
+      }
+
+			// Iterate through tensors to determine max dimensions
+			for (unsigned int t = 0; t < tensor_count; t++) {
+				if(tensor_stream->GetWidth(t) > max_width_)
+					max_width_ = tensor_stream->GetWidth(t);
+				
+				if(tensor_stream->GetHeight(t) > max_height_)
+					max_height_ = tensor_stream->GetHeight(t);
+
+        TensorStreamAccessor accessor;
+        accessor.tensor_stream = tensor_stream;
+        accessor.sample_in_stream = t;
+
+        if(segment.compare("training") == 0) {
+          training_accessors_.push_back(accessor);
+          tensor_count_training_++;
+        } else if(segment.compare("testing") == 0) {
+          testing_accessors_.push_back(accessor);
+          tensor_count_testing_++;
+        } else {
+          FATAL("Unknown segment \"" << segment << "\", filename: " << filename);
+        }
+			}
+			
+      // Check if input and label map count needs to be set
+      if(input_maps_ == 0 && label_maps_ == 0) {
+        if(tensor_stream->GetTensorCount() > 0) {
+          input_maps_ = tensor_stream->GetMaps(0);
+          label_maps_ = tensor_stream->GetMaps(1);
+        }
+      } else {
+        if(tensor_stream->GetTensorCount() > 0) {
+          if(input_maps_ != tensor_stream->GetMaps(0) ||
+             label_maps_ != tensor_stream->GetMaps(1)) {
+            FATAL("Map count mismatch for segment \"" << segment << "\", filename: " << filename);
+          }
+        }
+      }
+
+      // Add TensorStream to cleanup list
+      tensor_streams_.push_back(tensor_stream);
 		}
 	}
 	
@@ -124,11 +160,100 @@ void JSONDataset::LoadFile(std::istream& file, bool dont_load, DatasetLoadSelect
 
 
 bool JSONDataset::GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
-	return false;
+  if (index < tensor_count_training_ / 2) {
+    bool success = true;
+
+    TensorStream* training_stream = training_accessors_[2 * index].tensor_stream;
+    unsigned int index_image = training_accessors_[2 * index].sample_in_stream;
+    unsigned int index_label = training_accessors_[2 * index + 1].sample_in_stream;
+
+    success &= training_stream->CopySample(index_image, 0, data_tensor, sample);
+    success &= training_stream->CopySample(index_label, 0, label_tensor, sample);
+
+    unsigned int data_width = training_stream->GetWidth(index_image);
+    unsigned int data_height = training_stream->GetHeight(index_image);
+    
+		// Write spatial prior data to helper tensor
+		for (unsigned int y = 0; y < data_height; y++) {
+			for (unsigned int x = 0; x < data_width; x++) {
+				*helper_tensor.data_ptr(x, y, 0, sample) = ((datum)x) / ((datum)data_width - 1);
+				*helper_tensor.data_ptr(x, y, 1, sample) = ((datum)y) / ((datum)data_height - 1);
+			}
+			for (unsigned int x = data_width; x < GetWidth(); x++) {
+				*helper_tensor.data_ptr(x, y, 0, sample) = 0;
+				*helper_tensor.data_ptr(x, y, 1, sample) = 0;
+			}
+		}
+		for (unsigned int y = data_height; y < GetHeight(); y++) {
+			for (unsigned int x = 0; x < GetWidth(); x++) {
+				*helper_tensor.data_ptr(x, y, 0, sample) = 0;
+				*helper_tensor.data_ptr(x, y, 1, sample) = 0;
+			}
+		}
+
+    weight_tensor.Clear (0.0, sample);
+
+    // TODO Change boundaries for classification
+    #pragma omp parallel for default(shared)
+    for (unsigned int y = 0; y < data_height; y++) {
+      for (unsigned int x = 0; x < data_width; x++) {
+        const datum class_weight = class_weights_[label_tensor.PixelMaximum(x, y, sample)];
+        *weight_tensor.data_ptr (x, y, 0, sample) = error_function_ (x, y, data_width, data_height) * class_weight;
+      }
+    }
+
+    return success;
+  } else return false;
+
 }
 
 bool JSONDataset::GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index) {
-	return false;
+  if (index < tensor_count_testing_ / 2) {
+    bool success = true;
+
+    TensorStream* testing_stream = testing_accessors_[2 * index].tensor_stream;
+    unsigned int index_image = testing_accessors_[2 * index].sample_in_stream;
+    unsigned int index_label = testing_accessors_[2 * index + 1].sample_in_stream;
+
+    success &= testing_stream->CopySample(index_image, 0, data_tensor, sample);
+    success &= testing_stream->CopySample(index_label, 0, label_tensor, sample);
+    
+    unsigned int data_width = testing_stream->GetWidth(index_image);
+    unsigned int data_height = testing_stream->GetHeight(index_image);
+
+		// Write spatial prior data to helper tensor
+		for (unsigned int y = 0; y < data_height; y++) {
+			for (unsigned int x = 0; x < data_width; x++) {
+				*helper_tensor.data_ptr(x, y, 0, sample) = ((datum)x) / ((datum)data_width - 1);
+				*helper_tensor.data_ptr(x, y, 1, sample) = ((datum)y) / ((datum)data_height - 1);
+			}
+			for (unsigned int x = data_width; x < GetWidth(); x++) {
+				*helper_tensor.data_ptr(x, y, 0, sample) = 0;
+				*helper_tensor.data_ptr(x, y, 1, sample) = 0;
+			}
+		}
+		for (unsigned int y = data_height; y < GetHeight(); y++) {
+			for (unsigned int x = 0; x < GetWidth(); x++) {
+				*helper_tensor.data_ptr(x, y, 0, sample) = 0;
+				*helper_tensor.data_ptr(x, y, 1, sample) = 0;
+			}
+		}
+
+    weight_tensor.Clear (0.0, sample);
+
+    // TODO Change boundaries for classification
+    #pragma omp parallel for default(shared)
+    for (unsigned int y = 0; y < data_height; y++) {
+      for (unsigned int x = 0; x < data_width; x++) {
+        const datum class_weight = class_weights_[label_tensor.PixelMaximum(x, y, sample)];
+        *weight_tensor.data_ptr (x, y, 0, sample) = error_function_ (x, y, data_width, data_height) * class_weight;
+      }
+    }
+
+    return success;
+  } else return false;
+
+
 }
 
 }
