@@ -1,0 +1,48 @@
+{
+  "net": {  
+    "input": "resize",
+    "output": "tanh2",
+    "nodes": {
+      "resize": {
+        "layer": {
+          "type": "resize",
+          "border": [6,6]
+        }
+      },
+      "conv1": {
+        "input": "resize",
+        "layer": {
+          "type": "convolution",
+          "size": [7,7],
+          "kernels": 2
+        }
+      },
+      "tanh1": {
+        "input": "conv1",
+        "layer": "tanh"
+      },
+      "fc1": {
+        "input": "tanh1",
+        "layer": {
+          "type": "convolution",
+          "size": [1,1],
+          "kernels": 3
+        }
+      },
+      "tanh2": {
+        "input": "fc1",
+        "layer": "tanh"
+      }
+    }
+  },
+  "hyperparameters": {
+    "l1": 0.000,
+    "l2": 0.005,
+    "learning_rate": 0.1,
+    "learning_rate_gamma": 0.03,
+    "learning_rate_exponent": 0.75,
+    "epoch_iterations": 10000,
+    "batch_size_sequential": 1,
+    "batch_size_parallel": 1
+  }
+}
