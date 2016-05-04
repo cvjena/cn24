@@ -161,7 +161,9 @@ namespace Conv {
 				// Tensor has an image in it, no transform needed
 				Tensor::CopySample(rgb_tensor, source_sample, target, target_sample);
 			}
+      return true;
 		} else {
+      LOGDEBUG << "Sample " << source_index << " requested";
 			return false;
 		}
   }
