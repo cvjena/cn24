@@ -275,6 +275,11 @@ private:
 
 class JSONDataset : public Dataset {
 public:
+	struct TensorStreamAccessor {
+	public:
+		TensorStream* tensor_stream;
+		unsigned int sample_in_stream;
+	};
 	JSONDataset();
 	~JSONDataset();
   // Dataset implementations
@@ -309,12 +314,19 @@ private:
   unsigned int max_width_ = 0;
   unsigned int max_height_ = 0;
   
-  // Parameters
+  // Metadata
   std::vector<std::string> class_names_;
   std::vector<unsigned int> class_colors_;
   std::vector<datum> class_weights_;
   unsigned int classes_;
   dataset_localized_error_function error_function_;
+	
+	// Samples
+	std::vector<TensorStream*> tensor_streams_;
+	
+	std::vector<TensorStreamAccessor> training_accessors_;
+	std::vector<TensorStreamAccessor> testing_accessors_;
+	
 };
  
 }
