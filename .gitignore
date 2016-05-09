@@ -28,3 +28,4 @@ thesis.ps
 *.DS_Store
 *.tex.backup
 *.swp
+.idea/*
