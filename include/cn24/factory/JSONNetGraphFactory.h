@@ -31,7 +31,7 @@ public:
     net_json = JSON::parse(file);
   };
 
-  JSON GetHyperparameters() { return JSON::parse(""); };
+  JSON GetHyperparameters() { if(net_json.count("hyperparameters")==1 && net_json["hyperparameters"].is_object()) { return net_json["hyperparameters"]; } else { return JSON::parse(""); }};
   bool AddLayers(NetGraph& graph);
 
 private:

@@ -10,6 +10,9 @@
 namespace Conv {
 
 bool JSONNetGraphFactory::AddLayers(NetGraph &graph) {
+  // (1) Add layers
+
+  // (2) Add loss layers to outputs
   return false;
 }
 
