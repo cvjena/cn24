@@ -272,6 +272,62 @@ private:
   unsigned int classes_;
   dataset_localized_error_function error_function_;
 };
+
+class JSONDataset : public Dataset {
+public:
+	struct TensorStreamAccessor {
+	public:
+		TensorStream* tensor_stream;
+		unsigned int sample_in_stream;
+	};
+	JSONDataset();
+	~JSONDataset();
+  // Dataset implementations
+  virtual Task GetTask() const { return SEMANTIC_SEGMENTATION; }
+  virtual Method GetMethod() const { return FCN; }
+  virtual unsigned int GetWidth() const { return max_width_; }
+  virtual unsigned int GetHeight() const { return max_height_; }
+  virtual unsigned int GetInputMaps() const { return input_maps_; }
+  virtual unsigned int GetLabelMaps() const { return label_maps_; }
+  virtual unsigned int GetClasses() const { return class_names_.size(); }
+  virtual std::vector< std::string > GetClassNames() const { return class_names_; }
+  virtual std::vector< unsigned int > GetClassColors() const { return class_colors_; }
+  virtual std::vector< datum > GetClassWeights() const { return class_weights_; }
+  virtual unsigned int GetTrainingSamples() const { return tensor_count_training_ / 2; }
+  virtual unsigned int GetTestingSamples() const { return tensor_count_testing_ / 2; }
+  virtual bool SupportsTesting() const { return tensor_count_testing_ > 0; }
+  virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
+  virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index);
+	
+	virtual void LoadFile(std::istream& file, bool dont_load = false, DatasetLoadSelection selection = LOAD_BOTH);
+	
+private:
+	bool is_first_dataset = true;
+	
+	unsigned int input_maps_ = 0;
+  unsigned int label_maps_ = 0;
+  
+  unsigned int tensor_count_training_ = 0;
+  unsigned int tensor_count_testing_ = 0;
+  
+  unsigned int max_width_ = 0;
+  unsigned int max_height_ = 0;
+  
+  // Metadata
+  std::vector<std::string> class_names_;
+  std::vector<unsigned int> class_colors_;
+  std::vector<datum> class_weights_;
+  unsigned int classes_;
+  dataset_localized_error_function error_function_;
+	
+	// Samples
+	std::vector<TensorStream*> tensor_streams_;
+	
+	std::vector<TensorStreamAccessor> training_accessors_;
+	std::vector<TensorStreamAccessor> testing_accessors_;
+	
+};
+ 
 }
 
 #endif

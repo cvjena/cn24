@@ -27,7 +27,7 @@ namespace Conv {
 class HMaxActivationFunction : public SimpleLayer, public LossFunctionLayer {
 public:
   HMaxActivationFunction(const datum mu, const datum loss_weight);
-  explicit HMaxActivationFunction(std::string configuration);
+  explicit HMaxActivationFunction(JSON configuration);
   
   // Implementations for SimpleLayer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs,

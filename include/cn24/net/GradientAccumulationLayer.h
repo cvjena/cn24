@@ -25,7 +25,7 @@ namespace Conv {
 class GradientAccumulationLayer: public Layer {
 public:
   GradientAccumulationLayer(unsigned int output_count);
-  explicit GradientAccumulationLayer(std::string configuration);
+  explicit GradientAccumulationLayer(JSON configuration);
 
   // Layer implementations
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs,

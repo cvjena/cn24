@@ -34,6 +34,7 @@
 #include "cn24/util/StatSink.h"
 #include "cn24/util/ConsoleStatSink.h"
 #include "cn24/util/CSVStatSink.h"
+#include "cn24/util/JSONParsing.h"
 
 #include "cn24/math/TensorMath.h"
 
@@ -64,6 +65,7 @@
 #include "cn24/net/NetGraphNode.h"
 #include "cn24/net/NetStatus.h"
 #include "cn24/net/LayerFactory.h"
+#include "cn24/net/JSONNetGraphFactory.h"
 #include "cn24/net/HMaxActivationFunction.h"
 
 #include "cn24/factory/ConfigurableFactory.h"

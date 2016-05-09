@@ -36,7 +36,7 @@ ConvolutionLayer::ConvolutionLayer (const unsigned int kwidth,
                                     const unsigned int pad_height,
                                     const unsigned int group,
                                     const int seed, const datum dropout_fraction) :
-  SimpleLayer(""),
+  SimpleLayer(JSON::object()),
   output_maps_ (output_maps), kernel_width_ (kwidth), kernel_height_ (kheight),
   rand_ (seed), stride_width_(stride_width), stride_height_(stride_height),
   pad_width_(pad_width), pad_height_(pad_height),
@@ -69,7 +69,7 @@ ConvolutionLayer::ConvolutionLayer (const unsigned int kwidth,
   LOGDEBUG << "Dropout fraction: " << dropout_fraction_;
 }
 
-ConvolutionLayer::ConvolutionLayer(std::string configuration) :
+ConvolutionLayer::ConvolutionLayer(JSON configuration) :
   SimpleLayer(configuration) {
   unsigned int seed = 0;
   kernel_width_ = 0;
@@ -82,19 +82,48 @@ ConvolutionLayer::ConvolutionLayer(std::string configuration) :
   group_ = 1;
   dropout_fraction_ = 0.0;
   datum local_lr = 1.0;
+	
+	if(configuration.count("size") != 1 || !configuration["size"].is_array() || configuration["size"].size() != 2) {
+		FATAL("Invalid configuration (no size): " << configuration.dump());
+	} else {
+		kernel_width_ = configuration["size"][0];
+		kernel_height_ = configuration["size"][1];
+	}
+	
+	if(configuration.count("stride") == 1 && configuration["stride"].is_array() && configuration["stride"].size() == 2) {
+		stride_width_ = configuration["stride"][0];
+		stride_height_ = configuration["stride"][1];
+	}
   
-  ParseKernelSizeIfPossible(configuration, "size", kernel_width_ , kernel_height_);
-  ParseKernelSizeIfPossible (configuration, "stride", stride_width_, stride_height_);
-  ParseKernelSizeIfPossible (configuration, "pad", pad_width_, pad_height_);
-  ParseCountIfPossible (configuration, "kernels", output_maps_);
-  ParseCountIfPossible (configuration, "group", group_);
-  ParseDatumParamIfPossible (configuration, "dropout", dropout_fraction_);
-  ParseDatumParamIfPossible (configuration, "llr", local_lr);
-  ParseCountIfPossible(configuration, "seed", seed);
+	if(configuration.count("pad") == 1 && configuration["pad"].is_array() && configuration["pad"].size() == 2) {
+		pad_width_ = configuration["pad"][0];
+		pad_height_ = configuration["pad"][1];
+	}
+	
+	if(configuration.count("kernels") == 1 && configuration["kernels"].is_number()) {
+		output_maps_ = configuration["kernels"];
+	}
   
-  // TODO Validation like in large constructor
+	if(configuration.count("group") == 1 && configuration["group"].is_number()) {
+		group_ = configuration["group"];
+	}
   
+	if(configuration.count("dropout") == 1 && configuration["dropout"].is_number()) {
+		dropout_fraction_ = configuration["dropout"];
+	}
+	
+	if(configuration.count("llr") == 1 && configuration["llr"].is_number()) {
+		local_lr_ = configuration["llr"];
+	}
+  
+	if(configuration.count("seed") == 1 && configuration["seed"].is_number()) {
+		seed = configuration["seed"];
+	}
+  
+  rand_.seed(seed);
   SetLocalLearningRate(local_lr);
+	
+  // TODO Validation like in large constructor
 }
 
 bool ConvolutionLayer::CreateOutputs (

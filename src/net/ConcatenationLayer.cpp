@@ -12,7 +12,7 @@
 namespace Conv {
 
 
-ConcatenationLayer::ConcatenationLayer() : Layer("") {
+ConcatenationLayer::ConcatenationLayer() : Layer(JSON::object()) {
   LOGDEBUG << "Instance created.";
 }
 

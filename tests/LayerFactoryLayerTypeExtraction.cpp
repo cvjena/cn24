@@ -14,10 +14,10 @@ int main(int argc, char* argv[]) {
   Conv::System::Init();
   
   std::vector<std::string> descriptors = {
-    "convolution(size=3x3 pad=3x4)",
-    "convolution(size=3x3)",
-    "convolution()",
-    "convolution"
+    "{\"layer\":{\"type\":\"convolution\", \"size\":[3,3], \"padding\":[3,4]}}",
+    "{\"layer\":{\"type\":\"convolution\", \"padding\":[3,4]}}",
+    "{\"layer\":{\"type\":\"convolution\"}}",
+    "{\"layer\":\"convolution\"}"
   };
   std::vector<std::string> expected_layertypes = {
     "convolution",
@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
   bool failed = false;
   
   for(unsigned int s = 0; s < descriptors.size(); s++) {
-    std::string& descriptor = descriptors[s];
+    Conv::JSON descriptor = Conv::JSON::parse(descriptors[s]);
     std::string& excpected_layertype = expected_layertypes[s];
     std::string actual_layertype = Conv::LayerFactory::ExtractLayerType(descriptor);
     if(actual_layertype.compare(excpected_layertype) != 0) {

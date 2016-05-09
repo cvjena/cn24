@@ -16,6 +16,7 @@
 #define CONV_TRAINER_H
 
 #include <cmath>
+#include "JSONParsing.h"
 
 #include "../util/CombinedTensor.h"
 #include "../util/StatAggregator.h"
@@ -56,7 +57,7 @@ public:
 	* @param net The Net to train
 	* @param settings The settings to use in training
 	*/
-  Trainer (NetGraph& graph, TrainerSettings settings);
+  Trainer (NetGraph& graph, JSON settings);
 
   /**
 	* @brief Train the net for the specified number of epochs
@@ -101,12 +102,12 @@ public:
   inline unsigned int epoch() { return epoch_; }
 
   inline datum CalculateLR (unsigned int iteration) {
-    return settings_.learning_rate * pow (1.0 + settings_.gamma
+    return (datum)settings_["learning_rate"] * pow (1.0 + (datum)settings_["learning_rate_gamma"]
                                           * (datum) iteration,
-                                          -settings_.exponent);
+                                          -(datum)settings_["learning_rate_exponent"]);
   }
   
-  inline void SetStatsDuringTraining(bool enable) { settings_.stats_during_training = enable; }
+  inline void SetStatsDuringTraining(bool enable) { settings_["enable_stats_during_training"] = enable; }
 
 private:
   void ApplyGradients (datum lr);
@@ -127,7 +128,7 @@ private:
   unsigned int weight_count_ = 0;
 
   // Learning options
-  TrainerSettings settings_;
+  JSON settings_;
 
   // State
   unsigned int epoch_ = 0;

@@ -21,24 +21,35 @@ AdvancedMaxPoolingLayer::AdvancedMaxPoolingLayer (const unsigned int region_widt
                                   const unsigned int region_height,
                                   const unsigned int stride_width,
                                   const unsigned int stride_height ) :
-  SimpleLayer(""),
+  SimpleLayer(JSON::object()),
   region_width_ (region_width), region_height_ (region_height),
   stride_width_ (stride_width), stride_height_ (stride_height){
   LOGDEBUG << "Instance created: " << region_width_ << "x" << region_height_ <<
            " pooling.";
 }
 
-AdvancedMaxPoolingLayer::AdvancedMaxPoolingLayer(std::string configuration) : SimpleLayer(configuration) {
+AdvancedMaxPoolingLayer::AdvancedMaxPoolingLayer(JSON configuration) : SimpleLayer(configuration) {
   region_width_ = 1;
   region_height_ = 1;
   stride_width_ = 1;
   stride_height_ = 1;
   
-  ParseKernelSizeIfPossible(configuration, "size", region_width_, region_height_);
+	if(configuration.count("size") != 1 || !configuration["size"].is_array() || configuration["size"].size() != 2) {
+		FATAL("Invalid configuration (no size): " << configuration.dump());
+	} else {
+		region_width_ = configuration["size"][0];
+		region_height_ = configuration["size"][0];
+	}
+	
   stride_width_ = region_width_;
   stride_height_ = region_height_;
-  
-  ParseKernelSizeIfPossible(configuration, "stride", stride_width_, stride_height_);
+	
+	if(configuration.count("stride") == 1 && configuration["stride"].is_array() && configuration["stride"].size() == 2) {
+		stride_width_ = configuration["stride"][0];
+		stride_height_ = configuration["stride"][1];
+	}
+	
+	// TODO Validation of actual values
 }
 
 bool AdvancedMaxPoolingLayer::CreateOutputs (

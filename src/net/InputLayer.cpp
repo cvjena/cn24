@@ -15,7 +15,7 @@ InputLayer::InputLayer ( Tensor& data ) : InputLayer ( data,
 
 }
 
-  InputLayer::InputLayer ( Tensor& data, Tensor& helper ) : Layer("") {
+  InputLayer::InputLayer ( Tensor& data, Tensor& helper ) : Layer(JSON::object()) {
   // Check if data and helper Tensor match
   if ( data.samples() != helper.samples() ) {
     FATAL ( "Dimensions don't match!" );
@@ -37,7 +37,7 @@ InputLayer::InputLayer ( Tensor& data ) : InputLayer ( data,
 }
 
 InputLayer::InputLayer ( Tensor& data, Tensor& label, Tensor& helper,
-                        Tensor& weight ) : Layer("") {
+                        Tensor& weight ) : Layer(JSON::object()) {
   // Check if data and helper Tensor match
   if ( data.samples() != helper.samples() ) {
     FATAL ( "Dimensions don't match!" );

@@ -25,7 +25,7 @@ namespace Conv {
 #define NL_LAYER(name) class name##Layer : public NonLinearityLayer {\
 public: \
 name##Layer() : NonLinearityLayer("") { LOGDEBUG << "Instance created, nl: " << #name; } \
-explicit name##Layer(std::string configuration) : NonLinearityLayer(configuration) { LOGDEBUG << "Instance created, nl: " << #name; } \
+explicit name##Layer(JSON configuration) : NonLinearityLayer(configuration) { LOGDEBUG << "Instance created, nl: " << #name; } \
 std::string GetLayerDescription() { return #name " Layer";}\
 void FeedForward(); \
 void BackPropagate(); \
@@ -35,7 +35,7 @@ bool IsOpenCLAware(); \
 #define NL_LAYER_NOCL(name) class name##Layer : public NonLinearityLayer {\
 public: \
 name##Layer() : NonLinearityLayer("") { LOGDEBUG << "Instance created, nl: " << #name; } \
-explicit name##Layer(std::string configuration) : NonLinearityLayer(configuration) { LOGDEBUG << "Instance created, nl: " << #name; } \
+explicit name##Layer(JSON configuration) : NonLinearityLayer(configuration) { LOGDEBUG << "Instance created, nl: " << #name; } \
 std::string GetLayerDescription() { return #name " Layer";}\
 void FeedForward(); \
 void BackPropagate(); \
@@ -45,7 +45,7 @@ bool IsOpenCLAware() { return false; } \
 
 class NonLinearityLayer : public SimpleLayer {
 public:
-  explicit NonLinearityLayer(std::string configuration) : SimpleLayer(configuration) {};
+  explicit NonLinearityLayer(JSON configuration) : SimpleLayer(configuration) {};
   
   // Implementations for SimpleLayer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs,

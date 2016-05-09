@@ -34,7 +34,7 @@ public:
   MaxPoolingLayer(const unsigned int region_width,
                   const unsigned int region_height);
   
-  explicit MaxPoolingLayer(std::string configuration);
+  explicit MaxPoolingLayer(JSON configuration);
   
   // Implementations for SimpleLayer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs, std::vector< CombinedTensor* >& outputs);
