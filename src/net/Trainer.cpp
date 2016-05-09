@@ -182,7 +182,7 @@ void Trainer::InitializeStats() {
   // Move lambdas with reference captures here
 }
 
-Trainer::Trainer(Conv::NetGraph& graph, TrainerSettings settings) :
+Trainer::Trainer(Conv::NetGraph& graph, JSON settings) :
   graph_(graph), settings_(settings) {
   LOGDEBUG << "Instance created";
 
@@ -226,6 +226,22 @@ Trainer::Trainer(Conv::NetGraph& graph, TrainerSettings settings) :
   sample_count_ = first_training_layer_->GetLabelWidth() * first_training_layer_->GetLabelHeight()
   * first_training_layer_->GetBatchSize();
 
+  // Insert defaults
+  if(!settings_.count("testing_ratio")) settings_["testing_ratio"] = 1.0;
+  if(!settings_.count("epoch_training_ratio")) settings_["epoch_training_ratio"] = 1.0;
+  if(!settings_.count("learning_rate")) settings_["learning_rate"] = 0.0001;
+  if(!settings_.count("l1")) settings_["l1"] = 0.001;
+  if(!settings_.count("l2")) settings_["l2"] = 0.0005;
+  if(!settings_.count("learning_rate_exponent")) settings_["learning_rate_exponent"] = 0.75;
+  if(!settings_.count("learning_rate_gamma")) settings_["learning_rate_gamma"] = 0.0003;
+  if(!settings_.count("gd_momentum")) settings_["gd_momentum"] = 0.9;
+  if(!settings_.count("quickprop_mu")) settings_["quickprop_mu"] = 1.75;
+  if(!settings_.count("quickprop_eta")) settings_["quickprop_eta"] = 1.5;
+  if(!settings_.count("batch_size_parallel")) settings_["batch_size_parallel"] = 1;
+  if(!settings_.count("batch_size_sequential")) settings_["batch_size_sequential"] = 1;
+  if(!settings_.count("epoch_iterations")) settings_["epoch_iterations"] = 500;
+  if(!settings_.count("enable_stats_during_training")) settings_["enable_stats_during_training"] = true;
+
   InitializeStats();
 }
 
@@ -234,7 +250,7 @@ void Trainer::Train (unsigned int epochs, bool do_snapshots) {
   System::stat_aggregator->hardcoded_stats_.weights = weight_count_;
 
   graph_.SetIsTesting(false);
-  graph_.SetStatLayersEnabled(settings_.stats_during_training);
+  graph_.SetStatLayersEnabled(settings_["enable_stats_during_training"]);
   
   for (unsigned int e = 0; e < epochs; e++) {
     Epoch();
@@ -260,7 +276,7 @@ void Trainer::Test() {
   unsigned int iterations = (first_training_layer_->GetSamplesInTestingSet()
                              / first_training_layer_->GetBatchSize()) + 1;
   iterations = (unsigned int) ( ( (datum) iterations) *
-                                settings_.testing_ratio);
+      (datum)settings_["testing_ratio"]);
 
 	for (NetGraphNode* training_node : graph_.GetTrainingNodes())
 		(dynamic_cast<TrainingLayer*>(training_node->layer))->SetTestingMode(true);
@@ -321,11 +337,11 @@ void Trainer::Epoch() {
 		loss_sums[n] = 0;
 
   unsigned int iterations =
-    settings_.iterations == 0 ?
-    first_training_layer_->GetSamplesInTrainingSet() :
-    settings_.iterations;
+      ((unsigned int)settings_["epoch_iterations"]) == (unsigned int)0 ?
+      first_training_layer_->GetSamplesInTrainingSet() :
+      (unsigned int)settings_["epoch_iterations"];
   iterations = (unsigned int) ( ( (datum) iterations) *
-                                settings_.epoch_training_ratio);
+      (datum)settings_["epoch_training_ratio"]);
 
   unsigned int fiftieth = 0;
   unsigned int tenth = 0;
@@ -334,7 +350,7 @@ void Trainer::Epoch() {
 		(dynamic_cast<TrainingLayer*>(training_node->layer))->SetTestingMode(false);
 
   LOGINFO << "Epoch: " << epoch_ << ", it: " << iterations <<
-           ", bsize: " << first_training_layer_->GetBatchSize() * settings_.sbatchsize << ", current lr: " <<
+           ", bsize: " << first_training_layer_->GetBatchSize() * (unsigned int)settings_["batch_size_sequential"] << ", current lr: " <<
            CalculateLR (epoch_ * iterations) << std::endl;
 
   for (unsigned int i = 0; i < iterations; i++) {
@@ -353,7 +369,7 @@ void Trainer::Epoch() {
     for (unsigned int np = 0; np < accumulated_gradients_.size(); np++)
       accumulated_gradients_[np]->Clear();
 
-    for (unsigned int b = 0; b < settings_.sbatchsize; b++) {
+    for (unsigned int b = 0; b < (unsigned int)settings_["batch_size_sequential"]; b++) {
       graph_.FeedForward();
 
       // Save errors
@@ -399,19 +415,19 @@ void Trainer::Epoch() {
 
     // Update aggregate loss stat
     System::stat_aggregator->Update(stat_aggloss_->stat_id, aggregate_loss
-      / (first_training_layer_->GetLossSamplingProbability() * sample_count_ * settings_.sbatchsize));
+      / (first_training_layer_->GetLossSamplingProbability() * sample_count_ * (datum)settings_["batch_size_sequential"]));
   }
 
   // Submit performance statistics
-  System::stat_aggregator->Update(stat_sps_->stat_id, (double)sample_count_ * (double)iterations * (double)(settings_.sbatchsize));
-  System::stat_aggregator->Update(stat_fps_->stat_id, (double)(first_training_layer_->GetBatchSize()) * (double)iterations * (double)(settings_.sbatchsize));
+  System::stat_aggregator->Update(stat_sps_->stat_id, (double)sample_count_ * (double)iterations * (double)(settings_["batch_size_sequential"]));
+  System::stat_aggregator->Update(stat_fps_->stat_id, (double)(first_training_layer_->GetBatchSize()) * (double)iterations * (double)(settings_["batch_size_sequential"]));
   
   // Display training epoch_error
 	for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
-		LOGINFO << "Training (Epoch " << epoch_ << ", node " << n << ") " << graph_.GetLossNodes()[n]->layer->GetLayerDescription() <<  " lps: " << loss_sums[n] / (datum)(iterations * sample_count_ * settings_.sbatchsize * first_training_layer_->GetLossSamplingProbability());
+		LOGINFO << "Training (Epoch " << epoch_ << ", node " << n << ") " << graph_.GetLossNodes()[n]->layer->GetLayerDescription() <<  " lps: " << loss_sums[n] / (datum)(iterations * sample_count_ * (datum)settings_["batch_size_sequential"] * first_training_layer_->GetLossSamplingProbability());
 	}
 
-  if(settings_.stats_during_training) {
+  if(settings_["enable_stats_during_training"]) {
     for (unsigned int n = 0; n < graph_.GetStatNodes().size(); n++) {
       StatLayer* stat_layer = dynamic_cast<StatLayer*>(graph_.GetStatNodes()[n]->layer);
       std::stringstream epochname;
@@ -428,11 +444,14 @@ void Trainer::Epoch() {
 void Trainer::ApplyGradients (datum lr) {
   unsigned int dp = 0;
   unsigned int qp_caseA = 0, qp_caseB = 0, qp_caseC = 0, qp_caseM = 0;
-  
+
+  // TODO Fix this
+  const OPTIMIZATION_METHOD method = GRADIENT_DESCENT;
+
 	for (unsigned int l = 0; l < graph_.GetNodes().size(); l++) {
 		Layer* const layer = graph_.GetNodes()[l]->layer;
     datum layer_lr = 1;
-    switch (settings_.optimization_method) {
+    switch (method) {
       case GRADIENT_DESCENT:
         layer_lr = layer->local_lr_;
         break;
@@ -462,17 +481,17 @@ void Trainer::ApplyGradients (datum lr) {
         datum delta =
         
           // Average of gradient over minibatch
-          layer_lr * (w_gradient / ((datum) (sample_count_ * settings_.sbatchsize)) * first_training_layer_->GetLossSamplingProbability()) +
+          layer_lr * (w_gradient / ((datum) (sample_count_ * (datum)settings_["batch_size_sequential"])) * first_training_layer_->GetLossSamplingProbability()) +
           // Regularization
-          layer_lr * (settings_.l2_weight * l2_gradient + settings_.l1_weight * l1_gradient);
+          layer_lr * ((datum)settings_["l2"] * l2_gradient + (datum)settings_["l1"] * l1_gradient);
         
         // This is needed for both methods
         const datum last_step = (*last_deltas_[dp]) (w);
         
-        switch (settings_.optimization_method) {
+        switch (method) {
           case GRADIENT_DESCENT:
           {
-            const datum step = lr * delta + settings_.momentum * last_step;
+            const datum step = lr * delta + (datum)settings_["gd_momentum"] * last_step;
             param->data[w] -= step;
 
             // Backup delta
@@ -483,7 +502,7 @@ void Trainer::ApplyGradients (datum lr) {
           {
             // TODO Unhardcode these
             const datum epsilon = lr;
-            const datum mu = settings_.mu;
+            const datum mu = settings_["quickprop_mu"];
             const datum epsilon_flat = 1e-15;
             const datum epsilon_zero = 0.1;
 
@@ -542,7 +561,7 @@ void Trainer::ApplyGradients (datum lr) {
   }
   
   // Update quickprop stats
-  if(settings_.optimization_method == QUICKPROP) {
+  if(method == QUICKPROP) {
     System::stat_aggregator->Update(stat_qp_caseA_->stat_id, (double)qp_caseA);
     System::stat_aggregator->Update(stat_qp_caseB_->stat_id, (double)qp_caseB);
     System::stat_aggregator->Update(stat_qp_caseC_->stat_id, (double)qp_caseC);
