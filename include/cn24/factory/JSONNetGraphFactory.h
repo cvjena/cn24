@@ -28,14 +28,20 @@ namespace Conv {
 class JSONNetGraphFactory {
 public:
   JSONNetGraphFactory(std::istream& file, unsigned int seed = 0) : seed_(seed) {
-    net_json = JSON::parse(file);
-  };
+    JSON file_json = JSON::parse(file);
+    net_json_ = file_json["net"];
+    hyperparameters_json_ = file_json["hyperparameters"];
+  }
 
-  JSON GetHyperparameters() { if(net_json.count("hyperparameters")==1 && net_json["hyperparameters"].is_object()) { return net_json["hyperparameters"]; } else { return JSON::parse(""); }};
+  JSON GetHyperparameters() {
+    return hyperparameters_json_;
+  }
+
   bool AddLayers(NetGraph& graph);
 
 private:
-  JSON net_json;
+  JSON net_json_;
+  JSON hyperparameters_json_;
   unsigned int seed_ = 0;
 };
   
