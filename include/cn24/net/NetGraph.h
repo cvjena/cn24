@@ -64,6 +64,8 @@ public:
 	inline std::vector<NetGraphNode*>& GetLossNodes() { return loss_nodes_; }
 	inline std::vector<NetGraphNode*>& GetTrainingNodes() { return training_nodes_; }
 	inline std::vector<NetGraphNode*>& GetNodes() { return nodes_; }
+	bool ContainsNode(const std::string& unique_name);
+	NetGraphNode* GetNode(const std::string& unique_name);
 
 	// Network 
 	void FeedForward();

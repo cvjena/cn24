@@ -272,7 +272,7 @@ void NetGraph::InitializeNode(NetGraphNode* node) {
 
 		// Verify output buffer count
 		if (output_tensors.size() != node->output_buffers.size())
-			FATAL("Node created wrong number of output buffers!");
+			FATAL("Node \"" << node->unique_name <<  "\" created wrong number of output buffers! (" << output_tensors.size() << " instead of " << node->output_buffers.size() << ")");
 
 		// Update node output buffer info
 		for (unsigned int b = 0; b < output_tensors.size(); b++) {
@@ -470,6 +470,22 @@ datum NetGraph::AggregateLoss() {
 		}
 	}
 	return loss;
+}
+
+bool NetGraph::ContainsNode(const std::string &unique_name) {
+	for(NetGraphNode* node: nodes_) {
+		if(unique_name.compare(node->unique_name) == 0)
+			return true;
+	}
+	return false;
+}
+
+NetGraphNode* NetGraph::GetNode(const std::string &unique_name) {
+	for(NetGraphNode* node: nodes_) {
+		if(unique_name.compare(node->unique_name) == 0)
+			return node;
+	}
+	return nullptr;
 }
 
 }
