@@ -267,7 +267,7 @@ void NetGraph::InitializeNode(NetGraphNode* node) {
 
 		// Verify output buffer creation
 		if (!success_outputs) {
-			FATAL("Layer will not create outputs: " << node->layer->GetLayerDescription() << ", input0: " << input_tensors[0]->data);
+			FATAL("Layer will not create outputs: " << node->layer->GetLayerDescription() << ", inputs: " << input_tensors.size());
     }
 
 		// Verify output buffer count
