@@ -481,7 +481,7 @@ void Trainer::ApplyGradients (datum lr) {
         datum delta =
         
           // Average of gradient over minibatch
-          layer_lr * (w_gradient / ((datum) (sample_count_ * (datum)settings_["batch_size_sequential"])) * first_training_layer_->GetLossSamplingProbability()) +
+          layer_lr * (w_gradient / (((datum) (sample_count_ * (datum)settings_["batch_size_sequential"])) * first_training_layer_->GetLossSamplingProbability())) +
           // Regularization
           layer_lr * ((datum)settings_["l2"] * l2_gradient + (datum)settings_["l1"] * l1_gradient);
         
