@@ -37,7 +37,7 @@ public:
     return hyperparameters_json_;
   }
 
-  bool AddLayers(NetGraph& graph);
+  bool AddLayers(NetGraph& graph, unsigned int seed = 0);
 
 private:
   JSON net_json_;
