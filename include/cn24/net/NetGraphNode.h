@@ -19,6 +19,7 @@
 #include "../util/CombinedTensor.h"
 #include "NetStatus.h"
 #include "../util/TensorViewer.h"
+#include "../net/LayerFactory.h"
 
 #include "StatLayer.h"
 #include "NetGraph.h"
@@ -33,15 +34,21 @@ public:
 	explicit NetGraphNode(Layer* layer) : layer(layer) {
 		layer->CreateBufferDescriptors(output_buffers);
 	}
-  explicit NetGraphNode(std::string);
-  
+
 	NetGraphNode(Layer* layer, NetGraphConnection first_connection) : layer(layer) {
 		input_connections.push_back(first_connection);
 		layer->CreateBufferDescriptors(output_buffers);
 	}
-  
-  NetGraphNode(std::string configuration, NetGraphConnection first_connection) {
-    
+
+	explicit NetGraphNode(JSON descriptor) {
+		layer = LayerFactory::ConstructLayer(descriptor);
+		layer->CreateBufferDescriptors(output_buffers);
+	}
+
+  NetGraphNode(JSON descriptor, NetGraphConnection first_connection) {
+		input_connections.push_back(first_connection);
+		layer = LayerFactory::ConstructLayer(descriptor);
+		layer->CreateBufferDescriptors(output_buffers);
   }
 
 	Layer* layer;
