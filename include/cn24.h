@@ -35,6 +35,7 @@
 #include "cn24/util/ConsoleStatSink.h"
 #include "cn24/util/CSVStatSink.h"
 #include "cn24/util/JSONParsing.h"
+#include "cn24/util/MNISTDataset.h"
 
 #include "cn24/math/TensorMath.h"
 
@@ -69,5 +70,6 @@
 
 #include "cn24/factory/ConfigurableFactory.h"
 #include "cn24/factory/JSONNetGraphFactory.h"
+#include "cn24/factory/JSONDatasetFactory.h"
 
 #endif

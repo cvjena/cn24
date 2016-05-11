@@ -39,8 +39,10 @@ DatasetInputLayer::DatasetInputLayer (Dataset& dataset,
     LOGWARN << "Random seed is zero";
   }
 
-  if(dataset_.GetMethod() == FCN) {
+  if(dataset_.GetMethod() == FCN && dataset_.GetTask() == SEMANTIC_SEGMENTATION) {
     LOGDEBUG << "Using loss sampling probability: " << loss_sampling_p_;
+  } else {
+    loss_sampling_p_ = 1.0;
   }
 
   elements_training_ = dataset_.GetTrainingSamples();
@@ -66,50 +68,72 @@ bool DatasetInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inp
     return false;
   }
 
-  if (dataset_.GetMethod() == FCN) {
-    CombinedTensor* data_output =
-      new CombinedTensor (batch_size_, dataset_.GetWidth(),
-                          dataset_.GetHeight(), input_maps_);
+  if(dataset_.GetTask() == SEMANTIC_SEGMENTATION) {
+    if (dataset_.GetMethod() == FCN) {
+      CombinedTensor *data_output =
+          new CombinedTensor(batch_size_, dataset_.GetWidth(),
+                             dataset_.GetHeight(), input_maps_);
 
-    CombinedTensor* label_output =
-      new CombinedTensor (batch_size_, dataset_.GetWidth(),
-                          dataset_.GetHeight(), label_maps_);
+      CombinedTensor *label_output =
+          new CombinedTensor(batch_size_, dataset_.GetWidth(),
+                             dataset_.GetHeight(), label_maps_);
 
-    CombinedTensor* helper_output =
-      new CombinedTensor (batch_size_, dataset_.GetWidth(),
-                          dataset_.GetHeight(), 2);
+      CombinedTensor *helper_output =
+          new CombinedTensor(batch_size_, dataset_.GetWidth(),
+                             dataset_.GetHeight(), 2);
 
-    CombinedTensor* localized_error_output =
-      new CombinedTensor (batch_size_, dataset_.GetWidth(),
-                          dataset_.GetHeight(), 1);
+      CombinedTensor *localized_error_output =
+          new CombinedTensor(batch_size_, dataset_.GetWidth(),
+                             dataset_.GetHeight(), 1);
 
-    outputs.push_back (data_output);
-    outputs.push_back (label_output);
-    outputs.push_back (helper_output);
-    outputs.push_back (localized_error_output);
-  } else if (dataset_.GetMethod() == PATCH) {
-    CombinedTensor* data_output =
-      new CombinedTensor (batch_size_, dataset_.GetWidth(),
-                          dataset_.GetHeight(), input_maps_);
+      outputs.push_back(data_output);
+      outputs.push_back(label_output);
+      outputs.push_back(helper_output);
+      outputs.push_back(localized_error_output);
+    } else if (dataset_.GetMethod() == PATCH) {
+      CombinedTensor *data_output =
+          new CombinedTensor(batch_size_, dataset_.GetWidth(),
+                             dataset_.GetHeight(), input_maps_);
 
-    CombinedTensor* label_output =
-      new CombinedTensor (batch_size_, 1,
-                          1, label_maps_);
+      CombinedTensor *label_output =
+          new CombinedTensor(batch_size_, 1,
+                             1, label_maps_);
 
-    CombinedTensor* helper_output =
-      new CombinedTensor (batch_size_, 1,
-                          1, 2);
+      CombinedTensor *helper_output =
+          new CombinedTensor(batch_size_, 1,
+                             1, 2);
 
-    CombinedTensor* localized_error_output =
-      new CombinedTensor (batch_size_, 1,
-                          1, 1);
+      CombinedTensor *localized_error_output =
+          new CombinedTensor(batch_size_, 1,
+                             1, 1);
 
-    outputs.push_back (data_output);
-    outputs.push_back (label_output);
-    outputs.push_back (helper_output);
-    outputs.push_back (localized_error_output);
+      outputs.push_back(data_output);
+      outputs.push_back(label_output);
+      outputs.push_back(helper_output);
+      outputs.push_back(localized_error_output);
+    }
+  } else if (dataset_.GetTask() == CLASSIFICATION) {
+    CombinedTensor *data_output =
+        new CombinedTensor(batch_size_, dataset_.GetWidth(),
+                           dataset_.GetHeight(), input_maps_);
+
+    CombinedTensor *label_output =
+        new CombinedTensor(batch_size_, 1,
+                           1, label_maps_);
+
+    CombinedTensor *helper_output =
+        new CombinedTensor(batch_size_, 1,
+                           1, 2);
+
+    CombinedTensor *localized_error_output =
+        new CombinedTensor(batch_size_, 1,
+                           1, 1);
+
+    outputs.push_back(data_output);
+    outputs.push_back(label_output);
+    outputs.push_back(helper_output);
+    outputs.push_back(localized_error_output);
   }
-
   return true;
 }
 
@@ -187,7 +211,7 @@ void DatasetInputLayer::FeedForward() {
       FATAL ("Cannot load samples from Dataset!");
     }
 
-    if (!testing_ && !force_no_weight && dataset_.GetMethod() == FCN) {
+    if (!testing_ && !force_no_weight && dataset_.GetMethod() == FCN && dataset_.GetTask() == SEMANTIC_SEGMENTATION) {
       // Perform loss sampling
       const unsigned int block_size = 12;
 
