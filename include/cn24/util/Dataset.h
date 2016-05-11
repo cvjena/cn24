@@ -25,7 +25,8 @@ namespace Conv
 {
   
 enum Task {
-  SEMANTIC_SEGMENTATION
+  SEMANTIC_SEGMENTATION,
+	CLASSIFICATION
 };
 
 enum Method {
