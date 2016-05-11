@@ -69,5 +69,6 @@
 
 #include "cn24/factory/ConfigurableFactory.h"
 #include "cn24/factory/JSONNetGraphFactory.h"
+#include "cn24/factory/JSONDatasetFactory.h"
 
 #endif

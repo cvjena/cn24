@@ -19,6 +19,7 @@
 #include "Config.h"
 #include "Tensor.h"
 #include "TensorStream.h"
+#include "JSONParsing.h"
 
 namespace Conv
 {
@@ -273,15 +274,16 @@ private:
   dataset_localized_error_function error_function_;
 };
 
-class JSONDataset : public Dataset {
+
+class JSONSegmentationDataset : public Dataset {
 public:
 	struct TensorStreamAccessor {
 	public:
 		TensorStream* tensor_stream;
 		unsigned int sample_in_stream;
 	};
-	JSONDataset();
-	~JSONDataset();
+	JSONSegmentationDataset();
+	~JSONSegmentationDataset();
   // Dataset implementations
   virtual Task GetTask() const { return SEMANTIC_SEGMENTATION; }
   virtual Method GetMethod() const { return FCN; }
@@ -299,7 +301,7 @@ public:
   virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
   virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index);
 	
-	virtual void LoadFile(std::istream& file, bool dont_load = false, DatasetLoadSelection selection = LOAD_BOTH);
+	virtual void Load(JSON descriptor, bool dont_load = false, DatasetLoadSelection selection = LOAD_BOTH);
 	
 private:
 	bool is_first_dataset = true;

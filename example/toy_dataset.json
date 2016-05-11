@@ -1,5 +1,6 @@
 {
   "name": "T.O.Y. Example",
+  "task": "segmentation",
   "classes": [
     {
       "name": "background",

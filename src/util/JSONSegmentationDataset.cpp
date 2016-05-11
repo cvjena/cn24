@@ -14,18 +14,17 @@
 namespace Conv {
 
 	
-JSONDataset::JSONDataset() {
+JSONSegmentationDataset::JSONSegmentationDataset() {
 	
 }
 
-JSONDataset::~JSONDataset() {
+JSONSegmentationDataset::~JSONSegmentationDataset() {
 	
 }
 
-void JSONDataset::LoadFile(std::istream& file, bool dont_load, DatasetLoadSelection selection) {
+void JSONSegmentationDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSelection selection) {
 	// TODO Validate JSON
 	
-	JSON dataset_json = JSON::parse(file);
 	std::string dataset_name = dataset_json["name"];
 	
 	LOGINFO << "Loading dataset \"" << dataset_name << "\"";
@@ -175,7 +174,7 @@ void JSONDataset::LoadFile(std::istream& file, bool dont_load, DatasetLoadSelect
 }	
 
 
-bool JSONDataset::GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
+bool JSONSegmentationDataset::GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
   if (index < tensor_count_training_ / 2) {
     bool success = true;
 
@@ -223,7 +222,7 @@ bool JSONDataset::GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, T
 
 }
 
-bool JSONDataset::GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index) {
+bool JSONSegmentationDataset::GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index) {
   if (index < tensor_count_testing_ / 2) {
     bool success = true;
 
