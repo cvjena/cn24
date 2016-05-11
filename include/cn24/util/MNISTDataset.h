@@ -39,6 +39,11 @@ private:
   std::vector<std::string> class_names_;
   std::vector<unsigned int> class_colors_;
   std::vector<datum> class_weights_;
+
+  uint8_t* train_images_;
+  uint8_t* train_labels_;
+  uint8_t* test_images_;
+  uint8_t* test_labels_;
 };
 }
 
