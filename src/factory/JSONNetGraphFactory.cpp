@@ -8,6 +8,7 @@
 
 #include <string>
 #include <vector>
+#include <cn24/net/ErrorLayer.h>
 
 #include "NetGraph.h"
 #include "NetGraphNode.h"
@@ -19,6 +20,8 @@ namespace Conv {
 
 bool JSONNetGraphFactory::AddLayers(NetGraph &graph) {
   // TODO Validate
+  // TODO Check GetNode() calls for null pointers
+
   JSON nodes_json = net_json_["nodes"];
 
   // (1) Process input and output nodes
@@ -93,6 +96,7 @@ bool JSONNetGraphFactory::AddLayers(NetGraph &graph) {
           LOGDEBUG << "  with input: \"" << input_connection << "\"";
           NetGraphNode *source_node = graph.GetNode(input_connection);
           NetGraphConnection source = NetGraphConnection(source_node, 0, true);
+          node->input_connections.push_back(source);
         }
 
         // Add dataset input connection if requested
@@ -118,6 +122,15 @@ bool JSONNetGraphFactory::AddLayers(NetGraph &graph) {
   }
 
   // (3) Add loss layers to outputs
+  for(std::string& output_node_name : output_nodes) {
+    NetGraphNode* output_node = graph.GetNode(output_node_name);
+    ErrorLayer* error_layer = new ErrorLayer();
+    NetGraphNode* error_node = new NetGraphNode(error_layer,NetGraphConnection(output_node, 0, true));
+    error_node->input_connections.push_back(NetGraphConnection(input_node, 1, false));
+    error_node->input_connections.push_back(NetGraphConnection(input_node, 3, false));
+    error_node->unique_name = "loss_" + output_node_name;
+    graph.AddNode(error_node);
+  }
 
   graph.Initialize();
   return graph.IsComplete();
