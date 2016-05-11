@@ -243,11 +243,11 @@ unsigned int DatasetInputLayer::GetBatchSize() {
 }
 
 unsigned int DatasetInputLayer::GetLabelWidth() {
-  return (dataset_.GetMethod() == PATCH) ? 1 : dataset_.GetWidth();
+  return (dataset_.GetMethod() == PATCH || dataset_.GetTask() == CLASSIFICATION) ? 1 : dataset_.GetWidth();
 }
 
 unsigned int DatasetInputLayer::GetLabelHeight() {
-  return (dataset_.GetMethod() == PATCH) ? 1 : dataset_.GetHeight();
+  return (dataset_.GetMethod() == PATCH || dataset_.GetTask() == CLASSIFICATION) ? 1 : dataset_.GetHeight();
 }
 
 unsigned int DatasetInputLayer::GetSamplesInTestingSet() {
