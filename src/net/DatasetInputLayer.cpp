@@ -39,8 +39,10 @@ DatasetInputLayer::DatasetInputLayer (Dataset& dataset,
     LOGWARN << "Random seed is zero";
   }
 
-  if(dataset_.GetMethod() == FCN) {
+  if(dataset_.GetMethod() == FCN && dataset_.GetTask() == SEMANTIC_SEGMENTATION) {
     LOGDEBUG << "Using loss sampling probability: " << loss_sampling_p_;
+  } else {
+    loss_sampling_p_ = 1.0;
   }
 
   elements_training_ = dataset_.GetTrainingSamples();
@@ -209,7 +211,7 @@ void DatasetInputLayer::FeedForward() {
       FATAL ("Cannot load samples from Dataset!");
     }
 
-    if (!testing_ && !force_no_weight && dataset_.GetMethod() == FCN) {
+    if (!testing_ && !force_no_weight && dataset_.GetMethod() == FCN && dataset_.GetTask() == SEMANTIC_SEGMENTATION) {
       // Perform loss sampling
       const unsigned int block_size = 12;
 
