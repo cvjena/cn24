@@ -8,7 +8,8 @@
 
 #include <string>
 #include <vector>
-#include <cn24/net/ErrorLayer.h>
+#include <random>
+#include "../net/ErrorLayer.h"
 
 #include "NetGraph.h"
 #include "NetGraphNode.h"
@@ -18,9 +19,13 @@
 
 namespace Conv {
 
-bool JSONNetGraphFactory::AddLayers(NetGraph &graph) {
+bool JSONNetGraphFactory::AddLayers(NetGraph &graph, unsigned int seed) {
   // TODO Validate
   // TODO Check GetNode() calls for null pointers
+
+  // (0) Create RNG
+  std::mt19937 rand(seed);
+
 
   JSON nodes_json = net_json_["nodes"];
 
@@ -86,6 +91,12 @@ bool JSONNetGraphFactory::AddLayers(NetGraph &graph) {
 
       if(can_insert_node) {
         LOGDEBUG << "Inserting node: \"" << node_json_iterator.key() << "\"";
+
+        // Get random seed
+        unsigned int new_random_seed = rand();
+        node_json = LayerFactory::InjectSeed(node_json, new_random_seed);
+        LOGDEBUG << "Inserting " << node_json.dump();
+
         // Assemble node
         NetGraphNode *node = new NetGraphNode(node_json);
         node->unique_name = node_json_iterator.key();
