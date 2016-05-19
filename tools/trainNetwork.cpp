@@ -82,6 +82,7 @@ int main (int argc, char* argv[]) {
   net_config_fname = net_config_fname.substr (net_config_fname.rfind ("/") + 1);
   
   // Parse network configuration file
+  LOGDEBUG << "Parsing network config file..." << std::flush;
   Conv::JSONNetGraphFactory* factory = new Conv::JSONNetGraphFactory (*net_config_file, 8347734);
 
   // Open dataset configuration file
