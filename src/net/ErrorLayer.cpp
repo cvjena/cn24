@@ -47,6 +47,8 @@ bool ErrorLayer::CreateOutputs ( const std::vector< CombinedTensor* >& inputs,
 
   if ( first->data.elements() != second->data.elements() ) {
     LOGERROR << "Inputs need the same number of elements!";
+    LOGERROR << " Net input: " << first->data;
+    LOGERROR << " Label input: " << second->data;
     return false;
   }
 
