@@ -58,10 +58,14 @@ public:
   datum sum_of_activations_ = 0;
   datum total_activations_ = 0;
   
-  StatDescriptor desc_a, desc_b;
+  StatDescriptor desc_a, desc_b, desc_s;
   
   static int stat_id_a;
   static int stat_id_b;
+  static int stat_id_s;
+
+  datum sum_x = 0.0;
+  datum sum_x_sq = 0.0;
 };
 }
 
