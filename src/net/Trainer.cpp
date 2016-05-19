@@ -445,6 +445,11 @@ void Trainer::ApplyGradients (datum lr) {
   unsigned int dp = 0;
   unsigned int qp_caseA = 0, qp_caseB = 0, qp_caseC = 0, qp_caseM = 0;
 
+  datum _cached_batch_size_sequential = settings_["batch_size_sequential"];
+  datum _cached_l1 = settings_["l1"];
+  datum _cached_l2 = settings_["l2"];
+  datum _cached_gd_momentum = settings_["gd_momentum"];
+
   // TODO Fix this
   const OPTIMIZATION_METHOD method = GRADIENT_DESCENT;
 
@@ -481,9 +486,9 @@ void Trainer::ApplyGradients (datum lr) {
         datum delta =
         
           // Average of gradient over minibatch
-          layer_lr * (w_gradient / (((datum) (sample_count_ * (datum)settings_["batch_size_sequential"])) * first_training_layer_->GetLossSamplingProbability())) +
+          layer_lr * (w_gradient / (((datum) (sample_count_ * _cached_batch_size_sequential)) * first_training_layer_->GetLossSamplingProbability())) +
           // Regularization
-          layer_lr * ((datum)settings_["l2"] * l2_gradient + (datum)settings_["l1"] * l1_gradient);
+          layer_lr * (_cached_l2 * l2_gradient + _cached_l1 * l1_gradient);
         
         // This is needed for both methods
         const datum last_step = (*last_deltas_[dp]) (w);
@@ -491,7 +496,7 @@ void Trainer::ApplyGradients (datum lr) {
         switch (method) {
           case GRADIENT_DESCENT:
           {
-            const datum step = lr * delta + (datum)settings_["gd_momentum"] * last_step;
+            const datum step = lr * delta + _cached_gd_momentum * last_step;
             param->data[w] -= step;
 
             // Backup delta
