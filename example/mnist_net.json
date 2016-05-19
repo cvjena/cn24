@@ -1,0 +1,79 @@
+{
+  "net": {  
+    "input": "resize",
+    "output": "relu4",
+    "nodes": {
+      "resize": {
+        "layer": {
+          "type": "resize",
+          "border": [4,4]
+        }
+      },
+      "conv1": {
+        "input": "resize",
+        "layer": {
+          "type": "convolution",
+          "size": [5,5],
+          "kernels": 8
+        }
+      },
+      "pool1": {
+        "input": "conv1",
+        "layer": {
+          "type": "simple_maxpooling",
+          "size": [2, 2]
+        }
+      },
+      "conv2": {
+        "input": "pool1",
+        "layer": {
+          "type": "convolution",
+          "size": [5,5],
+          "kernels": 16
+        }
+      },
+      "pool2": {
+        "input": "conv2",
+        "layer": {
+          "type": "simple_maxpooling",
+          "size": [2, 2]
+        }
+      },
+      "fc3": {
+        "input": "pool2",
+        "layer": {
+          "type": "convolution",
+          "size": [5,5],
+          "kernels": 64
+        }
+      },
+      "relu3": {
+        "input": "fc3",
+        "layer": "relu"
+      },
+      "fc4": {
+        "input": "relu3",
+        "layer": {
+          "type": "convolution",
+          "size": [1,1],
+          "kernels": 10
+        }
+      },
+      "relu4": {
+        "input": "fc4",
+        "layer": "relu"
+      }
+    }
+  },
+  "hyperparameters": {
+    "l1": 0.000,
+    "l2": 0.0005,
+    "learning_rate": 0.01,
+    "learning_rate_gamma": 0.0001,
+    "learning_rate_exponent": 0.75,
+    "gd_momentum": 0.9,
+    "epoch_iterations": 1000,
+    "batch_size_sequential": 1,
+    "batch_size_parallel": 64
+  }
+}
