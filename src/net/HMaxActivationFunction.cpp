@@ -16,7 +16,8 @@ namespace Conv {
   
 int HMaxActivationFunction::stat_id_a = -1;
 int HMaxActivationFunction::stat_id_b = -1;
-  
+int HMaxActivationFunction::stat_id_s = -1;
+
 HMaxActivationFunction::HMaxActivationFunction(const datum mu, const datum loss_weight)
   : SimpleLayer(JSON::object()), mu_(mu), loss_weight_(loss_weight) {
     if(stat_id_a >= 0)
@@ -51,9 +52,24 @@ HMaxActivationFunction::HMaxActivationFunction(const datum mu, const datum loss_
       }
       return return_stat;
     };
+    desc_s.nullable = true;
+    desc_s.description = "HMaxSparsity";
+    desc_s.unit = "1";
+    desc_s.init_function = [](Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+    desc_s.update_function = [](Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+    desc_s.output_function = [](HardcodedStats& hc_stats, Stat& stat) -> Stat {
+      Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0) {
+        double d_iterations = (double)hc_stats.iterations;
+        return_stat.value = stat.value / d_iterations;
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
 
     stat_id_a = System::stat_aggregator->RegisterStat(&desc_a);
     stat_id_b = System::stat_aggregator->RegisterStat(&desc_b);
+    stat_id_s = System::stat_aggregator->RegisterStat(&desc_s);
 }
   
 HMaxActivationFunction::HMaxActivationFunction(JSON configuration)
@@ -126,10 +142,10 @@ void HMaxActivationFunction::FeedForward() {
   System::stat_aggregator->Update(stat_id_a, a);
   System::stat_aggregator->Update(stat_id_b, b);
   
-  LOGDEBUG << "a: " << a << ", b:" << b;
-  
   total_activations_ = (datum)(input_->data.elements());
   sum_of_activations_ = 0;
+  sum_x = 0;
+  sum_x_sq = 0;
   
   for (std::size_t element = 0; element < input_->data.elements(); element++) {
     const datum input_data = input_->data.data_ptr_const() [element];
@@ -137,8 +153,12 @@ void HMaxActivationFunction::FeedForward() {
     // Calculate sigmoid function
     const datum output_data = 1.0 / (1.0 + exp(-(a * input_data + b)));
     sum_of_activations_ += output_data;
+    sum_x += std::abs(output_data);
+    sum_x_sq += output_data * output_data;
     output_->data.data_ptr() [element] = output_data;
   }
+
+  System::stat_aggregator->Update(stat_id_s, sum_x / (sqrt((double)(input_->data.elements()))) * sum_x_sq);
 }
   
 void HMaxActivationFunction::BackPropagate() {
