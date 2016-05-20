@@ -48,9 +48,7 @@ public:
   datum lambda_ = 1;
   datum kl_loss_weight_ = 0;
   datum other_loss_weight_ = 0;
-  datum alpha_ = 3.0;
-
-  unsigned int seed_ = 0;
+  datum alpha_ = 0.5;
 };
 }
 
