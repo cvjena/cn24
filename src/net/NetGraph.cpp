@@ -418,10 +418,11 @@ void NetGraph::DeserializeParameters(std::istream& input) {
 
     // Read node name
     char* node_name_cstr = new char[node_unique_name_length + 1];
-    std::string node_name(node_name_cstr);
 
     input.read(node_name_cstr, node_unique_name_length);
     node_name_cstr[node_unique_name_length] = '\0';
+
+    std::string node_name(node_name_cstr);
 
     // Find node
     bool found_node = false;
