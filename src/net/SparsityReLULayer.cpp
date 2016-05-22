@@ -6,7 +6,6 @@
  */
 
 #include <cmath>
-#include <random>
 
 #include "CombinedTensor.h"
 #include "ConfigParsing.h"
@@ -22,12 +21,11 @@ SparsityReLULayer::SparsityReLULayer(const datum lambda, const datum kl_loss_wei
   
 SparsityReLULayer::SparsityReLULayer(JSON configuration)
   : SimpleLayer(configuration) {
-  alpha_ = 3.0;
+  alpha_ = 0.5;
   lambda_ = 1.0;
   kl_loss_weight_ = 0.0;
   other_loss_weight_ = 0.0;
-  seed_ = 0;
-	
+
 	if(configuration.count("lambda") == 1 && configuration["lambda"].is_number()) {
 		lambda_ = configuration["lambda"];
 	}
@@ -44,9 +42,15 @@ SparsityReLULayer::SparsityReLULayer(JSON configuration)
     other_loss_weight_ = configuration["other_weight"];
   }
 
-  if(configuration.count("seed") == 1 && configuration["seed"].is_number()) {
-    seed_ = configuration["seed"];
+
+  if(configuration.count("llr") == 1 && configuration["llr"].is_number()) {
+    local_lr_ = configuration["llr"];
+  } else if(kl_loss_weight_ == 0.0 && other_loss_weight_ == 0.0) {
+    local_lr_ = 0.0;
   }
+
+  SetLocalLearningRate(local_lr_);
+
 }
   
 bool SparsityReLULayer::CreateOutputs (
@@ -93,10 +97,8 @@ bool SparsityReLULayer::Connect (const CombinedTensor* input,
   weights_->data.Clear();
   weights_->delta.Clear();
 
-  std::mt19937 rand(seed_);
-  std::uniform_real_distribution<datum> dist(-10.0, 10.0);
-  weights_->data.data_ptr()[0] = dist(rand);
-  weights_->data.data_ptr()[1] = dist(rand);
+  weights_->data.data_ptr()[0] = 1.0;
+  weights_->data.data_ptr()[1] = 0.0;
 
   parameters_.push_back(weights_);
   
