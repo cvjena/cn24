@@ -238,7 +238,6 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
     std::string param_file_name;
     unsigned int last_layer = 0;
     Conv::ParseStringParamIfPossible (command, "file", param_file_name);
-    Conv::ParseCountIfPossible (command, "last_layer", last_layer);
 
     if (param_file_name.length() == 0) {
       LOGERROR << "Filename needed!";
@@ -246,7 +245,7 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
       std::ifstream param_file (param_file_name, std::ios::in | std::ios::binary);
 
       if (param_file.good()) {
-        graph.DeserializeParameters (param_file, last_layer);
+        graph.DeserializeParameters (param_file);
         LOGINFO << "Loaded parameters from " << param_file_name;
       } else {
         LOGERROR << "Cannot open " << param_file_name;
