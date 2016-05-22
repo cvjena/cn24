@@ -390,33 +390,69 @@ void NetGraph::GetParameters (std::vector< CombinedTensor* >& parameters) {
 }
 
 void NetGraph::SerializeParameters(std::ostream& output) {
-	// TODO use unique layer ids
 	for (unsigned int l = 0; l < nodes_.size(); l++) {
-		Layer* layer = nodes_[l]->layer;
-		for (unsigned int p = 0; p < layer->parameters().size(); p++) {
-			layer->parameters()[p]->data.Serialize(output);
-		}
+    NetGraphNode* node = nodes_[l];
+    Layer* layer = nodes_[l]->layer;
+    unsigned int layer_parameters = layer->parameters().size();
+    if(layer_parameters > 0) {
+      // Write length of node name
+      unsigned int node_unique_name_length = node->unique_name.length();
+      output.write((const char*)&node_unique_name_length, sizeof(unsigned int)/sizeof(char));
+
+      // Write node name
+      output.write(node->unique_name.c_str(), node_unique_name_length);
+
+      // Write parameters
+      for (unsigned int p = 0; p < layer->parameters().size(); p++) {
+        layer->parameters()[p]->data.Serialize(output);
+      }
+    }
 	}
 }
 
-void NetGraph::DeserializeParameters(std::istream& input, unsigned int last_layer) {
-	// TODO use unique layer ids
-  if (last_layer == 0 || last_layer >= nodes_.size())
-    last_layer = nodes_.size() - 1;
-  for (unsigned int l = 0; l <= last_layer; l++) {
-    Layer* layer = nodes_[l]->layer;
-    for (unsigned int p = 0; p < layer->parameters().size(); p++) {
-      if (!input.good() || input.eof())
+void NetGraph::DeserializeParameters(std::istream& input) {
+  while(input.good() && !input.eof()) {
+    // Read node name length
+    unsigned int node_unique_name_length;
+    input.read((char*)&node_unique_name_length, sizeof(unsigned int) / sizeof(char));
+
+    // Read node name
+    char* node_name_cstr = new char[node_unique_name_length + 1];
+
+    input.read(node_name_cstr, node_unique_name_length);
+    node_name_cstr[node_unique_name_length] = '\0';
+
+    std::string node_name(node_name_cstr);
+
+    // Find node
+    bool found_node = false;
+    for(NetGraphNode* node : nodes_) {
+      if(node->unique_name.compare(node_name) == 0) {
+        found_node = true;
+        Layer* layer = node->layer;
+
+        // Read parameters
+        for(unsigned int p = 0; p < layer->parameters().size(); p++) {
+          unsigned int elements_before = layer->parameters()[p]->data.elements();
+          layer->parameters()[p]->data.Deserialize(input);
+          unsigned int elements_after = layer->parameters()[p]->data.elements();
+          LOGINFO << "Loaded parameters for node \"" <<  node->unique_name << "\" parameter set " << p << ": " <<
+                  layer->parameters()[p]->data;
+          if (elements_before != elements_after) {
+            LOGERROR << "Deserialization changed layer parameter count!";
+          }
+        }
+
+        // Update EOF flag
+        input.peek();
         break;
-      unsigned int elements_before = layer->parameters() [p]->data.elements();
-      layer->parameters() [p]->data.Deserialize (input);
-      unsigned int elements_after = layer->parameters() [p]->data.elements();
-      LOGINFO << "Loaded parameters for layer " << l << " parameter set " << p << ": " << layer->parameters()[p]->data;
-      if(elements_before != elements_after) {
-        LOGERROR << "Deserialization changed layer parameter count!";
       }
-      input.peek();
     }
+    if(!found_node) {
+      LOGERROR << "Could not find node \"" << node_name << "\"";
+    }
+
+    delete[] node_name_cstr;
   }
 }
 
