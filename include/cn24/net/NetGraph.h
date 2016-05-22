@@ -77,7 +77,7 @@ public:
   void InitializeWeights();
   void GetParameters(std::vector<CombinedTensor*>& parameters);
   void SerializeParameters(std::ostream& output);
-  void DeserializeParameters(std::istream& input, unsigned int last_layer = 0);
+  void DeserializeParameters(std::istream& input);
 
 	// Output
 	void PrintGraph(std::ostream& graph_output);
