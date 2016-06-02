@@ -131,6 +131,8 @@ void SparsityReLULayer::BackPropagate() {
   datum a_delta_other = 0.0;
   datum b_delta_other = 0.0;
 
+  const datum inv_elements_per_sample = 1.0 / (datum)(input_->data.elements() / input_->data.samples());
+
   for (std::size_t element = 0; element < input_->data.elements(); element++) {
     const datum input_data = input_->data.data_ptr_const() [element];
     const datum output_data = output_->data.data_ptr_const() [element];
@@ -171,8 +173,8 @@ void SparsityReLULayer::BackPropagate() {
   }
 
   // Save gradient wrt a and b
-  weights_->delta.data_ptr()[0] = kl_loss_weight_ * a_delta_kl + other_loss_weight_ * a_delta_other;
-  weights_->delta.data_ptr()[1] = kl_loss_weight_ * b_delta_kl + other_loss_weight_ * b_delta_other;
+  weights_->delta.data_ptr()[0] = inv_elements_per_sample * kl_loss_weight_ * a_delta_kl + other_loss_weight_ * a_delta_other;
+  weights_->delta.data_ptr()[1] = inv_elements_per_sample * kl_loss_weight_ * b_delta_kl + other_loss_weight_ * b_delta_other;
 }
   
 datum SparsityReLULayer::CalculateLossFunction() {
