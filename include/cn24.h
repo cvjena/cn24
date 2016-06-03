@@ -68,6 +68,7 @@
 #include "cn24/net/LayerFactory.h"
 #include "cn24/net/HMaxActivationFunction.h"
 #include "cn24/net/SparsityReLULayer.h"
+#include "cn24/net/SparsityLossLayer.h"
 
 #include "cn24/factory/ConfigurableFactory.h"
 #include "cn24/factory/JSONNetGraphFactory.h"

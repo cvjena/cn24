@@ -22,6 +22,7 @@
 #include "ResizeLayer.h"
 #include "HMaxActivationFunction.h"
 #include "SparsityReLULayer.h"
+#include "SparsityLossLayer.h"
 #include "LayerFactory.h"
 
 namespace Conv {
@@ -96,7 +97,8 @@ Layer* LayerFactory::ConstructLayer(std::string descriptor) {
   CONV_LAYER_TYPE("gradientaccumulation", GradientAccumulationLayer)
   CONV_LAYER_TYPE("resize", ResizeLayer)
   CONV_LAYER_TYPE("hmax", HMaxActivationFunction)
-  CONV_LAYER_TYPE("sparsity_relu", SparsityReLULayer);
+  CONV_LAYER_TYPE("sparsity_relu", SparsityReLULayer)
+  CONV_LAYER_TYPE("sparsity_loss", SparsityLossLayer);
 
   return layer;
 }
@@ -158,7 +160,8 @@ Layer* LayerFactory::ConstructLayer(JSON descriptor)
   CONV_LAYER_TYPE("gradient_accumulation", GradientAccumulationLayer)
   CONV_LAYER_TYPE("resize", ResizeLayer)
   CONV_LAYER_TYPE("hmax", HMaxActivationFunction)
-  CONV_LAYER_TYPE("sparsity_relu", SparsityReLULayer);
+  CONV_LAYER_TYPE("sparsity_relu", SparsityReLULayer)
+  CONV_LAYER_TYPE("sparsity_loss", SparsityLossLayer);
 
   return layer;
 }
