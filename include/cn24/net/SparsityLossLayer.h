@@ -50,6 +50,9 @@ public:
 		return ss.str();
 	}
 private:
+
+	unsigned int stat_id_ = 0;
+	StatDescriptor stat_descriptor_;
   CombinedTensor* first_ = nullptr;
 
 	const datum zero_threshold = 0.00005;
