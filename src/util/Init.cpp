@@ -33,6 +33,7 @@
 #endif
 #endif
 
+#include "JSONParsing.h"
 #include "TensorViewer.h"
 #include "StatAggregator.h"
 
@@ -100,23 +101,21 @@ void System::Init(int requested_log_level) {
   unsigned int device_number = 0;
   
   // Look for configuration file
-  std::string config_path = binary_path + "config";
+  std::string config_path = binary_path + "config.json";
   if(!std::ifstream(config_path, std::ios::in).good()) {
-    config_path = binary_path + "../config";
+    config_path = binary_path + "../config.json";
   }
-  
+
   // Load and parse config file
   std::ifstream config_file(config_path, std::ios::in);
   if(config_file.good()) {
     LOGINFO << "Loading config file: " << config_path;
-    
-    while (!config_file.eof()) {
-      std::string line;
-      std::getline (config_file, line);
-      
-      ParseUIntIfPossible(line, "opencl_platform", platform_number);
-      ParseUIntIfPossible(line, "opencl_device", device_number);
-    }
+    JSON config_json = JSON::parse(config_file);
+
+    if(config_json.count("opencl_platform") == 1 && config_json["opencl_platform"].is_number())
+      platform_number = config_json["opencl_platform"];
+    if(config_json.count("opencl_device") == 1 && config_json["opencl_device"].is_number())
+      device_number = config_json["opencl_device"];
   } else {
 #ifdef BUILD_OPENCL
     LOGINFO << "Could not find a config file, using default OpenCL settings.";
@@ -213,7 +212,7 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
                    NULL, &device_count );
 
   if ( device_count == 0 ) {
-    FATAL ( "No OpenCL devices detected!" );
+    FATAL ( "No OpenCL devices detected for platform " << platform_number << "!" );
   }
 
   cl_device_id* device_ids = new cl_device_id[device_count];
