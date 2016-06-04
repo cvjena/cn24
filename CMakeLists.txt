@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(CN24 C CXX)
+cmake_policy(SET CMP0042 OLD)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Build type: Select either Debug, RelWithDebInfo or Release" FORCE)
