@@ -213,7 +213,7 @@ Trainer::Trainer(Conv::NetGraph& graph, JSON settings) :
     accumulated_gradient->Resize (parameters_[p]->data);
     accumulated_gradient->Clear();
 
-    last_deltas_.push_back (last_delta);
+    last_steps_.push_back (last_delta);
     last_gradients_.push_back (last_gradient);
     accumulated_gradients_.push_back (accumulated_gradient);
   }
@@ -442,13 +442,13 @@ void Trainer::Epoch() {
   epoch_++;
 }
 
-void Trainer::ApplyGradients (datum lr) {
+void Trainer::ApplyGradients (datum global_learning_rate) {
   unsigned int dp = 0;
   unsigned int qp_caseA = 0, qp_caseB = 0, qp_caseC = 0, qp_caseM = 0;
 
   datum _cached_batch_size_sequential = settings_["batch_size_sequential"];
-  datum _cached_l1 = settings_["l1"];
-  datum _cached_l2 = settings_["l2"];
+  datum _cached_l1_coefficient = settings_["l1"];
+  datum _cached_l2_coefficient = settings_["l2"];
   datum _cached_gd_momentum = settings_["gd_momentum"];
 
   OPTIMIZATION_METHOD method = GRADIENT_DESCENT;
@@ -459,64 +459,61 @@ void Trainer::ApplyGradients (datum lr) {
 
 	for (unsigned int l = 0; l < graph_.GetNodes().size(); l++) {
 		Layer* const layer = graph_.GetNodes()[l]->layer;
-    datum layer_lr = 1;
+    datum local_learning_rate = 1;
+
     switch (method) {
       case GRADIENT_DESCENT:
-        layer_lr = layer->local_lr_;
-        break;
       case QUICKPROP:
-        layer_lr = layer->local_lr_;
+        local_learning_rate = layer->local_lr_;
         break;
     }
 
     for (unsigned int p = 0; p < layer->parameters().size(); p++) {
-      CombinedTensor* const param = layer->parameters_[p];
+      CombinedTensor* const current_layer_parameters = layer->parameters_[p];
 #ifdef BUILD_OPENCL
-      param->data.MoveToCPU();
+      current_layer_parameters->data.MoveToCPU();
 #endif
 
-      for (unsigned int w = 0; w < param->data.elements(); w++) {
-        const datum weight = param->data (w);
+      for (unsigned int w = 0; w < current_layer_parameters->data.elements(); w++) {
+        const datum weight = current_layer_parameters->data (w);
+
+        // Gradients w.r.t. the weight
         const datum l1_gradient = (weight > 0) - (weight < 0);
         const datum l2_gradient = weight;
-        const datum w_gradient = (*accumulated_gradients_[dp]) [w];
+        const datum loss_gradient = (*accumulated_gradients_[dp]) [w];
 
-        /*
-         * http://www.iro.umontreal.ca/~pift6266/H10/notes/gradient.html
-         *
-         * This site says that one should average the gradient over
-         * the minibatch
-         */
-        datum delta =
+
+        const datum batch_size_loss_scaling_factor = ((datum)1.0) / (((datum) (sample_count_ * _cached_batch_size_sequential)) * first_training_layer_->GetLossSamplingProbability());
+        const datum partial_derivative =
         
           // Average of gradient over minibatch
-          layer_lr * (w_gradient / (((datum) (sample_count_ * _cached_batch_size_sequential)) * first_training_layer_->GetLossSamplingProbability())) +
+          local_learning_rate * (loss_gradient * batch_size_loss_scaling_factor) +
           // Regularization
-          layer_lr * (_cached_l2 * l2_gradient + _cached_l1 * l1_gradient);
+          local_learning_rate * (_cached_l2_coefficient * l2_gradient + _cached_l1_coefficient * l1_gradient);
         
         // This is needed for both methods
-        const datum last_step = (*last_deltas_[dp]) (w);
+        const datum last_step = (*last_steps_[dp]) (w);
         
         switch (method) {
           case GRADIENT_DESCENT:
           {
-            const datum step = lr * delta + _cached_gd_momentum * last_step;
-            param->data[w] -= step;
+            const datum step = global_learning_rate * partial_derivative + _cached_gd_momentum * last_step;
+            current_layer_parameters->data[w] -= step;
 
-            // Backup delta
-            (*last_deltas_[dp]) [w] = step;
+            // Backup last step
+            (*last_steps_[dp]) [w] = step;
           }
             break;
           case QUICKPROP:
           {
             // TODO Unhardcode these
-            const datum epsilon = lr;
+            const datum epsilon = global_learning_rate;
             const datum mu = settings_["quickprop_mu"];
             const datum epsilon_flat = 1e-15;
             const datum epsilon_zero = 0.1;
 
             // Renaming to "avoid confusion"
-            const datum current_slope = delta;
+            const datum current_slope = partial_derivative;
             const datum last_slope = (*last_gradients_[dp])(w);
             datum quadratic_step = 0;
             datum current_step = 0;
@@ -555,11 +552,11 @@ void Trainer::ApplyGradients (datum lr) {
             }
 
             // Weight update
-            param->data[w] += current_step;
+            current_layer_parameters->data[w] += current_step;
 
             // Backup steps and gradient
-            (*last_deltas_[dp]) [w] = current_step;
-            (*last_gradients_[dp]) [w] = delta;
+            (*last_steps_[dp]) [w] = current_step;
+            (*last_gradients_[dp]) [w] = partial_derivative;
           }
             break;
         }

@@ -83,7 +83,7 @@ public:
     LOGDEBUG << "Resetting Trainer state";
     for(Tensor* t : last_gradients_)
       t->Clear();
-    for(Tensor* t : last_deltas_)
+    for(Tensor* t : last_steps_)
       t->Clear();
     
     first_iteration = true;
@@ -116,7 +116,7 @@ private:
   // References for easy access
   NetGraph& graph_;
   std::vector<CombinedTensor*> parameters_;
-  std::vector<Tensor*> last_deltas_;
+  std::vector<Tensor*> last_steps_;
   std::vector<Tensor*> last_gradients_;
   std::vector<Tensor*> accumulated_gradients_;
   
