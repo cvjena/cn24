@@ -30,3 +30,4 @@ thesis.ps
 *.swp
 .idea/*
 build
+ci/clBLAS
