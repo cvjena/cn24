@@ -20,6 +20,20 @@ UpscaleLayer::UpscaleLayer ( const unsigned int region_width, const unsigned int
            " upscaling.";
 }
 
+UpscaleLayer::UpscaleLayer(JSON configuration) : SimpleLayer(configuration) {
+  region_width_ = 1;
+  region_height_ = 1;
+
+	if(configuration.count("size") != 1 || !configuration["size"].is_array() || configuration["size"].size() != 2) {
+		FATAL("Invalid configuration (no size): " << configuration.dump());
+	} else {
+		region_width_ = configuration["size"][0];
+		region_height_ = configuration["size"][0];
+	}
+
+  // TODO Validation of actual values
+}
+
 bool UpscaleLayer::CreateOutputs (
   const std::vector< CombinedTensor* >& inputs,
   std::vector< CombinedTensor* >& outputs ) {
@@ -51,8 +65,11 @@ bool UpscaleLayer::CreateOutputs (
 
 bool UpscaleLayer::Connect ( const CombinedTensor* input,
                              CombinedTensor* output ) {
-  // TODO Validate dimensions
-  bool valid = true;
+  bool valid =
+    (input->data.width() * region_height_ == output->data.width())
+    && (input->data.height() * region_height_ == output->data.height())
+    && (input->data.maps() == output->data.maps())
+    && (input->data.samples() == output->data.samples());
 
   if ( !valid ) {
     LOGERROR << "Invalid dimensions!";
