@@ -34,6 +34,8 @@ public:
 	*/
   UpscaleLayer(const unsigned int region_width,
 	       const unsigned int region_height);
+
+	UpscaleLayer(JSON configuration);
   
   // Implementations for SimpleLayer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs, std::vector< CombinedTensor* >& outputs);

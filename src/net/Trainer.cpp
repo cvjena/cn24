@@ -241,6 +241,7 @@ Trainer::Trainer(Conv::NetGraph& graph, JSON settings) :
   if(!settings_.count("batch_size_sequential")) settings_["batch_size_sequential"] = 1;
   if(!settings_.count("epoch_iterations")) settings_["epoch_iterations"] = 500;
   if(!settings_.count("enable_stats_during_training")) settings_["enable_stats_during_training"] = true;
+  if(!settings_.count("optimization_method")) settings_["optimization_method"] = "gd";
 
   InitializeStats();
 }
@@ -450,8 +451,11 @@ void Trainer::ApplyGradients (datum lr) {
   datum _cached_l2 = settings_["l2"];
   datum _cached_gd_momentum = settings_["gd_momentum"];
 
-  // TODO Fix this
-  const OPTIMIZATION_METHOD method = GRADIENT_DESCENT;
+  OPTIMIZATION_METHOD method = GRADIENT_DESCENT;
+  std::string optimization_method_str = settings_["optimization_method"];
+
+  if(optimization_method_str.compare("quickprop") == 0)
+    method = QUICKPROP;
 
 	for (unsigned int l = 0; l < graph_.GetNodes().size(); l++) {
 		Layer* const layer = graph_.GetNodes()[l]->layer;

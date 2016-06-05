@@ -32,6 +32,7 @@ std::vector<std::pair<std::string, bool>> test_layers_and_runs = {
   {"{\"layer\":{\"type\":\"hmax\",\"mu\":0.1,\"weight\":0.0}}",false},
   {"{\"layer\":{\"type\":\"hmax\",\"mu\":0.1,\"weight\":0.2}}",false},
   {"{\"layer\":{\"type\":\"sparsity_relu\",\"lambda\":0.1,\"kl_weight\":0.0,\"other_weight\":1.0,\"alpha\":3.0}}",true},
+	{"{\"layer\":{\"type\":\"upscale\",\"size\":[3,3]}}",false},
   {"{\"layer\":\"tanh\"}",false},
   {"{\"layer\":\"sigm\"}",false},
   {"{\"layer\":\"relu\"}",false},

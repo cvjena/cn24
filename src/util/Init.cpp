@@ -76,8 +76,6 @@ TensorViewer* System::viewer = nullptr;
 StatAggregator* System::stat_aggregator = nullptr;
 int System::log_level = 0;
 
-#define STRING_SHA1 GIT_SHA1
-
 void System::Init(int requested_log_level) {
   if(requested_log_level == -1) {
 #ifdef BUILD_VERBOSE
@@ -88,7 +86,7 @@ void System::Init(int requested_log_level) {
   } else
     log_level = requested_log_level;
   
-  LOGINFO << "CN24 version 3.0.0-SNAPSHOT @" STRING_SHA1;
+  LOGINFO << "CN24 version 3.0.0-SNAPSHOT";
   LOGINFO << "Copyright (C) 2016 Clemens-Alexander Brust";
   LOGINFO << "For licensing information, see the LICENSE"
           << " file included with this project.";

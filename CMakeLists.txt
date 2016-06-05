@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(CN24 C CXX)
+cmake_policy(SET CMP0042 OLD)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Build type: Select either Debug, RelWithDebInfo or Release" FORCE)
@@ -8,12 +9,6 @@ endif()
 enable_testing()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
-
-# Get Git SHA1 hash
-include(GetGitRevisionDescription)
-get_git_head_revision(GIT_REFSPEC GIT_SHA1)
-#git_describe(GIT_SHA1)
-add_definitions("-DGIT_SHA1=\"${GIT_SHA1} ${GIT_REFSPEC}\"")
 
 # Definitions
 set(CN24_SRC "${CN24_SOURCE_DIR}/src")
