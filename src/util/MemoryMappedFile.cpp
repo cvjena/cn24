@@ -39,6 +39,7 @@ MemoryMappedFile::MemoryMappedFile(std::string path) {
   if(input_fd < 0) {
     FATAL("Cannot open file: " << path);
   }
+  file_descriptor = input_fd;
 
 #if defined(BUILD_LINUX)
   void* target_mmap = mmap64(nullptr, length_, PROT_READ, MAP_PRIVATE, input_fd, 0);
@@ -58,6 +59,7 @@ MemoryMappedFile::MemoryMappedFile(std::string path) {
 
 MemoryMappedFile::~MemoryMappedFile() {
   munmap(address_, length_);
+  close(file_descriptor);
 }
 
 }

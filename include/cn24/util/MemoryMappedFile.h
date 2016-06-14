@@ -25,6 +25,8 @@ public:
 private:
   void* address_ = nullptr;
   std::size_t length_ = 0;
+
+  int file_descriptor = 0;
 };
 
 }
