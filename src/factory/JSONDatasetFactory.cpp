@@ -7,6 +7,7 @@
 
 #include "Dataset.h"
 #include "MNISTDataset.h"
+#include "ILSVRCDataset.h"
 
 #include "JSONDatasetFactory.h"
 
@@ -29,6 +30,10 @@ Dataset* JSONDatasetFactory::ConstructDataset(JSON descriptor) {
       MNISTDataset* mnist_dataset = new MNISTDataset;
       mnist_dataset->Load(descriptor);
       return mnist_dataset;
+    } else if(special_dataset.compare("ILSVRC") == 0) {
+      ILSVRCDataset* ilsvrc_dataset = new ILSVRCDataset;
+      ilsvrc_dataset->Load(descriptor);
+      return ilsvrc_dataset;
     }
   } else {
     FATAL("Not a valid dataset (no task or special dataset)");
