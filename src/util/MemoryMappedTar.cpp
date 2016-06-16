@@ -18,12 +18,13 @@ extern "C" {
 
 namespace Conv {
 
-MemoryMappedTar::MemoryMappedTar(void* address, std::size_t length, std::vector<MemoryMappedTarFileInfo>* parent_files) {
+MemoryMappedTar::MemoryMappedTar(void* address, std::size_t length, MemoryMappedTarFileInfoSink* sink, std::vector<MemoryMappedTarFileInfo>* parent_files) {
 
 #ifdef BUILD_LIBARCHIVE
   archive* tar_archive;
 
-  std::vector<MemoryMappedTarFileInfo>* target_files = parent_files == nullptr ? &files_ : parent_files;
+  target_files_ = parent_files == nullptr ? &files_ : parent_files;
+  MemoryMappedTarFileInfoSink* target_sink = sink == nullptr ? this : sink;
 
   tar_archive = archive_read_new();
   archive_read_support_filter_all(tar_archive);
@@ -36,8 +37,8 @@ MemoryMappedTar::MemoryMappedTar(void* address, std::size_t length, std::vector<
   archive_entry* tar_entry;
   while(archive_read_next_header(tar_archive, &tar_entry) == ARCHIVE_OK) {
     MemoryMappedTarFileInfo info;
-
-    info.filename = std::string(archive_entry_pathname(tar_entry));
+    const char* pathname = archive_entry_pathname(tar_entry);
+    info.filename = pathname;
 
     const void* buff = nullptr;
     size_t len = 0;
@@ -52,10 +53,10 @@ MemoryMappedTar::MemoryMappedTar(void* address, std::size_t length, std::vector<
 
     std::regex tar_ending = std::regex(".*\\.tar$", std::regex::extended);
     if(std::regex_match(info.filename, tar_ending)) {
-      MemoryMappedTar* inner_mm_tar = new MemoryMappedTar((void*) buff, len, target_files);
+      MemoryMappedTar* inner_mm_tar = new MemoryMappedTar((void*) buff, len, sink, target_files_);
       child_tars_.push_back(inner_mm_tar);
     } else {
-      target_files->push_back(std::move(info));
+      sink->Process(info);
     }
   }
   archive_ptr_ = tar_archive;
@@ -73,6 +74,10 @@ MemoryMappedTar::~MemoryMappedTar() {
     delete child_tar;
   }
 #endif
+}
+
+void MemoryMappedTar::Process(const MemoryMappedTarFileInfo &file_info) {
+  target_files_->push_back(file_info);
 }
 
 }

@@ -16,23 +16,32 @@ namespace Conv {
 
 struct MemoryMappedTarFileInfo {
 public:
-  std::string filename;
+  const char* filename;
   std::size_t length;
   datum* data;
 };
 
-class MemoryMappedTar {
+class MemoryMappedTarFileInfoSink {
 public:
-  explicit MemoryMappedTar(void* address, std::size_t length, std::vector<MemoryMappedTarFileInfo>* parent_files = nullptr);
+  virtual void Process(const MemoryMappedTarFileInfo& file_info) = 0;
+};
+
+class MemoryMappedTar : public MemoryMappedTarFileInfoSink {
+public:
+  explicit MemoryMappedTar(void* address, std::size_t length, MemoryMappedTarFileInfoSink* sink = nullptr, std::vector<MemoryMappedTarFileInfo>* parent_files = nullptr);
   ~MemoryMappedTar();
 
   unsigned int GetFileCount() const { return files_.size(); };
   const MemoryMappedTarFileInfo& GetFileInfo(unsigned int index) const { return files_[index]; };
 
+  virtual void Process(const MemoryMappedTarFileInfo& file_info);
+
 private:
   std::vector<MemoryMappedTarFileInfo> files_;
   std::vector<MemoryMappedTar*> child_tars_;
   void* archive_ptr_ = nullptr;
+
+  std::vector<MemoryMappedTarFileInfo>* target_files_ = nullptr;
 };
 
 }
