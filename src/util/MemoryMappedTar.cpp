@@ -14,6 +14,7 @@ extern "C" {
 
 #include <regex>
 #include <iomanip>
+#include <cstring>
 #include "MemoryMappedTar.h"
 
 namespace Conv {
@@ -73,11 +74,19 @@ MemoryMappedTar::~MemoryMappedTar() {
   for(MemoryMappedTar* child_tar : child_tars_) {
     delete child_tar;
   }
+  for(MemoryMappedTarFileInfo& info : files_) {
+    delete[] info.filename;
+  }
 #endif
 }
 
 void MemoryMappedTar::Process(const MemoryMappedTarFileInfo &file_info) {
-  target_files_->push_back(file_info);
+  MemoryMappedTarFileInfo info = file_info;
+  std::size_t name_length = strlen(info.filename);
+  char* name_copy = new char[name_length + 1];
+  strcpy(name_copy, info.filename);
+  info.filename = name_copy;
+  target_files_->push_back(info);
 }
 
 }
