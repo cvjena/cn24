@@ -24,12 +24,13 @@ public:
 class MemoryMappedTarFileInfoSink {
 public:
   virtual void Process(const MemoryMappedTarFileInfo& file_info) = 0;
+  virtual ~MemoryMappedTarFileInfoSink() {};
 };
 
 class MemoryMappedTar : public MemoryMappedTarFileInfoSink {
 public:
   explicit MemoryMappedTar(void* address, std::size_t length, MemoryMappedTarFileInfoSink* sink = nullptr, std::vector<MemoryMappedTarFileInfo>* parent_files = nullptr);
-  ~MemoryMappedTar();
+  virtual ~MemoryMappedTar();
 
   unsigned int GetFileCount() const { return files_.size(); };
   const MemoryMappedTarFileInfo& GetFileInfo(unsigned int index) const { return files_[index]; };

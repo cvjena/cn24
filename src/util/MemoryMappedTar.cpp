@@ -56,7 +56,7 @@ MemoryMappedTar::MemoryMappedTar(void* address, std::size_t length, MemoryMapped
       MemoryMappedTar* inner_mm_tar = new MemoryMappedTar((void*) buff, len, target_sink, target_files_);
       child_tars_.push_back(inner_mm_tar);
     } else {
-      sink->Process(info);
+      target_sink->Process(info);
     }
   }
   archive_ptr_ = tar_archive;
