@@ -53,7 +53,7 @@ MemoryMappedTar::MemoryMappedTar(void* address, std::size_t length, MemoryMapped
 
     std::regex tar_ending = std::regex(".*\\.tar$", std::regex::extended);
     if(std::regex_match(info.filename, tar_ending)) {
-      MemoryMappedTar* inner_mm_tar = new MemoryMappedTar((void*) buff, len, sink, target_files_);
+      MemoryMappedTar* inner_mm_tar = new MemoryMappedTar((void*) buff, len, target_sink, target_files_);
       child_tars_.push_back(inner_mm_tar);
     } else {
       sink->Process(info);
