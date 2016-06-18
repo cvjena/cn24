@@ -8,6 +8,7 @@
 #define CONV_ILSVRCDATASET_H
 
 #include <vector>
+#include <map>
 #include "JSONParsing.h"
 #include "MemoryMappedTar.h"
 
@@ -16,9 +17,9 @@
 namespace Conv {
 
 struct ILSVRCSynsetInfo {
-  unsigned int WNID; // nXXXXXXXX
   std::string class_name; // "dog", "apple"...
   unsigned int ILSVRC_ID; // 1-1000
+  unsigned int class_number;
 };
 
 class ILSVRCDataset : public Dataset {
@@ -52,7 +53,7 @@ private:
   unsigned int training_samples_;
   unsigned int testing_samples_;
 
-  std::vector<ILSVRCSynsetInfo*> synsets_;
+  std::map<std::string, ILSVRCSynsetInfo*> synsets_;
 };
 }
 

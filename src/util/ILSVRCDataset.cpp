@@ -31,12 +31,23 @@ void ILSVRCDataset::Load(JSON descriptor) {
   LOGINFO << "Loading " << synsets_json.size() << " synsets...";
 
 
+  classes_ = 0;
   for(JSON::iterator synset_json_iterator = synsets_json.begin(); synset_json_iterator != synsets_json.end(); ++synset_json_iterator) {
     std::string WNID = synset_json_iterator.key();
     JSON synset_json = synset_json_iterator.value();
-    LOGDEBUG << "Processing " << WNID << "...";
+
+    ILSVRCSynsetInfo* info = new ILSVRCSynsetInfo;
+    info->class_name = synset_json["words"];
+    info->class_number = classes_;
+    info->ILSVRC_ID = synset_json["ILSVRC2012_ID"];
+
+    synsets_[WNID] = info;
+    classes_++;
+    class_weights_.push_back(1.0);
+    class_names_.push_back(info->class_name);
+    class_colors_.push_back(info->class_number << 4);
   }
-  classes_ = 1;
+
   testing_samples_ = 0;
   training_samples_ = 0;
 }
