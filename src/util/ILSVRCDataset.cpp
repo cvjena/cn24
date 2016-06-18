@@ -19,7 +19,7 @@ ILSVRCDataset::ILSVRCDataset() {
 void ILSVRCDataset::Load(JSON descriptor) {
   std::string path = descriptor["ilsvrc_path"];
   std::string descriptor_path = path + "/synsets.json";
-  std::ifstream synset_file = std::ifstream(descriptor_path, std::ios::in);
+  std::ifstream synset_file(descriptor_path, std::ios::in);
   if(!synset_file.good()) {
     FATAL("Cannot open synset descriptor file, looking at " + path + "/synsets.json");
   }
