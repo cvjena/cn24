@@ -78,6 +78,16 @@ int main (int argc, char* argv[]) {
     width+=4;
   if(height & 4)
     height+=4;
+
+  if(width & 8)
+    width+=8;
+  if(height & 8)
+    height+=8;
+
+  if(width & 16)
+    width+=16;
+  if(height & 16)
+    height+=16;
   
   Conv::Tensor data_tensor(1, width, height, original_data_tensor.maps());
   Conv::Tensor helper_tensor(1, width, height, 2);
