@@ -5,8 +5,8 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * @file testOpenCL.cpp
- * @brief Small test application for the OpenCL library
+ * @file listOpenCLDevices.cpp
+ * @brief Small test application for the OpenCL library, lists devices
  * 
  * @author Clemens-A. Brust (ikosa.de@gmail.com)
  */

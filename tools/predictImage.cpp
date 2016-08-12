@@ -5,7 +5,7 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 /**
- * @file classifyImage.cpp
+ * @file predictImage.cpp
  * @brief Application that uses a pretrained net to segment images.
  *
  * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
