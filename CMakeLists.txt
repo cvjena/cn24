@@ -335,9 +335,9 @@ file(GLOB_RECURSE CN24_TEST_SOURCES ${CN24_TES}/*.cpp)
 
 foreach(TEST_SOURCE ${CN24_TEST_SOURCES})
   get_filename_component(TEST_NAME ${TEST_SOURCE} NAME_WE)
-  add_executable(${TEST_NAME} ${TEST_SOURCE})
-  add_test(${TEST_NAME} ${TEST_NAME})
-  target_link_libraries(${TEST_NAME} cn24 ${CN24_LIBS})
+  add_executable(test_${TEST_NAME} ${TEST_SOURCE})
+  add_test(${TEST_NAME} test_${TEST_NAME})
+  target_link_libraries(test_${TEST_NAME} cn24 ${CN24_LIBS})
   message(STATUS "Added ${TEST_NAME} test.")
 endforeach()
 
