@@ -390,6 +390,9 @@ void NetGraph::GetParameters (std::vector< CombinedTensor* >& parameters) {
 }
 
 void NetGraph::SerializeParameters(std::ostream& output) {
+	uint64_t magic = CN24_PAR_MAGIC;
+	output.write((char*)&magic, sizeof(uint64_t)/sizeof(char));
+
 	for (unsigned int l = 0; l < nodes_.size(); l++) {
     NetGraphNode* node = nodes_[l];
     Layer* layer = nodes_[l]->layer;
@@ -397,7 +400,9 @@ void NetGraph::SerializeParameters(std::ostream& output) {
     if(layer_parameters > 0) {
       // Write length of node name
       unsigned int node_unique_name_length = node->unique_name.length();
+			unsigned int parameter_set_size = node->layer->parameters().size();
       output.write((const char*)&node_unique_name_length, sizeof(unsigned int)/sizeof(char));
+			output.write((const char*)&parameter_set_size, sizeof(unsigned int)/sizeof(char));
 
       // Write node name
       output.write(node->unique_name.c_str(), node_unique_name_length);
@@ -411,10 +416,20 @@ void NetGraph::SerializeParameters(std::ostream& output) {
 }
 
 void NetGraph::DeserializeParameters(std::istream& input) {
+  // Check for right magic number
+	uint64_t magic = 0;
+	input.read((char*)&magic, sizeof(uint64_t)/sizeof(char));
+
+	if(magic != CN24_PAR_MAGIC) {
+		FATAL("Wrong magic at start of stream!");
+	}
+
   while(input.good() && !input.eof()) {
     // Read node name length
     unsigned int node_unique_name_length;
+		unsigned int parameter_set_size;
     input.read((char*)&node_unique_name_length, sizeof(unsigned int) / sizeof(char));
+		input.read((char*)&parameter_set_size, sizeof(unsigned int) / sizeof(char));
 
     // Read node name
     char* node_name_cstr = new char[node_unique_name_length + 1];
@@ -428,6 +443,10 @@ void NetGraph::DeserializeParameters(std::istream& input) {
     bool found_node = false;
     for(NetGraphNode* node : nodes_) {
       if(node->unique_name.compare(node_name) == 0) {
+				if(node->layer->parameters().size() != parameter_set_size) {
+					LOGERROR << "Node name matches, but parameter set size does not";
+					continue;
+				}
         found_node = true;
         Layer* layer = node->layer;
 
