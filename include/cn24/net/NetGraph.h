@@ -24,6 +24,8 @@
 
 #include <vector>
 
+#define CN24_PAR_MAGIC 0xC240C240C240C240
+
 namespace Conv {
 
 class NetGraphNode;
