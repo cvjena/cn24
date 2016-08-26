@@ -34,6 +34,8 @@ enum Method {
   PATCH
 };
 
+typedef void* DatasetMetadataPointer;
+
 class Dataset
 {
 public:
@@ -132,7 +134,25 @@ public:
   virtual bool GetTestingSample ( Tensor& data_tensor, Tensor& label_tensor,
 				  Tensor& helper_tensor, Tensor& weight_tensor, 
 				   unsigned int sample, unsigned int index) = 0;
-				   
+
+	/**
+	 * @brief Fills the specified array with pointers to the available metadata
+	 * @param metadata_array An array of pointers to metadata
+	 * @param sample The sample in the target Array
+	 * @param index The index of the training sample to load
+	 * @returns True on success
+	 */
+	virtual bool GetTrainingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) = 0;
+
+	/**
+	 * @brief Fills the specified array with pointers to the available metadata
+	 * @param metadata_array An array of pointers to metadata
+	 * @param sample The sample in the target Array
+	 * @param index The index of the testing sample to load
+	 * @returns True on success
+	 */
+	virtual bool GetTestingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) = 0;
+
   /**
    * @brief Uses this Dataset's colors to colorize a net output
    */
@@ -183,7 +203,9 @@ class TensorStreamPatchDataset : public Dataset {
   virtual bool SupportsTesting() const;
   virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
   virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index);
-  
+	virtual bool GetTrainingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
+	virtual bool GetTestingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
+
   static TensorStreamPatchDataset* CreateFromConfiguration(std::istream& file, bool dont_load, DatasetLoadSelection selection, unsigned int patchsize_x, unsigned int patchsize_y);
   
 private:
@@ -243,7 +265,9 @@ public:
   virtual bool SupportsTesting() const;
   virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
   virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index);
-  
+	virtual bool GetTrainingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
+	virtual bool GetTestingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
+
   static TensorStreamDataset* CreateFromConfiguration(std::istream& file, bool dont_load = false, DatasetLoadSelection selection = LOAD_BOTH);
   
 private:
@@ -301,7 +325,9 @@ public:
   virtual bool SupportsTesting() const { return tensor_count_testing_ > 0; }
   virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
   virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index);
-	
+	virtual bool GetTrainingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
+	virtual bool GetTestingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
+
 	virtual void Load(JSON descriptor, bool dont_load = false, DatasetLoadSelection selection = LOAD_BOTH);
 	
 private:
