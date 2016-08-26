@@ -76,11 +76,17 @@ namespace Conv {
   bool ListTensorStream::CopySample(const unsigned int source_index, const std::size_t source_sample, Conv::Tensor &target, const std::size_t target_sample) {
 		if(source_index < tensors_.size()) {
 			// Load tensor by filename
-			Tensor rgb_tensor(tensors_[source_index].filename);
+			Tensor rgb_tensor;
+			if(!tensors_[source_index].ignore)
+        rgb_tensor.LoadFromFile(tensors_[source_index].filename);
+      else {
+				target.Clear((datum) 0.0, target_sample);
+				return true;
+			}
 			
 			// TODO Consider validation vs. performance
 			
-			if(source_index % 2) {
+			if(source_index % 2 && rgb_tensor.elements() > 0) {
 				// Tensor has a label in it, colors need to be transformed
 				unsigned int number_of_classes = class_colors_.size();
 				
@@ -170,12 +176,19 @@ namespace Conv {
   
 	unsigned int ListTensorStream::LoadFiles(std::string image_list_fname, std::string image_directory, std::string label_list_fname, std::string label_directory) {
 		unsigned int number_of_classes = class_colors_.size();
+		bool dont_load_labels = false;
+
+		if(label_list_fname.compare("DONOTLOAD") == 0) {
+			label_list_fname = image_list_fname;
+			label_directory = image_directory;
+			dont_load_labels = true;
+		}
 		
 		if(image_directory.back() != '/')
 			image_directory += "/";
 
 		if(label_directory.back() != '/')
-    label_directory += "/";
+      label_directory += "/";
 
 		// Open file lists
 		std::ifstream image_list_file ( image_list_fname, std::ios::in );
@@ -204,19 +217,26 @@ namespace Conv {
 
 			LOGDEBUG << "Importing files " << image_fname << " and " << label_fname << "...";
 			Conv::Tensor image_tensor ( image_directory + image_fname );
-			Conv::Tensor label_rgb_tensor ( label_directory + label_fname );
+			Conv::Tensor label_rgb_tensor;
 
-			if ( image_tensor.width() != label_rgb_tensor.width() ||
-					image_tensor.height() != label_rgb_tensor.height() ) {
-				LOGERROR << "Dimensions don't match, skipping file!";
-				continue;
+			if(!dont_load_labels) {
+				label_rgb_tensor.LoadFromFile(label_directory + label_fname);
+
+				if (image_tensor.width() != label_rgb_tensor.width() ||
+						image_tensor.height() != label_rgb_tensor.height()) {
+					LOGERROR << "Dimensions don't match, skipping file!";
+					continue;
+				}
 			}
 	
 			int label_tensor_width = number_of_classes; 
 			
 			ListTensorMetadata image_md(image_directory + image_fname, image_tensor.width(), image_tensor.height(), image_tensor.maps(), image_tensor.samples());
 			ListTensorMetadata label_md(label_directory + label_fname, label_rgb_tensor.width(), label_rgb_tensor.height(), number_of_classes, label_rgb_tensor.samples());
-			
+
+      if(dont_load_labels)
+				label_md.ignore = true;
+
 			tensors_.push_back(image_md);
 			tensors_.push_back(label_md);
 			
