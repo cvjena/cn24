@@ -133,6 +133,24 @@ bool DatasetInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inp
     outputs.push_back(label_output);
     outputs.push_back(helper_output);
     outputs.push_back(localized_error_output);
+  } else if(dataset_.GetTask() == DETECTION) {
+    CombinedTensor *data_output =
+        new CombinedTensor(batch_size_, dataset_.GetWidth(),
+                           dataset_.GetHeight(), input_maps_);
+
+    CombinedTensor *label_output =
+        new CombinedTensor(0);
+
+    CombinedTensor *helper_output =
+        new CombinedTensor(0);
+
+    CombinedTensor *localized_error_output =
+        new CombinedTensor(0);
+
+    outputs.push_back(data_output);
+    outputs.push_back(label_output);
+    outputs.push_back(helper_output);
+    outputs.push_back(localized_error_output);
   }
   return true;
 }
