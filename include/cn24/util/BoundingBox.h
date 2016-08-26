@@ -31,6 +31,8 @@ public:
   datum Union(BoundingBox* bounding_box);
 
   datum x = 0, y = 0, w = 0, h = 0;
+
+  unsigned int c = 0;
 };
 
 }
