@@ -366,6 +366,7 @@ public:
 	public:
 		TensorStream* tensor_stream;
 		unsigned int sample_in_stream;
+		std::vector<BoundingBox> bounding_boxes_;
 	};
 	JSONDetectionDataset();
 	~JSONDetectionDataset();
@@ -380,8 +381,8 @@ public:
   virtual std::vector< std::string > GetClassNames() const { return class_names_; }
   virtual std::vector< unsigned int > GetClassColors() const { return class_colors_; }
   virtual std::vector< datum > GetClassWeights() const { return class_weights_; }
-  virtual unsigned int GetTrainingSamples() const { return tensor_count_training_ / 2; }
-  virtual unsigned int GetTestingSamples() const { return tensor_count_testing_ / 2; }
+  virtual unsigned int GetTrainingSamples() const { return tensor_count_training_; }
+  virtual unsigned int GetTestingSamples() const { return tensor_count_testing_; }
   virtual bool SupportsTesting() const { return tensor_count_testing_ > 0; }
   virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
   virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index);
@@ -414,9 +415,6 @@ private:
 
 	std::vector<TensorStreamAccessor> training_accessors_;
 	std::vector<TensorStreamAccessor> testing_accessors_;
-
-	// Bounding Boxes
-	std::vector<std::vector<BoundingBox*>> bounding_boxes_;
 
 };
  

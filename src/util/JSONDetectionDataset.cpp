@@ -5,6 +5,8 @@
  * For licensing information, see the LICENSE file included with this project.
  */  
 
+#include <fstream>
+
 #include "JSONParsing.h"
 
 #include "Dataset.h"
@@ -73,6 +75,7 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
       TensorStream* tensor_stream = nullptr;
       std::string filename = "";
 			std::string segment = element_json["segment"];
+      std::string boxes = element_json["bounding_boxes"];
 
       if(element_type.compare("tensor_stream") == 0) {
         filename = element_json["filename"];
@@ -88,7 +91,23 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
       }
 
 			unsigned int tensor_count = tensor_stream->GetTensorCount();
-			
+
+      // Load bounding boxes
+      std::ifstream boxes_file(boxes, std::ios::in);
+      if(!boxes_file.good()) {
+        FATAL("Cannot load bounding boxes from " << boxes);
+      }
+
+      JSON boxes_json = JSON::parse(boxes_file);
+      if(boxes_json.count("samples") != 1 || !boxes_json["samples"].is_array()) {
+        FATAL(boxes << " does not contain bounding boxes!");
+      }
+
+      JSON boxes_samples = boxes_json["samples"];
+      if(tensor_count != boxes_samples.size() * 2) {
+        FATAL(boxes << " contains the wrong number of samples. Needs " << tensor_count / 2 << ", contains " << boxes_samples.size() << ".");
+      }
+
       // Validate tensor count
 			if(tensor_count == 0) {
 				LOGWARN << "Empty tensor stream for segment \"" << segment << "\", filename: " << filename;
@@ -99,7 +118,7 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
       }
 
 			// Iterate through tensors to determine max dimensions
-			for (unsigned int t = 0; t < tensor_count; t++) {
+			for (unsigned int t = 0; t < tensor_count; t+=2) {
 				if(tensor_stream->GetWidth(t) > max_width_)
 					max_width_ = tensor_stream->GetWidth(t);
 				
@@ -109,6 +128,34 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
         TensorStreamAccessor accessor;
         accessor.tensor_stream = tensor_stream;
         accessor.sample_in_stream = t;
+
+        // Load boxes
+        JSON tensor_box = boxes_samples[t / 2];
+        if(!tensor_box.is_object() || tensor_box.count("boxes") != 1 || !tensor_box["boxes"].is_array()) {
+          FATAL("Wrong bounding box JSON for sample " << t / 2);
+        }
+        LOGDEBUG << "Sample " << t / 2 << " has " << tensor_box["boxes"].size() << " bounding boxes.";
+
+        for(unsigned int b = 0; b < tensor_box["boxes"].size(); b++) {
+          JSON box_json = tensor_box["boxes"][b];
+          BoundingBox box(box_json["x"], box_json["y"], box_json["w"], box_json["h"]);
+
+          // Find the class by name
+          std::string class_name = box_json["class"];
+          bool class_found = false;
+          for(unsigned int c = 0; c < classes_; c++) {
+            if(class_name.compare(class_names_[c]) == 0) {
+              class_found = true;
+              box.c = c;
+              break;
+            }
+          }
+          if(!class_found) {
+            FATAL("Cannot find class " << class_name);
+          }
+
+          accessor.bounding_boxes_.push_back(std::move(box));
+        }
 
         if(segment.compare("training") == 0) {
           training_accessors_.push_back(accessor);
@@ -174,11 +221,11 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
 
 
 bool JSONDetectionDataset::GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
-  if (index < tensor_count_training_ / 2) {
+  if (index < tensor_count_training_) {
     bool success = true;
 
-    TensorStream* training_stream = training_accessors_[2 * index].tensor_stream;
-    unsigned int index_image = training_accessors_[2 * index].sample_in_stream;
+    TensorStream* training_stream = training_accessors_[index].tensor_stream;
+    unsigned int index_image = training_accessors_[index].sample_in_stream;
 
     success &= training_stream->CopySample(index_image, 0, data_tensor, sample);
 
@@ -189,11 +236,11 @@ bool JSONDetectionDataset::GetTrainingSample(Tensor& data_tensor, Tensor& label_
 }
 
 bool JSONDetectionDataset::GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index) {
-  if (index < tensor_count_testing_ / 2) {
+  if (index < tensor_count_testing_) {
     bool success = true;
 
-    TensorStream* testing_stream = testing_accessors_[2 * index].tensor_stream;
-    unsigned int index_image = testing_accessors_[2 * index].sample_in_stream;
+    TensorStream* testing_stream = testing_accessors_[index].tensor_stream;
+    unsigned int index_image = testing_accessors_[index].sample_in_stream;
 
     success &= testing_stream->CopySample(index_image, 0, data_tensor, sample);
 
@@ -205,12 +252,18 @@ bool JSONDetectionDataset::GetTestingSample(Tensor& data_tensor, Tensor& label_t
 
 bool JSONDetectionDataset::GetTrainingMetadata(DatasetMetadataPointer *metadata_array, unsigned int sample,
                                                unsigned int index) {
-  return false;
+  if (index < tensor_count_training_) {
+    metadata_array[sample] = &(training_accessors_[index].bounding_boxes_);
+    return true;
+  } else return false;
 }
 
 bool JSONDetectionDataset::GetTestingMetadata(DatasetMetadataPointer *metadata_array, unsigned int sample,
                                               unsigned int index) {
-  return false;
+  if (index < tensor_count_testing_) {
+    metadata_array[sample] = &(testing_accessors_[index].bounding_boxes_);
+    return true;
+  } else return false;
 }
 
 }
