@@ -51,6 +51,7 @@ public:
   void BackPropagate();
 
   // Implementations for TrainingLayer
+  void SelectAndLoadSamples();
   void SetTestingMode (bool testing);
   unsigned int GetSamplesInTrainingSet();
   unsigned int GetSamplesInTestingSet();

@@ -26,9 +26,15 @@
 
 #define CN24_PAR_MAGIC 0xC240C240C240C240
 
+#define NETGRAPH_EVENT_BEFORE_FF 1
+#define NETGRAPH_EVENT_AFTER_FF 2
+#define NETGRAPH_EVENT_BEFORE_BP 3
+#define NETGRAPH_EVENT_AFTER_BP 4
+
 namespace Conv {
 
 class NetGraphNode;
+class NetGraph;
 
 struct NetGraphConnection {
 public:
@@ -51,6 +57,9 @@ public:
 	std::string description = "Output";
 	CombinedTensor* combined_tensor = nullptr;
 };
+
+// Function pointers for callbacks
+typedef void (*NetGraphEventHandler)(NetGraph* graph, unsigned int event_type);
 
 class NetGraph : public NetStatus {
 public:
@@ -87,6 +96,17 @@ public:
   void SetStatLayersEnabled(bool enabled);
 	datum AggregateLoss();
 
+	// Events
+	void OnBeforeFeedForward();
+	void OnAfterFeedForward();
+	void OnBeforeBackPropagate();
+	void OnAfterBackPropagate();
+
+	void RegisterBeforeFeedForwardHandler(NetGraphEventHandler handler) { handler_before_ff_.push_back(handler); }
+	void RegisterAfterFeedForwardHandler(NetGraphEventHandler handler) { handler_after_ff_.push_back(handler); }
+	void RegisterBeforeBackPropagateHandler(NetGraphEventHandler handler) { handler_before_bp_.push_back(handler); }
+	void RegisterAfterBackPropagateHandler(NetGraphEventHandler handler) { handler_after_bp_.push_back(handler); }
+
 	// Status
 	bool IsComplete() const;
 private:
@@ -107,6 +127,12 @@ private:
 	int last_uid = -1;
   bool layerview_enabled_ = false;
   TensorViewer viewer;
+
+	// Event handlers
+  std::vector<NetGraphEventHandler> handler_before_ff_;
+	std::vector<NetGraphEventHandler> handler_after_ff_;
+	std::vector<NetGraphEventHandler> handler_before_bp_;
+	std::vector<NetGraphEventHandler> handler_after_bp_;
 };
 
 }

@@ -289,7 +289,10 @@ void Trainer::Test() {
 
   for (unsigned int i = 0; i < iterations; i++) {
     aggregate_loss = 0.0;
+
+    first_training_layer_->SelectAndLoadSamples();
     graph_.FeedForward();
+
     for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
       LossFunctionLayer* lossfunction_layer = dynamic_cast<LossFunctionLayer*>(graph_.GetLossNodes()[n]->layer);
 			const datum loss = lossfunction_layer->CalculateLossFunction();
@@ -371,6 +374,7 @@ void Trainer::Epoch() {
       accumulated_gradients_[np]->Clear();
 
     for (unsigned int b = 0; b < (unsigned int)settings_["batch_size_sequential"]; b++) {
+      first_training_layer_->SelectAndLoadSamples();
       graph_.FeedForward();
 
       // Save errors

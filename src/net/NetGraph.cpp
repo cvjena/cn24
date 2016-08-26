@@ -290,7 +290,9 @@ void NetGraph::InitializeNode(NetGraphNode* node) {
 }
 
 void NetGraph::FeedForward() {
+  OnBeforeFeedForward();
 	FeedForward(nodes_, true);
+	OnAfterFeedForward();
 }
 
 void NetGraph::FeedForward(std::vector<NetGraphNode*>& nodes, bool clear_flag) {
@@ -340,7 +342,9 @@ void NetGraph::FeedForward(NetGraphNode* node) {
 }
 
 void NetGraph::BackPropagate() {
+	OnBeforeBackPropagate();
 	BackPropagate(nodes_, true);
+	OnAfterBackPropagate();
 }
 
 void NetGraph::BackPropagate(std::vector<NetGraphNode*>& nodes, bool clear_flag) {
@@ -543,4 +547,27 @@ NetGraphNode* NetGraph::GetNode(const std::string &unique_name) {
 	return nullptr;
 }
 
+void NetGraph::OnBeforeFeedForward() {
+	for(unsigned int h=0; h < handler_before_ff_.size(); h++) {
+		handler_before_ff_[h](this, NETGRAPH_EVENT_BEFORE_FF);
+	}
+}
+
+void NetGraph::OnAfterFeedForward() {
+	for(unsigned int h=0; h < handler_after_ff_.size(); h++) {
+		handler_after_ff_[h](this, NETGRAPH_EVENT_AFTER_FF);
+	}
+}
+
+void NetGraph::OnBeforeBackPropagate() {
+	for(unsigned int h=0; h < handler_before_bp_.size(); h++) {
+		handler_before_bp_[h](this, NETGRAPH_EVENT_BEFORE_BP);
+	}
+}
+
+void NetGraph::OnAfterBackPropagate() {
+	for(unsigned int h=0; h < handler_after_bp_.size(); h++) {
+		handler_after_bp_[h](this, NETGRAPH_EVENT_AFTER_BP);
+	}
+}
 }
