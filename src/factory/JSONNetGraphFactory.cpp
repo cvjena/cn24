@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include <random>
+#include "../net/DummyErrorLayer.h"
 #include "../net/ErrorLayer.h"
 
 #include "NetGraph.h"
@@ -168,12 +169,32 @@ bool JSONNetGraphFactory::AddLayers(NetGraph &graph, unsigned int seed) {
       LOGERROR << "Net graph does not contain output node \"" << output_node_name << "\"!";
       return false;
     }
-    ErrorLayer* error_layer = new ErrorLayer();
-    NetGraphNode* error_node = new NetGraphNode(error_layer,NetGraphConnection(output_node, 0, true));
-    error_node->input_connections.push_back(NetGraphConnection(dataset_input_node, 1, false));
-    error_node->input_connections.push_back(NetGraphConnection(dataset_input_node, 3, false));
-    error_node->unique_name = "loss_" + output_node_name;
-    graph.AddNode(error_node);
+    if(net_json_.count("error_layer") == 1 && net_json_["error_layer"].is_string()) {
+      std::string error_layer = net_json_["error_layer"];
+      if(error_layer.compare("no") == 0) {
+        LOGDEBUG << "Not using an error layer";
+      } else if (error_layer.compare("dummy") == 0) {
+        DummyErrorLayer *error_layer = new DummyErrorLayer();
+        NetGraphNode *error_node = new NetGraphNode(error_layer, NetGraphConnection(output_node, 0, true));
+        error_node->input_connections.push_back(NetGraphConnection(dataset_input_node, 1, false));
+        error_node->input_connections.push_back(NetGraphConnection(dataset_input_node, 3, false));
+        error_node->unique_name = "loss_" + output_node_name;
+        graph.AddNode(error_node);
+      } else if (error_layer.compare("square") == 0) {
+        ErrorLayer *error_layer = new ErrorLayer();
+        NetGraphNode *error_node = new NetGraphNode(error_layer, NetGraphConnection(output_node, 0, true));
+        error_node->input_connections.push_back(NetGraphConnection(dataset_input_node, 1, false));
+        error_node->input_connections.push_back(NetGraphConnection(dataset_input_node, 3, false));
+        error_node->unique_name = "loss_" + output_node_name;
+        graph.AddNode(error_node);
+      } else {
+        LOGERROR << "Unknown error layer type specified: " << error_layer;
+        return false;
+      }
+    } else {
+      LOGERROR << "No error layer type specified!";
+      return false;
+    }
   }
 
   graph.Initialize();
