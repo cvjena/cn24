@@ -163,7 +163,7 @@ bool DatasetInputLayer::Connect (const std::vector< CombinedTensor* >& inputs,
   return valid;
 }
 
-void DatasetInputLayer::FeedForward() {
+void DatasetInputLayer::SelectAndLoadSamples() {
 #ifdef BUILD_OPENCL
   data_output_->data.MoveToCPU (true);
   label_output_->data.MoveToCPU (true);
@@ -232,6 +232,10 @@ void DatasetInputLayer::FeedForward() {
     if (force_no_weight)
       localized_error_output_->data.Clear (0.0, sample);
   }
+}
+
+void DatasetInputLayer::FeedForward() {
+  // Nothing to do here
 }
 
 void DatasetInputLayer::BackPropagate() {

@@ -56,6 +56,11 @@ public:
    * @brief Gets the height of the label image (expected output)
    */
   virtual unsigned int GetLabelHeight() = 0;
+
+  /**
+   * @brief Selects a batch random samples and loads it into an output buffer
+   */
+  virtual void SelectAndLoadSamples() = 0;
 };
 
 }
