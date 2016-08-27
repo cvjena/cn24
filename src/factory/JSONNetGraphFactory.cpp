@@ -9,8 +9,10 @@
 #include <string>
 #include <vector>
 #include <random>
+#include <cn24/net/YOLOLossLayer.h>
 #include "../net/DummyErrorLayer.h"
 #include "../net/ErrorLayer.h"
+#include "../net/YOLOLossLayer.h"
 
 #include "NetGraph.h"
 #include "NetGraphNode.h"
@@ -187,6 +189,19 @@ bool JSONNetGraphFactory::AddLayers(NetGraph &graph, unsigned int seed) {
         error_node->input_connections.push_back(NetGraphConnection(dataset_input_node, 3, false));
         error_node->unique_name = "loss_" + output_node_name;
         graph.AddNode(error_node);
+      } else if (error_layer.compare("yolo") == 0) {
+        if(net_json_.count("yolo_configuration") != 1 || !net_json_["yolo_configuration"].is_object()) {
+          LOGERROR << "Missing YOLO configuration!";
+          return false;
+        }
+        JSON yolo_configuration = net_json_["yolo_configuration"];
+        YOLOLossLayer *error_layer = new YOLOLossLayer(yolo_configuration);
+        NetGraphNode *error_node = new NetGraphNode(error_layer, NetGraphConnection(output_node, 0, true));
+        error_node->input_connections.push_back(NetGraphConnection(dataset_input_node, 1, false));
+        error_node->input_connections.push_back(NetGraphConnection(dataset_input_node, 3, false));
+        error_node->unique_name = "loss_" + output_node_name;
+        graph.AddNode(error_node);
+      } else if (error_layer.compare("square") == 0) {
       } else {
         LOGERROR << "Unknown error layer type specified: " << error_layer;
         return false;
