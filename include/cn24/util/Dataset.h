@@ -37,7 +37,6 @@ enum Method {
   PATCH
 };
 
-typedef void* DatasetMetadataPointer;
 
 class Dataset
 {

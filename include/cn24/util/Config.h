@@ -25,7 +25,9 @@ namespace Conv {
  * are evil.
  */
 typedef float datum;
+typedef void* DatasetMetadataPointer;
 typedef int32_t dint;
+
 #ifdef __MINGW32__
 typedef uint32_t duint;
 #else
