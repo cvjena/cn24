@@ -175,11 +175,15 @@ void NetGraph::PrintGraph(std::ostream& graph_output) {
 				if (i > 0)
 					node_output << "|";
 				node_output << "<o" << i << ">" << node->output_buffers[i].description << " " << node->output_buffers[i].combined_tensor->data;
+				if(node->output_buffers[i].combined_tensor->metadata != nullptr)
+					node_output << " with metadata";
 			}
 			node_output << "}";
 		}
 		else if (node->output_buffers.size() == 1) {
 			node_output << "| <o0> " << node->output_buffers[0].description << " " << node->output_buffers[0].combined_tensor->data;
+			if(node->output_buffers[0].combined_tensor->metadata != nullptr)
+				node_output << " with metadata";
 		}
 		node_output << "}\"];\n";
 
