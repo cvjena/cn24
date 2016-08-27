@@ -59,6 +59,7 @@
 #include "cn24/net/LossFunctionLayer.h"
 #include "cn24/net/ErrorLayer.h"
 #include "cn24/net/DummyErrorLayer.h"
+#include "cn24/net/YOLOLossLayer.h"
 #include "cn24/net/StatLayer.h"
 #include "cn24/net/BinaryStatLayer.h"
 #include "cn24/net/ConfusionMatrixLayer.h"
