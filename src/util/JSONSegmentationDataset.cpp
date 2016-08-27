@@ -139,39 +139,46 @@ void JSONSegmentationDataset::Load(JSON dataset_json, bool dont_load, DatasetLoa
       tensor_streams_.push_back(tensor_stream);
 		}
 	}
-	
-	// Increase max_width and max_height for better pooling
-	if (max_width_ & 1)
-    max_width_++;
-  if (max_height_ & 1)
-    max_height_++;
-  
-  if (max_width_ & 2)
-    max_width_+=2;
-  if (max_height_ & 2)
-    max_height_+=2;
 
-  if (max_width_ & 4)
-    max_width_+=4;
-  if (max_height_ & 4)
-    max_height_+=4;
-  
-  if (max_width_ & 8)
-    max_width_+=8;
-  if (max_height_ & 8)
-    max_height_+=8;
-  
-  if (max_width_ & 16)
-    max_width_+=16;
-  if (max_height_ & 16)
-    max_height_+=16;
-  
-  if (max_width_ & 32)
-    max_width_+=32;
-  if (max_height_ & 32)
-    max_height_+=32;
-	
-}	
+	if(dataset_json.count("width") == 1 && dataset_json["width"].is_number() && dataset_json.count("height") == 1 && dataset_json["height"].is_number()) {
+    max_width_ = dataset_json["width"];
+    max_height_ = dataset_json["height"];
+
+    LOGDEBUG << "Dataset specifies fixed size of " << max_width_ << "x" << max_height_;
+  } else {
+    // Increase max_width and max_height for better pooling
+    if (max_width_ & 1)
+      max_width_++;
+    if (max_height_ & 1)
+      max_height_++;
+
+    if (max_width_ & 2)
+      max_width_ += 2;
+    if (max_height_ & 2)
+      max_height_ += 2;
+
+    if (max_width_ & 4)
+      max_width_ += 4;
+    if (max_height_ & 4)
+      max_height_ += 4;
+
+    if (max_width_ & 8)
+      max_width_ += 8;
+    if (max_height_ & 8)
+      max_height_ += 8;
+
+    if (max_width_ & 16)
+      max_width_ += 16;
+    if (max_height_ & 16)
+      max_height_ += 16;
+
+    if (max_width_ & 32)
+      max_width_ += 32;
+    if (max_height_ & 32)
+      max_height_ += 32;
+
+  }
+}
 
 
 bool JSONSegmentationDataset::GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
