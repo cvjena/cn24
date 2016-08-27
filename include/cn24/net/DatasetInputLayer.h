@@ -104,6 +104,9 @@ private:
    * @brief Clears the permutation vector and generates a new one.
    */
   void RedoPermutation();
+
+  // Metadata buffer
+  DatasetMetadataPointer* metadata_buffer_ = nullptr;
 };
 
 }

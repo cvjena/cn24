@@ -179,22 +179,25 @@ int main (int argc, char* argv[]) {
 }
 
 void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Dataset* dataset) {
-	for (Conv::NetGraphNode* output_node : graph.GetOutputNodes()) {
-		// Add appropriate statistics layer
-		Conv::NetGraphNode* stat_node = nullptr;
-		if (dataset->GetClasses() == 1) {
-			Conv::BinaryStatLayer* binary_stat_layer = new Conv::BinaryStatLayer (13, -1, 1);
-			stat_node = new Conv::NetGraphNode(binary_stat_layer);
-		} else {
-			std::vector<std::string> class_names = dataset->GetClassNames();
-			Conv::ConfusionMatrixLayer* confusion_matrix_layer = new Conv::ConfusionMatrixLayer (class_names, dataset->GetClasses());
-			stat_node = new Conv::NetGraphNode(confusion_matrix_layer);
-		}
-		stat_node->input_connections.push_back(Conv::NetGraphConnection(output_node, 0, false));
-		stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node,1));
-		stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node,3));
-		graph.AddNode(stat_node);
-	}
+  if(dataset->GetTask() == Conv::SEMANTIC_SEGMENTATION || dataset->GetTask() == Conv::CLASSIFICATION) {
+    for (Conv::NetGraphNode *output_node : graph.GetOutputNodes()) {
+      // Add appropriate statistics layer
+      Conv::NetGraphNode *stat_node = nullptr;
+      if (dataset->GetClasses() == 1) {
+        Conv::BinaryStatLayer *binary_stat_layer = new Conv::BinaryStatLayer(13, -1, 1);
+        stat_node = new Conv::NetGraphNode(binary_stat_layer);
+      } else {
+        std::vector<std::string> class_names = dataset->GetClassNames();
+        Conv::ConfusionMatrixLayer *confusion_matrix_layer = new Conv::ConfusionMatrixLayer(class_names,
+                                                                                            dataset->GetClasses());
+        stat_node = new Conv::NetGraphNode(confusion_matrix_layer);
+      }
+      stat_node->input_connections.push_back(Conv::NetGraphConnection(output_node, 0, false));
+      stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node, 1));
+      stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node, 3));
+      graph.AddNode(stat_node);
+    }
+  }
 }
 
 

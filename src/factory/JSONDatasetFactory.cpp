@@ -20,6 +20,10 @@ Dataset* JSONDatasetFactory::ConstructDataset(JSON descriptor) {
       return segmentation_dataset;
     } else if(task.compare("classification") == 0) {
 
+    } else if (task.compare("detection") == 0) {
+      JSONDetectionDataset* detection_dataset = new JSONDetectionDataset;
+      detection_dataset->Load(descriptor, false, LOAD_BOTH);
+      return detection_dataset;
     } else {
       FATAL("Invalid task: " << task);
     }

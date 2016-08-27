@@ -28,6 +28,7 @@ namespace Conv {
 			
 		std::size_t width = 0, height = 0, maps = 0, samples = 0;
 		std::string filename;
+		bool ignore = false;
 	};
   
   class ListTensorStream : public TensorStream {
