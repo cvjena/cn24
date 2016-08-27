@@ -147,6 +147,10 @@ bool DatasetInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inp
     CombinedTensor *localized_error_output =
         new CombinedTensor(0);
 
+    DatasetMetadataPointer* metadata_buffer = new DatasetMetadataPointer[batch_size_];
+
+    label_output->metadata = metadata_buffer;
+
     outputs.push_back(data_output);
     outputs.push_back(label_output);
     outputs.push_back(helper_output);
@@ -176,6 +180,8 @@ bool DatasetInputLayer::Connect (const std::vector< CombinedTensor* >& inputs,
     label_output_ = label_output;
     helper_output_ = helper_output;
     localized_error_output_ = localized_error_output;
+    if(dataset_.GetTask() == DETECTION)
+      metadata_buffer_ = label_output_->metadata;
   }
 
   return valid;
@@ -249,6 +255,18 @@ void DatasetInputLayer::SelectAndLoadSamples() {
     // Copy localized error
     if (force_no_weight)
       localized_error_output_->data.Clear (0.0, sample);
+
+    // Load metadata
+    if(dataset_.GetTask() == DETECTION) {
+      if (testing_)
+        success = dataset_.GetTestingMetadata(metadata_buffer_,sample, selected_element);
+      else
+        success = dataset_.GetTrainingMetadata(metadata_buffer_,sample, selected_element);
+    }
+
+    if (!success) {
+      FATAL ("Cannot load metadata from Dataset!");
+    }
   }
 }
 
