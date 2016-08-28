@@ -5,6 +5,7 @@
  * For licensing information, see the LICENSE file included with this project.
  */
 #include <cmath>
+#include <cn24/util/BoundingBox.h>
 
 #include "Log.h"
 #include "CombinedTensor.h"
@@ -69,7 +70,19 @@ bool YOLOLossLayer::Connect ( const std::vector< CombinedTensor* >& inputs,
   CombinedTensor* second = inputs[1];
   CombinedTensor* third = inputs[2];
   bool valid = first != nullptr && second != nullptr &&
-               outputs.size() == 0;
+               outputs.size() == 0 && second->metadata != nullptr;
+
+  unsigned int total_maps = first->data.maps();
+  unsigned int maps_per_cell = total_maps / (horizontal_cells_ * vertical_cells_);
+  classes_ = maps_per_cell - (5 * boxes_per_cell_);
+
+  unsigned int should_be_maps = ((5 * boxes_per_cell_) + classes_) * horizontal_cells_ * vertical_cells_;
+
+  if(should_be_maps != total_maps) {
+    LOGERROR << "Wrong number of output maps detected! Should be " << total_maps << " (" << horizontal_cells_ << "x" << vertical_cells_ << "x(" << classes_ << "+5).";
+  }
+
+  valid &= should_be_maps == total_maps;
 
   if ( valid ) {
     first_ = first;
@@ -88,6 +101,8 @@ void YOLOLossLayer::FeedForward() {
   //pragma omp parallel for default(shared)
   for ( unsigned int sample = 0; sample < first_->data.samples(); sample++ ) {
     LOGDEBUG << "Processing sample " << sample;
+    std::vector<BoundingBox>* sample_boxes = (std::vector<BoundingBox>*)second_->metadata[sample];
+    LOGDEBUG << "  " << sample_boxes->size() << " bounding boxes in ground truth";
   }
   first_->delta.Clear();
 }

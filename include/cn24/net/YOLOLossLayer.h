@@ -56,6 +56,8 @@ private:
   unsigned int vertical_cells_ = 0;
   unsigned int boxes_per_cell_ = 0;
 
+	unsigned int classes_ = 0;
+
 	datum loss_weight_ = 1.0;
 };
 
