@@ -25,6 +25,7 @@
 #include "SparsityLossLayer.h"
 #include "UpscaleLayer.h"
 #include "LayerFactory.h"
+#include "YOLODetectionLayer.h"
 
 namespace Conv {
 bool LayerFactory::IsValidDescriptor(std::string descriptor) {
@@ -100,7 +101,8 @@ Layer* LayerFactory::ConstructLayer(std::string descriptor) {
   CONV_LAYER_TYPE("upscale", UpscaleLayer)
   CONV_LAYER_TYPE("hmax", HMaxActivationFunction)
   CONV_LAYER_TYPE("sparsity_relu", SparsityReLULayer)
-  CONV_LAYER_TYPE("sparsity_loss", SparsityLossLayer);
+  CONV_LAYER_TYPE("sparsity_loss", SparsityLossLayer)
+  CONV_LAYER_TYPE("yolo_detection", YOLODetectionLayer);
 
   return layer;
 }
@@ -164,7 +166,8 @@ Layer* LayerFactory::ConstructLayer(JSON descriptor)
   CONV_LAYER_TYPE("upscale", UpscaleLayer)
   CONV_LAYER_TYPE("hmax", HMaxActivationFunction)
   CONV_LAYER_TYPE("sparsity_relu", SparsityReLULayer)
-  CONV_LAYER_TYPE("sparsity_loss", SparsityLossLayer);
+  CONV_LAYER_TYPE("sparsity_loss", SparsityLossLayer)
+  CONV_LAYER_TYPE("yolo_detection", YOLODetectionLayer);
 
   return layer;
 }
