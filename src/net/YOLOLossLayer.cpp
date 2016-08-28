@@ -16,9 +16,20 @@ namespace Conv {
 YOLOLossLayer::YOLOLossLayer(JSON configuration)
  : Layer(configuration) {
   LOGDEBUG << "Instance created.";
-#ifdef ERROR_LAYER_IGNORE_WEIGHTS
-  LOGINFO << "Weights are being ignored!";
-#endif
+  if(configuration.count("horizontal_cells") != 1 || !configuration["horizontal_cells"].is_number()) {
+    FATAL("YOLO configuration property horizontal_cells missing!");
+  }
+  horizontal_cells_ = configuration["horizontal_cells"];
+
+  if(configuration.count("vertical_cells") != 1 || !configuration["vertical_cells"].is_number()) {
+    FATAL("YOLO configuration property vertical_cells missing!");
+  }
+  vertical_cells_ = configuration["vertical_cells"];
+
+  if(configuration.count("boxes_per_cell") != 1 || !configuration["boxes_per_cell"].is_number()) {
+    FATAL("YOLO configuration property boxes_per_cell missing!");
+  }
+  boxes_per_cell_ = configuration["boxes_per_cell"];
 }
 
 bool YOLOLossLayer::CreateOutputs ( const std::vector< CombinedTensor* >& inputs,
@@ -76,7 +87,7 @@ void YOLOLossLayer::FeedForward() {
   // batch.
   //pragma omp parallel for default(shared)
   for ( unsigned int sample = 0; sample < first_->data.samples(); sample++ ) {
-
+    LOGDEBUG << "Processing sample " << sample;
   }
   first_->delta.Clear();
 }
@@ -92,6 +103,7 @@ datum YOLOLossLayer::CalculateLossFunction() {
   for (unsigned int sample = 0; sample < first_->data.samples(); sample++) {
 				  error += 0;
   }
+  return (datum)error;
 }
 
 
