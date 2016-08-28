@@ -14,3 +14,6 @@ GetGitRevisionDescription.cmake (Boost License 1.0):
 
 json.hpp (MIT License):
  Niels Lohmann
+
+YOLO Framework (YOLO License):
+ Joseph Redmon
