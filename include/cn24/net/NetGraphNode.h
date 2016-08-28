@@ -42,6 +42,9 @@ public:
 
 	explicit NetGraphNode(JSON descriptor) {
 		layer = LayerFactory::ConstructLayer(descriptor);
+		if(layer == nullptr) {
+			FATAL("Unknown layer! Descriptor: " << descriptor.dump());
+		}
 		layer->CreateBufferDescriptors(output_buffers);
 	}
 
