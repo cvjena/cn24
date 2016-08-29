@@ -23,7 +23,7 @@ namespace Conv {
 
 class YOLODetectionLayer : public SimpleLayer {
 public:
-  explicit YOLODetectionLayer(JSON configuration) : SimpleLayer(configuration) {};
+  explicit YOLODetectionLayer(JSON configuration);
   
   // Implementations for SimpleLayer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs,
@@ -36,6 +36,12 @@ public:
 
 private:
   DatasetMetadataPointer* metadata_buffer_ = nullptr;
+
+  unsigned int horizontal_cells_ = 0;
+  unsigned int vertical_cells_ = 0;
+  unsigned int boxes_per_cell_ = 0;
+
+  unsigned int classes_ = 0;
 
 };
 

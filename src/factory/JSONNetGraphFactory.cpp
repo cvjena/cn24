@@ -121,6 +121,11 @@ bool JSONNetGraphFactory::AddLayers(NetGraph &graph, unsigned int seed) {
         node_json = LayerFactory::InjectSeed(node_json, new_random_seed);
         LOGDEBUG << "Inserting " << node_json.dump();
 
+        // Insert YOLO configuration if needed
+        if(LayerFactory::ExtractLayerType(node_json).compare("yolo_detection") == 0) {
+          node_json["layer"]["yolo_configuration"] = net_json_["yolo_configuration"];
+        }
+
         // Assemble node
         NetGraphNode *node = new NetGraphNode(node_json);
         node->unique_name = node_json_iterator.key();
