@@ -306,7 +306,7 @@ void LeakyReLULayer::FeedForward () {
     const datum input_data = input_->data.data_ptr_const ()[element];
 
     // max(0, x)
-    const datum output_data = input_data > 0 ? input_data : 0;
+    const datum output_data = input_data > 0 ? input_data : 0.1 * input_data;
     output_->data.data_ptr ()[element] = output_data;
   }
 #endif
