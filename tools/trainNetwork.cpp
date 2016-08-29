@@ -315,19 +315,52 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
 	}
 	else if (command.compare(0, 5, "wstat") == 0) {
     std::string node_uid;
+    unsigned int show = 0;
+    unsigned int map = 0;
+    unsigned int sample = 0;
 		Conv::ParseStringParamIfPossible(command, "node", node_uid);
+    Conv::ParseCountIfPossible(command, "show", show);
+    Conv::ParseCountIfPossible(command, "map", map);
+    Conv::ParseCountIfPossible(command, "sample", sample);
+
 		for (Conv::NetGraphNode* node : graph.GetNodes()) {
 			if (node->unique_name.compare(node_uid) == 0) {
 				unsigned int p = 0;
 				for (Conv::CombinedTensor* param_tensor : node->layer->parameters()) {
-					LOGINFO << "Reporting stats on parameter set " << p++ << " " << param_tensor->data;
-					LOGINFO << "Weight stats:";
-					param_tensor->data.PrintStats();
-					LOGINFO << "Gradient stats:";
-					param_tensor->delta.PrintStats();
+          if(show == 1) {
+            Conv::System::viewer->show(&(param_tensor->data), "Tensor Viewer", false, map, sample);
+          } else {
+            LOGINFO << "Reporting stats on parameter set " << p++ << " " << param_tensor->data;
+            LOGINFO << "Weight stats:";
+            param_tensor->data.PrintStats();
+            LOGINFO << "Gradient stats:";
+            param_tensor->delta.PrintStats();
+          }
 				}
 			}
 		}
+	}
+  else if (command.compare(0, 5, "dump ") == 0) {
+    std::string node_uid;
+		Conv::ParseStringParamIfPossible(command, "node", node_uid);
+
+    std::string param_file_name;
+    Conv::ParseStringParamIfPossible (command, "file", param_file_name);
+
+    if (param_file_name.length() == 0) {
+      LOGERROR << "Filename needed!";
+    } else {
+      std::ofstream param_file(param_file_name, std::ios::out | std::ios::binary);
+
+      for (Conv::NetGraphNode *node : graph.GetNodes()) {
+        if (node->unique_name.compare(node_uid) == 0) {
+          unsigned int p = 0;
+          for (Conv::CombinedTensor *param_tensor : node->layer->parameters()) {
+            param_tensor->data.Serialize(param_file, true);
+          }
+        }
+      }
+    }
 	}
 	else if (command.compare(0, 5, "dstat") == 0) {
     std::string node_uid;

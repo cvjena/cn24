@@ -59,6 +59,9 @@ TensorViewer::TensorViewer () {
 
 void TensorViewer::show ( Tensor* tensor, const std::string& title, bool autoclose,unsigned int map, unsigned int sample ) {
 #ifdef BUILD_GUI
+  if(tensor->elements() == 0)
+    return;
+
   unsigned int factor = 1;
   if(tensor->width() < 256 && tensor->height() < 256) {
     factor = 256/tensor->width();

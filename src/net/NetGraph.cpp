@@ -323,8 +323,10 @@ void NetGraph::FeedForward(NetGraphNode* node) {
 		node->layer->FeedForward();
     if(layerview_enabled_)
       for(NetGraphBuffer buffer: node->output_buffers) {
-        for(unsigned int sample = 0; sample < buffer.combined_tensor->data.samples(); sample++) {
-          for(unsigned int map = 0; map < buffer.combined_tensor->data.maps(); map++) {
+				for(unsigned int sample = 0; sample < 1; sample++) {
+					for(unsigned int map = 0; map < 1; map++) {
+        //for(unsigned int sample = 0; sample < buffer.combined_tensor->data.samples(); sample++) {
+        //  for(unsigned int map = 0; map < buffer.combined_tensor->data.maps(); map++) {
             std::stringstream ss;
             ss << node->unique_name << ": " << node->layer->GetLayerDescription() << ", buffer " << buffer.description;
   #ifdef BUILD_OPENCL
