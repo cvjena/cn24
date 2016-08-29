@@ -124,7 +124,90 @@ int main(int argc, char **argv) {
         }
       }
     }
-    else if (command.compare(0, 5, "save ") == 0) {
+    if (command.compare(0, 13, "load_darknet ") == 0) {
+      std::string param_file_name;
+      Conv::ParseStringParamIfPossible(command, "file", param_file_name);
+
+      std::string net_file_name;
+      Conv::ParseStringParamIfPossible(command, "net", net_file_name);
+
+      // Check if input file exists
+      std::ifstream input (param_file_name, std::ios::in | std::ios::binary);
+      if (input.good()) {
+        LOGINFO << "Loading model file " << param_file_name;
+      } else {
+        LOGERROR << "Cannot open " << param_file_name;
+        continue;
+      }
+
+      input.ignore(4 * sizeof(int));
+
+      // Check if input file exists
+      std::ifstream net_input (net_file_name, std::ios::in);
+      if (net_input.good()) {
+        LOGINFO << "Loading net file " << net_file_name;
+      } else {
+        LOGERROR << "Cannot open " << net_file_name;
+        continue;
+      }
+
+      Conv::JSON net_json = Conv::JSON::parse(net_input);
+      Conv::JSON nodes_json = net_json["net"]["nodes"];
+
+      LOGINFO << "Processing " << nodes_json.size() << " nodes";
+
+      unsigned int input_maps = 3;
+
+      for(Conv::JSON::iterator node_json_iterator = nodes_json.begin(); node_json_iterator != nodes_json.end(); ++node_json_iterator) {
+        Conv::JSON node_json = node_json_iterator.value();
+        if(node_json["layer"].is_object()) {
+          std::string layer_type = node_json["layer"]["type"];
+          Conv::JSON layer_json = node_json["layer"];
+          if(layer_type.compare("convolution") == 0) {
+            LOGINFO << "Processing layer " << node_json_iterator.key();
+            unsigned int kernel_width = layer_json["size"][0];
+            unsigned int kernel_height = layer_json["size"][1];
+            unsigned int kernel_count = layer_json["kernels"];
+            NamedTensorArray* array = new NamedTensorArray(node_json_iterator.key());
+
+            Conv::Tensor* bias_tensor = new Conv::Tensor(1, kernel_count, 1, 1);
+            // Read bias tensor
+            input.read((char*) bias_tensor->data_ptr(), sizeof(Conv::datum) * kernel_count);
+
+            Conv::Tensor* weight_tensor = new Conv::Tensor(kernel_count, kernel_width, kernel_height, input_maps);
+            if(layer_json.count("transpose") == 1 && layer_json["transpose"].is_number() && layer_json["transpose"] == 1) {
+              LOGINFO << "Transposing weights";
+              Conv::Tensor* temp_tensor = new Conv::Tensor(input_maps, kernel_width, kernel_height, kernel_count);
+              input.read((char *) temp_tensor->data_ptr(),
+                         sizeof(Conv::datum) * kernel_count * kernel_width * kernel_height * input_maps);
+
+              for(unsigned int s = 0; s < kernel_count; s++) {
+                for(unsigned int m = 0; m < input_maps; m++) {
+                  for(unsigned int y = 0; y < kernel_height; y++) {
+                    for(unsigned int x = 0; x < kernel_width; x++) {
+                      weight_tensor->data_ptr()[(input_maps * kernel_width * kernel_height) * s + (kernel_width * kernel_height * m) + (kernel_width * y) + x] =
+                          temp_tensor->data_ptr_const()[(kernel_count * kernel_width * kernel_height * m) + (kernel_width * kernel_height * s) + (kernel_width * y) + x];
+                    }
+                  }
+                }
+              }
+
+              delete temp_tensor;
+            } else {
+              input.read((char *) weight_tensor->data_ptr(),
+                         sizeof(Conv::datum) * kernel_count * kernel_width * kernel_height * input_maps);
+            }
+
+            array->tensors.push_back(weight_tensor);
+            array->tensors.push_back(bias_tensor);
+
+            tensors.push_back(array);
+            input_maps = kernel_count;
+          }
+        }
+      }
+
+    } else if (command.compare(0, 5, "save ") == 0) {
       std::string param_file_name;
       Conv::ParseStringParamIfPossible(command, "file", param_file_name);
 
