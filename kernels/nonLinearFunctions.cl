@@ -54,3 +54,31 @@ __kernel void NL_SIGM_BWD ( __global float* dX,
     const float dY_value = dY[element];
     dX[element] = dY_value * Y_value * (1.0 - Y_value);
 }
+
+__kernel void NL_LEAKY_FWD ( __global float* X,
+                        __global float* Y
+                      )
+{
+    uint element = get_global_id ( 0 );
+    if(X[element] > 0) {
+        Y[element] =  X[element];
+    } else {
+        Y[element] =  0.1 * X[element];
+    }
+}
+
+
+__kernel void NL_LEAKY_BWD ( __global float* dX,
+                        __global float* X,
+			__global float* dY
+                      )
+{
+    uint element = get_global_id ( 0 );
+    const float X_value = X[element];
+    const float dY_value = dY[element];
+    if(X_value > 0) {
+        dX[element] = dY_value;
+    } else {
+        dX[element] = dY_value * 0.1f;
+    }
+}

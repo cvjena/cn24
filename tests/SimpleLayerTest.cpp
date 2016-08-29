@@ -36,6 +36,7 @@ std::vector<std::pair<std::string, bool>> test_layers_and_runs = {
   {"{\"layer\":\"tanh\"}",false},
   {"{\"layer\":\"sigm\"}",false},
   {"{\"layer\":\"relu\"}",false},
+	{"{\"layer\":\"leaky\"}",false},
   {"{\"layer\":{\"type\":\"gradient_accumulation\",\"outputs\":2}}",false},
   {"{\"layer\":{\"type\":\"resize\",\"border\":[2,2]}}",false}
 };
