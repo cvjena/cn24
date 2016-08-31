@@ -224,6 +224,26 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
       max_height_ += 32;
 
   }
+
+  // Go trough all accessors and normalize their bounding boxes
+  for(unsigned int a = 0; a < training_accessors_.size(); a++) {
+    for(unsigned int b = 0; b < training_accessors_[a].bounding_boxes_.size(); b++) {
+      BoundingBox *box = &(training_accessors_[a].bounding_boxes_[b]);
+      box->x /= (datum)max_width_;
+      box->y /= (datum)max_height_;
+      box->w /= (datum)max_width_;
+      box->h /= (datum)max_height_;
+    }
+  }
+  for(unsigned int a = 0; a < testing_accessors_.size(); a++) {
+    for(unsigned int b = 0; b < testing_accessors_[a].bounding_boxes_.size(); b++) {
+      BoundingBox *box = &(testing_accessors_[a].bounding_boxes_[b]);
+      box->x /= (datum)max_width_;
+      box->y /= (datum)max_height_;
+      box->w /= (datum)max_width_;
+      box->h /= (datum)max_height_;
+    }
+  }
 }	
 
 

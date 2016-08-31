@@ -115,7 +115,7 @@ void YOLODetectionLayer::FeedForward() {
     std::vector<BoundingBox>* sample_boxes = (std::vector<BoundingBox>*)output_->metadata[sample];
     sample_boxes->clear();
 
-    LOGDEBUG << "Processing sample " << sample;
+    // LOGDEBUG << "Processing sample " << sample;
 
     // Prepare indices into the prediction array
     unsigned int sample_index = sample * input_->data.maps();
