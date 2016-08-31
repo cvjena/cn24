@@ -92,7 +92,7 @@ int main (int argc, char* argv[]) {
     FATAL ("Cannot open dataset configuration file!");
   }
 
-  dataset_config_fname = dataset_config_fname.substr (net_config_fname.rfind ("/") + 1);
+  dataset_config_fname = dataset_config_fname.substr (dataset_config_fname.rfind ("/") + 1);
 
 
   // Extract parallel batch size from parsed configuration
