@@ -175,24 +175,43 @@ int main(int argc, char **argv) {
             input.read((char*) bias_tensor->data_ptr(), sizeof(Conv::datum) * kernel_count);
 
             Conv::Tensor* weight_tensor = new Conv::Tensor(kernel_count, kernel_width, kernel_height, input_maps);
-            if(layer_json.count("transpose") == 1 && layer_json["transpose"].is_number() && layer_json["transpose"] == 1) {
-              LOGINFO << "Transposing weights";
-              Conv::Tensor* temp_tensor = new Conv::Tensor(input_maps, kernel_width, kernel_height, kernel_count);
-              input.read((char *) temp_tensor->data_ptr(),
-                         sizeof(Conv::datum) * kernel_count * kernel_width * kernel_height * input_maps);
+            if(layer_json.count("transpose") == 1 && layer_json["transpose"].is_number() && (unsigned int)(layer_json["transpose"]) == 1) {
+              if(kernel_width == 1) {
+                LOGINFO << "Transposing weights (simple)";
+                Conv::Tensor *temp_tensor = new Conv::Tensor(input_maps, kernel_width, kernel_height, kernel_count);
+                input.read((char *) temp_tensor->data_ptr(),
+                           sizeof(Conv::datum) * kernel_count * kernel_width * kernel_height * input_maps);
 
-              for(unsigned int s = 0; s < kernel_count; s++) {
-                for(unsigned int m = 0; m < input_maps; m++) {
-                  for(unsigned int y = 0; y < kernel_height; y++) {
-                    for(unsigned int x = 0; x < kernel_width; x++) {
-                      weight_tensor->data_ptr()[(input_maps * kernel_width * kernel_height) * s + (kernel_width * kernel_height * m) + (kernel_width * y) + x] =
-                          temp_tensor->data_ptr_const()[(kernel_count * kernel_width * kernel_height * m) + (kernel_width * kernel_height * s) + (kernel_width * y) + x];
+                for (unsigned int s = 0; s < kernel_count; s++) {
+                  for (unsigned int m = 0; m < input_maps; m++) {
+                        weight_tensor->data_ptr()[input_maps * s + m] =
+                            temp_tensor->data_ptr_const()[kernel_count * m + s];
+                  }
+                }
+
+                delete temp_tensor;
+              } else {
+                LOGINFO << "Transposing weights (complex)";
+                Conv::Tensor *temp_tensor = new Conv::Tensor(input_maps, kernel_width, kernel_height, kernel_count);
+                input.read((char *) temp_tensor->data_ptr(),
+                           sizeof(Conv::datum) * kernel_count * kernel_width * kernel_height * input_maps);
+
+                for (unsigned int s = 0; s < kernel_count; s++) {
+                  for (unsigned int m = 0; m < input_maps; m++) {
+                    for (unsigned int y = 0; y < kernel_height; y++) {
+                      for (unsigned int x = 0; x < kernel_width; x++) {
+                        weight_tensor->data_ptr()[(input_maps * kernel_width * kernel_height) * s +
+                                                  (kernel_width * kernel_height * m) + (kernel_width * y) + x] =
+
+                            temp_tensor->data_ptr_const()[(kernel_count * kernel_width * kernel_height * m) +
+                                                          (kernel_width * kernel_count * y) + (kernel_count * x) + s];
+                      }
                     }
                   }
                 }
-              }
 
-              delete temp_tensor;
+                delete temp_tensor;
+              }
             } else {
               input.read((char *) weight_tensor->data_ptr(),
                          sizeof(Conv::datum) * kernel_count * kernel_width * kernel_height * input_maps);
