@@ -60,6 +60,8 @@ public:
   static cl_kernel k_nlTanhBackward;
   static cl_kernel k_nlSigm;
   static cl_kernel k_nlSigmBackward;
+  static cl_kernel k_nlLeaky;
+  static cl_kernel k_nlLeakyBackward;
   static cl_kernel k_setValue;
   static cl_kernel k_sms;
   static cl_kernel k_im2col;

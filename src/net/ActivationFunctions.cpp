@@ -37,6 +37,14 @@ bool TanhLayer::IsOpenCLAware() {
 #endif
 }
 
+bool LeakyReLULayer::IsOpenCLAware() {
+#ifdef BUILD_OPENCL
+  return true;
+#else
+  return false;
+#endif
+}
+
 void SigmoidLayer::FeedForward () {
 #ifdef BUILD_OPENCL
   cl_uint error = 0;
@@ -263,5 +271,94 @@ void SoftmaxLayer::BackPropagate () {
     input_->delta.data_ptr ()[element] = output_delta;
   }
 }
+
+void LeakyReLULayer::FeedForward () {
+#ifdef BUILD_OPENCL
+  cl_uint error = 0;
+  input_->data.MoveToGPU ();
+  output_->data.MoveToGPU ();
+
+  error |= clSetKernelArg (CLHelper::k_nlLeaky, 0, sizeof (cl_mem), &input_->data.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_nlLeaky, 1, sizeof (cl_mem), &output_->data.cl_data_ptr_);
+
+  if (error != CL_SUCCESS) {
+    FATAL("Error setting kernel args: " << (signed int) error);
+  }
+
+  size_t global_work_size[] = {input_->data.elements ()};
+
+  error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_nlLeaky, 1, NULL,
+      global_work_size, NULL, 0, NULL, NULL);
+  if (error != CL_SUCCESS) {
+    FATAL("Error enqueueing kernel: " << (signed int) error);
+  }
+
+#ifdef BRUTAL_FINISH
+  error = clFinish (CLHelper::queue);
+  if (error != CL_SUCCESS) {
+    FATAL("Error finishing command queue: " << (signed int) error);
+  }
+#endif
+
+#else
+#pragma omp parallel for default(shared)
+  for (std::size_t element = 0; element < input_->data.elements(); element++) {
+    const datum input_data = input_->data.data_ptr_const ()[element];
+
+    // max(0, x)
+    const datum output_data = input_data > 0 ? input_data : 0.1 * input_data;
+    output_->data.data_ptr ()[element] = output_data;
+  }
+#endif
+}
+
+void LeakyReLULayer::BackPropagate () {
+#ifdef BUILD_OPENCL
+  cl_uint error = 0;
+
+  input_->delta.MoveToGPU ();
+  input_->data.MoveToGPU ();
+  output_->delta.MoveToGPU ();
+
+  error |= clSetKernelArg (CLHelper::k_nlLeakyBackward, 0, sizeof (cl_mem), &input_->delta.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_nlLeakyBackward, 1, sizeof (cl_mem), &input_->data.cl_data_ptr_);
+  error |= clSetKernelArg (CLHelper::k_nlLeakyBackward, 2, sizeof (cl_mem), &output_->delta.cl_data_ptr_);
+
+  if (error != CL_SUCCESS) {
+    FATAL("Error setting kernel args: " << (signed int) error);
+  }
+
+  size_t global_work_size[] = {input_->data.elements ()};
+
+  error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_nlLeakyBackward, 1, NULL,
+      global_work_size, NULL, 0, NULL, NULL);
+  if (error != CL_SUCCESS) {
+    FATAL("Error enqueueing kernel: " << (signed int) error);
+  }
+
+#ifdef BRUTAL_FINISH
+  error = clFinish (CLHelper::queue);
+  if (error != CL_SUCCESS) {
+    FATAL("Error finishing command queue: " << (signed int) error);
+  }
+#endif
+
+
+
+#else
+#pragma omp parallel for default(shared)
+  for (std::size_t element = 0; element < input_->data.elements (); element++) {
+    const datum output_delta = output_->delta.data_ptr_const ()[element];
+    const datum input_data = input_->data.data_ptr_const ()[element];
+
+    // There is more than one way to do this. max(0,x) is not differentiable
+    // at x=0 so we have to make a choice. It doesn't affect the learning in
+    // any meaningful way.
+    const datum input_delta = (input_data > 0 ? output_delta : ((datum)0.1) * output_delta);
+    input_->delta.data_ptr ()[element] = input_delta;
+  }
+#endif
+}
+
 
 }

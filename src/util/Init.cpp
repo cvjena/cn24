@@ -64,6 +64,8 @@ cl_kernel CLHelper::k_nlTanh = 0;
 cl_kernel CLHelper::k_nlTanhBackward = 0;
 cl_kernel CLHelper::k_nlSigm = 0;
 cl_kernel CLHelper::k_nlSigmBackward = 0;
+cl_kernel CLHelper::k_nlLeaky = 0;
+cl_kernel CLHelper::k_nlLeakyBackward = 0;
 cl_kernel CLHelper::k_setValue = 0;
 cl_kernel CLHelper::k_sms = 0;
 cl_kernel CLHelper::k_im2col = 0;
@@ -381,7 +383,19 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   if ( error != CL_SUCCESS ) {
     FATAL ( "Error creating kernel: " << ( signed int ) error );
   }
-  
+
+  k_nlLeaky = clCreateKernel ( p_nonLinearFunctions, "NL_LEAKY_FWD", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+
+  k_nlLeakyBackward = clCreateKernel ( p_nonLinearFunctions, "NL_LEAKY_BWD", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+
   k_setValue = clCreateKernel ( p_setValue, "SET_VALUE", &error );
 
   if ( error != CL_SUCCESS ) {

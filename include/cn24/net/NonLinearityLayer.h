@@ -58,6 +58,7 @@ public:
 
 NL_LAYER(Tanh)
 NL_LAYER(Sigmoid)
+NL_LAYER(LeakyReLU)
 NL_LAYER_NOCL(ReLU)
 NL_LAYER_NOCL(Softmax)
 }
