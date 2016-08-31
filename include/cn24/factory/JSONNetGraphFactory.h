@@ -27,10 +27,15 @@ namespace Conv {
   
 class JSONNetGraphFactory {
 public:
-  JSONNetGraphFactory(std::istream& file, unsigned int seed = 0) : seed_(seed) {
+  explicit JSONNetGraphFactory(std::istream& file, unsigned int seed = 0) : seed_(seed) {
     JSON file_json = JSON::parse(file);
     net_json_ = file_json["net"];
     hyperparameters_json_ = file_json["hyperparameters"];
+  }
+
+  explicit JSONNetGraphFactory(JSON json, unsigned int seed = 0) : seed_(seed) {
+    net_json_ = json["net"];
+    hyperparameters_json_ = json["hyperparameters"];
   }
 
   JSON GetHyperparameters() {
