@@ -134,7 +134,7 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
         if(!tensor_box.is_object() || tensor_box.count("boxes") != 1 || !tensor_box["boxes"].is_array()) {
           FATAL("Wrong bounding box JSON for sample " << t / 2);
         }
-        LOGDEBUG << "Sample " << t / 2 << " has " << tensor_box["boxes"].size() << " bounding boxes.";
+        // LOGDEBUG << "Sample " << t / 2 << " has " << tensor_box["boxes"].size() << " bounding boxes.";
 
         for(unsigned int b = 0; b < tensor_box["boxes"].size(); b++) {
           JSON box_json = tensor_box["boxes"][b];

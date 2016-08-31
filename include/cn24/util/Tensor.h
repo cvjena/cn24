@@ -185,9 +185,10 @@ public:
    * @param source_sample The sample in the source Tensor
    * @param target The target Tensor
    * @param target_sample The sample in the target Tensor
+   * @param allow_oversize If true, target size is allowed to be too small
    */
   static bool CopySample (const Tensor& source, const std::size_t source_sample,
-                          Tensor& target, const std::size_t target_sample);
+                          Tensor& target, const std::size_t target_sample, const bool allow_oversize = false);
 
   /**
    * @brief Copy a map of a sample from one Tensor to another.
@@ -198,11 +199,12 @@ public:
    * @param target The target Tensor
    * @param target_sample The sample in the target Tensor
    * @param target_map The map in the target Tensor
+   * @param allow_oversize If true, target size is allowed to be too small
    */
   static bool CopyMap (const Tensor& source, const std::size_t source_sample,
                        const std::size_t source_map, Tensor& target,
                        const std::size_t target_sample,
-                       const std::size_t target_map);
+                       const std::size_t target_map, const bool allow_oversize = false);
   /**
    * @brief Deallocates the memory if data_ptr is not a nullptr.
    */

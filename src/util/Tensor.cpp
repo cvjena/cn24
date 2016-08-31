@@ -321,13 +321,13 @@ void Tensor::Deserialize ( std::istream& input , bool head_only, bool try_mmap, 
 
 
 bool Tensor::CopySample ( const Tensor& source, const std::size_t source_sample,
-                          Tensor& target, const std::size_t target_sample ) {
+                          Tensor& target, const std::size_t target_sample, const bool allow_oversize) {
   // Check if both Tensors have the same amount of feature maps/channels
   if ( source.maps() != target.maps() )
     return false;
 
   if ( source.width() != target.width() || source.height() != target.height() ) {
-    if ( target.width() < source.width() || target.height() < source.height() )
+    if ( (target.width() < source.width() || target.height() < source.height()) && !allow_oversize)
       return false;
   }
 
@@ -335,7 +335,7 @@ bool Tensor::CopySample ( const Tensor& source, const std::size_t source_sample,
 
   for ( std::size_t map = 0; map < source.maps(); map++ ) {
     result &= CopyMap ( source, source_sample, map,
-                        target, target_sample, map );
+                        target, target_sample, map, allow_oversize );
   }
 
   return result;
@@ -344,19 +344,19 @@ bool Tensor::CopySample ( const Tensor& source, const std::size_t source_sample,
 bool Tensor::CopyMap ( const Tensor& source, const std::size_t source_sample,
                        const std::size_t source_map, Tensor& target,
                        const std::size_t target_sample,
-                       const std::size_t target_map ) {
+                       const std::size_t target_map, const bool allow_oversize) {
   // Check sample bounds
   if ( source_sample >= source.samples() || target_sample >= target.samples() )
     return false;
 
   // Check if image dimensions match
   if ( source.width() != target.width() || source.height() != target.height() ) {
-    if ( target.width() < source.width() || target.height() < source.height() )
+    if ( (target.width() < source.width() || target.height() < source.height() ) && !allow_oversize)
       return false;
 
     // Source image is smaller, okay..
-    for ( unsigned int y = 0; y < source.height(); y++ ) {
-      for ( unsigned int x = 0; x < source.width(); x++ ) {
+    for ( unsigned int y = 0; (y < source.height() && y < target.height()); y++ ) {
+      for ( unsigned int x = 0; (x < source.width() && y < target.width()); x++ ) {
         *target.data_ptr ( x,y,target_map, target_sample ) =
           *source.data_ptr ( x,y,source_map, source_sample );
       }
