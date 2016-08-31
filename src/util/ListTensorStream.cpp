@@ -161,11 +161,11 @@ namespace Conv {
 						}
 					}
 				} // end if
-				return Tensor::CopySample(label_tensor, source_sample, target, target_sample);
+				return Tensor::CopySample(label_tensor, source_sample, target, target_sample, true);
 				
 			} else {
 				// Tensor has an image in it, no transform needed
-				return Tensor::CopySample(rgb_tensor, source_sample, target, target_sample);
+				return Tensor::CopySample(rgb_tensor, source_sample, target, target_sample, true);
 			}
 		} else {
       LOGDEBUG << "Sample " << source_index << " requested";
@@ -214,7 +214,7 @@ namespace Conv {
 			if ( image_fname.length() < 5 || label_fname.length() < 5 )
 				break;
 
-			LOGDEBUG << "Importing files " << image_fname << " and " << label_fname << "...";
+			// LOGDEBUG << "Importing files " << image_fname << " and " << label_fname << "...";
 			Conv::Tensor image_tensor ( image_directory + image_fname );
 			Conv::Tensor label_rgb_tensor;
 
