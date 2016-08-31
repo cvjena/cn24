@@ -35,11 +35,11 @@ bool JSONNetGraphFactory::AddLayers(NetGraph &graph, unsigned int seed) {
   // (1) Process input and output nodes
   std::vector<std::string> input_nodes;
   std::vector<std::string> output_nodes;
-  NetGraphNode* dataset_input_node = graph.GetTrainingNodes()[0];
+  NetGraphNode* dataset_input_node = graph.GetInputNodes()[0];
 
   if(net_json_.count("input") == 1) {
     if(dataset_input_node == nullptr) {
-      LOGERROR << "Net requested training input, but there are no training nodes in net graph!";
+      LOGERROR << "Net requested input, but there are no input nodes in net graph!";
       return false;
     }
     if(net_json_["input"].is_string()) {
