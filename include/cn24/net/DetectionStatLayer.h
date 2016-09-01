@@ -23,8 +23,16 @@
 
 namespace Conv {
 
+
 class DetectionStatLayer: public Layer, public StatLayer {
 public:
+  struct Detection {
+  public:
+    datum confidence = 0;
+    datum tp = 0;
+    datum fp = 0;
+  };
+
   /**
 	* @brief Creates a DetectionStatLayer
 	*
@@ -32,8 +40,7 @@ public:
 	* @param min_t The minimum binarization threshold
 	* @param max_t The maximum binarization threshold
 	*/
-  DetectionStatLayer(const unsigned int classes, unsigned int thresholds = 24, const datum min_t = -0.458333,
-                  const datum max_t = 0.5);
+  explicit DetectionStatLayer(const unsigned int classes);
   
   void UpdateAll();
 
@@ -73,23 +80,14 @@ protected:
   CombinedTensor* first_ = nullptr;
   CombinedTensor* second_ = nullptr;
 
-  unsigned int thresholds_ = 0;
   unsigned int classes_ = 0;
-  
-  datum* threshold_values_ = nullptr;
-  datum* true_positives_ = nullptr;
-  datum* true_negatives_ = nullptr;
-  datum* false_positives_ = nullptr;
-  datum* false_negatives_ = nullptr;
+  std::vector<Detection> detections_;
   
   bool disabled_ = false;
 
+  StatDescriptor* stat_tpr_ = nullptr;
   StatDescriptor* stat_fpr_ = nullptr;
-  StatDescriptor* stat_fnr_ = nullptr;
-  StatDescriptor* stat_pre_ = nullptr;
-  StatDescriptor* stat_rec_ = nullptr;
-  StatDescriptor* stat_acc_ = nullptr;
-  StatDescriptor* stat_f1_ = nullptr;
+  StatDescriptor* stat_map_ = nullptr;
 };
 
 }

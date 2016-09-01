@@ -3,7 +3,11 @@
  * copyright (C) 2015 Clemens-Alexander Brust (ikosa dot de at gmail dot com).
  *
  * For licensing information, see the LICENSE file included with this project.
- */  
+ */
+
+#include <algorithm>
+#include <vector>
+
 #include "Log.h"
 #include "Init.h"
 #include "StatAggregator.h"
@@ -12,40 +16,24 @@
 
 namespace Conv {
 
-DetectionStatLayer::DetectionStatLayer ( const unsigned int classes, const unsigned int thresholds,
-                                   const datum min_t, const datum max_t )
-  : Layer(JSON::object()), classes_(classes), thresholds_ ( thresholds ) {
-  if ( thresholds < 1 ) {
-    FATAL ( "Detection needs at least one threshold value!" );
-  }
+DetectionStatLayer::DetectionStatLayer ( const unsigned int classes )
+  : Layer(JSON::object()), classes_(classes) {
 
-  LOGDEBUG << "Instance created. Using " << thresholds_ << " thresholds from " <<
-           min_t << " to " << max_t;
-  threshold_values_ = new datum[thresholds_];
-  true_positives_ = new datum[thresholds_];
-  false_positives_ = new datum[thresholds_];
-  true_negatives_ = new datum[thresholds_];
-  false_negatives_ = new datum[thresholds_];
-
-  if ( thresholds_ == 1 ) {
-    threshold_values_[0] = ( min_t + max_t ) / 2.0;
-  } else {
-    datum interval = ( max_t - min_t ) / ( datum ) ( thresholds_ - 1 );
-
-    for ( unsigned int t = 0; t < thresholds_; t++ ) {
-      threshold_values_[t] = min_t + interval * ( datum ) t;
-    }
-  }
+  LOGDEBUG << "Instance created.";
 
   Reset();
 
   // Initialize stat descriptors
+  stat_tpr_ = new StatDescriptor;
   stat_fpr_ = new StatDescriptor;
-  stat_fnr_ = new StatDescriptor;
-  stat_pre_ = new StatDescriptor;
-  stat_rec_ = new StatDescriptor;
-  stat_acc_ = new StatDescriptor;
-  stat_f1_ = new StatDescriptor;
+  stat_map_ = new StatDescriptor;
+
+  stat_tpr_->description = "True Positive Rate";
+  stat_tpr_->unit = "%";
+  stat_tpr_->nullable = true;
+  stat_tpr_->init_function = [this] (Stat& stat) { stat.is_null = true; stat.value = 0; Reset(); };
+  stat_tpr_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
+  stat_tpr_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
 
   stat_fpr_->description = "False Positive Rate";
   stat_fpr_->unit = "%";
@@ -54,116 +42,33 @@ DetectionStatLayer::DetectionStatLayer ( const unsigned int classes, const unsig
   stat_fpr_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
   stat_fpr_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
 
-  stat_fnr_->description = "False Negative Rate";
-  stat_fnr_->unit = "%";
-  stat_fnr_->nullable = true;
-  stat_fnr_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
-  stat_fnr_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
-  stat_fnr_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
-
-  stat_pre_->description = "Precision";
-  stat_pre_->unit = "%";
-  stat_pre_->nullable = true;
-  stat_pre_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
-  stat_pre_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
-  stat_pre_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
-
-  stat_rec_->description = "Recall";
-  stat_rec_->unit = "%";
-  stat_rec_->nullable = true;
-  stat_rec_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
-  stat_rec_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
-  stat_rec_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
-
-  stat_acc_->description = "Accuracy";
-  stat_acc_->unit = "%";
-  stat_acc_->nullable = true;
-  stat_acc_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
-  stat_acc_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
-  stat_acc_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
-
-  stat_f1_->description = "F1 Value";
-  stat_f1_->unit = "%";
-  stat_f1_->nullable = true;
-  stat_f1_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
-  stat_f1_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
-  stat_f1_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
+  stat_map_->description = "mAP";
+  stat_map_->unit = "%";
+  stat_map_->nullable = true;
+  stat_map_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
+  stat_map_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
+  stat_map_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
 
   // Register stats
+  System::stat_aggregator->RegisterStat(stat_tpr_);
   System::stat_aggregator->RegisterStat(stat_fpr_);
-  System::stat_aggregator->RegisterStat(stat_fnr_);
-  System::stat_aggregator->RegisterStat(stat_pre_);
-  System::stat_aggregator->RegisterStat(stat_rec_);
-  System::stat_aggregator->RegisterStat(stat_acc_);
-  System::stat_aggregator->RegisterStat(stat_f1_);
+  System::stat_aggregator->RegisterStat(stat_map_);
 }
 
 void DetectionStatLayer::UpdateAll() {
+  // Sort vector
+  std::sort(detections_.begin(), detections_.end(), [](Detection& d1, Detection& d2) { return d1.confidence < d2.confidence; });
+
   // Calculate metrics
-  datum fmax = -2;
-  unsigned int tfmax = -1;
-
-  for ( unsigned int t = 0; t < thresholds_; t++ ) {
-    datum precision = -1;
-    datum recall = -1;
-    datum f1 = -1;
-
-    if ( ( true_positives_[t] + false_positives_[t] ) > 0 )
-      precision = ( true_positives_[t] ) /
-                  ( true_positives_[t] + false_positives_[t] );
-
-    if ( ( true_positives_[t] + false_negatives_[t] ) > 0 )
-      recall = ( true_positives_[t] ) /
-               ( true_positives_[t] + false_negatives_[t] );
-
-    if ( precision >= 0 && recall >= 0 ) {
-      f1 = 2 * precision * recall / ( precision + recall );
-    }
-
-    if ( f1 > fmax ) {
-      fmax = f1;
-      tfmax = t;
-    }
-  }
-
-  datum fpr = -1;
-  datum fnr = -1;
-  datum precision = -1;
-  datum recall = -1;
-  datum f1 = -1;
-  datum acc = -1;
-
-  if ( ( true_positives_[tfmax] + false_positives_[tfmax] ) > 0 )
-    precision = ( true_positives_[tfmax] ) /
-                ( true_positives_[tfmax] + false_positives_[tfmax] );
-
-  if ( ( true_positives_[tfmax] + false_negatives_[tfmax] ) > 0 )
-    recall = ( true_positives_[tfmax] ) /
-             ( true_positives_[tfmax] + false_negatives_[tfmax] );
-
-  if ( ( false_positives_[tfmax] + true_negatives_[tfmax] ) > 0 )
-    fpr = ( false_positives_[tfmax] ) /
-          ( false_positives_[tfmax] + true_negatives_[tfmax] );
-
-  if ( ( true_positives_[tfmax] + false_negatives_[tfmax] ) > 0 )
-    fnr = ( false_negatives_[tfmax] ) /
-          ( true_positives_[tfmax] + false_negatives_[tfmax] );
-
-  if ( precision >= 0 && recall >= 0 )
-    f1 = 2 * precision * recall / ( precision + recall );
-  
-  acc = ( true_positives_[tfmax] + true_negatives_[tfmax] ) /
-          ( true_positives_[tfmax] + true_negatives_[tfmax] +
-            false_negatives_[tfmax] + false_positives_[tfmax]
-          );
 
   // Update stats
+  /*if(tpr >= 0) System::stat_aggregator->Update(stat_fpr_->stat_id, 100.0 * fpr);
   if(fpr >= 0) System::stat_aggregator->Update(stat_fpr_->stat_id, 100.0 * fpr);
   if(fnr >= 0) System::stat_aggregator->Update(stat_fnr_->stat_id, 100.0 * fnr);
-  if(precision >= 0) System::stat_aggregator->Update(stat_pre_->stat_id, 100.0 * precision);
+  if(precision >= 0) System::stat_aggregator->Update(stat_map_->stat_id, 100.0 * precision);
   if(recall >= 0) System::stat_aggregator->Update(stat_rec_->stat_id, 100.0 * recall);
   if(acc >= 0) System::stat_aggregator->Update(stat_acc_->stat_id, 100.0 * acc);
-  if(f1 >= 0) System::stat_aggregator->Update(stat_f1_->stat_id, 100.0 * f1);
+  if(f1 >= 0) System::stat_aggregator->Update(stat_f1_->stat_id, 100.0 * f1);*/
 }
 
 bool DetectionStatLayer::CreateOutputs ( const std::vector< CombinedTensor* >& inputs, std::vector< CombinedTensor* >& outputs ) {
@@ -225,11 +130,6 @@ bool DetectionStatLayer::Connect ( const std::vector< CombinedTensor* >& inputs,
 void DetectionStatLayer::FeedForward() {
   if ( disabled_ )
     return;
-
-  #pragma omp parallel for default(shared)
-  for ( unsigned int t = 0; t < thresholds_; t++ ) {
-    continue;
-  }
 }
 
 void DetectionStatLayer::BackPropagate() {
@@ -237,13 +137,7 @@ void DetectionStatLayer::BackPropagate() {
 }
 
 void DetectionStatLayer::Reset() {
-
-  for ( unsigned int t = 0; t < thresholds_; t++ ) {
-    true_negatives_[t] = 0;
-    true_positives_[t] = 0;
-    false_negatives_[t] = 0;
-    false_positives_[t] = 0;
-  }
+  detections_.clear();
 }
 
 void DetectionStatLayer::Print ( std::string prefix, bool training ) {
