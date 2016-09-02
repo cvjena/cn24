@@ -139,6 +139,10 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
         for(unsigned int b = 0; b < tensor_box["boxes"].size(); b++) {
           JSON box_json = tensor_box["boxes"][b];
           BoundingBox box(box_json["x"], box_json["y"], box_json["w"], box_json["h"]);
+          if(box_json.count("difficult") == 1 && box_json["difficult"].is_number()) {
+            unsigned int difficult = box_json["difficult"];
+            box.flag2 = difficult > 0;
+          }
 
           // Find the class by name
           std::string class_name = box_json["class"];
