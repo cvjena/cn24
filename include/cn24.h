@@ -64,6 +64,7 @@
 #include "cn24/net/StatLayer.h"
 #include "cn24/net/BinaryStatLayer.h"
 #include "cn24/net/ConfusionMatrixLayer.h"
+#include "cn24/net/DetectionStatLayer.h"
 #include "cn24/net/SpatialPriorLayer.h"
 #include "cn24/net/ConcatenationLayer.h"
 #include "cn24/net/GradientAccumulationLayer.h"

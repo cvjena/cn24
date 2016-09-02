@@ -35,6 +35,10 @@ public:
   datum x = 0, y = 0, w = 0, h = 0, score = 0;
 
   unsigned int c = 0;
+
+  // Flag 1 is used for calculations, always set it to false after using it
+  // Flag 2 is used by certain datasets, don't ever change it!
+  bool flag1 = false, flag2 = false;
 };
 
 }
