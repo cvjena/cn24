@@ -35,6 +35,8 @@ public:
   datum x = 0, y = 0, w = 0, h = 0, score = 0;
 
   unsigned int c = 0;
+
+  bool flag1 = false, flag2 = false;
 };
 
 }
