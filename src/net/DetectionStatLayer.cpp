@@ -73,6 +73,8 @@ void DetectionStatLayer::UpdateAll() {
   datum global_tpr = 0;
   datum global_fpr = 0;
   datum global_rec = 0;
+  datum global_ap = 0;
+
   datum sampled_classes = 0;
   for(unsigned int c = 0; c < classes_; c++) {
     // Skip empty classes
@@ -130,10 +132,12 @@ void DetectionStatLayer::UpdateAll() {
       ap += (detection_recall[different_indices[i]] - detection_recall[different_indices[i] - 1]) * detection_precision[different_indices[i]];
     }
     LOGDEBUG << "AP class " << c << ": " << ap * 100.0;
+    global_ap += ap;
   }
   if(sampled_classes > 0) System::stat_aggregator->Update(stat_tpr_->stat_id, 100.0 * global_tpr / sampled_classes);
   if(sampled_classes > 0) System::stat_aggregator->Update(stat_fpr_->stat_id, 100.0 * global_fpr / sampled_classes);
   if(sampled_classes > 0) System::stat_aggregator->Update(stat_rec_->stat_id, 100.0 * global_rec / sampled_classes);
+  if(sampled_classes > 0) System::stat_aggregator->Update(stat_map_->stat_id, 100.0 * global_ap / sampled_classes);
 
     // Calculate metrics
 
@@ -237,6 +241,9 @@ void DetectionStatLayer::FeedForward() {
         }
 
         if(maximum_overlap > 0.5 && best_truth_box >= 0) { // Second part shouldn't be necessary, but who knows
+          if((*sample_truth_boxes)[best_truth_box].flag2) // Difficult box, ignore completely
+            continue;
+
           if(!(*sample_truth_boxes)[best_truth_box].flag1) {
             detection.tp = 1.0;
             (*sample_truth_boxes)[best_truth_box].flag1 = true;
@@ -256,7 +263,10 @@ void DetectionStatLayer::FeedForward() {
     // Reset box flags
     for (unsigned int t = 0; t < sample_truth_boxes->size(); t++) {
       (*sample_truth_boxes)[t].flag1 = false;
-      positive_samples_[(*sample_truth_boxes)[t].c]++;
+
+      // Count positive samples (ignore difficult boxes)
+      if(!(*sample_truth_boxes)[t].flag2)
+        positive_samples_[(*sample_truth_boxes)[t].c]++;
     }
   }
 
