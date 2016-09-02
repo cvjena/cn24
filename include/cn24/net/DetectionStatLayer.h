@@ -81,13 +81,15 @@ protected:
   CombinedTensor* second_ = nullptr;
 
   unsigned int classes_ = 0;
-  std::vector<Detection> detections_;
+  std::vector<Detection>* detections_ = nullptr;
+  unsigned int* positive_samples_ = nullptr;
   
   bool disabled_ = false;
 
   StatDescriptor* stat_tpr_ = nullptr;
   StatDescriptor* stat_fpr_ = nullptr;
   StatDescriptor* stat_map_ = nullptr;
+  StatDescriptor* stat_rec_ = nullptr;
 };
 
 }
