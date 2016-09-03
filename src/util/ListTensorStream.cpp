@@ -73,7 +73,7 @@ namespace Conv {
 		}
   }
   
-  bool ListTensorStream::CopySample(const unsigned int source_index, const std::size_t source_sample, Conv::Tensor &target, const std::size_t target_sample) {
+  bool ListTensorStream::CopySample(const unsigned int source_index, const std::size_t source_sample, Conv::Tensor &target, const std::size_t target_sample, const bool scale) {
 		if(source_index < tensors_.size()) {
 			// Load tensor by filename
 			Tensor rgb_tensor;
@@ -161,11 +161,11 @@ namespace Conv {
 						}
 					}
 				} // end if
-				return Tensor::CopySample(label_tensor, source_sample, target, target_sample, true);
+				return Tensor::CopySample(label_tensor, source_sample, target, target_sample, false, scale);
 				
 			} else {
 				// Tensor has an image in it, no transform needed
-				return Tensor::CopySample(rgb_tensor, source_sample, target, target_sample, true);
+				return Tensor::CopySample(rgb_tensor, source_sample, target, target_sample, false, scale);
 			}
 		} else {
       LOGDEBUG << "Sample " << source_index << " requested";

@@ -29,7 +29,7 @@ public:
   virtual unsigned int LoadFile(std::string path) = 0;
   
   virtual bool CopySample(const unsigned int source, const std::size_t source_sample,
-                          Tensor& target, const std::size_t target_sample) = 0;
+                          Tensor& target, const std::size_t target_sample, bool scale = false) = 0;
   
   virtual unsigned int GetTensorCount() = 0;
   

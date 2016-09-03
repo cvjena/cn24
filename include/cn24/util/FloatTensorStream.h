@@ -36,7 +36,7 @@ public:
   std::size_t GetSamples(unsigned int index) { return index < tensors_.size() ? tensors_[index]->samples() : 0; }
   unsigned int GetTensorCount() { return tensors_.size(); }
   unsigned int LoadFile(std::string path);
-  bool CopySample(const unsigned int source_index, const std::size_t source_sample, Tensor& target, const std::size_t target_sample);
+  bool CopySample(const unsigned int source_index, const std::size_t source_sample, Tensor& target, const std::size_t target_sample, const bool scale = false);
 private:
   std::vector<Tensor*> tensors_;
 };

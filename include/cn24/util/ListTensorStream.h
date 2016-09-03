@@ -46,7 +46,7 @@ namespace Conv {
     std::size_t GetSamples(unsigned int index);
     unsigned int GetTensorCount();
     unsigned int LoadFile(std::string path);
-    bool CopySample(const unsigned int source_index, const std::size_t source_sample, Tensor& target, const std::size_t target_sample);
+    bool CopySample(const unsigned int source_index, const std::size_t source_sample, Tensor& target, const std::size_t target_sample, const bool scale = false);
 		
 	private:
 		std::vector<ListTensorMetadata> tensors_;

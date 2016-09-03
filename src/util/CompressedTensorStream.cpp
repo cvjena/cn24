@@ -65,7 +65,7 @@ unsigned int CompressedTensorStream::LoadFile(std::string path)
 }
 
 bool CompressedTensorStream::CopySample(const unsigned int source, const std::size_t source_sample,
-                                   Conv::Tensor& target, const std::size_t target_sample)
+                                   Conv::Tensor& target, const std::size_t target_sample, const bool scale)
 {
   if(source < tensors_.size()) {
     CompressedTensor* const ctensor = tensors_[source];
@@ -83,7 +83,7 @@ bool CompressedTensorStream::CopySample(const unsigned int source, const std::si
       return true;
     } else {
       ctensor->Decompress(temp_tensor_, temp_tensor_.data_ptr());
-      return Tensor::CopySample(temp_tensor_, source_sample, target, target_sample);
+      return Tensor::CopySample(temp_tensor_, source_sample, target, target_sample, false, scale);
     }
   } else
     return false;
