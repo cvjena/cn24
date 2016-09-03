@@ -156,7 +156,7 @@ int main (int argc, char* argv[]) {
 
     Conv::Tensor data_tensor(1, width, height, original_data_tensor.maps());
     data_tensor.Clear();
-    Conv::Tensor::CopySample(original_data_tensor, 0, data_tensor, 0, true);
+    Conv::Tensor::CopySample(original_data_tensor, 0, data_tensor, 0, false, true);
 
      // Assemble net
     Conv::NetGraph graph;

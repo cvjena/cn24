@@ -53,10 +53,10 @@ unsigned int FloatTensorStream::LoadFile(std::string path)
 }
 
 bool FloatTensorStream::CopySample(const unsigned int source, const std::size_t source_sample,
-                                   Conv::Tensor& target, const std::size_t target_sample)
+                                   Conv::Tensor& target, const std::size_t target_sample, const bool scale)
 {
   if(source < tensors_.size()) {
-    return Tensor::CopySample(*tensors_[source], source_sample, target, target_sample);
+    return Tensor::CopySample(*tensors_[source], source_sample, target, target_sample, false, scale);
   } else
     return false;
 }

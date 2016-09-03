@@ -15,4 +15,8 @@ namespace Conv {
   template void AssertLess<int>(int expected, int actual, std::string description);
   template void AssertGreater<datum>(datum expected, datum actual, std::string description);
   template void AssertGreater<int>(int expected, int actual, std::string description);
+  template void AssertLessEqual<datum>(datum expected, datum actual, std::string description);
+  template void AssertLessEqual<int>(int expected, int actual, std::string description);
+  template void AssertGreaterEqual<datum>(datum expected, datum actual, std::string description);
+  template void AssertGreaterEqual<int>(int expected, int actual, std::string description);
 }

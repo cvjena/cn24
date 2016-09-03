@@ -197,6 +197,18 @@ void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::
       stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node, 3));
       graph.AddNode(stat_node);
     }
+  } else if(dataset->GetTask() == Conv::DETECTION) {
+    for (Conv::NetGraphNode *output_node : graph.GetOutputNodes()) {
+      // Add appropriate statistics layer
+      Conv::NetGraphNode *stat_node = nullptr;
+      Conv::DetectionStatLayer *detection_stat_layer = new Conv::DetectionStatLayer(dataset->GetClasses());
+
+      stat_node = new Conv::NetGraphNode(detection_stat_layer);
+      stat_node->input_connections.push_back(Conv::NetGraphConnection(output_node, 0, false));
+      stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node, 1));
+      stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node, 3));
+      graph.AddNode(stat_node);
+    }
   }
 }
 

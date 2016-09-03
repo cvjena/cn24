@@ -188,7 +188,7 @@ public:
    * @param allow_oversize If true, target size is allowed to be too small
    */
   static bool CopySample (const Tensor& source, const std::size_t source_sample,
-                          Tensor& target, const std::size_t target_sample, const bool allow_oversize = false);
+                          Tensor& target, const std::size_t target_sample, const bool allow_oversize = false, const bool scale = false);
 
   /**
    * @brief Copy a map of a sample from one Tensor to another.
@@ -204,7 +204,19 @@ public:
   static bool CopyMap (const Tensor& source, const std::size_t source_sample,
                        const std::size_t source_map, Tensor& target,
                        const std::size_t target_sample,
-                       const std::size_t target_map, const bool allow_oversize = false);
+                       const std::size_t target_map, const bool allow_oversize = false, const bool scale = false);
+
+  /**
+   * @brief Return an interpolated value at a continuous location in the Tensor
+   * @param x
+   * @param y
+   * @param map
+   * @param sample
+   *
+   * @returns Interpolated value
+   */
+  datum GetSmoothData(datum x, datum y, std::size_t map, std::size_t sample) const;
+
   /**
    * @brief Deallocates the memory if data_ptr is not a nullptr.
    */

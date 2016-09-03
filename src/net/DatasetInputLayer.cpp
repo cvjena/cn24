@@ -139,10 +139,10 @@ bool DatasetInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inp
                            dataset_.GetHeight(), input_maps_);
 
     CombinedTensor *label_output =
-        new CombinedTensor(0);
+        new CombinedTensor(batch_size_);
 
     CombinedTensor *helper_output =
-        new CombinedTensor(0);
+        new CombinedTensor(batch_size_);
 
     CombinedTensor *localized_error_output =
         new CombinedTensor(0);

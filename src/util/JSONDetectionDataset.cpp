@@ -139,6 +139,10 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
         for(unsigned int b = 0; b < tensor_box["boxes"].size(); b++) {
           JSON box_json = tensor_box["boxes"][b];
           BoundingBox box(box_json["x"], box_json["y"], box_json["w"], box_json["h"]);
+          if(box_json.count("difficult") == 1 && box_json["difficult"].is_number()) {
+            unsigned int difficult = box_json["difficult"];
+            box.flag2 = difficult > 0;
+          }
 
           // Find the class by name
           std::string class_name = box_json["class"];
@@ -227,21 +231,25 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
 
   // Go trough all accessors and normalize their bounding boxes
   for(unsigned int a = 0; a < training_accessors_.size(); a++) {
+    const datum width = training_accessors_[a].tensor_stream->GetWidth(training_accessors_[a].sample_in_stream) - (datum)1.0;
+    const datum height = training_accessors_[a].tensor_stream->GetHeight(training_accessors_[a].sample_in_stream) - (datum)1.0;
     for(unsigned int b = 0; b < training_accessors_[a].bounding_boxes_.size(); b++) {
       BoundingBox *box = &(training_accessors_[a].bounding_boxes_[b]);
-      box->x /= (datum)max_width_;
-      box->y /= (datum)max_height_;
-      box->w /= (datum)max_width_;
-      box->h /= (datum)max_height_;
+      box->x /= width;
+      box->y /= height;
+      box->w /= width;
+      box->h /= height;
     }
   }
   for(unsigned int a = 0; a < testing_accessors_.size(); a++) {
+    const datum width = testing_accessors_[a].tensor_stream->GetWidth(testing_accessors_[a].sample_in_stream) - (datum)1.0;
+    const datum height = testing_accessors_[a].tensor_stream->GetHeight(testing_accessors_[a].sample_in_stream) - (datum)1.0;
     for(unsigned int b = 0; b < testing_accessors_[a].bounding_boxes_.size(); b++) {
       BoundingBox *box = &(testing_accessors_[a].bounding_boxes_[b]);
-      box->x /= (datum)max_width_;
-      box->y /= (datum)max_height_;
-      box->w /= (datum)max_width_;
-      box->h /= (datum)max_height_;
+      box->x /= width;
+      box->y /= height;
+      box->w /= width;
+      box->h /= height;
     }
   }
 }	
@@ -254,7 +262,7 @@ bool JSONDetectionDataset::GetTrainingSample(Tensor& data_tensor, Tensor& label_
     TensorStream* training_stream = training_accessors_[index].tensor_stream;
     unsigned int index_image = training_accessors_[index].sample_in_stream;
 
-    success &= training_stream->CopySample(index_image, 0, data_tensor, sample);
+    success &= training_stream->CopySample(index_image, 0, data_tensor, sample, true);
 
     weight_tensor.Clear (1.0, sample);
 
@@ -269,7 +277,7 @@ bool JSONDetectionDataset::GetTestingSample(Tensor& data_tensor, Tensor& label_t
     TensorStream* testing_stream = testing_accessors_[index].tensor_stream;
     unsigned int index_image = testing_accessors_[index].sample_in_stream;
 
-    success &= testing_stream->CopySample(index_image, 0, data_tensor, sample);
+    success &= testing_stream->CopySample(index_image, 0, data_tensor, sample, true);
 
     weight_tensor.Clear (1.0, sample);
 
