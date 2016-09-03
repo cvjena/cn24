@@ -31,6 +31,18 @@ template <typename T> void AssertGreater(T expected, T actual, std::string descr
   }
 }
 
+template <typename T> void AssertGreaterEqual(T expected, T actual, std::string description) {
+  if(expected > actual) {
+    FATAL("Assertion failed: Expected " << description << " to be greater than " << expected << ", actual value: " << actual);
+  }
+}
+
+template <typename T> void AssertLessEqual(T expected, T actual, std::string description) {
+  if(expected < actual) {
+    FATAL("Assertion failed: Expected " << description << " to be less than " << expected << ", actual value: " << actual);
+  }
+}
+
 }
 
 #endif
