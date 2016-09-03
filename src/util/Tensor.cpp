@@ -321,13 +321,13 @@ void Tensor::Deserialize ( std::istream& input , bool head_only, bool try_mmap, 
 
 
 bool Tensor::CopySample ( const Tensor& source, const std::size_t source_sample,
-                          Tensor& target, const std::size_t target_sample, const bool allow_oversize) {
+                          Tensor& target, const std::size_t target_sample, const bool allow_oversize, const bool scale) {
   // Check if both Tensors have the same amount of feature maps/channels
   if ( source.maps() != target.maps() )
     return false;
 
   if ( source.width() != target.width() || source.height() != target.height() ) {
-    if ( (target.width() < source.width() || target.height() < source.height()) && !allow_oversize)
+    if ( (target.width() < source.width() || target.height() < source.height()) && !allow_oversize && !scale)
       return false;
   }
 
@@ -335,7 +335,7 @@ bool Tensor::CopySample ( const Tensor& source, const std::size_t source_sample,
 
   for ( std::size_t map = 0; map < source.maps(); map++ ) {
     result &= CopyMap ( source, source_sample, map,
-                        target, target_sample, map, allow_oversize );
+                        target, target_sample, map, allow_oversize, scale );
   }
 
   return result;
@@ -344,31 +344,47 @@ bool Tensor::CopySample ( const Tensor& source, const std::size_t source_sample,
 bool Tensor::CopyMap ( const Tensor& source, const std::size_t source_sample,
                        const std::size_t source_map, Tensor& target,
                        const std::size_t target_sample,
-                       const std::size_t target_map, const bool allow_oversize) {
+                       const std::size_t target_map, const bool allow_oversize, const bool scale) {
   // Check sample bounds
   if ( source_sample >= source.samples() || target_sample >= target.samples() )
     return false;
 
   // Check if image dimensions match
   if ( source.width() != target.width() || source.height() != target.height() ) {
-    if ( (target.width() < source.width() || target.height() < source.height() ) && !allow_oversize)
+    if ( (target.width() < source.width() || target.height() < source.height() ) && !allow_oversize && !scale)
       return false;
 
-    // Source image is smaller, okay..
-    for ( unsigned int y = 0; (y < source.height() && y < target.height()); y++ ) {
-      for ( unsigned int x = 0; (x < source.width() && y < target.width()); x++ ) {
-        *target.data_ptr ( x,y,target_map, target_sample ) =
-          *source.data_ptr ( x,y,source_map, source_sample );
+    if(!scale) {
+      // Source image is smaller, okay..
+      for (unsigned int y = 0; (y < source.height() && y < target.height()); y++) {
+        for (unsigned int x = 0; (x < source.width() && y < target.width()); x++) {
+          *target.data_ptr(x, y, target_map, target_sample) =
+              *source.data_ptr(x, y, source_map, source_sample);
+        }
+
+        for (unsigned int x = source.width(); x < target.width(); x++) {
+          *target.data_ptr(x, y, target_map, target_sample) = 0;
+        }
       }
 
-      for ( unsigned int x = source.width(); x < target.width(); x++ ) {
-        *target.data_ptr ( x,y,target_map,target_sample ) = 0;
+      for (unsigned int y = source.height(); y < target.height(); y++) {
+        for (unsigned int x = 0; x < target.width(); x++) {
+          *target.data_ptr(x, y, target_map, target_sample) = 0;
+        }
       }
-    }
+    } else {
+      // Interpolate
+      for(unsigned int y = 0; y < target.height(); y++) {
+        const datum normalized_y = ((datum)y)/(datum)(target.height() - 1);
+        const datum source_y = normalized_y * ((datum)source.height() - 1);
+        for(unsigned int x = 0; x < target.width(); x++) {
+          const datum normalized_x = ((datum)x)/(datum)(target.width() - 1);
+          const datum source_x = normalized_x * ((datum)source.width() - 1);
 
-    for ( unsigned int y = source.height(); y < target.height(); y++ ) {
-      for ( unsigned int x = 0; x < target.width(); x++ ) {
-        *target.data_ptr ( x,y,target_map,target_sample ) = 0;
+          *target.data_ptr(x, y, target_map, target_sample) =
+            source.GetSmoothData(source_x, source_y, source_map, source_sample);
+
+        }
       }
     }
 
@@ -699,6 +715,24 @@ void Tensor::PrintStats() {
 	LOGINFO << "Average : " << avg;
 	LOGINFO << "L2 Norm : " << l2;
 	LOGINFO << "Variance: " << variance;
+}
+
+datum Tensor::GetSmoothData(datum x, datum y, std::size_t map, std::size_t sample) const {
+  unsigned int left_x = (unsigned int)std::floor(x);
+  unsigned int right_x = (unsigned int)std::ceil(x);
+  unsigned int left_y = (unsigned int)std::floor(y);
+  unsigned int right_y = (unsigned int)std::ceil(y);
+
+  const Conv::datum Q11 = *(data_ptr(left_x, left_y));
+  const Conv::datum Q21 = *(data_ptr(right_x, left_y));
+  const Conv::datum Q12 = *(data_ptr(left_x, right_y));
+  const Conv::datum Q22 = *(data_ptr(right_x, right_y));
+
+  const Conv::datum L1 = (left_x == right_x) ? Q11 : ((right_x - x)/(right_x - left_x)) * Q11 + ((x - left_x)/(right_x - left_x)) * Q21;
+  const Conv::datum L2 = (left_x == right_x) ? Q12 : ((right_x - x)/(right_x - left_x)) * Q12 + ((x - left_x)/(right_x - left_x)) * Q22;
+
+  const Conv::datum smooth = (left_y == right_y) ? L1 : ((right_y - y)/(right_y - left_y)) * L1 + ((y - left_y)/(right_y - left_y)) * L2;
+  return smooth;
 }
 
 std::ostream& operator<< ( std::ostream& output, const Tensor& tensor ) {
