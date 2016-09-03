@@ -374,6 +374,7 @@ bool Tensor::CopyMap ( const Tensor& source, const std::size_t source_sample,
       }
     } else {
       // Interpolate
+#pragma omp parallel for default(shared)
       for(unsigned int y = 0; y < target.height(); y++) {
         const datum normalized_y = ((datum)y)/(datum)(target.height() - 1);
         const datum source_y = normalized_y * ((datum)source.height() - 1);
@@ -723,10 +724,10 @@ datum Tensor::GetSmoothData(datum x, datum y, std::size_t map, std::size_t sampl
   unsigned int left_y = (unsigned int)std::floor(y);
   unsigned int right_y = (unsigned int)std::ceil(y);
 
-  const Conv::datum Q11 = *(data_ptr(left_x, left_y));
-  const Conv::datum Q21 = *(data_ptr(right_x, left_y));
-  const Conv::datum Q12 = *(data_ptr(left_x, right_y));
-  const Conv::datum Q22 = *(data_ptr(right_x, right_y));
+  const Conv::datum Q11 = *(data_ptr(left_x, left_y, map, sample));
+  const Conv::datum Q21 = *(data_ptr(right_x, left_y, map, sample));
+  const Conv::datum Q12 = *(data_ptr(left_x, right_y, map, sample));
+  const Conv::datum Q22 = *(data_ptr(right_x, right_y, map, sample));
 
   const Conv::datum L1 = (left_x == right_x) ? Q11 : ((right_x - x)/(right_x - left_x)) * Q11 + ((x - left_x)/(right_x - left_x)) * Q21;
   const Conv::datum L2 = (left_x == right_x) ? Q12 : ((right_x - x)/(right_x - left_x)) * Q12 + ((x - left_x)/(right_x - left_x)) * Q22;
