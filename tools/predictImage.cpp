@@ -146,7 +146,8 @@ int main (int argc, char* argv[]) {
         for (unsigned int x = 0; x < small.width(); x++)
           *small.data_ptr(x, y, m, 0) = *image_output_tensor.data_ptr_const(x, y, m, 0);
 
-    small.WriteToFile(output_image_fname);
+    if(argc > 5)
+      small.WriteToFile(output_image_fname);
   } else if(dataset->GetTask() == Conv::CLASSIFICATION || dataset->GetTask() == Conv::DETECTION) {
     // Rescale image
     unsigned int width = dataset->GetWidth();
@@ -188,10 +189,53 @@ int main (int argc, char* argv[]) {
       LOGINFO << "Bounding boxes: " << output_boxes->size();
       for(unsigned int b = 0; b < output_boxes->size(); b++) {
         Conv::BoundingBox box = (*output_boxes)[b];
+        box.x *= (Conv::datum)original_width;
+        box.y *= (Conv::datum)original_height;
+        box.w *= (Conv::datum)original_width;
+        box.h *= (Conv::datum)original_height;
+
         LOGINFO << "Box\t" << b << ": " << dataset->GetClassNames()[box.c] << " (" << box.score << ")";
-        LOGINFO << "  Center: (" << box.x * (Conv::datum)original_width << "," << box.y * (Conv::datum)original_height << ")";
-        LOGINFO << "  Size: (" << box.w * (Conv::datum)original_width << "x" << box.h * (Conv::datum)original_height << ")";
+        LOGINFO << "  Center: (" << box.x << "," << box.y << ")";
+        LOGINFO << "  Size: (" << box.w << "x" << box.h << ")";
+
+        // Draw box into original data tensor
+        for(int bx = (box.x - (box.w / 2)); bx <= (box.x + (box.w / 2)); bx++) {
+          int by_top = box.y - (box.h / 2);
+          int by_bot = box.y + (box.h / 2);
+          if(bx >= 0 && bx < original_width) {
+            if (by_top >= 0 && by_top < original_height) {
+              *(original_data_tensor.data_ptr(bx, by_top, 0, 0)) = 1.0;
+              *(original_data_tensor.data_ptr(bx, by_top, 1, 0)) = 1.0;
+              *(original_data_tensor.data_ptr(bx, by_top, 2, 0)) = 1.0;
+            }
+            if (by_bot >= 0 && by_bot < original_height) {
+              *(original_data_tensor.data_ptr(bx, by_bot, 0, 0)) = 1.0;
+              *(original_data_tensor.data_ptr(bx, by_bot, 1, 0)) = 1.0;
+              *(original_data_tensor.data_ptr(bx, by_bot, 2, 0)) = 1.0;
+            }
+          }
+        }
+        // Draw vertical lines
+        for(int by = (box.y - (box.h / 2)); by <= (box.y + (box.h / 2)); by++) {
+          int bx_top = box.x - (box.w / 2);
+          int bx_bot = box.x + (box.w / 2);
+          if(by >= 0 && by < original_height) {
+            if (bx_top >= 0 && bx_top < original_width) {
+              *(original_data_tensor.data_ptr(bx_top, by, 0, 0)) = 1.0;
+              *(original_data_tensor.data_ptr(bx_top, by, 1, 0)) = 1.0;
+              *(original_data_tensor.data_ptr(bx_top, by, 2, 0)) = 1.0;
+            }
+            if (bx_bot >= 0 && bx_bot < original_width) {
+              *(original_data_tensor.data_ptr(bx_bot, by, 0, 0)) = 1.0;
+              *(original_data_tensor.data_ptr(bx_bot, by, 1, 0)) = 1.0;
+              *(original_data_tensor.data_ptr(bx_bot, by, 2, 0)) = 1.0;
+            }
+          }
+        }
       }
+
+      if(argc > 5)
+        original_data_tensor.WriteToFile(output_image_fname);
     }
 
   }
