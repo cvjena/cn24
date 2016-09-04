@@ -40,7 +40,7 @@ public:
 	* @param min_t The minimum binarization threshold
 	* @param max_t The maximum binarization threshold
 	*/
-  explicit DetectionStatLayer(const unsigned int classes);
+  explicit DetectionStatLayer(std::vector<std::string> classes);
   
   void UpdateAll();
 
@@ -81,6 +81,8 @@ protected:
   CombinedTensor* second_ = nullptr;
 
   unsigned int classes_ = 0;
+  std::vector<std::string> names_;
+
   std::vector<Detection>* detections_ = nullptr;
   unsigned int* positive_samples_ = nullptr;
   
