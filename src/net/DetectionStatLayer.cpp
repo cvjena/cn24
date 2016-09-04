@@ -17,13 +17,19 @@
 
 namespace Conv {
 
-DetectionStatLayer::DetectionStatLayer ( const unsigned int classes )
-  : Layer(JSON::object()), classes_(classes) {
+DetectionStatLayer::DetectionStatLayer ( std::vector<std::string> classes )
+  : Layer(JSON::object()), classes_(classes.size()), names_(classes) {
 
-  LOGDEBUG << "Instance created.";
+  LOGDEBUG << "Instance created, " << classes_ << " classes.";
+  for(unsigned int n = 0; n < names_.size(); n++) {
+    if(names_[n].length() > 11) {
+      std::string original = names_[n];
+      names_[n] = original.substr(0,8) + "...";
+    }
+  }
 
-  detections_ = new std::vector<Detection>[classes];
-  positive_samples_ = new unsigned int[classes];
+  detections_ = new std::vector<Detection>[classes_];
+  positive_samples_ = new unsigned int[classes_];
 
   Reset();
 
@@ -131,7 +137,7 @@ void DetectionStatLayer::UpdateAll() {
     for(int i = 0; i < different_indices.size(); i++) {
       ap += (detection_recall[different_indices[i]] - detection_recall[different_indices[i] - 1]) * detection_precision[different_indices[i]];
     }
-    LOGDEBUG << "AP class " << c << ": " << ap * 100.0;
+    LOGDEBUG << "AP class " << names_[c] << ": " << ap * 100.0;
     global_ap += ap;
   }
   if(sampled_classes > 0) System::stat_aggregator->Update(stat_tpr_->stat_id, 100.0 * global_tpr / sampled_classes);

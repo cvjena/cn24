@@ -201,7 +201,7 @@ void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::
     for (Conv::NetGraphNode *output_node : graph.GetOutputNodes()) {
       // Add appropriate statistics layer
       Conv::NetGraphNode *stat_node = nullptr;
-      Conv::DetectionStatLayer *detection_stat_layer = new Conv::DetectionStatLayer(dataset->GetClasses());
+      Conv::DetectionStatLayer *detection_stat_layer = new Conv::DetectionStatLayer(dataset->GetClassNames());
 
       stat_node = new Conv::NetGraphNode(detection_stat_layer);
       stat_node->input_connections.push_back(Conv::NetGraphConnection(output_node, 0, false));
