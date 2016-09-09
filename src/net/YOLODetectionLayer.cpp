@@ -35,6 +35,14 @@ YOLODetectionLayer::YOLODetectionLayer(JSON configuration): SimpleLayer(configur
     FATAL("YOLO yolo_configuration property boxes_per_cell missing!");
   }
   boxes_per_cell_ = yolo_configuration["boxes_per_cell"];
+
+  if(yolo_configuration.count("do_nms") == 1 && yolo_configuration["do_nms"].is_boolean()) {
+    do_nms_ = yolo_configuration["do_nms"];
+  }
+
+  if(yolo_configuration.count("confidence_threshold") == 1 && yolo_configuration["confidence_threshold"].is_number()) {
+    confidence_threshold_ = yolo_configuration["confidence_threshold"];
+  }
 }
   
 bool YOLODetectionLayer::CreateOutputs (
@@ -136,7 +144,8 @@ void YOLODetectionLayer::FeedForward() {
           // Get predicted IOU
           const datum iou = input_->data.data_ptr_const()[iou_index + cell_id * boxes_per_cell_ + b];
           unsigned int box_coords_index = coords_index + 4 * (boxes_per_cell_ * cell_id + b);
-          if(iou > 0.2) {
+          // Remove boxes where IOU is less than threshold, because IOU*score will be less as well
+          if(iou > confidence_threshold_) {
             // Calculate in-image coordinates
             const datum x = box_x + (input_->data.data_ptr_const()[box_coords_index] / (datum) horizontal_cells_);
             const datum y = box_y + (input_->data.data_ptr_const()[box_coords_index + 1] / (datum) vertical_cells_);
@@ -146,13 +155,9 @@ void YOLODetectionLayer::FeedForward() {
             // Loop over all classes
             for (unsigned int c = 0; c < classes_; c++) {
 
-              // Remove classes where IOU*score is less than 0.2
+              // Remove classes where IOU*score is less than threshold
               datum class_prob = input_->data.data_ptr_const()[class_index + cell_id * classes_ + c] * iou;
-              if(class_prob > 0.2) {
-                /*LOGDEBUG << "Cell (" << hcell << "," << vcell << "), box " << b << " at : (" << x << "," << y << "), size (" << w * w << "," << h * h << ")";
-                LOGDEBUG << "Cell (" << hcell << "," << vcell << "), class " << c << ": "
-                         << input_->data.data_ptr_const()[class_index + cell_id * classes_ + c];*/
-
+              if(class_prob >= confidence_threshold_) {
                 // Add bounding box to output
                 BoundingBox box(x,y,w,h);
                 box.c = c;
@@ -169,19 +174,24 @@ void YOLODetectionLayer::FeedForward() {
 
     // Do non-maximum suppression
     if(sample_boxes->size() > 1) {
-      std::sort(sample_boxes->begin(), sample_boxes->end(), BoundingBox::CompareScore);
-      for (unsigned int b1 = 0; b1 < (sample_boxes->size() - 1); b1++) {
-        BoundingBox &box1 = (*sample_boxes)[b1];
-        for (unsigned int b2 = b1 + 1; b2 < sample_boxes->size(); b2++) {
-          BoundingBox &box2 = (*sample_boxes)[b2];
-          if (box2.c == box1.c && box2.score > box1.score) {
-            if (box1.IntersectionOverUnion(&box2) > (datum) 0.5)
-              box1.score = (datum)0;
+
+      if(do_nms_) {
+        std::sort(sample_boxes->begin(), sample_boxes->end(), BoundingBox::CompareScore);
+        for (unsigned int b1 = 0; b1 < (sample_boxes->size() - 1); b1++) {
+          BoundingBox &box1 = (*sample_boxes)[b1];
+          for (unsigned int b2 = b1 + 1; b2 < sample_boxes->size(); b2++) {
+            BoundingBox &box2 = (*sample_boxes)[b2];
+            if (box2.c == box1.c && box2.score > box1.score) {
+              if (box1.IntersectionOverUnion(&box2) > (datum) 0.5)
+                box1.score = (datum) 0;
+            }
           }
         }
-      }
 
-      sample_boxes->erase(std::remove_if(sample_boxes->begin(), sample_boxes->end(), [](BoundingBox& box1){ return box1.score == (datum)0; }), sample_boxes->end());
+        sample_boxes->erase(std::remove_if(sample_boxes->begin(), sample_boxes->end(),
+                                           [](BoundingBox &box1) { return box1.score == (datum) 0; }),
+                            sample_boxes->end());
+      }
     }
 
     // Display boxes

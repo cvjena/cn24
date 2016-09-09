@@ -43,6 +43,9 @@ private:
 
   unsigned int classes_ = 0;
 
+  bool do_nms_ = true;
+  datum confidence_threshold_ = 0.2;
+
 };
 
 }
