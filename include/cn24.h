@@ -40,6 +40,7 @@
 #include "cn24/util/MemoryMappedTar.h"
 #include "cn24/util/BoundingBox.h"
 #include "cn24/util/Test.h"
+#include "cn24/util/ClassManager.h"
 
 #include "cn24/math/TensorMath.h"
 
