@@ -18,6 +18,12 @@ template <typename T> void AssertEqual(T expected, T actual, std::string descrip
   }
 }
 
+template <typename T> void AssertNotEqual(T expected, T actual, std::string description) {
+  if(expected == actual) {
+    FATAL("Assertion failed: Expected " << description << " to be " << expected << ", actual value: " << actual);
+  }
+}
+
 template <typename T> void AssertLess(T expected, T actual, std::string description) {
   if(expected <= actual) {
     FATAL("Assertion failed: Expected " << description << " to be less than " << expected << ", actual value: " << actual);
