@@ -36,11 +36,13 @@ public:
 	* @param loss_sampling_p p value for spatial loss sampling
 	* @param seed The random seed to use for sample selection and loss sampling
 	*/
-  DatasetInputLayer(Dataset& dataset, const unsigned int batch_size = 1,
+  DatasetInputLayer(Dataset* initial_dataset, const unsigned int batch_size = 1,
 			const datum loss_sampling_p = 1.0,
       const unsigned int seed = 0
 		    );
-  
+
+  void SetActiveDataset(Dataset* dataset);
+
   // Implementations for Layer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs,
                       std::vector< CombinedTensor* >& outputs);
@@ -70,8 +72,8 @@ public:
 	void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers);
   bool IsOpenCLAware();
 private:
-  Dataset& dataset_;
-  
+  Dataset* active_dataset_;
+
   // Outputs
   CombinedTensor* data_output_ = nullptr;
   CombinedTensor* label_output_ = nullptr;
