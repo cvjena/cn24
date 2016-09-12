@@ -9,6 +9,9 @@
 #ifndef CONV_CLASSMANAGER_H
 #define CONV_CLASSMANAGER_H
 
+#include <string>
+#include <map>
+
 #include "Config.h"
 #include "JSONParsing.h"
 
@@ -24,9 +27,13 @@ public:
   JSON SaveToFile();
 
   bool RegisterClassByName(std::string name);
-  unsigned int GetClassIdByName(std::string name);
+  unsigned int GetClassIdByName(const std::string& name) const;
 
-  unsigned int GetMaxClassId();
+  unsigned int GetMaxClassId() const;
+
+private:
+  std::map<std::string,unsigned int> classes_;
+  unsigned int next_class_id_ = 0;
 };
 }
 
