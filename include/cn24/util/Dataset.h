@@ -41,6 +41,11 @@ enum Method {
 class Dataset
 {
 public:
+	/**
+	 * @brief Gets the name of the dataset
+	 */
+	virtual std::string GetName() const  {return "Unnamed dataset"; }
+
   /**
    * @brief Gets the task this Dataset is designed for.
    */
@@ -312,6 +317,7 @@ public:
 	JSONSegmentationDataset();
 	~JSONSegmentationDataset();
   // Dataset implementations
+	virtual std::string GetName() const { return name_; }
   virtual Task GetTask() const { return SEMANTIC_SEGMENTATION; }
   virtual Method GetMethod() const { return FCN; }
   virtual unsigned int GetWidth() const { return max_width_; }
@@ -333,6 +339,7 @@ public:
 	virtual void Load(JSON descriptor, bool dont_load = false, DatasetLoadSelection selection = LOAD_BOTH);
 	
 private:
+	std::string name_;
 	bool is_first_dataset = true;
 	
 	unsigned int input_maps_ = 0;
@@ -370,6 +377,7 @@ public:
 	JSONDetectionDataset();
 	~JSONDetectionDataset();
   // Dataset implementations
+	virtual std::string GetName() const { return name_; }
   virtual Task GetTask() const { return DETECTION; }
   virtual Method GetMethod() const { return FCN; }
   virtual unsigned int GetWidth() const { return max_width_; }
@@ -391,6 +399,7 @@ public:
 	virtual void Load(JSON descriptor, bool dont_load = false, DatasetLoadSelection selection = LOAD_BOTH);
 
 private:
+  std::string name_;
 	bool is_first_dataset = true;
 
 	unsigned int input_maps_ = 0;

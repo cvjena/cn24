@@ -26,7 +26,8 @@ void JSONSegmentationDataset::Load(JSON dataset_json, bool dont_load, DatasetLoa
 	// TODO Validate JSON
 	
 	std::string dataset_name = dataset_json["name"];
-	
+  name_ = dataset_name;
+
 	LOGINFO << "Loading dataset \"" << dataset_name << "\"";
 	
 	// Load metadata
