@@ -39,9 +39,9 @@ TensorStreamPatchDataset::TensorStreamPatchDataset(std::istream& training_stream
 		std::vector<unsigned int> class_colors,
 		std::vector<datum> class_weights,
 		unsigned int patchsize_x,
-		unsigned int patchsize_y,
+		unsigned int patchsize_y, ClassManager* class_manager,
 		dataset_localized_error_function error_function,
-    int training_fd, int testing_fd ) :
+    int training_fd, int testing_fd ) : Dataset(class_manager),
   patchsize_x_(patchsize_x), patchsize_y_(patchsize_y),
 	class_names_(class_names), class_colors_(class_colors),
 	class_weights_(class_weights),
@@ -328,7 +328,7 @@ bool TensorStreamPatchDataset::GetTestingSample (Tensor& data_tensor, Tensor& la
   } else return false;
 }
 
-TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std::istream& file , bool dont_load, DatasetLoadSelection selection, unsigned int patchsize_x, unsigned int patchsize_y) {
+TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std::istream& file , bool dont_load, DatasetLoadSelection selection, unsigned int patchsize_x, unsigned int patchsize_y, ClassManager* class_manager) {
   unsigned int classes = 0;
   std::vector<std::string> class_names;
   std::vector<unsigned int> class_colors;
@@ -458,7 +458,7 @@ TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std
 
   return new TensorStreamPatchDataset (*training_stream, *testing_stream, classes,
                                        class_names, class_colors, class_weights, patchsize_x,
-                                       patchsize_y, error_function, training_fd, testing_fd);
+                                       patchsize_y, class_manager, error_function, training_fd, testing_fd);
 }
 
 }

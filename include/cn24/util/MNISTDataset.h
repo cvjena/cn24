@@ -15,7 +15,7 @@
 namespace Conv {
 class MNISTDataset : public Dataset {
 public:
-  MNISTDataset();
+  explicit MNISTDataset(ClassManager* class_manager);
   ~MNISTDataset() {};
   virtual Task GetTask() const { return CLASSIFICATION; };
   virtual Method GetMethod() const { return FCN; }

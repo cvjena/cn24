@@ -11,7 +11,7 @@
 
 namespace Conv {
 
-MNISTDataset::MNISTDataset() {
+MNISTDataset::MNISTDataset(ClassManager* class_manager) : Dataset(class_manager) {
   for(unsigned int c = 0; c <= 9; c++) {
     class_colors_.push_back(0);
     class_weights_.push_back(1.0);

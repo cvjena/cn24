@@ -63,7 +63,7 @@ int main (int argc, char* argv[]) {
   // Remove actual data to avoid loading times
   dataset_json["data"] = Conv::JSON::array();
 
-  Conv::Dataset* dataset = Conv::JSONDatasetFactory::ConstructDataset(dataset_json);
+  Conv::Dataset* dataset = Conv::JSONDatasetFactory::ConstructDataset(dataset_json, new Conv::ClassManager);
   unsigned int CLASSES = dataset->GetClasses();
 
   // Load image

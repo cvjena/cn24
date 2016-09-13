@@ -20,6 +20,7 @@
 #include "Tensor.h"
 #include "TensorStream.h"
 #include "JSONParsing.h"
+#include "ClassManager.h"
 
 #include "BoundingBox.h"
 
@@ -41,6 +42,7 @@ enum Method {
 class Dataset
 {
 public:
+  explicit Dataset(ClassManager* class_manager) : class_manager_(class_manager) {};
 	/**
 	 * @brief Gets the name of the dataset
 	 */
@@ -164,6 +166,9 @@ public:
    * @brief Uses this Dataset's colors to colorize a net output
    */
   virtual void Colorize ( Tensor& net_output_tensor, Tensor& target_tensor);
+
+protected:
+	ClassManager* class_manager_ = nullptr;
 };
  
 /*
@@ -190,7 +195,7 @@ class TensorStreamPatchDataset : public Dataset {
 		 std::vector<unsigned int> class_colors,
 		 std::vector<datum> class_weights,
 		 unsigned int patchsize_x,
-		 unsigned int patchsize_y,
+		 unsigned int patchsize_y, ClassManager* class_manager,
 		 dataset_localized_error_function error_function = DefaultLocalizedErrorFunction,
     int training_fd = 0, int testing_fd = 0);
  
@@ -213,7 +218,7 @@ class TensorStreamPatchDataset : public Dataset {
 	virtual bool GetTrainingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
 	virtual bool GetTestingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
 
-  static TensorStreamPatchDataset* CreateFromConfiguration(std::istream& file, bool dont_load, DatasetLoadSelection selection, unsigned int patchsize_x, unsigned int patchsize_y);
+  static TensorStreamPatchDataset* CreateFromConfiguration(std::istream& file, bool dont_load, DatasetLoadSelection selection, unsigned int patchsize_x, unsigned int patchsize_y, ClassManager* class_manager);
   
 private:
   // Stored data
@@ -254,6 +259,7 @@ public:
     std::vector<std::string> class_names,
     std::vector<unsigned int> class_colors,
 		std::vector<datum> class_weights,
+		ClassManager* class_manager,
     dataset_localized_error_function error_function = DefaultLocalizedErrorFunction);
   
   // Dataset implementations
@@ -275,7 +281,7 @@ public:
 	virtual bool GetTrainingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
 	virtual bool GetTestingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
 
-  static TensorStreamDataset* CreateFromConfiguration(std::istream& file, bool dont_load = false, DatasetLoadSelection selection = LOAD_BOTH);
+  static TensorStreamDataset* CreateFromConfiguration(std::istream& file, bool dont_load = false, DatasetLoadSelection selection = LOAD_BOTH, ClassManager* class_manager = nullptr);
   
 private:
   // Stored data
@@ -314,7 +320,7 @@ public:
 		TensorStream* tensor_stream;
 		unsigned int sample_in_stream;
 	};
-	JSONSegmentationDataset();
+	explicit JSONSegmentationDataset(ClassManager* class_manager);
 	~JSONSegmentationDataset();
   // Dataset implementations
 	virtual std::string GetName() const { return name_; }
@@ -374,7 +380,7 @@ public:
 		unsigned int sample_in_stream;
 		std::vector<BoundingBox> bounding_boxes_;
 	};
-	JSONDetectionDataset();
+	explicit JSONDetectionDataset(ClassManager* class_manager);
 	~JSONDetectionDataset();
   // Dataset implementations
 	virtual std::string GetName() const { return name_; }

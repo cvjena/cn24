@@ -102,9 +102,10 @@ int main (int argc, char* argv[]) {
   }
 
   // Load dataset
+  Conv::ClassManager class_manager;
   LOGINFO << "Loading dataset, this can take a long time depending on the size!" << std::flush;
 
-  Conv::Dataset* dataset = Conv::JSONDatasetFactory::ConstructDataset(Conv::JSON::parse(dataset_config_file));
+  Conv::Dataset* dataset = Conv::JSONDatasetFactory::ConstructDataset(Conv::JSON::parse(dataset_config_file), &class_manager);
   //  dataset->LoadFile(dataset_config_file, false, Conv::LOAD_BOTH);
 
   unsigned int CLASSES = dataset->GetClasses();

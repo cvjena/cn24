@@ -14,7 +14,7 @@
 namespace Conv {
 
 	
-JSONSegmentationDataset::JSONSegmentationDataset() {
+JSONSegmentationDataset::JSONSegmentationDataset(ClassManager* class_manager) : Dataset(class_manager) {
 	
 }
 

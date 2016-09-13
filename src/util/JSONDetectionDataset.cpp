@@ -16,7 +16,7 @@
 namespace Conv {
 
 	
-JSONDetectionDataset::JSONDetectionDataset() {
+JSONDetectionDataset::JSONDetectionDataset(ClassManager* class_manager) : Dataset(class_manager) {
 	
 }
 

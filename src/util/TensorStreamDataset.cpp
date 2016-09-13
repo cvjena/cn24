@@ -38,7 +38,8 @@ TensorStreamDataset::TensorStreamDataset (
     std::vector< std::string > class_names,
     std::vector<unsigned int> class_colors,
 		std::vector<datum> class_weights,
-    dataset_localized_error_function error_function) :
+    ClassManager* class_manager,
+    dataset_localized_error_function error_function) : Dataset(class_manager),
     training_stream_(training_stream), testing_stream_(testing_stream),
   class_names_ (class_names), class_colors_ (class_colors),
 	class_weights_(class_weights),classes_ (classes),
@@ -285,7 +286,7 @@ bool TensorStreamDataset::GetTestingSample (Tensor& data_tensor, Tensor& label_t
   } else return false;
 }
 
-TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream& file , bool dont_load, DatasetLoadSelection selection) {
+TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream& file , bool dont_load, DatasetLoadSelection selection, ClassManager* class_manager) {
   unsigned int classes = 0;
   std::vector<std::string> class_names;
   std::vector<unsigned int> class_colors;
@@ -384,7 +385,7 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
   }
 
   return new TensorStreamDataset (training_stream, testing_stream, classes,
-                                  class_names, class_colors, class_weights, error_function);
+                                  class_names, class_colors, class_weights, class_manager, error_function);
 }
 
 }
