@@ -20,7 +20,13 @@
 namespace Conv {
 class ClassManager {
 public:
+  typedef std::map<std::string,unsigned int>::const_iterator const_iterator;
+
   ClassManager();
+
+  // Iterate
+  const_iterator begin() { return classes_.begin(); }
+  const_iterator end() { return classes_.end(); }
 
   // Import/Export
   bool LoadFromFile(JSON configuration);
@@ -30,6 +36,7 @@ public:
   unsigned int GetClassIdByName(const std::string& name) const;
 
   unsigned int GetMaxClassId() const;
+  unsigned int GetClassCount() const { return classes_.size(); }
 
 private:
   std::map<std::string,unsigned int> classes_;

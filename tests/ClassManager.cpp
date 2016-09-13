@@ -18,6 +18,7 @@ int main() {
 
   // Check if empty class manager is actually empty
   Conv::AssertEqual<int>(UNKNOWN_CLASS, class_manager.GetMaxClassId(), "GetMaxClassId() on empty ClassManager");
+  Conv::AssertEqual<int>(0, class_manager.GetClassCount(), "GetClassCount() on empty ClassManager");
 
   // Register classes
   for(unsigned int c = 0; c < sample_classes.size(); c++) {
