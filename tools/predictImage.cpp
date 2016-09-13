@@ -63,7 +63,8 @@ int main (int argc, char* argv[]) {
   // Remove actual data to avoid loading times
   dataset_json["data"] = Conv::JSON::array();
 
-  Conv::Dataset* dataset = Conv::JSONDatasetFactory::ConstructDataset(dataset_json, new Conv::ClassManager);
+  Conv::ClassManager class_manager;
+  Conv::Dataset* dataset = Conv::JSONDatasetFactory::ConstructDataset(dataset_json, &class_manager);
   unsigned int CLASSES = dataset->GetClasses();
 
   // Load image
@@ -194,7 +195,7 @@ int main (int argc, char* argv[]) {
         box.w *= (Conv::datum)original_width;
         box.h *= (Conv::datum)original_height;
 
-        LOGINFO << "Box\t" << b << ": " << dataset->GetClassNames()[box.c] << " (" << box.score << ")";
+        LOGINFO << "Box\t" << b << ": " << class_manager.GetClassInfoById(box.c).first << " (" << box.score << ")";
         LOGINFO << "  Center: (" << box.x << "," << box.y << ")";
         LOGINFO << "  Size: (" << box.w << "x" << box.h << ")";
 
