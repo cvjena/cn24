@@ -22,7 +22,7 @@ int main() {
 
   // Register classes
   for(unsigned int c = 0; c < sample_classes.size(); c++) {
-    Conv::AssertEqual<bool>(true, class_manager.RegisterClassByName(sample_classes[c]), "result of RegisterClassByName");
+    Conv::AssertEqual<bool>(true, class_manager.RegisterClassByName(sample_classes[c], 0, 0), "result of RegisterClassByName");
   }
 
   // See if classes come up as known, save max class id while at it
