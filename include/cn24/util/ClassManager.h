@@ -41,12 +41,14 @@ public:
   bool RegisterClassByName(std::string name, unsigned int color, datum weight);
   unsigned int GetClassIdByName(const std::string& name) const;
   Info GetClassInfoByName(const std::string& name) const;
+  std::pair<std::string, Info> GetClassInfoById(unsigned int id) const;
 
   unsigned int GetMaxClassId() const;
   unsigned int GetClassCount() const { return classes_.size(); }
 
 private:
   std::map<std::string,Info> classes_;
+  std::map<unsigned int, std::pair<std::string,Info>> by_id_;
   unsigned int next_class_id_ = 0;
 };
 }
