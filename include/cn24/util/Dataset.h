@@ -79,28 +79,6 @@ public:
   virtual unsigned int GetLabelMaps() const = 0;
   
   /**
-   * @brief Gets the number of classes in this Dataset.
-   */
-  virtual unsigned int GetClasses() const = 0;
-  
-  /**
-   * @brief Gets the names of the classes in this Dataset.
-   */
-  virtual std::vector<std::string> GetClassNames() const = 0;
-  
-  /**
-   * @brief Gets the colors of the classes in this Dataset.
-   * The colors are unsigned ints of the format 0x00RRGGBB.
-   */
-  virtual std::vector<unsigned int> GetClassColors() const = 0;
-  
-  /**
-   * @brief Gets the colors of the classes in this Dataset.
-   * The colors are unsigned ints of the format 0x00RRGGBB.
-   */
-  virtual std::vector<datum> GetClassWeights() const = 0;
-  
-  /**
    * @brief Gets the number of training samples in this Dataset.
    */
   virtual unsigned int GetTrainingSamples() const = 0;
@@ -206,17 +184,21 @@ class TensorStreamPatchDataset : public Dataset {
   virtual unsigned int GetHeight() const;
   virtual unsigned int GetInputMaps() const;
   virtual unsigned int GetLabelMaps() const;
-  virtual unsigned int GetClasses() const;
-  virtual std::vector< std::string > GetClassNames() const;
-  virtual std::vector< unsigned int > GetClassColors() const;
-  virtual std::vector< datum > GetClassWeights() const;
   virtual unsigned int GetTrainingSamples() const;
   virtual unsigned int GetTestingSamples() const;
   virtual bool SupportsTesting() const;
   virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
   virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index);
-	virtual bool GetTrainingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
-	virtual bool GetTestingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
+	virtual bool GetTrainingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) {
+		UNREFERENCED_PARAMETER(metadata_array);
+		UNREFERENCED_PARAMETER(sample);
+		UNREFERENCED_PARAMETER(index);
+		return false; };
+	virtual bool GetTestingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) {
+		UNREFERENCED_PARAMETER(metadata_array);
+		UNREFERENCED_PARAMETER(sample);
+		UNREFERENCED_PARAMETER(index);
+		return false; };
 
   static TensorStreamPatchDataset* CreateFromConfiguration(std::istream& file, bool dont_load, DatasetLoadSelection selection, unsigned int patchsize_x, unsigned int patchsize_y, ClassManager* class_manager);
   
@@ -269,17 +251,21 @@ public:
   virtual unsigned int GetHeight() const;
   virtual unsigned int GetInputMaps() const;
   virtual unsigned int GetLabelMaps() const;
-  virtual unsigned int GetClasses() const;
-  virtual std::vector< std::string > GetClassNames() const;
-  virtual std::vector< unsigned int > GetClassColors() const;
-  virtual std::vector< datum > GetClassWeights() const;
   virtual unsigned int GetTrainingSamples() const;
   virtual unsigned int GetTestingSamples() const;
   virtual bool SupportsTesting() const;
   virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
   virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index);
-	virtual bool GetTrainingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
-	virtual bool GetTestingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
+	virtual bool GetTrainingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) {
+		UNREFERENCED_PARAMETER(metadata_array);
+		UNREFERENCED_PARAMETER(sample);
+		UNREFERENCED_PARAMETER(index);
+		return false; };
+	virtual bool GetTestingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) {
+		UNREFERENCED_PARAMETER(metadata_array);
+		UNREFERENCED_PARAMETER(sample);
+		UNREFERENCED_PARAMETER(index);
+		return false; };
 
   static TensorStreamDataset* CreateFromConfiguration(std::istream& file, bool dont_load = false, DatasetLoadSelection selection = LOAD_BOTH, ClassManager* class_manager = nullptr);
   
@@ -330,17 +316,21 @@ public:
   virtual unsigned int GetHeight() const { return max_height_; }
   virtual unsigned int GetInputMaps() const { return input_maps_; }
   virtual unsigned int GetLabelMaps() const { return label_maps_; }
-	virtual unsigned int GetClasses() const { return class_manager_->GetClassCount(); }
-	virtual std::vector< std::string > GetClassNames() const { return {}; }
-	virtual std::vector< unsigned int > GetClassColors() const { return {}; }
-	virtual std::vector< datum > GetClassWeights() const { return {}; }
   virtual unsigned int GetTrainingSamples() const { return tensor_count_training_ / 2; }
   virtual unsigned int GetTestingSamples() const { return tensor_count_testing_ / 2; }
   virtual bool SupportsTesting() const { return tensor_count_testing_ > 0; }
   virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
   virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index);
-	virtual bool GetTrainingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
-	virtual bool GetTestingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
+	virtual bool GetTrainingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) {
+		UNREFERENCED_PARAMETER(metadata_array);
+		UNREFERENCED_PARAMETER(sample);
+		UNREFERENCED_PARAMETER(index);
+		return false; };
+	virtual bool GetTestingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) {
+		UNREFERENCED_PARAMETER(metadata_array);
+		UNREFERENCED_PARAMETER(sample);
+		UNREFERENCED_PARAMETER(index);
+		return false; };
 
 	virtual void Load(JSON descriptor, bool dont_load = false, DatasetLoadSelection selection = LOAD_BOTH);
 	
@@ -386,10 +376,6 @@ public:
   virtual unsigned int GetHeight() const { return max_height_; }
   virtual unsigned int GetInputMaps() const { return input_maps_; }
   virtual unsigned int GetLabelMaps() const { return label_maps_; }
-  virtual unsigned int GetClasses() const { return class_manager_->GetClassCount(); }
-  virtual std::vector< std::string > GetClassNames() const { return {}; }
-  virtual std::vector< unsigned int > GetClassColors() const { return {}; }
-  virtual std::vector< datum > GetClassWeights() const { return {}; }
   virtual unsigned int GetTrainingSamples() const { return tensor_count_training_; }
   virtual unsigned int GetTestingSamples() const { return tensor_count_testing_; }
   virtual bool SupportsTesting() const { return tensor_count_testing_ > 0; }

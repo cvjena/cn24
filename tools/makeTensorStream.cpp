@@ -49,16 +49,18 @@ int main ( int argc, char** argv ) {
 
   LOGINFO << "Loading dataset";
   // Load dataset
-  Conv::TensorStreamDataset* dataset = Conv::TensorStreamDataset::CreateFromConfiguration ( dataset_config_file, true );
+  Conv::ClassManager class_manager;
+  Conv::TensorStreamDataset* dataset = Conv::TensorStreamDataset::CreateFromConfiguration ( dataset_config_file, true, Conv::LOAD_BOTH, &class_manager);
 
-  unsigned int number_of_classes = dataset->GetClasses();
+  unsigned int number_of_classes = class_manager.GetMaxClassId() + 1;
   // arrays to store class colors in an easy to index way
   Conv::datum* cr = new Conv::datum[number_of_classes];
   Conv::datum* cg = new Conv::datum[number_of_classes];
   Conv::datum* cb = new Conv::datum[number_of_classes];
 
-  for ( unsigned int c = 0; c < number_of_classes; c++ ) {
-    const unsigned int class_color = dataset->GetClassColors() [c];
+  for(Conv::ClassManager::const_iterator it = class_manager.begin(); it != class_manager.end(); it++) {
+    const unsigned int c = it->second.id;
+    const unsigned int class_color = it->second.color;
     cr[c] = DATUM_FROM_UCHAR ( ( class_color >> 16 ) & 0xFF );
     cg[c] = DATUM_FROM_UCHAR ( ( class_color >> 8 ) & 0xFF );
     cb[c] = DATUM_FROM_UCHAR ( class_color & 0xFF );
@@ -122,7 +124,7 @@ int main ( int argc, char** argv ) {
       }
     } else if(number_of_classes == 1) {
       // 1 class - convert RGB images into multi-channel label tensors
-      const unsigned int foreground_color = dataset->GetClassColors() [0];
+      const unsigned int foreground_color = class_manager.begin()->second.color;
       const Conv::datum fr = DATUM_FROM_UCHAR ( ( foreground_color >> 16 ) & 0xFF ),
                         fg = DATUM_FROM_UCHAR ( ( foreground_color >> 8 ) & 0xFF ),
                         fb = DATUM_FROM_UCHAR ( foreground_color & 0xFF );

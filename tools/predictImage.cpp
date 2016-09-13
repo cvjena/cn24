@@ -65,7 +65,7 @@ int main (int argc, char* argv[]) {
 
   Conv::ClassManager class_manager;
   Conv::Dataset* dataset = Conv::JSONDatasetFactory::ConstructDataset(dataset_json, &class_manager);
-  unsigned int CLASSES = dataset->GetClasses();
+  unsigned int CLASSES = class_manager.GetMaxClassId() + 1;
 
   // Load image
   Conv::Tensor original_data_tensor(input_image_fname);

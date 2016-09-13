@@ -13,18 +13,14 @@
 #include "ConfusionMatrixLayer.h"
 
 namespace Conv {
-ConfusionMatrixLayer::ConfusionMatrixLayer (
-  std::vector<std::string> names, const unsigned int classes ) :
-  Layer(JSON::object()),
-  classes_ ( classes ), names_ ( names )
+ConfusionMatrixLayer::ConfusionMatrixLayer ( ClassManager* class_manager ) :
+  Layer(JSON::object()), class_manager_(class_manager)
 {
-  LOGDEBUG << "Instance created, " << classes << " classes.";
-  for(unsigned int n = 0; n < names_.size(); n++) {
-    if(names_[n].length() > 11) {
-      std::string original = names_[n];
-      names_[n] = original.substr(0,8) + "...";
-    }
-  }
+
+  LOGDEBUG << "Instance created, " << class_manager_->GetClassCount() << " classes for now.";
+
+  UpdateClassCount();
+
   // Initialize stat descriptors
   stat_orr_ = new StatDescriptor;
   stat_arr_ = new StatDescriptor;
@@ -82,9 +78,10 @@ void ConfusionMatrixLayer::UpdateAll() {
   long double ccount = 0;
   long double sum = 0;
 
-  for ( unsigned int c = 0; c < classes_; c++ ) {
+  for(ClassManager::const_iterator it = class_manager_->begin(); it != class_manager_->end(); it++) {
+    unsigned int c = it->second.id;
     if ( per_class_[c] > 0 ) {
-      sum += matrix_[ ( c * classes_ ) + c] / per_class_[c];
+      sum += matrix_[ ( c * (last_seen_max_id_ + 1) ) + c] / per_class_[c];
       ccount += 1.0L;
     }
   }
@@ -93,26 +90,46 @@ void ConfusionMatrixLayer::UpdateAll() {
 
   // Intersection over union
   long double IU_sum = 0;
-  for(unsigned int t = 0; t < classes_; t++) {
+  for(ClassManager::const_iterator itt = class_manager_->begin(); itt != class_manager_->end(); itt++) {
+    unsigned int t = itt->second.id;
     // Calculate IU measure for class T
     long double unionn = 0;
-    for(unsigned int c = 0; c < classes_; c++) {
+    for(ClassManager::const_iterator it = class_manager_->begin(); it != class_manager_->end(); it++) {
+      unsigned int c = it->second.id;
       if(c!=t) {
-        unionn += matrix_[ ( t * classes_ ) + c];
-        unionn += matrix_[ ( c * classes_ ) + t];
+        unionn += matrix_[ ( t * (last_seen_max_id_ + 1) ) + c];
+        unionn += matrix_[ ( c * (last_seen_max_id_ + 1) ) + t];
       }
     }
-    unionn += matrix_[ ( t * classes_) + t];
-    long double IU = (unionn > 0.0) ? (matrix_[ ( t * classes_) + t] / unionn) : 0.0;
+    unionn += matrix_[ ( t * (last_seen_max_id_ + 1)) + t];
+    long double IU = (unionn > 0.0) ? (matrix_[ ( t * (last_seen_max_id_ + 1)) + t] / unionn) : 0.0;
     IU_sum += IU;
   }
 
-  iou = 100.0L * IU_sum / (long double)classes_;
+  iou = 100.0L * IU_sum / (long double)(last_seen_max_id_ + 1);
   
   // Submit metrics to StatAggregator
   System::stat_aggregator->Update(stat_orr_->stat_id, (double)orr);
   System::stat_aggregator->Update(stat_arr_->stat_id, (double)arr);
   System::stat_aggregator->Update(stat_iou_->stat_id, (double)iou);
+}
+
+void ConfusionMatrixLayer::UpdateClassCount() {
+  if(last_seen_max_id_ != class_manager_->GetMaxClassId() || matrix_ == nullptr) {
+    unsigned int max_id = class_manager_->GetMaxClassId();
+
+    if(matrix_ != nullptr)
+      delete[] matrix_;
+    if(per_class_ != nullptr)
+      delete[] per_class_;
+
+    matrix_ = new long double[(max_id + 1) * (max_id)];
+    per_class_ = new long double[(max_id + 1)];
+
+    last_seen_max_id_ = max_id;
+
+    Reset();
+  }
 }
 
 bool ConfusionMatrixLayer::CreateOutputs (
@@ -173,10 +190,7 @@ bool ConfusionMatrixLayer::Connect
     second_ = second;
     third_ = third;
 
-    matrix_ = new long double[classes_ * classes_];
-    per_class_ = new long double[classes_];
-
-    Reset();
+    UpdateClassCount();
   }
 
   return valid;
@@ -186,13 +200,15 @@ void ConfusionMatrixLayer::FeedForward() {
   if ( disabled_ )
     return;
 
+  UpdateClassCount();
+
   for ( unsigned int sample = 0; sample < first_->data.samples(); sample++ ) {
     for ( unsigned int y = 0; y < first_->data.height(); y++ ) {
       for ( unsigned int x = 0; x < first_->data.width(); x++ ) {
         unsigned int first_class = first_->data.PixelMaximum ( x,y,sample );
         unsigned int second_class = second_->data.PixelMaximum ( x,y,sample );
         const long double weight = *third_->data.data_ptr_const ( x,y,0,sample );
-        matrix_[ ( first_class * classes_ ) + second_class] += weight;
+        matrix_[ ( first_class * (last_seen_max_id_ + 1) ) + second_class] += weight;
         per_class_[second_class] += weight;
         total_ += weight;
 
@@ -209,11 +225,11 @@ void ConfusionMatrixLayer::BackPropagate() {
 
 
 void ConfusionMatrixLayer::Reset() {
-  for ( unsigned int c = 0; c < ( classes_ * classes_ ); c++ ) {
+  for ( unsigned int c = 0; c < ( (last_seen_max_id_ + 1) * (last_seen_max_id_ + 1) ); c++ ) {
     matrix_[c] = 0;
   }
 
-  for ( unsigned int c = 0; c < classes_; c++ ) {
+  for ( unsigned int c = 0; c < (last_seen_max_id_ + 1); c++ ) {
     per_class_[c] = 0;
   }
 
@@ -226,8 +242,10 @@ void ConfusionMatrixLayer::Print ( std::string prefix, bool training ) {
   std::stringstream caption;
   caption << std::setw ( 12 ) << "vCLS  ACT>";
 
+  unsigned int classes_ = last_seen_max_id_ + 1;
+
   for ( unsigned int c = 0; c < classes_; c++ ) {
-    caption << std::setw ( 12 ) << names_[c];
+    caption << std::setw ( 12 ) << class_manager_->GetClassInfoById(c).first;
   }
 
   (training?LOGTRESULT:LOGRESULT) << caption.str() << LOGRESULTEND;
@@ -235,7 +253,7 @@ void ConfusionMatrixLayer::Print ( std::string prefix, bool training ) {
 
 
   for ( unsigned int t = 0; t < classes_; t++ ) {
-    caption << std::setw ( 12 ) << names_[t];
+    caption << std::setw ( 12 ) << class_manager_->GetClassInfoById(t).first;
 
     for ( unsigned int c = 0; c < classes_; c++ ) {
       long double result = matrix_[ ( t * classes_ ) + c];
@@ -250,7 +268,7 @@ void ConfusionMatrixLayer::Print ( std::string prefix, bool training ) {
   for ( unsigned int c = 0; c < classes_; c++ ) {
     if ( per_class_[c] > 0 ) {
       long double classrr = matrix_[ ( c * classes_ ) + c] / per_class_[c];
-      caption << std::setw(12) << names_[c];
+      caption << std::setw(12) << class_manager_->GetClassInfoById(c).first;
       caption << " RR: ";
       caption << std::setw(12) << classrr * 100.0L;
       caption << "%";
@@ -275,7 +293,7 @@ void ConfusionMatrixLayer::Print ( std::string prefix, bool training ) {
     unionn += matrix_[ ( t * classes_) + t];
     long double IU = (unionn > 0.0) ? (matrix_[ ( t * classes_) + t] / unionn) : 0.0;
     IU_sum += IU;
-    caption << std::setw(12) << names_[t];
+    caption << std::setw(12) << class_manager_->GetClassInfoById(t).first;
     caption << " IU: ";
     caption << std::setw(12) << IU * 100.0L;
     caption << "%";

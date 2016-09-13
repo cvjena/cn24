@@ -28,20 +28,19 @@ int main(int argc, char* argv[]) {
   if(!dataset_config_fstream.good()) {
     FATAL("Cannot open " << dataset_config_file << "!");
   }
-  
-  Conv::Dataset* dataset = Conv::TensorStreamDataset::CreateFromConfiguration(dataset_config_fstream);
+
+  Conv::ClassManager class_manager;
+  Conv::Dataset* dataset = Conv::TensorStreamDataset::CreateFromConfiguration(dataset_config_fstream, false, Conv::LOAD_BOTH, &class_manager);
 
   Conv::Tensor data_tensor(1, dataset->GetWidth(), dataset->GetHeight(), dataset->GetInputMaps());
   Conv::Tensor weight_tensor(1, dataset->GetWidth(), dataset->GetHeight(), 1);
   Conv::Tensor label_tensor(1, dataset->GetWidth(), dataset->GetHeight(), dataset->GetLabelMaps());
   Conv::Tensor helper_tensor(1, dataset->GetWidth(), dataset->GetHeight(), 2);
-  
-  std::vector<Conv::datum> class_weights = dataset->GetClassWeights();
-  std::vector<std::string> class_names = dataset->GetClassNames();
-  
-  long double* pixel_counts = new long double[dataset->GetClasses()];
-  long double* pixel_counts_weighted = new long double[dataset->GetClasses()];
-  for(unsigned int clazz = 0; clazz < dataset->GetClasses(); clazz++) {
+
+  unsigned int max_class_id = class_manager.GetMaxClassId() + 1;
+  long double* pixel_counts = new long double[max_class_id];
+  long double* pixel_counts_weighted = new long double[max_class_id];
+  for(unsigned int clazz = 0; clazz < max_class_id; clazz++) {
     pixel_counts[clazz] = 0;
     pixel_counts_weighted[clazz] = 0;
   }
@@ -55,7 +54,7 @@ int main(int argc, char* argv[]) {
         Conv::datum weight = *weight_tensor.data_ptr_const(x,y);
         
         pixel_counts[pixel_class] += (long double)weight;
-        pixel_counts_weighted[pixel_class] += (long double)(weight * class_weights[pixel_class]);
+        pixel_counts_weighted[pixel_class] += (long double)(weight * class_manager.GetClassInfoById(pixel_class).second.weight);
       }
     }
   }
@@ -64,7 +63,8 @@ int main(int argc, char* argv[]) {
   long double total_pixels_weighted = 0;
   long double total_classes = 0;
   long double total_classes_weighted = 0;
-  for(unsigned int clazz = 0; clazz < dataset->GetClasses(); clazz++) {
+  for(Conv::ClassManager::const_iterator it = class_manager.begin(); it != class_manager.end(); it++) {
+    unsigned int clazz = it->second.id;
     total_pixels += pixel_counts[clazz];
     total_pixels_weighted += pixel_counts_weighted[clazz];
     if(pixel_counts[clazz] > 0)
@@ -76,7 +76,8 @@ int main(int argc, char* argv[]) {
   long double expected_ratio_weighted = 1.0 / total_classes_weighted;
   long double correction_ratio_sum = 0;
   long double correction_ratio_sum_weighted = 0;
-  for(unsigned int clazz = 0; clazz < dataset->GetClasses(); clazz++) {
+  for(Conv::ClassManager::const_iterator it = class_manager.begin(); it != class_manager.end(); it++) {
+    unsigned int clazz = it->second.id;
     if(pixel_counts[clazz] > 0)
       correction_ratio_sum += expected_ratio/(pixel_counts[clazz]/total_pixels);
     if(pixel_counts_weighted[clazz] > 0)
@@ -88,13 +89,14 @@ int main(int argc, char* argv[]) {
   LOGINFO << "===========================";
   LOGINFO << "Classes counted: " << total_classes;
   LOGINFO << "Expected ratio: " << 100.0 * expected_ratio << "%";
-  for(unsigned int clazz = 0; clazz < dataset->GetClasses(); clazz++) {
+  for(Conv::ClassManager::const_iterator it = class_manager.begin(); it != class_manager.end(); it++) {
+    unsigned int clazz = it->second.id;
     long double actual_ratio = pixel_counts[clazz]/total_pixels;
     long double correction_ratio = 0;
     if(pixel_counts[clazz] > 0) {
       correction_ratio = expected_ratio / actual_ratio;
     }
-    LOGINFO << "Class " << std::setw(30) << class_names[clazz] << " | " << std::setw(14) << static_cast<long>(pixel_counts[clazz]) << std::setw(14) << 100.0 * actual_ratio << "%" << std::setw(14) << correction_ratio << std::setw(14) << static_cast<long>(correction_ratio * pixel_counts[clazz]);
+    LOGINFO << "Class " << std::setw(30) << it->first << " | " << std::setw(14) << static_cast<long>(pixel_counts[clazz]) << std::setw(14) << 100.0 * actual_ratio << "%" << std::setw(14) << correction_ratio << std::setw(14) << static_cast<long>(correction_ratio * pixel_counts[clazz]);
   }
   
   // Not ignoring weights
@@ -102,13 +104,14 @@ int main(int argc, char* argv[]) {
   LOGINFO << "===========================";
   LOGINFO << "Classes counted: " << total_classes_weighted;
   LOGINFO << "Expected ratio: " << 100.0 * expected_ratio_weighted << "%";
-  for(unsigned int clazz = 0; clazz < dataset->GetClasses(); clazz++) {
+  for(Conv::ClassManager::const_iterator it = class_manager.begin(); it != class_manager.end(); it++) {
+    unsigned int clazz = it->second.id;
     long double actual_ratio = pixel_counts_weighted[clazz]/total_pixels_weighted;
     long double correction_ratio = 0;
     if(pixel_counts_weighted[clazz] > 0) {
       correction_ratio = expected_ratio_weighted / actual_ratio;
     }
-    LOGINFO << "Class " << std::setw(30) << class_names[clazz] << " | " << std::setw(14) << static_cast<long>(pixel_counts_weighted[clazz]) << std::setw(14) << 100.0 * actual_ratio << "%" << std::setw(14) << correction_ratio << std::setw(14) << static_cast<long>(correction_ratio * pixel_counts_weighted[clazz]);
+    LOGINFO << "Class " << std::setw(30) << it->first << " | " << std::setw(14) << static_cast<long>(pixel_counts_weighted[clazz]) << std::setw(14) << 100.0 * actual_ratio << "%" << std::setw(14) << correction_ratio << std::setw(14) << static_cast<long>(correction_ratio * pixel_counts_weighted[clazz]);
   }
   
 

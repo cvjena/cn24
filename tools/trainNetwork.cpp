@@ -108,8 +108,6 @@ int main (int argc, char* argv[]) {
   Conv::Dataset* dataset = Conv::JSONDatasetFactory::ConstructDataset(Conv::JSON::parse(dataset_config_file), &class_manager);
   //  dataset->LoadFile(dataset_config_file, false, Conv::LOAD_BOTH);
 
-  unsigned int CLASSES = dataset->GetClasses();
-
   // Assemble net
   Conv::NetGraph graph;
   Conv::DatasetInputLayer* data_layer = nullptr;
@@ -184,13 +182,11 @@ void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::
     for (Conv::NetGraphNode *output_node : graph.GetOutputNodes()) {
       // Add appropriate statistics layer
       Conv::NetGraphNode *stat_node = nullptr;
-      if (dataset->GetClasses() == 1) {
+      if (class_manager->GetClassCount() == 1) {
         Conv::BinaryStatLayer *binary_stat_layer = new Conv::BinaryStatLayer(13, -1, 1);
         stat_node = new Conv::NetGraphNode(binary_stat_layer);
       } else {
-        std::vector<std::string> class_names = dataset->GetClassNames();
-        Conv::ConfusionMatrixLayer *confusion_matrix_layer = new Conv::ConfusionMatrixLayer(class_names,
-                                                                                            dataset->GetClasses());
+        Conv::ConfusionMatrixLayer *confusion_matrix_layer = new Conv::ConfusionMatrixLayer(class_manager);
         stat_node = new Conv::NetGraphNode(confusion_matrix_layer);
       }
       stat_node->input_connections.push_back(Conv::NetGraphConnection(output_node, 0, false));

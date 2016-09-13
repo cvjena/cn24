@@ -179,22 +179,6 @@ unsigned int TensorStreamPatchDataset::GetLabelMaps() const {
   return label_maps_;
 }
 
-unsigned int TensorStreamPatchDataset::GetClasses() const {
-  return classes_;
-}
-
-std::vector<std::string> TensorStreamPatchDataset::GetClassNames() const {
-  return class_names_;
-}
-
-std::vector<unsigned int> TensorStreamPatchDataset::GetClassColors() const {
-  return class_colors_;
-}
-
-std::vector<datum> TensorStreamPatchDataset::GetClassWeights() const {
-	return class_weights_;
-}
-
 unsigned int TensorStreamPatchDataset::GetTrainingSamples() const {
   return sample_count_training_;
 }

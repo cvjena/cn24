@@ -76,7 +76,7 @@ void DetectionStatLayer::UpdateClassCount() {
       delete[] positive_samples_;
 
     detections_ = new std::vector<Detection>[max_id + 1];
-    positive_samples_ = new unsigned int[max_id + 1];
+    positive_samples_ = new unsigned int[max_id];
     last_seen_max_id_ = max_id;
 
     Reset();

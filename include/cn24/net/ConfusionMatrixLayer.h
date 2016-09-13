@@ -22,20 +22,15 @@
 #include "StatLayer.h"
 
 #include "../util/StatAggregator.h"
+#include "../util/ClassManager.h"
 
 namespace Conv {
 
 class ConfusionMatrixLayer: public Layer, public StatLayer {
 public:
-  /**
-	* @brief Creates a ConfusionMatrixLayer
-	*
-	* @param names The names of the classes (for display)
-	* @param classes The number of classes
-	*/
-  explicit ConfusionMatrixLayer(std::vector<std::string> names,
-                                const unsigned int classes);
+  explicit ConfusionMatrixLayer(ClassManager* class_manager);
 
+  void UpdateClassCount();
   void UpdateAll();
   /**
 	* @brief Prints the current statistics
@@ -71,10 +66,11 @@ public:
 	std::string GetLayerDescription() { return "Confusion Matrix Layer"; }
   ~ConfusionMatrixLayer();
 private:
-  unsigned int classes_;
-  std::vector<std::string> names_;
   bool disabled_ = false;
-  
+
+  ClassManager* class_manager_ = nullptr;
+  unsigned int last_seen_max_id_ = 0;
+
   CombinedTensor* first_ = nullptr;
   CombinedTensor* second_ = nullptr;
   CombinedTensor* third_ = nullptr;
