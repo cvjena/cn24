@@ -20,6 +20,7 @@
 #include "Tensor.h"
 #include "TensorStream.h"
 #include "JSONParsing.h"
+#include "ClassManager.h"
 
 #include "BoundingBox.h"
 
@@ -41,6 +42,7 @@ enum Method {
 class Dataset
 {
 public:
+  explicit Dataset(ClassManager* class_manager) : class_manager_(class_manager) {};
 	/**
 	 * @brief Gets the name of the dataset
 	 */
@@ -75,28 +77,6 @@ public:
    * @brief Gets the number of label maps in this Dataset.
    */
   virtual unsigned int GetLabelMaps() const = 0;
-  
-  /**
-   * @brief Gets the number of classes in this Dataset.
-   */
-  virtual unsigned int GetClasses() const = 0;
-  
-  /**
-   * @brief Gets the names of the classes in this Dataset.
-   */
-  virtual std::vector<std::string> GetClassNames() const = 0;
-  
-  /**
-   * @brief Gets the colors of the classes in this Dataset.
-   * The colors are unsigned ints of the format 0x00RRGGBB.
-   */
-  virtual std::vector<unsigned int> GetClassColors() const = 0;
-  
-  /**
-   * @brief Gets the colors of the classes in this Dataset.
-   * The colors are unsigned ints of the format 0x00RRGGBB.
-   */
-  virtual std::vector<datum> GetClassWeights() const = 0;
   
   /**
    * @brief Gets the number of training samples in this Dataset.
@@ -164,6 +144,9 @@ public:
    * @brief Uses this Dataset's colors to colorize a net output
    */
   virtual void Colorize ( Tensor& net_output_tensor, Tensor& target_tensor);
+
+protected:
+	ClassManager* class_manager_ = nullptr;
 };
  
 /*
@@ -190,7 +173,7 @@ class TensorStreamPatchDataset : public Dataset {
 		 std::vector<unsigned int> class_colors,
 		 std::vector<datum> class_weights,
 		 unsigned int patchsize_x,
-		 unsigned int patchsize_y,
+		 unsigned int patchsize_y, ClassManager* class_manager,
 		 dataset_localized_error_function error_function = DefaultLocalizedErrorFunction,
     int training_fd = 0, int testing_fd = 0);
  
@@ -201,19 +184,23 @@ class TensorStreamPatchDataset : public Dataset {
   virtual unsigned int GetHeight() const;
   virtual unsigned int GetInputMaps() const;
   virtual unsigned int GetLabelMaps() const;
-  virtual unsigned int GetClasses() const;
-  virtual std::vector< std::string > GetClassNames() const;
-  virtual std::vector< unsigned int > GetClassColors() const;
-  virtual std::vector< datum > GetClassWeights() const;
   virtual unsigned int GetTrainingSamples() const;
   virtual unsigned int GetTestingSamples() const;
   virtual bool SupportsTesting() const;
   virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
   virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index);
-	virtual bool GetTrainingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
-	virtual bool GetTestingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
+	virtual bool GetTrainingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) {
+		UNREFERENCED_PARAMETER(metadata_array);
+		UNREFERENCED_PARAMETER(sample);
+		UNREFERENCED_PARAMETER(index);
+		return false; };
+	virtual bool GetTestingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) {
+		UNREFERENCED_PARAMETER(metadata_array);
+		UNREFERENCED_PARAMETER(sample);
+		UNREFERENCED_PARAMETER(index);
+		return false; };
 
-  static TensorStreamPatchDataset* CreateFromConfiguration(std::istream& file, bool dont_load, DatasetLoadSelection selection, unsigned int patchsize_x, unsigned int patchsize_y);
+  static TensorStreamPatchDataset* CreateFromConfiguration(std::istream& file, bool dont_load, DatasetLoadSelection selection, unsigned int patchsize_x, unsigned int patchsize_y, ClassManager* class_manager);
   
 private:
   // Stored data
@@ -254,6 +241,7 @@ public:
     std::vector<std::string> class_names,
     std::vector<unsigned int> class_colors,
 		std::vector<datum> class_weights,
+		ClassManager* class_manager,
     dataset_localized_error_function error_function = DefaultLocalizedErrorFunction);
   
   // Dataset implementations
@@ -263,19 +251,23 @@ public:
   virtual unsigned int GetHeight() const;
   virtual unsigned int GetInputMaps() const;
   virtual unsigned int GetLabelMaps() const;
-  virtual unsigned int GetClasses() const;
-  virtual std::vector< std::string > GetClassNames() const;
-  virtual std::vector< unsigned int > GetClassColors() const;
-  virtual std::vector< datum > GetClassWeights() const;
   virtual unsigned int GetTrainingSamples() const;
   virtual unsigned int GetTestingSamples() const;
   virtual bool SupportsTesting() const;
   virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
   virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index);
-	virtual bool GetTrainingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
-	virtual bool GetTestingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
+	virtual bool GetTrainingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) {
+		UNREFERENCED_PARAMETER(metadata_array);
+		UNREFERENCED_PARAMETER(sample);
+		UNREFERENCED_PARAMETER(index);
+		return false; };
+	virtual bool GetTestingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) {
+		UNREFERENCED_PARAMETER(metadata_array);
+		UNREFERENCED_PARAMETER(sample);
+		UNREFERENCED_PARAMETER(index);
+		return false; };
 
-  static TensorStreamDataset* CreateFromConfiguration(std::istream& file, bool dont_load = false, DatasetLoadSelection selection = LOAD_BOTH);
+  static TensorStreamDataset* CreateFromConfiguration(std::istream& file, bool dont_load = false, DatasetLoadSelection selection = LOAD_BOTH, ClassManager* class_manager = nullptr);
   
 private:
   // Stored data
@@ -314,7 +306,7 @@ public:
 		TensorStream* tensor_stream;
 		unsigned int sample_in_stream;
 	};
-	JSONSegmentationDataset();
+	explicit JSONSegmentationDataset(ClassManager* class_manager);
 	~JSONSegmentationDataset();
   // Dataset implementations
 	virtual std::string GetName() const { return name_; }
@@ -324,17 +316,21 @@ public:
   virtual unsigned int GetHeight() const { return max_height_; }
   virtual unsigned int GetInputMaps() const { return input_maps_; }
   virtual unsigned int GetLabelMaps() const { return label_maps_; }
-  virtual unsigned int GetClasses() const { return class_names_.size(); }
-  virtual std::vector< std::string > GetClassNames() const { return class_names_; }
-  virtual std::vector< unsigned int > GetClassColors() const { return class_colors_; }
-  virtual std::vector< datum > GetClassWeights() const { return class_weights_; }
   virtual unsigned int GetTrainingSamples() const { return tensor_count_training_ / 2; }
   virtual unsigned int GetTestingSamples() const { return tensor_count_testing_ / 2; }
   virtual bool SupportsTesting() const { return tensor_count_testing_ > 0; }
   virtual bool GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index);
   virtual bool GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index);
-	virtual bool GetTrainingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
-	virtual bool GetTestingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) { return false; };
+	virtual bool GetTrainingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) {
+		UNREFERENCED_PARAMETER(metadata_array);
+		UNREFERENCED_PARAMETER(sample);
+		UNREFERENCED_PARAMETER(index);
+		return false; };
+	virtual bool GetTestingMetadata(DatasetMetadataPointer* metadata_array, unsigned int sample, unsigned int index) {
+		UNREFERENCED_PARAMETER(metadata_array);
+		UNREFERENCED_PARAMETER(sample);
+		UNREFERENCED_PARAMETER(index);
+		return false; };
 
 	virtual void Load(JSON descriptor, bool dont_load = false, DatasetLoadSelection selection = LOAD_BOTH);
 	
@@ -352,10 +348,6 @@ private:
   unsigned int max_height_ = 0;
   
   // Metadata
-  std::vector<std::string> class_names_;
-  std::vector<unsigned int> class_colors_;
-  std::vector<datum> class_weights_;
-  unsigned int classes_;
   dataset_localized_error_function error_function_;
 	
 	// Samples
@@ -374,7 +366,7 @@ public:
 		unsigned int sample_in_stream;
 		std::vector<BoundingBox> bounding_boxes_;
 	};
-	JSONDetectionDataset();
+	explicit JSONDetectionDataset(ClassManager* class_manager);
 	~JSONDetectionDataset();
   // Dataset implementations
 	virtual std::string GetName() const { return name_; }
@@ -384,10 +376,6 @@ public:
   virtual unsigned int GetHeight() const { return max_height_; }
   virtual unsigned int GetInputMaps() const { return input_maps_; }
   virtual unsigned int GetLabelMaps() const { return label_maps_; }
-  virtual unsigned int GetClasses() const { return class_names_.size(); }
-  virtual std::vector< std::string > GetClassNames() const { return class_names_; }
-  virtual std::vector< unsigned int > GetClassColors() const { return class_colors_; }
-  virtual std::vector< datum > GetClassWeights() const { return class_weights_; }
   virtual unsigned int GetTrainingSamples() const { return tensor_count_training_; }
   virtual unsigned int GetTestingSamples() const { return tensor_count_testing_; }
   virtual bool SupportsTesting() const { return tensor_count_testing_ > 0; }
@@ -412,10 +400,6 @@ private:
   unsigned int max_height_ = 0;
 
   // Metadata
-  std::vector<std::string> class_names_;
-  std::vector<unsigned int> class_colors_;
-  std::vector<datum> class_weights_;
-  unsigned int classes_;
   dataset_localized_error_function error_function_;
 
 	// Samples

@@ -15,7 +15,7 @@ namespace Conv {
 
 class JSONDatasetFactory {
 public:
-  static Dataset* ConstructDataset(JSON descriptor);
+  static Dataset* ConstructDataset(JSON descriptor, ClassManager* class_manager);
 };
 
 }

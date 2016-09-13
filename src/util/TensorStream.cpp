@@ -28,7 +28,7 @@
 
 namespace Conv {
   
-TensorStream* TensorStream::FromFile(std::string path, std::vector<unsigned int> class_colors) {
+TensorStream* TensorStream::FromFile(std::string path, ClassManager* class_manager) {
 	std::string listtensor_regex = "list:.*;.*;.*;.*";
 #ifdef BUILD_BOOST
 	bool is_listtensor = boost::regex_match(path, boost::regex(listtensor_regex, boost::regex::extended));
@@ -37,7 +37,7 @@ TensorStream* TensorStream::FromFile(std::string path, std::vector<unsigned int>
 #endif
   if(is_listtensor) {
     LOGDEBUG << "Is list tensor, loading...";
-    ListTensorStream* lts = new ListTensorStream(class_colors);
+    ListTensorStream* lts = new ListTensorStream(class_manager);
     lts->LoadFile(path);
     return lts;
   }

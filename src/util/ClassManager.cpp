@@ -19,7 +19,8 @@ bool ClassManager::LoadFromFile(JSON configuration) {
   for(JSON::iterator it = configuration.begin(); it != configuration.end(); it++) {
     // Check if class name exists
     std::string class_name = it.key();
-    unsigned int class_id = it.value();
+    JSON obj = it.value();
+    unsigned int class_id = obj["id"];
     unsigned int registered_id = GetClassIdByName(class_name);
     if(registered_id != UNKNOWN_CLASS) {
       // Class name exists
@@ -32,15 +33,22 @@ bool ClassManager::LoadFromFile(JSON configuration) {
       }
     } else {
       // Class is new, check if id exists
-      for(std::map<std::string,unsigned int>::iterator mit = classes_.begin(); mit != classes_.end(); mit++) {
-        if(mit->second == class_id) {
+      for(std::map<std::string,Info>::iterator mit = classes_.begin(); mit != classes_.end(); mit++) {
+        if(mit->second.id == class_id) {
           // Same id, different name
           FATAL("Same class id " << class_id << " with different names " << class_name << " and " << mit->first << "!");
         }
       }
 
       // Id doesn't exist, okay
-      classes_.emplace(class_name, class_id);
+      Info class_info; class_info.id = class_id;
+      class_info.weight = obj["weight"];
+      class_info.color = obj["color"];
+      classes_.emplace(class_name, class_info);
+      std::pair<std::string,Info> p;
+      p.first = class_name;
+      p.second = class_info;
+      by_id_.emplace(class_info.id, p);
     }
   }
   return false;
@@ -48,26 +56,58 @@ bool ClassManager::LoadFromFile(JSON configuration) {
 
 JSON ClassManager::SaveToFile() {
   JSON dump = JSON::object();
-  for(std::map<std::string,unsigned int>::iterator it = classes_.begin(); it != classes_.end(); it++) {
-    dump[it->first] = it->second;
+  for(std::map<std::string,Info>::iterator it = classes_.begin(); it != classes_.end(); it++) {
+    JSON obj = JSON::object();
+    obj["id"] = it->second.id;
+    obj["color"] = it->second.color;
+    obj["weight"] = it->second.weight;
+    dump[it->first] = obj;
   }
   return dump;
 }
 
-bool ClassManager::RegisterClassByName(std::string name) {
-  auto result = classes_.emplace(name, next_class_id_);
+bool ClassManager::RegisterClassByName(std::string name, unsigned int color, datum weight) {
+  Info info;
+  info.id = next_class_id_;
+  info.color = color;
+  info.weight = weight;
+  auto result = classes_.emplace(name, info);
 
-  if(result.second)
+  if(result.second) {
+    std::pair<std::string,Info> p;
+    p.first = name;
+    p.second = info;
+    by_id_.emplace(info.id, p);
     next_class_id_++;
+  }
 
   return result.second;
 }
 
 unsigned int ClassManager::GetClassIdByName(const std::string& name) const {
-  std::map<std::string,unsigned int>::const_iterator element = classes_.find(name);
+  std::map<std::string,Info>::const_iterator element = classes_.find(name);
+  if(element != classes_.end())
+    return element->second.id;
+  return UNKNOWN_CLASS;
+}
+
+ClassManager::Info ClassManager::GetClassInfoByName(const std::string& name) const {
+  std::map<std::string,Info>::const_iterator element = classes_.find(name);
   if(element != classes_.end())
     return element->second;
-  return UNKNOWN_CLASS;
+
+  Info info; info.id = UNKNOWN_CLASS;
+  return info;
+}
+
+std::pair<std::string, ClassManager::Info> ClassManager::GetClassInfoById(unsigned int id) const {
+  std::map<unsigned int, std::pair<std::string,Info>>::const_iterator element = by_id_.find(id);
+  if(element != by_id_.end()) {
+    return element->second;
+  }
+  std::pair<std::string, Info> p;
+  p.second.id = UNKNOWN_CLASS;
+  return p;
 }
 
 unsigned int ClassManager::GetMaxClassId() const {

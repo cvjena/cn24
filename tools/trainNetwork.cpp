@@ -23,7 +23,7 @@
 #include <cn24.h>
 #include <private/ConfigParsing.h>
 
-void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Dataset* dataset);
+void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Dataset* dataset, Conv::ClassManager* class_manager);
 bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, std::string& command);
 void help();
 
@@ -102,12 +102,11 @@ int main (int argc, char* argv[]) {
   }
 
   // Load dataset
+  Conv::ClassManager class_manager;
   LOGINFO << "Loading dataset, this can take a long time depending on the size!" << std::flush;
 
-  Conv::Dataset* dataset = Conv::JSONDatasetFactory::ConstructDataset(Conv::JSON::parse(dataset_config_file));
+  Conv::Dataset* dataset = Conv::JSONDatasetFactory::ConstructDataset(Conv::JSON::parse(dataset_config_file), &class_manager);
   //  dataset->LoadFile(dataset_config_file, false, Conv::LOAD_BOTH);
-
-  unsigned int CLASSES = dataset->GetClasses();
 
   // Assemble net
   Conv::NetGraph graph;
@@ -125,7 +124,7 @@ int main (int argc, char* argv[]) {
   if(!completeness)
     FATAL("Graph completeness test failed after factory run!");
 
-	addStatLayers(graph, input_node, dataset);
+	addStatLayers(graph, input_node, dataset, &class_manager);
   
   if(!completeness)
     FATAL("Graph completeness test failed after adding stat layer!");
@@ -178,18 +177,16 @@ int main (int argc, char* argv[]) {
   return 0;
 }
 
-void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Dataset* dataset) {
+void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Dataset* dataset, Conv::ClassManager* class_manager) {
   if(dataset->GetTask() == Conv::SEMANTIC_SEGMENTATION || dataset->GetTask() == Conv::CLASSIFICATION) {
     for (Conv::NetGraphNode *output_node : graph.GetOutputNodes()) {
       // Add appropriate statistics layer
       Conv::NetGraphNode *stat_node = nullptr;
-      if (dataset->GetClasses() == 1) {
+      if (class_manager->GetClassCount() == 1) {
         Conv::BinaryStatLayer *binary_stat_layer = new Conv::BinaryStatLayer(13, -1, 1);
         stat_node = new Conv::NetGraphNode(binary_stat_layer);
       } else {
-        std::vector<std::string> class_names = dataset->GetClassNames();
-        Conv::ConfusionMatrixLayer *confusion_matrix_layer = new Conv::ConfusionMatrixLayer(class_names,
-                                                                                            dataset->GetClasses());
+        Conv::ConfusionMatrixLayer *confusion_matrix_layer = new Conv::ConfusionMatrixLayer(class_manager);
         stat_node = new Conv::NetGraphNode(confusion_matrix_layer);
       }
       stat_node->input_connections.push_back(Conv::NetGraphConnection(output_node, 0, false));
@@ -201,7 +198,7 @@ void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::
     for (Conv::NetGraphNode *output_node : graph.GetOutputNodes()) {
       // Add appropriate statistics layer
       Conv::NetGraphNode *stat_node = nullptr;
-      Conv::DetectionStatLayer *detection_stat_layer = new Conv::DetectionStatLayer(dataset->GetClassNames());
+      Conv::DetectionStatLayer *detection_stat_layer = new Conv::DetectionStatLayer(class_manager);
 
       stat_node = new Conv::NetGraphNode(detection_stat_layer);
       stat_node->input_connections.push_back(Conv::NetGraphConnection(output_node, 0, false));

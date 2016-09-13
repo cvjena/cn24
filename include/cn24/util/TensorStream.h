@@ -15,8 +15,8 @@
 
 #include "Log.h"
 #include "Config.h"
-
 #include "Tensor.h"
+#include "ClassManager.h"
 
 namespace Conv {
 
@@ -33,7 +33,7 @@ public:
   
   virtual unsigned int GetTensorCount() = 0;
   
-  static TensorStream* FromFile(std::string path, std::vector<unsigned int> class_colors = {});
+  static TensorStream* FromFile(std::string path, ClassManager* class_manager);
 };
 
 }

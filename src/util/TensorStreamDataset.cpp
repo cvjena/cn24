@@ -38,7 +38,8 @@ TensorStreamDataset::TensorStreamDataset (
     std::vector< std::string > class_names,
     std::vector<unsigned int> class_colors,
 		std::vector<datum> class_weights,
-    dataset_localized_error_function error_function) :
+    ClassManager* class_manager,
+    dataset_localized_error_function error_function) : Dataset(class_manager),
     training_stream_(training_stream), testing_stream_(testing_stream),
   class_names_ (class_names), class_colors_ (class_colors),
 	class_weights_(class_weights),classes_ (classes),
@@ -165,22 +166,6 @@ unsigned int TensorStreamDataset::GetLabelMaps() const {
   return label_maps_;
 }
 
-unsigned int TensorStreamDataset::GetClasses() const {
-  return classes_;
-}
-
-std::vector<std::string> TensorStreamDataset::GetClassNames() const {
-  return class_names_;
-}
-
-std::vector<unsigned int> TensorStreamDataset::GetClassColors() const {
-  return class_colors_;
-}
-
-std::vector<datum> TensorStreamDataset::GetClassWeights() const {
-	return class_weights_;
-}
-
 unsigned int TensorStreamDataset::GetTrainingSamples() const {
   return tensor_count_training_ / 2;
 }
@@ -285,7 +270,7 @@ bool TensorStreamDataset::GetTestingSample (Tensor& data_tensor, Tensor& label_t
   } else return false;
 }
 
-TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream& file , bool dont_load, DatasetLoadSelection selection) {
+TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream& file , bool dont_load, DatasetLoadSelection selection, ClassManager* class_manager) {
   unsigned int classes = 0;
   std::vector<std::string> class_names;
   std::vector<unsigned int> class_colors;
@@ -374,17 +359,17 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
 	}
 	
   if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TRAINING_ONLY) && training_file.length() > 0) {
-    training_stream = TensorStream::FromFile(training_file, class_colors);
+    training_stream = TensorStream::FromFile(training_file, class_manager);
   } else {
   }
 
   if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TESTING_ONLY) && testing_file.length() > 0) {
-    testing_stream = TensorStream::FromFile(testing_file, class_colors);
+    testing_stream = TensorStream::FromFile(testing_file, class_manager);
   } else {
   }
 
   return new TensorStreamDataset (training_stream, testing_stream, classes,
-                                  class_names, class_colors, class_weights, error_function);
+                                  class_names, class_colors, class_weights, class_manager, error_function);
 }
 
 }

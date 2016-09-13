@@ -16,7 +16,7 @@
 namespace Conv {
 
 	
-JSONDetectionDataset::JSONDetectionDataset() {
+JSONDetectionDataset::JSONDetectionDataset(ClassManager* class_manager) : Dataset(class_manager) {
 	
 }
 
@@ -56,17 +56,17 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
 			if(class_json.count("weight") == 1) {
 				class_weight = class_json["weight"];
 			}
-			
-			class_names_.push_back(class_name);
-			class_weights_.push_back(class_weight);
-			class_colors_.push_back(class_color);
+
+      bool result = class_manager_->RegisterClassByName(class_name, class_color, 1.0);
+      if(!result) {
+        FATAL("Could not register class " << class_name << " with ClassManager");
+      }
 		}
-		classes_ = class_count;
     label_maps_ = 0;
 	} else {
 		// TODO Validate similarity
 	}
-	
+
 	// Load data
 	unsigned int data_elements = dataset_json["data"].size();
 	for(unsigned int d = 0; d < data_elements; d++) {
@@ -80,14 +80,14 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
 
       if(element_type.compare("tensor_stream") == 0) {
         filename = element_json["filename"];
-        tensor_stream = TensorStream::FromFile(filename, class_colors_);
+        tensor_stream = TensorStream::FromFile(filename, class_manager_);
       } else if(element_type.compare("list") == 0) {
         filename = "LISTTENSORSTREAM";
         std::string imagelist_path = element_json["imagelist"];
         std::string labellist_path = "DONOTLOAD";
         std::string images = element_json["imagepath"];
         std::string labels = "DONOTLOAD";
-        tensor_stream = new ListTensorStream(class_colors_);
+        tensor_stream = new ListTensorStream(class_manager_);
         dynamic_cast<ListTensorStream*>(tensor_stream)->LoadFiles(imagelist_path, images, labellist_path, labels);
       }
 
@@ -147,14 +147,9 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
 
           // Find the class by name
           std::string class_name = box_json["class"];
-          bool class_found = false;
-          for(unsigned int c = 0; c < classes_; c++) {
-            if(class_name.compare(class_names_[c]) == 0) {
-              class_found = true;
-              box.c = c;
-              break;
-            }
-          }
+          box.c = class_manager_->GetClassIdByName(class_name);
+          bool class_found = box.c != UNKNOWN_CLASS;
+
           if(!class_found) {
             FATAL("Cannot find class " << class_name);
           }

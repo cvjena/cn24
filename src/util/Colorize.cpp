@@ -24,8 +24,8 @@ void Dataset::Colorize(Tensor& net_output_tensor, Tensor& target_tensor) {
   net_output_tensor.MoveToCPU();
   target_tensor.MoveToCPU();
 #endif
-  if(GetClasses() == 1) {
-    const unsigned int foreground_color = GetClassColors()[0];
+  if(class_manager_->GetClassCount() == 1) {
+    const unsigned int foreground_color = class_manager_->begin()->second.color;
     const datum r = DATUM_FROM_UCHAR((foreground_color >> 16) & 0xFF),
     g = DATUM_FROM_UCHAR((foreground_color >> 8) & 0xFF),
     b = DATUM_FROM_UCHAR(foreground_color & 0xFF);
@@ -50,7 +50,8 @@ void Dataset::Colorize(Tensor& net_output_tensor, Tensor& target_tensor) {
 	for(unsigned int x = 0; x < net_output_tensor.width(); x++) {
 	  unsigned int maxclass = 0;
 	  datum maxvalue = std::numeric_limits<datum>::min();
-	  for(unsigned int c = 0; c < GetClasses(); c++) {
+		for(ClassManager::const_iterator it = class_manager_->begin(); it != class_manager_->end(); it++) {
+      const unsigned int c = it->second.id;
 	    const datum value = *net_output_tensor.data_ptr_const(x,y,c,sample);
 	    if(value > maxvalue) {
 	      maxvalue = value;
@@ -58,7 +59,7 @@ void Dataset::Colorize(Tensor& net_output_tensor, Tensor& target_tensor) {
 	    }
 	  }
 	  
-	  const unsigned int foreground_color = GetClassColors()[maxclass];
+	  const unsigned int foreground_color = class_manager_->GetClassInfoById(maxclass).second.color;
 	  const datum r = DATUM_FROM_UCHAR((foreground_color >> 16) & 0xFF),
 	  g = DATUM_FROM_UCHAR((foreground_color >> 8) & 0xFF),
 	  b = DATUM_FROM_UCHAR(foreground_color & 0xFF);

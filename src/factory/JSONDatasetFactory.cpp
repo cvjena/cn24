@@ -11,17 +11,17 @@
 #include "JSONDatasetFactory.h"
 
 namespace Conv {
-Dataset* JSONDatasetFactory::ConstructDataset(JSON descriptor) {
+Dataset* JSONDatasetFactory::ConstructDataset(JSON descriptor, ClassManager* class_manager) {
   if(descriptor.count("task") == 1) {
     std::string task = descriptor["task"];
     if(task.compare("segmentation") == 0) {
-      JSONSegmentationDataset* segmentation_dataset = new JSONSegmentationDataset;
+      JSONSegmentationDataset* segmentation_dataset = new JSONSegmentationDataset(class_manager);
       segmentation_dataset->Load(descriptor, false, LOAD_BOTH);
       return segmentation_dataset;
     } else if(task.compare("classification") == 0) {
 
     } else if (task.compare("detection") == 0) {
-      JSONDetectionDataset* detection_dataset = new JSONDetectionDataset;
+      JSONDetectionDataset* detection_dataset = new JSONDetectionDataset(class_manager);
       detection_dataset->Load(descriptor, false, LOAD_BOTH);
       return detection_dataset;
     } else {
@@ -30,7 +30,7 @@ Dataset* JSONDatasetFactory::ConstructDataset(JSON descriptor) {
   } else if(descriptor.count("special") == 1) {
     std::string special_dataset = descriptor["special"];
     if(special_dataset.compare("MNIST") == 0) {
-      MNISTDataset* mnist_dataset = new MNISTDataset;
+      MNISTDataset* mnist_dataset = new MNISTDataset(class_manager);
       mnist_dataset->Load(descriptor);
       return mnist_dataset;
     }

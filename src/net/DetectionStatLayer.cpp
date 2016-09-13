@@ -17,21 +17,13 @@
 
 namespace Conv {
 
-DetectionStatLayer::DetectionStatLayer ( std::vector<std::string> classes )
-  : Layer(JSON::object()), classes_(classes.size()), names_(classes) {
+DetectionStatLayer::DetectionStatLayer (ClassManager* class_manager)
+  : Layer(JSON::object()), class_manager_(class_manager) {
 
-  LOGDEBUG << "Instance created, " << classes_ << " classes.";
-  for(unsigned int n = 0; n < names_.size(); n++) {
-    if(names_[n].length() > 11) {
-      std::string original = names_[n];
-      names_[n] = original.substr(0,8) + "...";
-    }
-  }
+  LOGDEBUG << "Instance created, " << class_manager_->GetClassCount() << " classes right now.";
 
-  detections_ = new std::vector<Detection>[classes_];
-  positive_samples_ = new unsigned int[classes_];
 
-  Reset();
+  UpdateClassCount();
 
   // Initialize stat descriptors
   stat_tpr_ = new StatDescriptor;
@@ -74,6 +66,23 @@ DetectionStatLayer::DetectionStatLayer ( std::vector<std::string> classes )
   System::stat_aggregator->RegisterStat(stat_rec_);
 }
 
+void DetectionStatLayer::UpdateClassCount() {
+  if(last_seen_max_id_ != class_manager_->GetMaxClassId() || detections_ == nullptr) {
+    unsigned int max_id = class_manager_->GetMaxClassId();
+
+    if(detections_ != nullptr)
+      delete[] detections_;
+    if(positive_samples_ != nullptr)
+      delete[] positive_samples_;
+
+    detections_ = new std::vector<Detection>[max_id + 1];
+    positive_samples_ = new unsigned int[max_id];
+    last_seen_max_id_ = max_id;
+
+    Reset();
+  }
+}
+
 void DetectionStatLayer::UpdateAll() {
   // Global metrics
   datum global_tpr = 0;
@@ -82,7 +91,8 @@ void DetectionStatLayer::UpdateAll() {
   datum global_ap = 0;
 
   datum sampled_classes = 0;
-  for(unsigned int c = 0; c < classes_; c++) {
+  for(ClassManager::const_iterator it = class_manager_->begin(); it != class_manager_->end(); it++) {
+    unsigned int c = it->second.id;
     // Skip empty classes
     if(detections_[c].size() == 0)
       continue;
@@ -137,7 +147,7 @@ void DetectionStatLayer::UpdateAll() {
     for(int i = 0; i < different_indices.size(); i++) {
       ap += (detection_recall[different_indices[i]] - detection_recall[different_indices[i] - 1]) * detection_precision[different_indices[i]];
     }
-    LOGDEBUG << "AP class " << names_[c] << ": " << ap * 100.0;
+    LOGDEBUG << "AP class " << it->first << ": " << ap * 100.0;
     global_ap += ap;
   }
   if(sampled_classes > 0) System::stat_aggregator->Update(stat_tpr_->stat_id, 100.0 * global_tpr / sampled_classes);
@@ -217,11 +227,14 @@ void DetectionStatLayer::FeedForward() {
   if ( disabled_ )
     return;
 
+  UpdateClassCount();
+
   for (unsigned int sample = 0; sample < first_->data.samples(); sample++) {
     std::vector<BoundingBox> *sample_detected_boxes = (std::vector<BoundingBox> *) first_->metadata[sample];
     std::vector<BoundingBox> *sample_truth_boxes = (std::vector<BoundingBox> *) second_->metadata[sample];
 
-    for(unsigned int c = 0; c < classes_; c++) {
+    for(ClassManager::const_iterator it = class_manager_->begin(); it != class_manager_->end(); it++) {
+      unsigned int c = it->second.id;
       // Loop over all detected boxes
       for(unsigned int b = 0; b < sample_detected_boxes->size(); b++) {
         if((*sample_detected_boxes)[b].c != c)
@@ -284,7 +297,7 @@ void DetectionStatLayer::BackPropagate() {
 }
 
 void DetectionStatLayer::Reset() {
-  for (unsigned int c = 0; c < classes_; c++) {
+  for (unsigned int c = 0; c < last_seen_max_id_; c++) {
     detections_[c].clear();
     positive_samples_[c] = 0;
   }

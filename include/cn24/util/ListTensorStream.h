@@ -18,6 +18,7 @@
 
 #include "Tensor.h"
 #include "TensorStream.h"
+#include "ClassManager.h"
 
 namespace Conv {
 	
@@ -33,7 +34,7 @@ namespace Conv {
   
   class ListTensorStream : public TensorStream {
   public:
-    explicit ListTensorStream(std::vector<unsigned int> class_colors) : class_colors_(class_colors) {};
+    explicit ListTensorStream(ClassManager* class_manager) : class_manager_(class_manager) {};
     ~ListTensorStream() {
     }
     
@@ -50,7 +51,7 @@ namespace Conv {
 		
 	private:
 		std::vector<ListTensorMetadata> tensors_;
-		std::vector<unsigned int> class_colors_;
+		ClassManager* class_manager_ = nullptr;
   };
   
 }
