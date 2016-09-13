@@ -375,12 +375,12 @@ TensorStreamDataset* TensorStreamDataset::CreateFromConfiguration (std::istream&
 	}
 	
   if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TRAINING_ONLY) && training_file.length() > 0) {
-    training_stream = TensorStream::FromFile(training_file, class_colors);
+    training_stream = TensorStream::FromFile(training_file, class_manager);
   } else {
   }
 
   if (!dont_load && (selection == LOAD_BOTH || selection == LOAD_TESTING_ONLY) && testing_file.length() > 0) {
-    testing_stream = TensorStream::FromFile(testing_file, class_colors);
+    testing_stream = TensorStream::FromFile(testing_file, class_manager);
   } else {
   }
 

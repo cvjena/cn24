@@ -54,12 +54,12 @@ void JSONSegmentationDataset::Load(JSON dataset_json, bool dont_load, DatasetLoa
 			if(class_json.count("weight") == 1) {
 				class_weight = class_json["weight"];
 			}
-			
-			class_names_.push_back(class_name);
-			class_weights_.push_back(class_weight);
-			class_colors_.push_back(class_color);
+
+      bool result = class_manager_->RegisterClassByName(class_name, class_color, class_weight);
+      if(!result) {
+        FATAL("Could not register class " << class_name << " with ClassManager");
+      }
 		}
-		classes_ = class_count;
 	} else {
 		// TODO Validate similarity
 	}
@@ -76,14 +76,14 @@ void JSONSegmentationDataset::Load(JSON dataset_json, bool dont_load, DatasetLoa
 
       if(element_type.compare("tensor_stream") == 0) {
         filename = element_json["filename"];
-        tensor_stream = TensorStream::FromFile(filename, class_colors_);
+        tensor_stream = TensorStream::FromFile(filename, class_manager_);
       } else if(element_type.compare("list") == 0) {
         filename = "LISTTENSORSTREAM";
         std::string imagelist_path = element_json["imagelist"];
         std::string labellist_path = element_json["labellist"];
         std::string images = element_json["imagepath"];
         std::string labels = element_json["labelpath"];
-        tensor_stream = new ListTensorStream(class_colors_);
+        tensor_stream = new ListTensorStream(class_manager_);
         dynamic_cast<ListTensorStream*>(tensor_stream)->LoadFiles(imagelist_path, images, labellist_path, labels);
       }
 
@@ -220,7 +220,8 @@ bool JSONSegmentationDataset::GetTrainingSample(Tensor& data_tensor, Tensor& lab
     #pragma omp parallel for default(shared)
     for (unsigned int y = 0; y < data_height; y++) {
       for (unsigned int x = 0; x < data_width; x++) {
-        const datum class_weight = class_weights_[label_tensor.PixelMaximum(x, y, sample)];
+        // TODO Read weights from ClassManager
+        const datum class_weight = 1.0; // class_weights_[label_tensor.PixelMaximum(x, y, sample)];
         *weight_tensor.data_ptr (x, y, 0, sample) = error_function_ (x, y, data_width, data_height) * class_weight;
       }
     }
@@ -270,7 +271,8 @@ bool JSONSegmentationDataset::GetTestingSample(Tensor& data_tensor, Tensor& labe
     #pragma omp parallel for default(shared)
     for (unsigned int y = 0; y < data_height; y++) {
       for (unsigned int x = 0; x < data_width; x++) {
-        const datum class_weight = class_weights_[label_tensor.PixelMaximum(x, y, sample)];
+        // TODO Read weights from ClassManager
+        const datum class_weight = 1.0; // class_weights_[label_tensor.PixelMaximum(x, y, sample)];
         *weight_tensor.data_ptr (x, y, 0, sample) = error_function_ (x, y, data_width, data_height) * class_weight;
       }
     }

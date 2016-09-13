@@ -330,10 +330,10 @@ public:
   virtual unsigned int GetHeight() const { return max_height_; }
   virtual unsigned int GetInputMaps() const { return input_maps_; }
   virtual unsigned int GetLabelMaps() const { return label_maps_; }
-  virtual unsigned int GetClasses() const { return class_names_.size(); }
-  virtual std::vector< std::string > GetClassNames() const { return class_names_; }
-  virtual std::vector< unsigned int > GetClassColors() const { return class_colors_; }
-  virtual std::vector< datum > GetClassWeights() const { return class_weights_; }
+	virtual unsigned int GetClasses() const { return class_manager_->GetClassCount(); }
+	virtual std::vector< std::string > GetClassNames() const { return {}; }
+	virtual std::vector< unsigned int > GetClassColors() const { return {}; }
+	virtual std::vector< datum > GetClassWeights() const { return {}; }
   virtual unsigned int GetTrainingSamples() const { return tensor_count_training_ / 2; }
   virtual unsigned int GetTestingSamples() const { return tensor_count_testing_ / 2; }
   virtual bool SupportsTesting() const { return tensor_count_testing_ > 0; }
@@ -358,10 +358,6 @@ private:
   unsigned int max_height_ = 0;
   
   // Metadata
-  std::vector<std::string> class_names_;
-  std::vector<unsigned int> class_colors_;
-  std::vector<datum> class_weights_;
-  unsigned int classes_;
   dataset_localized_error_function error_function_;
 	
 	// Samples
@@ -390,10 +386,10 @@ public:
   virtual unsigned int GetHeight() const { return max_height_; }
   virtual unsigned int GetInputMaps() const { return input_maps_; }
   virtual unsigned int GetLabelMaps() const { return label_maps_; }
-  virtual unsigned int GetClasses() const { return class_names_.size(); }
-  virtual std::vector< std::string > GetClassNames() const { return class_names_; }
-  virtual std::vector< unsigned int > GetClassColors() const { return class_colors_; }
-  virtual std::vector< datum > GetClassWeights() const { return class_weights_; }
+  virtual unsigned int GetClasses() const { return class_manager_->GetClassCount(); }
+  virtual std::vector< std::string > GetClassNames() const { return {}; }
+  virtual std::vector< unsigned int > GetClassColors() const { return {}; }
+  virtual std::vector< datum > GetClassWeights() const { return {}; }
   virtual unsigned int GetTrainingSamples() const { return tensor_count_training_; }
   virtual unsigned int GetTestingSamples() const { return tensor_count_testing_; }
   virtual bool SupportsTesting() const { return tensor_count_testing_ > 0; }
@@ -418,10 +414,6 @@ private:
   unsigned int max_height_ = 0;
 
   // Metadata
-  std::vector<std::string> class_names_;
-  std::vector<unsigned int> class_colors_;
-  std::vector<datum> class_weights_;
-  unsigned int classes_;
   dataset_localized_error_function error_function_;
 
 	// Samples

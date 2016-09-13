@@ -20,6 +20,7 @@
 #include "Layer.h"
 #include "StatLayer.h"	
 #include "../util/StatAggregator.h"
+#include "../util/ClassManager.h"
 
 namespace Conv {
 
@@ -36,12 +37,11 @@ public:
   /**
 	* @brief Creates a DetectionStatLayer
 	*
-	* @param thresholds When computing FMax, the number of binarization thresholds to use
-	* @param min_t The minimum binarization threshold
-	* @param max_t The maximum binarization threshold
+  * @param class_manager Global ClassManager instance
 	*/
-  explicit DetectionStatLayer(std::vector<std::string> classes);
-  
+  explicit DetectionStatLayer(ClassManager* class_manager);
+
+  void UpdateClassCount();
   void UpdateAll();
 
   /**
@@ -80,8 +80,8 @@ protected:
   CombinedTensor* first_ = nullptr;
   CombinedTensor* second_ = nullptr;
 
-  unsigned int classes_ = 0;
-  std::vector<std::string> names_;
+  ClassManager* class_manager_ = nullptr;
+  unsigned int last_seen_max_id_ = 0;
 
   std::vector<Detection>* detections_ = nullptr;
   unsigned int* positive_samples_ = nullptr;

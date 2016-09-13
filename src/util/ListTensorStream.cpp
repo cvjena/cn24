@@ -88,15 +88,16 @@ namespace Conv {
 			
 			if(source_index % 2 && rgb_tensor.elements() > 0) {
 				// Tensor has a label in it, colors need to be transformed
-				unsigned int number_of_classes = class_colors_.size();
+				unsigned int number_of_classes = class_manager_->GetMaxClassId() + 1;
 				
 				// arrays to store class colors in an easy to index way
 				Conv::datum* cr = new Conv::datum[number_of_classes];
 				Conv::datum* cg = new Conv::datum[number_of_classes];
 				Conv::datum* cb = new Conv::datum[number_of_classes];
 
-				for ( unsigned int c = 0; c < number_of_classes; c++ ) {
-					const unsigned int class_color = class_colors_[c];
+				for(ClassManager::const_iterator it = class_manager_->begin(); it != class_manager_->end(); it++) {
+          const unsigned int c = it->second.id;
+					const unsigned int class_color = it->second.color;
 					cr[c] = DATUM_FROM_UCHAR ( ( class_color >> 16 ) & 0xFF );
 					cg[c] = DATUM_FROM_UCHAR ( ( class_color >> 8 ) & 0xFF );
 					cb[c] = DATUM_FROM_UCHAR ( class_color & 0xFF );
@@ -106,7 +107,7 @@ namespace Conv {
 
 				if(number_of_classes == 1) {
 					// 1 class - convert RGB images into multi-channel label tensors
-					const unsigned int foreground_color = class_colors_[0];
+					const unsigned int foreground_color = class_manager_->begin()->second.color;
 					const Conv::datum fr = DATUM_FROM_UCHAR ( ( foreground_color >> 16 ) & 0xFF ),
 														fg = DATUM_FROM_UCHAR ( ( foreground_color >> 8 ) & 0xFF ),
 														fb = DATUM_FROM_UCHAR ( foreground_color & 0xFF );
@@ -174,7 +175,7 @@ namespace Conv {
   }
   
 	unsigned int ListTensorStream::LoadFiles(std::string image_list_fname, std::string image_directory, std::string label_list_fname, std::string label_directory) {
-		unsigned int number_of_classes = class_colors_.size();
+		unsigned int number_of_classes = class_manager_->GetMaxClassId() + 1;
 		bool dont_load_labels = false;
 
 		if(label_list_fname.compare("DONOTLOAD") == 0) {

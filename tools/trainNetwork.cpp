@@ -23,7 +23,7 @@
 #include <cn24.h>
 #include <private/ConfigParsing.h>
 
-void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Dataset* dataset);
+void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Dataset* dataset, Conv::ClassManager* class_manager);
 bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, std::string& command);
 void help();
 
@@ -126,7 +126,7 @@ int main (int argc, char* argv[]) {
   if(!completeness)
     FATAL("Graph completeness test failed after factory run!");
 
-	addStatLayers(graph, input_node, dataset);
+	addStatLayers(graph, input_node, dataset, &class_manager);
   
   if(!completeness)
     FATAL("Graph completeness test failed after adding stat layer!");
@@ -179,7 +179,7 @@ int main (int argc, char* argv[]) {
   return 0;
 }
 
-void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Dataset* dataset) {
+void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Dataset* dataset, Conv::ClassManager* class_manager) {
   if(dataset->GetTask() == Conv::SEMANTIC_SEGMENTATION || dataset->GetTask() == Conv::CLASSIFICATION) {
     for (Conv::NetGraphNode *output_node : graph.GetOutputNodes()) {
       // Add appropriate statistics layer
@@ -202,7 +202,7 @@ void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::
     for (Conv::NetGraphNode *output_node : graph.GetOutputNodes()) {
       // Add appropriate statistics layer
       Conv::NetGraphNode *stat_node = nullptr;
-      Conv::DetectionStatLayer *detection_stat_layer = new Conv::DetectionStatLayer(dataset->GetClassNames());
+      Conv::DetectionStatLayer *detection_stat_layer = new Conv::DetectionStatLayer(class_manager);
 
       stat_node = new Conv::NetGraphNode(detection_stat_layer);
       stat_node->input_connections.push_back(Conv::NetGraphConnection(output_node, 0, false));
