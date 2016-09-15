@@ -15,6 +15,7 @@
 #include <fstream>
 #include <cstring>
 #include <sstream>
+#include <chrono>
 
 #include <cn24.h>
 
@@ -123,16 +124,20 @@ int main (int argc, char* argv[]) {
     graph.SetIsTesting(true);
     LOGINFO << "Classifying..." << std::flush;
 
+    auto start_time = std::chrono::system_clock::now();
+    double avg_seconds = 0;
+
     while(true) {
       // Load cam image
       capture.grab();
       cv::Mat camera_frame;
       capture >> camera_frame;
-      for(unsigned int c = 0; c < 3; c++) {
-        unsigned int actual_channel = 2 - c;
-        for(unsigned int y = 0; y < original_data_tensor.height(); y++) {
-          const unsigned char* ptr = camera_frame.ptr<unsigned char>(y);
-          for(unsigned int x = 0; x < original_data_tensor.width(); x++) {
+#pragma omp parallel for default(shared)
+      for(unsigned int y = 0; y < original_data_tensor.height(); y++) {
+        const unsigned char* ptr = camera_frame.ptr<unsigned char>(y);
+        for(unsigned int x = 0; x < original_data_tensor.width(); x++) {
+          for(unsigned int c = 0; c < 3; c++) {
+            unsigned int actual_channel = 2 - c;
             *(original_data_tensor.data_ptr(x, y, c)) = DATUM_FROM_UCHAR(ptr[x*3+actual_channel]);
           }
         }
@@ -147,6 +152,7 @@ int main (int argc, char* argv[]) {
       Conv::DatasetMetadataPointer* net_output = graph.GetDefaultOutputNode()->output_buffers[0].combined_tensor->metadata;
       std::vector<Conv::BoundingBox>* output_boxes = (std::vector<Conv::BoundingBox>*)net_output[0];
 
+#pragma omp parallel for default(shared)
       for (unsigned int b = 0; b < output_boxes->size(); b++) {
         Conv::BoundingBox box = (*output_boxes)[b];
         box.x *= (Conv::datum) original_width;
@@ -190,16 +196,16 @@ int main (int argc, char* argv[]) {
         }
       }
 
-      for(unsigned int c = 0; c < 3; c++) {
-        unsigned int actual_channel = 2 - c;
-        for(unsigned int y = 0; y < original_data_tensor.height(); y++) {
-          unsigned char* ptr = camera_frame.ptr<unsigned char>(y);
-          for(unsigned int x = 0; x < original_data_tensor.width(); x++) {
+#pragma omp parallel for default(shared)
+      for(unsigned int y = 0; y < original_data_tensor.height(); y++) {
+        unsigned char* ptr = camera_frame.ptr<unsigned char>(y);
+        for(unsigned int x = 0; x < original_data_tensor.width(); x++) {
+          for(unsigned int c = 0; c < 3; c++) {
+            unsigned int actual_channel = 2 - c;
             ptr[x*3+actual_channel] = UCHAR_FROM_DATUM(*(original_data_tensor.data_ptr_const(x, y, c)));
           }
         }
       }
-
 
       for (unsigned int b = 0; b < output_boxes->size(); b++) {
         Conv::BoundingBox box = (*output_boxes)[b];
@@ -210,6 +216,16 @@ int main (int argc, char* argv[]) {
         // Put box text
         cv::putText(camera_frame, class_manager.GetClassInfoById(box.c).first, cv::Point(box.x - (box.w/2), box.y + 20 - (box.h/2)), cv::FONT_HERSHEY_PLAIN, 2.0, cv::Scalar(255,255,255));
       }
+
+      auto stop_time = std::chrono::system_clock::now();
+      std::chrono::duration<double> t_diff = stop_time - start_time;
+      start_time = stop_time;
+      double seconds_elapsed = t_diff.count();
+      avg_seconds = 0.9 * avg_seconds + 0.1 * seconds_elapsed;
+      std::stringstream ss;
+      ss << "FPS: " << std::setprecision(3) << 1.0 / avg_seconds;
+
+      cv::putText(camera_frame, ss.str(), cv::Point(0, 20), cv::FONT_HERSHEY_PLAIN, 2.0, cv::Scalar(255,255,255));
 
       // Show image
       cv::imshow("Live stream", camera_frame);
