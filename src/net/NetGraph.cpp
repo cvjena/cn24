@@ -478,7 +478,14 @@ void NetGraph::DeserializeParameters(std::istream& input) {
       }
     }
     if(!found_node) {
-      LOGERROR << "Could not find node \"" << node_name << "\"";
+      LOGWARN << "Could not find node \"" << node_name << "\"";
+			for(unsigned int p = 0; p < parameter_set_size; p++) {
+				Tensor* t = new Tensor();
+				t->Deserialize(input);
+				LOGDEBUG << "Skipping parameter set for node " << node_name << *t;
+				delete t;
+			}
+			input.peek();
     }
 
     delete[] node_name_cstr;
