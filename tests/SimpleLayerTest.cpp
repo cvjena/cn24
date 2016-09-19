@@ -21,6 +21,7 @@ unsigned int SAMPLES = 2, WIDTH = 9, HEIGHT = 6, MAPS = 3;
 Conv::datum epsilon = 0.005;
 
 std::vector<std::pair<std::string, bool>> test_layers_and_runs = {
+  {"{\"layer\":{\"type\":\"dropout\",\"dropout_fraction\":0.3}}",true},
   {"{\"layer\":{\"type\":\"simple_maxpooling\",\"size\":[3,3]}}",false},
   {"{\"layer\":{\"type\":\"simple_maxpooling\",\"size\":[3,2]}}",false},
   {"{\"layer\":{\"type\":\"advanced_maxpooling\",\"size\":[3,3]}}",false},
