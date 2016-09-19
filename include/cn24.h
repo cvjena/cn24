@@ -52,6 +52,7 @@
 #include "cn24/net/DatasetInputLayer.h"
 #include "cn24/net/ResizeLayer.h"
 #include "cn24/net/ConvolutionLayer.h"
+#include "cn24/net/DropoutLayer.h"
 #include "cn24/net/MaxPoolingLayer.h"
 #include "cn24/net/AdvancedMaxPoolingLayer.h"
 #include "cn24/net/InputDownSamplingLayer.h"
