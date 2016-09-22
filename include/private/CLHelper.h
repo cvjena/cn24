@@ -68,6 +68,7 @@ public:
   static cl_kernel k_col2im;
   static cl_kernel k_up;
   static cl_kernel k_down;
+  static cl_kernel k_applyMask;
 #endif
 };
   
