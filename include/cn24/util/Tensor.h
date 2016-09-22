@@ -108,6 +108,14 @@ public:
                bool dont_delete = false);
 
   /**
+   * @brief Extends the Tensor to hold more samples without data loss
+   *
+   * This is an expensive operation!
+   * @param samples
+   */
+  void Extend (const std::size_t samples);
+
+  /**
    * @brief Resizes the Tensor to match another Tensor's size.
    *
    * @param tensor The Tensor to take the size data from
