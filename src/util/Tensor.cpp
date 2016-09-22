@@ -319,6 +319,33 @@ void Tensor::Deserialize ( std::istream& input , bool head_only, bool try_mmap, 
       
 }
 
+bool Tensor::Copy (const Tensor& source, Tensor& target) {
+  if(source.elements() != target.elements()) {
+    return false;
+  }
+#ifdef BUILD_OPENCL
+  if(source.cl_gpu_ || target.cl_gpu_) {
+    ((Tensor&)source).MoveToGPU();
+    target.MoveToGPU(true);
+    cl_int error_ret = clEnqueueCopyBuffer(CLHelper::queue, (cl_mem)source.cl_data_ptr_, (cl_mem)target.cl_data_ptr_, 0, 0, source.elements() * sizeof(datum), 0, NULL, NULL);
+    if ( error_ret != CL_SUCCESS ) {
+      FATAL ( "Error moving to GPU: " << error_ret );
+    }
+#ifdef BRUTAL_FINISH
+    error_ret = clFinish (CLHelper::queue);
+    if (error_ret != CL_SUCCESS) {
+      FATAL("Error finishing command queue: " << (signed int) error);
+    }
+#endif
+    return true;
+  } else {
+#endif
+    std::memcpy((void*)target.data_ptr(), (const void*)target.data_ptr_const(), source.elements() * sizeof(datum));
+    return true; // std::memcpy does not return an error, maybe use try/catch?
+#ifdef BUILD_OPENCL
+  }
+#endif
+}
 
 bool Tensor::CopySample ( const Tensor& source, const std::size_t source_sample,
                           Tensor& target, const std::size_t target_sample, const bool allow_oversize, const bool scale) {
