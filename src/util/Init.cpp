@@ -72,6 +72,7 @@ cl_kernel CLHelper::k_im2col = 0;
 cl_kernel CLHelper::k_col2im = 0;
 cl_kernel CLHelper::k_up = 0;
 cl_kernel CLHelper::k_down = 0;
+cl_kernel CLHelper::k_applyMask = 0;
 #endif
 
 TensorViewer* System::viewer = nullptr;
@@ -275,6 +276,7 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   cl_program p_setValue = CreateProgram ( "kernels/setValue.cl" );
   cl_program p_sms = CreateProgram ( "kernels/sms.cl" );
   cl_program p_im2col = CreateProgram ( "kernels/im2col.cl" );
+  cl_program p_applyMask = CreateProgram ( "kernels/applyMask.cl" );
 
   k_crossCorrelation = clCreateKernel ( p_crossCorrelation, "CROSS_CORRELATION", &error );
 
@@ -427,6 +429,12 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
   }
   
   k_down = clCreateKernel ( p_scaling, "DOWN", &error );
+
+  if ( error != CL_SUCCESS ) {
+    FATAL ( "Error creating kernel: " << ( signed int ) error );
+  }
+
+  k_applyMask = clCreateKernel ( p_applyMask, "APPLY_MASK", &error );
 
   if ( error != CL_SUCCESS ) {
     FATAL ( "Error creating kernel: " << ( signed int ) error );

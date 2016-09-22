@@ -21,6 +21,7 @@ unsigned int SAMPLES = 2, WIDTH = 9, HEIGHT = 6, MAPS = 3;
 Conv::datum epsilon = 0.005;
 
 std::vector<std::pair<std::string, bool>> test_layers_and_runs = {
+  {"{\"layer\":{\"type\":\"dropout\",\"dropout_fraction\":0.3}}",true},
   {"{\"layer\":{\"type\":\"simple_maxpooling\",\"size\":[3,3]}}",false},
   {"{\"layer\":{\"type\":\"simple_maxpooling\",\"size\":[3,2]}}",false},
   {"{\"layer\":{\"type\":\"advanced_maxpooling\",\"size\":[3,3]}}",false},
@@ -98,6 +99,7 @@ int main(int argc, char* argv[]) {
   
   Conv::NetStatus net_status;
   net_status.SetIsTesting(true);
+	net_status.SetIsGradientTesting(true);
   
   bool test_failed = false;
   
@@ -138,6 +140,9 @@ int main(int argc, char* argv[]) {
 		for(unsigned int current_run = 0; current_run < total_runs; current_run++) {
 			Conv::JSON layer_descriptor = Conv::LayerFactory::InjectSeed(raw_layer_descriptor, seed_generator());
 			bool data_sign = seed_generator() % 2 == 0;
+#ifdef BUILD_OPENCL
+      input_data.data.MoveToCPU();
+#endif
 			for(unsigned int e = 0; e < input_data.data.elements(); e++) {
 				if(data_sign)
 					input_data.data.data_ptr()[e] = dist(seed_generator);
@@ -145,7 +150,7 @@ int main(int argc, char* argv[]) {
 					input_data.data.data_ptr()[e] = -dist(seed_generator);
 			}
 			input_data.delta.Clear(0.0);
-			
+
 			Conv::Layer* layer = Conv::LayerFactory::ConstructLayer(layer_descriptor);
 			if(layer == nullptr) {
 				test_failed = true;
@@ -154,7 +159,14 @@ int main(int argc, char* argv[]) {
 				current_run = total_runs;
 				continue;
 			}
-			
+
+#ifdef BUILD_OPENCL
+      if(layer->IsOpenCLAware()) {
+				if(seed_generator() % 4 < 2)
+          input_data.data.MoveToGPU();
+        LOGDEBUG << "    OpenCL aware!";
+			}
+#endif
 			LOGDEBUG << "    Description: " << layer->GetLayerDescription();
 			LOGDEBUG << "    Configuration: " << layer->GetLayerConfiguration().dump();
 			

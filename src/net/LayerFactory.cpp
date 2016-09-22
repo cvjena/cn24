@@ -15,6 +15,7 @@
 #endif
 
 #include "ConvolutionLayer.h"
+#include "DropoutLayer.h"
 #include "NonLinearityLayer.h"
 #include "MaxPoolingLayer.h"
 #include "AdvancedMaxPoolingLayer.h"
@@ -91,6 +92,7 @@ Layer* LayerFactory::ConstructLayer(std::string descriptor) {
     // Leave layer a nullptr
   }
   CONV_LAYER_TYPE("convolution", ConvolutionLayer)
+  CONV_LAYER_TYPE("dropout", DropoutLayer)
   CONV_LAYER_TYPE("maxpooling", MaxPoolingLayer)
   CONV_LAYER_TYPE("amaxpooling", AdvancedMaxPoolingLayer)
   CONV_LAYER_TYPE("tanh", TanhLayer)
@@ -157,6 +159,7 @@ Layer* LayerFactory::ConstructLayer(JSON descriptor)
     // Leave layer a nullptr
   }
   CONV_LAYER_TYPE("convolution", ConvolutionLayer)
+  CONV_LAYER_TYPE("dropout", DropoutLayer)
   CONV_LAYER_TYPE("simple_maxpooling", MaxPoolingLayer)
   CONV_LAYER_TYPE("advanced_maxpooling", AdvancedMaxPoolingLayer)
   CONV_LAYER_TYPE("tanh", TanhLayer)

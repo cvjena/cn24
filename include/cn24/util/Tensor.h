@@ -179,6 +179,14 @@ public:
 	void PrintStats();
 
   /**
+   * @brief Copies source to target Tensor (needs exact size match)
+   * @param source Source Tensor
+   * @param target Target Tensor
+   * @return True on success
+   */
+  static bool Copy (const Tensor& source, Tensor& target);
+
+  /**
    * @brief Copy a complete sample from one Tensor to another.
    *
    * @param source The source Tensor
