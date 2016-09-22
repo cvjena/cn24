@@ -166,6 +166,28 @@ void Tensor::Resize ( const std::size_t samples, const std::size_t width,
   elements_ = elements;
 }
 
+void Tensor::Extend(const std::size_t samples) {
+  if(samples <= samples_) {
+    LOGWARN << "Tried to shrink Tensor!";
+    return;
+  }
+
+  // Make backup
+  Tensor temp_tensor(*this);
+  Tensor::Copy(*this, temp_tensor);
+
+  Resize(samples, width_, height_, maps_);
+
+#ifdef BUILD_OPENCL
+  MoveToCPU(true);
+  temp_tensor.MoveToCPU();
+#endif
+
+  // Restore data
+  for(int s = 0; s < temp_tensor.samples(); s++) {
+    Tensor::CopySample(temp_tensor, s, *this, s);
+  }
+}
 void Tensor::Resize ( const Tensor& tensor ) {
   Resize ( tensor.samples(), tensor.width(), tensor.height(), tensor.maps() );
 }
