@@ -35,12 +35,13 @@ public:
 
   virtual std::string GetLayerDescription() { return "Dropout Layer"; }
 
+  virtual bool IsOpenCLAware() { return true; }
 private:
   std::mt19937 rand_;
   datum dropout_fraction_;
   Tensor dropout_mask_;
   datum scale_;
-
+  unsigned int seed_;
 };
 
 }

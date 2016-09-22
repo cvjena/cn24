@@ -8,6 +8,8 @@
 #include <random>
 #include <algorithm>
 
+
+#include "CLHelper.h"
 #include "CombinedTensor.h"
 #include "Log.h"
 #include "BoundingBox.h"
@@ -31,6 +33,7 @@ DropoutLayer::DropoutLayer(JSON configuration): SimpleLayer(configuration) {
   if(configuration.count("seed") == 1 && configuration["seed"].is_number()) {
 		seed = configuration["seed"];
 	}
+  seed_ = seed;
   rand_.seed(seed);
 
   LOGDEBUG << "Initialized. Dropout fraction: " << dropout_fraction_;
@@ -81,7 +84,12 @@ bool DropoutLayer::Connect (const CombinedTensor* input,
 }
 
 void DropoutLayer::FeedForward() {
-  if(!net_->IsTesting()) {
+  if(!net_->IsTesting() || net_->IsGradientTesting()) {
+    if(net_->IsGradientTesting())
+      rand_.seed(seed_);
+#ifdef BUILD_OPENCL
+    dropout_mask_.MoveToCPU(true);
+#endif
     datum* mask_ptr = dropout_mask_.data_ptr();
     const datum* in_data_ptr = input_->data.data_ptr_const();
     datum* out_data_ptr = output_->data.data_ptr();
@@ -95,19 +103,76 @@ void DropoutLayer::FeedForward() {
       }
     }
 
+#ifdef BUILD_OPENCL
+    input_->data.MoveToGPU();
+    dropout_mask_.MoveToGPU();
+    output_->data.MoveToGPU(true);
+    cl_int error = 0;
+
+    error |= clSetKernelArg(CLHelper::k_applyMask, 0, sizeof(cl_mem), &(input_->data.cl_data_ptr_));
+    error |= clSetKernelArg(CLHelper::k_applyMask, 1, sizeof(cl_mem), &(dropout_mask_.cl_data_ptr_));
+    error |= clSetKernelArg(CLHelper::k_applyMask, 2, sizeof(cl_mem), &(output_->data.cl_data_ptr_));
+
+    if (error != CL_SUCCESS) {
+      FATAL("Error setting kernel args: " << (signed int) error);
+    }
+
+    size_t global_work_size[] = {(size_t)input_->data.elements()};
+
+    error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_applyMask, 1, NULL,
+        global_work_size, NULL, 0, NULL, NULL);
+    if (error != CL_SUCCESS) {
+      FATAL("Error enqueueing kernel: " << (signed int) error);
+    }
+
+#ifdef BRUTAL_FINISH
+    error = clFinish (CLHelper::queue);
+    if (error != CL_SUCCESS) {
+      FATAL("Error finishing command queue: " << (signed int) error);
+    }
+#endif
+#else
 #pragma omp parallel for default(shared)
     for (unsigned int element = 0; element < input_->data.elements(); element++) {
       out_data_ptr[element] = in_data_ptr[element] * mask_ptr[element];
     }
+#endif
   } else {
-    for(unsigned int s = 0; s < input_->data.samples(); s++) {
-      Tensor::CopySample(input_->data, s, output_->data, s);
-    }
+    Tensor::Copy(input_->data, output_->data);
   }
 }
 
 void DropoutLayer::BackPropagate() {
-  if(!net_->IsTesting()) {
+  if(!net_->IsTesting() || net_->IsGradientTesting()) {
+#ifdef BUILD_OPENCL
+    output_->delta.MoveToGPU();
+    dropout_mask_.MoveToGPU();
+    input_->delta.MoveToGPU(true);
+    cl_int error = 0;
+
+    error |= clSetKernelArg(CLHelper::k_applyMask, 0, sizeof(cl_mem), &(output_->delta.cl_data_ptr_));
+    error |= clSetKernelArg(CLHelper::k_applyMask, 1, sizeof(cl_mem), &(dropout_mask_.cl_data_ptr_));
+    error |= clSetKernelArg(CLHelper::k_applyMask, 2, sizeof(cl_mem), &(input_->delta.cl_data_ptr_));
+
+    if (error != CL_SUCCESS) {
+      FATAL("Error setting kernel args: " << (signed int) error);
+    }
+
+    size_t global_work_size[] = {(size_t)output_->data.elements()};
+
+    error = clEnqueueNDRangeKernel (CLHelper::queue, CLHelper::k_applyMask, 1, NULL,
+        global_work_size, NULL, 0, NULL, NULL);
+    if (error != CL_SUCCESS) {
+      FATAL("Error enqueueing kernel: " << (signed int) error);
+    }
+
+#ifdef BRUTAL_FINISH
+    error = clFinish (CLHelper::queue);
+    if (error != CL_SUCCESS) {
+      FATAL("Error finishing command queue: " << (signed int) error);
+    }
+#endif
+#else
     datum* in_delta_ptr = input_->delta.data_ptr();
     const datum* out_delta_ptr = output_->delta.data_ptr_const();
     const datum* mask_ptr = dropout_mask_.data_ptr_const();
@@ -115,11 +180,10 @@ void DropoutLayer::BackPropagate() {
     for (unsigned int element = 0; element < input_->data.elements(); element++) {
       in_delta_ptr[element] = out_delta_ptr[element] * mask_ptr[element];
     }
+#endif
   } else {
     // Except when gradient testing, this should never happen
-    for(unsigned int s = 0; s < input_->data.samples(); s++) {
-      Tensor::CopySample(output_->delta, s, input_->delta, s);
-    }
+    Tensor::Copy(output_->delta, input_->delta);
   }
 }
 
