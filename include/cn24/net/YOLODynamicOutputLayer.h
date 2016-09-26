@@ -15,6 +15,7 @@ namespace Conv {
 class YOLODynamicOutputLayer : public SimpleLayer {
 public:
   YOLODynamicOutputLayer(JSON configuration, ClassManager* class_manager);
+  void UpdateTensorSizes();
 
   // Implementations for SimpleLayer
   bool Connect(const CombinedTensor *input, CombinedTensor *output);
@@ -23,9 +24,18 @@ public:
   bool CreateOutputs(const std::vector<CombinedTensor *> &inputs, std::vector<CombinedTensor *> &outputs);
   void FeedForward();
   void BackPropagate();
+  std::string GetLayerDescription() { return "YOLO Dynamic Output Layer"; }
 
 private:
   ClassManager* class_manager_;
+  unsigned int horizontal_cells_ = 0;
+  unsigned int vertical_cells_ = 0;
+  unsigned int boxes_per_cell_ = 0;
+
+  CombinedTensor* box_weights_;
+  CombinedTensor* box_biases_;
+  CombinedTensor* class_weights_;
+  CombinedTensor* class_biases_;
 };
 }
 
