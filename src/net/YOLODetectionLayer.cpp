@@ -74,6 +74,7 @@ bool YOLODetectionLayer::CreateOutputs (
 
   DatasetMetadataPointer* metadata_buffer = new DatasetMetadataPointer[input->data.samples()];
   output->metadata = metadata_buffer;
+  output->is_dynamic = input->is_dynamic;
 
   // Tell network about the output
   outputs.push_back (output);

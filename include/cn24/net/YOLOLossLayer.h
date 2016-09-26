@@ -47,6 +47,8 @@ public:
 		ss << "YOLO Loss Layer (Weight: " << loss_weight_ << ")";
 		return ss.str();
 	}
+
+	bool IsDynamicTensorAware() { return true; }
 private:
   CombinedTensor* first_ = nullptr;
   CombinedTensor* second_ = nullptr;

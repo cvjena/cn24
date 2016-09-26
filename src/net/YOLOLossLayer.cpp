@@ -94,6 +94,10 @@ bool YOLOLossLayer::Connect ( const std::vector< CombinedTensor* >& inputs,
 }
 
 void YOLOLossLayer::FeedForward() {
+  unsigned int total_maps = first_->data.maps();
+  unsigned int maps_per_cell = total_maps / (horizontal_cells_ * vertical_cells_);
+  classes_ = maps_per_cell - (5 * boxes_per_cell_);
+
   // We write the deltas at this point, because
   // CalculateLossFunction() is called before BackPropagate().
   //pragma omp parallel for default(shared)
