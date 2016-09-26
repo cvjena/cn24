@@ -49,6 +49,7 @@ DatasetInputLayer::DatasetInputLayer (Dataset* initial_dataset,
 }
 
 void DatasetInputLayer::SetActiveDataset(Dataset *dataset) {
+  active_dataset_ = dataset;
   LOGDEBUG << "Switching to dataset " << dataset->GetName();
   elements_training_ = dataset->GetTrainingSamples();
   elements_testing_ = dataset->GetTestingSamples();

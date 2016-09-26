@@ -42,6 +42,7 @@ public:
 		    );
 
   void SetActiveDataset(Dataset* dataset);
+  Dataset* GetActiveDataset() const { return active_dataset_; }
 
   // Implementations for Layer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs,
