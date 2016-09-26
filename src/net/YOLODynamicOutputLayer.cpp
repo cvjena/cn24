@@ -103,6 +103,43 @@ bool YOLODynamicOutputLayer::CreateOutputs(const std::vector<CombinedTensor *> &
 
 void YOLODynamicOutputLayer::FeedForward() {
   UpdateTensorSizes();
+
+  const unsigned int class_offset = vertical_cells_ * horizontal_cells_ * boxes_per_cell_ * 5;
+  const unsigned int input_maps = input_->data.maps();
+  const unsigned int box_output_maps = vertical_cells_ * horizontal_cells_ * boxes_per_cell_ * 5;
+  const unsigned int class_output_maps = vertical_cells_ * horizontal_cells_ * (class_manager_->GetMaxClassId() + 1);
+
+  for (unsigned int sample = 0; sample < input_->data.samples(); sample++) {
+    const datum* input_ptr = input_->data.data_ptr_const(0,0,0,sample);
+    datum* output_ptr = output_->data.data_ptr(0,0,0,sample);
+
+    // Box weights
+    for (unsigned int m = 0; m < box_output_maps; m++) {
+      datum sum = 0;
+      for (unsigned int i = 0; i < input_maps; i++) {
+        sum += input_ptr[i] * *(box_weights_->data.data_ptr_const(0, 0, i, m));
+      }
+      output_ptr[m] = sum;
+    }
+
+    // Class weights
+    for (unsigned int m = 0; m < class_output_maps; m++) {
+      datum sum = 0;
+      for (unsigned int i = 0; i < input_maps; i++) {
+        sum += input_ptr[i] * *(class_weights_->data.data_ptr_const(0, 0, i, m));
+      }
+    }
+
+    // Box biases
+    for (unsigned int m = 0; m < box_biases_->data.samples(); m++) {
+      output_ptr[m] += box_biases_->data.data_ptr_const()[m];
+    }
+
+    // Class biases
+    for (unsigned int m = 0; m < class_biases_->data.samples(); m++) {
+      output_ptr[m + class_offset] += box_biases_->data.data_ptr_const()[m];
+    }
+  }
 }
 
 void YOLODynamicOutputLayer::BackPropagate() {
