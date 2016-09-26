@@ -257,12 +257,18 @@ void Trainer::UpdateParameterSizes() {
     Tensor* last_gradient = last_gradients_[p];
     Tensor* accumulated_gradient = accumulated_gradients_[p];
 
-    last_delta->Resize (parameters_[p]->data);
-    last_delta->Clear();
-    last_gradient->Resize (parameters_[p]->data);
-    last_gradient->Clear();
-    accumulated_gradient->Resize (parameters_[p]->data);
-    accumulated_gradient->Clear();
+    if(last_delta->elements() != parameters_[p]->data.elements()) {
+      last_delta->Resize(parameters_[p]->data);
+      last_delta->Clear();
+    }
+    if(last_gradient->elements() != parameters_[p]->data.elements()) {
+      last_gradient->Resize(parameters_[p]->data);
+      last_gradient->Clear();
+    }
+    if(accumulated_gradient->elements() != parameters_[p]->data.elements()) {
+      accumulated_gradient->Resize(parameters_[p]->data);
+      accumulated_gradient->Clear();
+    }
   }
 
   if(w != weight_count_) {
