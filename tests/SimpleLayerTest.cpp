@@ -21,6 +21,7 @@ unsigned int SAMPLES = 2, WIDTH = 9, HEIGHT = 6, MAPS = 3;
 Conv::datum epsilon = 0.005;
 
 std::vector<std::pair<std::string, bool>> test_layers_and_runs = {
+  {"{\"layer\":{\"type\":\"yolo_output\",\"yolo_configuration\":{\"boxes_per_cell\":1,\"horizontal_cells\":2,\"vertical_cells\":2}}}",true},
   {"{\"layer\":{\"type\":\"dropout\",\"dropout_fraction\":0.3}}",true},
   {"{\"layer\":{\"type\":\"simple_maxpooling\",\"size\":[3,3]}}",false},
   {"{\"layer\":{\"type\":\"simple_maxpooling\",\"size\":[3,2]}}",false},
@@ -96,7 +97,13 @@ int main(int argc, char* argv[]) {
   
   std::mt19937 seed_generator(93023);
   std::uniform_real_distribution<Conv::datum> dist(1.0, 2.0);
-  
+
+	Conv::ClassManager class_manager;
+	class_manager.RegisterClassByName("test1", 0, 1);
+	class_manager.RegisterClassByName("test2", 0, 1);
+	class_manager.RegisterClassByName("test3", 0, 1);
+	class_manager.RegisterClassByName("test4", 0, 1);
+
   Conv::NetStatus net_status;
   net_status.SetIsTesting(true);
 	net_status.SetIsGradientTesting(true);
@@ -134,7 +141,9 @@ int main(int argc, char* argv[]) {
 		unsigned int failed_input_gradient_tests = 0;
 		unsigned int failed_weight_gradient_tests = 0;
 		unsigned int total_runs = layer_pair.second ? RANDOM_RUNS : 1;
-		
+    unsigned int total_input_tests = 0;
+		unsigned int total_weight_tests = 0;
+
 		LOGINFO << "Testing layer: " << raw_layer_descriptor.dump() << " with " << total_runs << " runs..." << std::flush;
 			
 		for(unsigned int current_run = 0; current_run < total_runs; current_run++) {
@@ -151,7 +160,14 @@ int main(int argc, char* argv[]) {
 			}
 			input_data.delta.Clear(0.0);
 
-			Conv::Layer* layer = Conv::LayerFactory::ConstructLayer(layer_descriptor);
+			Conv::Layer* layer;
+			if(Conv::LayerFactory::ExtractLayerType(layer_descriptor).compare("yolo_output") == 0) {
+				layer = new Conv::YOLODynamicOutputLayer(Conv::LayerFactory::ExtractConfiguration(layer_descriptor), &class_manager);
+				input_data.data.Reshape(SAMPLES, 1, 1, WIDTH * HEIGHT * MAPS);
+			} else {
+				layer = Conv::LayerFactory::ConstructLayer(layer_descriptor);
+				input_data.data.Reshape(SAMPLES, WIDTH, HEIGHT, MAPS);
+			}
 			if(layer == nullptr) {
 				test_failed = true;
 				LOGINFO << "    Constructing...";
@@ -206,13 +222,17 @@ int main(int argc, char* argv[]) {
 				SimpleSumLoss;
 			
 			for(Conv::CombinedTensor* weights : layer->parameters()) {
+        LOGDEBUG << "    Gradient test (weight set " << weights->data << ")..." << std::flush;
+				total_weight_tests++;
 				bool gradient_success = Conv::GradientTester::DoGradientTest(layer, weights->data, weights->delta, outputs, epsilon, WriteLossDeltas, CalculateLoss);
 				if(!gradient_success) {
 					failed_weight_gradient_tests++;
 					continue;
 				}
 			}
-			
+
+			LOGDEBUG << "    Gradient test (inputs)..." << std::flush;
+			total_input_tests++;
 			bool gradient_success = Conv::GradientTester::DoGradientTest(layer, input_data.data, input_data.delta, outputs, epsilon, WriteLossDeltas, CalculateLoss);
 			if(!gradient_success) {
 				failed_input_gradient_tests++;
@@ -223,8 +243,8 @@ int main(int argc, char* argv[]) {
 				delete output;
 		}
 		
-		Conv::datum input_gradient_failure_rate = ((Conv::datum)failed_input_gradient_tests)/((Conv::datum)total_runs);
-		Conv::datum weight_gradient_failure_rate = ((Conv::datum)failed_weight_gradient_tests)/((Conv::datum)total_runs);
+		Conv::datum input_gradient_failure_rate = ((Conv::datum)failed_input_gradient_tests)/((Conv::datum)total_input_tests);
+		Conv::datum weight_gradient_failure_rate = ((Conv::datum)failed_weight_gradient_tests)/((Conv::datum)total_weight_tests);
 		
 		if(input_gradient_failure_rate > 0.2) {
 			test_failed = true;
