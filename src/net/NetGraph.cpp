@@ -314,11 +314,11 @@ void NetGraph::FeedForward(NetGraphNode* node) {
 		for (NetGraphConnection connection : node->input_connections)
 			FeedForward(connection.node);
 
+		PrepareNode(node);
 #ifdef LAYERTIME
     auto t_begin = std::chrono::system_clock::now();
 #endif
 
-		PrepareNode(node);
 		// Call the Layer::FeedForward method and set the visited flag
 		node->layer->FeedForward();
     if(layerview_enabled_)
@@ -519,6 +519,9 @@ void NetGraph::InitializeWeights(NetGraphNode* node) {
 void NetGraph::PrepareNode(NetGraphNode* node) {
 #ifdef BUILD_OPENCL
 	if (!node->layer->IsOpenCLAware()) {
+#ifdef LAYERTIME
+		auto t_begin = std::chrono::system_clock::now();
+#endif
 		for (NetGraphConnection connection : node->input_connections) {
 			connection.node->output_buffers[connection.buffer].combined_tensor->data.MoveToCPU();
 			connection.node->output_buffers[connection.buffer].combined_tensor->delta.MoveToCPU();
@@ -527,6 +530,11 @@ void NetGraph::PrepareNode(NetGraphNode* node) {
 			buffer.combined_tensor->data.MoveToCPU();
 			buffer.combined_tensor->delta.MoveToCPU();
 		}
+#ifdef LAYERTIME
+		auto t_end = std::chrono::system_clock::now();
+		std::chrono::duration<double> pass_duration = t_end - t_begin;
+		LOGINFO << "OpenCL x-fer  " << node->unique_name << " (" << node->layer->GetLayerDescription() << ") time:\t" << pass_duration.count() << "s";
+#endif
 	}
 #endif
 }
