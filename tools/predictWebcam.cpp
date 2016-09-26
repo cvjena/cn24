@@ -112,7 +112,7 @@ int main (int argc, char* argv[]) {
     input_node.is_input = true;
 
     graph.AddNode(&input_node);
-    bool complete = factory->AddLayers(graph);
+    bool complete = factory->AddLayers(graph, &class_manager);
     if (!complete) FATAL("Failed completeness check, inspect model!");
 
     graph.Initialize();

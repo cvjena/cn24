@@ -42,7 +42,7 @@ public:
     return hyperparameters_json_;
   }
 
-  bool AddLayers(NetGraph& graph, unsigned int seed = 0);
+  bool AddLayers(NetGraph& graph, ClassManager* class_manager, unsigned int seed = 0);
 
 private:
   JSON net_json_;

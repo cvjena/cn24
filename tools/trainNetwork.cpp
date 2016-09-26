@@ -118,7 +118,7 @@ int main (int argc, char* argv[]) {
   input_node->is_input = true;
   graph.AddNode(input_node);
 
-	bool completeness = factory->AddLayers(graph); //, Conv::NetGraphConnection(input_node), CLASSES, true);
+	bool completeness = factory->AddLayers(graph, &class_manager);
 	LOGDEBUG << "Graph complete: " << completeness;
   
   if(!completeness)

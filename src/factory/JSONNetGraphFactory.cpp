@@ -13,6 +13,7 @@
 #include "../net/DummyErrorLayer.h"
 #include "../net/ErrorLayer.h"
 #include "../net/YOLOLossLayer.h"
+#include "../net/YOLODynamicOutputLayer.h"
 
 #include "NetGraph.h"
 #include "NetGraphNode.h"
@@ -22,7 +23,7 @@
 
 namespace Conv {
 
-bool JSONNetGraphFactory::AddLayers(NetGraph &graph, unsigned int seed) {
+bool JSONNetGraphFactory::AddLayers(NetGraph &graph, ClassManager* class_manager, unsigned int seed) {
   // (0) Create RNG
   std::mt19937 rand(seed);
 
@@ -122,12 +123,19 @@ bool JSONNetGraphFactory::AddLayers(NetGraph &graph, unsigned int seed) {
         LOGDEBUG << "Inserting " << node_json.dump();
 
         // Insert YOLO configuration if needed
-        if(LayerFactory::ExtractLayerType(node_json).compare("yolo_detection") == 0) {
+        if(LayerFactory::ExtractLayerType(node_json).compare("yolo_detection") == 0 ||
+          LayerFactory::ExtractLayerType(node_json).compare("yolo_output") == 0 ) {
           node_json["layer"]["yolo_configuration"] = net_json_["yolo_configuration"];
         }
 
         // Assemble node
-        NetGraphNode *node = new NetGraphNode(node_json);
+        NetGraphNode *node;
+        if(LayerFactory::ExtractLayerType(node_json).compare("yolo_output") == 0) {
+          Layer* layer = new YOLODynamicOutputLayer(LayerFactory::ExtractConfiguration(node_json), class_manager);
+          node = new NetGraphNode(layer);
+        } else {
+          node = new NetGraphNode(node_json);
+        }
         node->unique_name = node_json_iterator.key();
 
         // Add input connections
