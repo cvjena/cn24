@@ -8,6 +8,8 @@
 #ifndef CONV_YOLODYNAMICOUTPUTLAYER_H
 #define CONV_YOLODYNAMICOUTPUTLAYER_H
 
+#include <random>
+
 #include "SimpleLayer.h"
 #include "ClassManager.h"
 
@@ -26,7 +28,11 @@ public:
   void FeedForward();
   void BackPropagate();
   std::string GetLayerDescription() { return "YOLO Dynamic Output Layer"; }
+  void OnLayerConnect (const std::vector<Layer*> next_layer);
 
+  inline unsigned int Gain() {
+    return input_->data.maps();
+  }
 private:
   ClassManager* class_manager_;
   unsigned int horizontal_cells_ = 0;
@@ -37,6 +43,8 @@ private:
   CombinedTensor* box_biases_;
   CombinedTensor* class_weights_;
   CombinedTensor* class_biases_;
+
+  std::mt19937 rand_;
 };
 }
 
