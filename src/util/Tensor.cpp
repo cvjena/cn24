@@ -356,7 +356,7 @@ bool Tensor::Copy (const Tensor& source, Tensor& target) {
 #ifdef BRUTAL_FINISH
     error_ret = clFinish (CLHelper::queue);
     if (error_ret != CL_SUCCESS) {
-      FATAL("Error finishing command queue: " << (signed int) error);
+      FATAL("Error finishing command queue: " << (signed int) error_ret);
     }
 #endif
     return true;
