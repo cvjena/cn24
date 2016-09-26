@@ -117,7 +117,17 @@ bool YOLODetectionLayer::Connect (const CombinedTensor* input,
 }
 
 void YOLODetectionLayer::FeedForward() {
-  unsigned int maps_per_cell = input_->data.maps() / (horizontal_cells_ * vertical_cells_);
+  const unsigned int total_maps = input_->data.maps();
+  const unsigned int maps_per_cell = total_maps / (horizontal_cells_ * vertical_cells_);
+  const unsigned int classes = maps_per_cell - (5 * boxes_per_cell_);
+
+  if(classes != classes_) {
+    LOGDEBUG << "Class count changed from " << classes_ << " to " << classes;
+    output_->data.Shadow(input_->data);
+    output_->delta.Shadow(input_->delta);
+    classes_ = classes;
+  }
+
   for (unsigned int sample = 0; sample < input_->data.samples(); sample++ ) {
     // Clear output vector
     std::vector<BoundingBox>* sample_boxes = (std::vector<BoundingBox>*)output_->metadata[sample];
