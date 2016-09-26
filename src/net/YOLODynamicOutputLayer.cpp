@@ -73,6 +73,7 @@ bool YOLODynamicOutputLayer::Connect(const CombinedTensor *input, CombinedTensor
   parameters_.push_back(class_biases_);
 
 
+  class_manager_->RegisterClassUpdateHandler(this);
   return output->data.width() == 1 && output->data.height() == 1 && output->data.samples() == input->data.samples() && output->data.maps() == output_maps;
 }
 

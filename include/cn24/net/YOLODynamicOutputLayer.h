@@ -12,10 +12,11 @@
 #include "ClassManager.h"
 
 namespace Conv {
-class YOLODynamicOutputLayer : public SimpleLayer {
+class YOLODynamicOutputLayer : public SimpleLayer, public ClassManager::ClassUpdateHandler {
 public:
   YOLODynamicOutputLayer(JSON configuration, ClassManager* class_manager);
   void UpdateTensorSizes();
+  inline void OnClassUpdate() { UpdateTensorSizes(); }
 
   // Implementations for SimpleLayer
   bool Connect(const CombinedTensor *input, CombinedTensor *output);
