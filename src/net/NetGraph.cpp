@@ -177,6 +177,8 @@ void NetGraph::PrintGraph(std::ostream& graph_output) {
 				node_output << "<o" << i << ">" << node->output_buffers[i].description << " " << node->output_buffers[i].combined_tensor->data;
 				if(node->output_buffers[i].combined_tensor->metadata != nullptr)
 					node_output << " with metadata";
+				if(node->output_buffers[i].combined_tensor->is_dynamic)
+					node_output << " (dynamic)";
 			}
 			node_output << "}";
 		}
@@ -184,6 +186,8 @@ void NetGraph::PrintGraph(std::ostream& graph_output) {
 			node_output << "| <o0> " << node->output_buffers[0].description << " " << node->output_buffers[0].combined_tensor->data;
 			if(node->output_buffers[0].combined_tensor->metadata != nullptr)
 				node_output << " with metadata";
+			if(node->output_buffers[0].combined_tensor->is_dynamic)
+				node_output << " (dynamic)";
 		}
 		node_output << "}\"];\n";
 
@@ -256,13 +260,19 @@ void NetGraph::Initialize() {
 
 void NetGraph::InitializeNode(NetGraphNode* node) {
 	if (!node->initialized) {
+    bool layer_has_dynamic_inputs = false;
 		// Collect input tensors through DFS
 		std::vector<CombinedTensor*> input_tensors;
 		for (NetGraphConnection connection : node->input_connections) {
 			InitializeNode(connection.node);
-
-
 			input_tensors.push_back(connection.node->output_buffers[connection.buffer].combined_tensor);
+			layer_has_dynamic_inputs |= connection.node->output_buffers[connection.buffer].combined_tensor->is_dynamic;
+		}
+    // See if layer is dynamic tensor aware
+		if(layer_has_dynamic_inputs) {
+			if(!node->layer->IsDynamicTensorAware()) {
+				FATAL("Layer has dynamic input but doesn't support it: " << node->layer->GetLayerDescription());
+			}
 		}
 
 		// Ask layer to create output buffers
