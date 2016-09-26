@@ -51,7 +51,8 @@ bool ClassManager::LoadFromFile(JSON configuration) {
       by_id_.emplace(class_info.id, p);
     }
   }
-  return false;
+  for(std::vector<ClassUpdateHandler*>::iterator it = handlers_.begin(); it != handlers_.end(); it++)(*it)->OnClassUpdate();
+  return true;
 }
 
 JSON ClassManager::SaveToFile() {
@@ -81,6 +82,7 @@ bool ClassManager::RegisterClassByName(std::string name, unsigned int color, dat
     next_class_id_++;
   }
 
+  for(std::vector<ClassUpdateHandler*>::iterator it = handlers_.begin(); it != handlers_.end(); it++)(*it)->OnClassUpdate();
   return result.second;
 }
 
