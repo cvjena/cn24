@@ -39,15 +39,16 @@ public:
                            const std::size_t width = 1,
                            const std::size_t height = 1,
                            const std::size_t maps = 1,
-                           DatasetMetadataPointer* metadata = nullptr) :
+                           DatasetMetadataPointer* metadata = nullptr,
+                           bool is_dynamic = false) :
     data (samples, width, height, maps),
-    delta (samples, width, height, maps), metadata(metadata) {}
+    delta (samples, width, height, maps), metadata(metadata), is_dynamic(is_dynamic) {}
 
 
   DatasetMetadataPointer* metadata;
   Tensor data;
   Tensor delta;
-
+  bool is_dynamic;
 };
 
 }

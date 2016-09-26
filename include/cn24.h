@@ -63,6 +63,7 @@
 #include "cn24/net/DummyErrorLayer.h"
 #include "cn24/net/YOLOLossLayer.h"
 #include "cn24/net/YOLODetectionLayer.h"
+#include "cn24/net/YOLODynamicOutputLayer.h"
 #include "cn24/net/StatLayer.h"
 #include "cn24/net/BinaryStatLayer.h"
 #include "cn24/net/ConfusionMatrixLayer.h"

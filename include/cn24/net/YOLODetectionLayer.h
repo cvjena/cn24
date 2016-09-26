@@ -32,6 +32,8 @@ public:
   virtual void FeedForward();
   virtual void BackPropagate();
 
+  bool IsDynamicTensorAware() { return true; }
+
   virtual std::string GetLayerDescription() { return "YOLO Detection Layer"; }
 
 private:

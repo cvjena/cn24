@@ -118,6 +118,11 @@ public:
    */
   virtual bool IsNotGradientSafe() { return false; }
 
+  /**
+   * @brief Returns true if the layer is aware of dynamically resizable inputs
+   */
+  virtual bool IsDynamicTensorAware() { return false; }
+
   virtual JSON GetLayerConfiguration() { return configuration_; }
 	virtual std::string GetLayerDescription() { return "Layer"; }
 	virtual void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers) {UNREFERENCED_PARAMETER(buffers);}

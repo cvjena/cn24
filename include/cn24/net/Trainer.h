@@ -109,6 +109,8 @@ public:
   
   inline void SetStatsDuringTraining(bool enable) { settings_["enable_stats_during_training"] = enable; }
 
+  void UpdateParameterSizes();
+
 private:
   void ApplyGradients (datum lr);
   void InitializeStats();

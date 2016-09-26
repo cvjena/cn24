@@ -74,7 +74,9 @@ public:
   inline void SetDisabled(bool disabled = false) {
     disabled_ = disabled;
   }
-  
+
+  bool IsDynamicTensorAware() { return true; }
+
 	std::string GetLayerDescription() { return "Detection Statistic Layer"; }
 protected:
   CombinedTensor* first_ = nullptr;
