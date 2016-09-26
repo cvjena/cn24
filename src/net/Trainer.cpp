@@ -246,7 +246,35 @@ Trainer::Trainer(Conv::NetGraph& graph, JSON settings) :
   InitializeStats();
 }
 
+void Trainer::UpdateParameterSizes() {
+  unsigned int w = 0;
+
+  for (unsigned int p = 0; p < parameters_.size(); p++) {
+    w += parameters_[p]->data.elements();
+
+    // Allocate Tensors for momentum
+    Tensor* last_delta = last_steps_[p];
+    Tensor* last_gradient = last_gradients_[p];
+    Tensor* accumulated_gradient = accumulated_gradients_[p];
+
+    last_delta->Resize (parameters_[p]->data);
+    last_delta->Clear();
+    last_gradient->Resize (parameters_[p]->data);
+    last_gradient->Clear();
+    accumulated_gradient->Resize (parameters_[p]->data);
+    accumulated_gradient->Clear();
+  }
+
+  if(w != weight_count_) {
+    LOGDEBUG << "Weight count changed from " << weight_count_ << " to " << w;
+    weight_count_ = w;
+  }
+}
+
 void Trainer::Train (unsigned int epochs, bool do_snapshots) {
+  // Update parameter sizes
+  UpdateParameterSizes();
+
   // Update hardcoded stats
   System::stat_aggregator->hardcoded_stats_.weights = weight_count_;
 
