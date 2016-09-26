@@ -24,7 +24,7 @@
 #include <private/ConfigParsing.h>
 
 void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Dataset* dataset, Conv::ClassManager* class_manager);
-bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, std::string& command);
+bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*>& datasets, Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, std::string& command);
 void help();
 
 int main (int argc, char* argv[]) {
@@ -105,15 +105,16 @@ int main (int argc, char* argv[]) {
   Conv::ClassManager class_manager;
   LOGINFO << "Loading dataset, this can take a long time depending on the size!" << std::flush;
 
-  Conv::Dataset* dataset = Conv::JSONDatasetFactory::ConstructDataset(Conv::JSON::parse(dataset_config_file), &class_manager);
-  //  dataset->LoadFile(dataset_config_file, false, Conv::LOAD_BOTH);
+  Conv::Dataset* initial_dataset = Conv::JSONDatasetFactory::ConstructDataset(Conv::JSON::parse(dataset_config_file), &class_manager);
+  std::vector<Conv::Dataset*> datasets;
+  datasets.push_back(initial_dataset);
 
   // Assemble net
   Conv::NetGraph graph;
   Conv::DatasetInputLayer* data_layer = nullptr;
 	Conv::NetGraphNode* input_node = nullptr;
 
-  data_layer = new Conv::DatasetInputLayer (dataset, batch_size_parallel, loss_sampling_p, 983923);
+  data_layer = new Conv::DatasetInputLayer (initial_dataset, batch_size_parallel, loss_sampling_p, 983923);
   input_node = new Conv::NetGraphNode(data_layer);
   input_node->is_input = true;
   graph.AddNode(input_node);
@@ -124,7 +125,7 @@ int main (int argc, char* argv[]) {
   if(!completeness)
     FATAL("Graph completeness test failed after factory run!");
 
-	addStatLayers(graph, input_node, dataset, &class_manager);
+	addStatLayers(graph, input_node, initial_dataset, &class_manager);
   
   if(!completeness)
     FATAL("Graph completeness test failed after adding stat layer!");
@@ -156,7 +157,7 @@ int main (int argc, char* argv[]) {
       std::string command;
       std::getline (script_file, command);
 
-      if (!parseCommand (graph, *testing_graph, trainer, *testing_trainer, command) || script_file.eof())
+      if (!parseCommand (class_manager, datasets, graph, *testing_graph, trainer, *testing_trainer, command) || script_file.eof())
         break;
     }
   } else {
@@ -167,7 +168,7 @@ int main (int argc, char* argv[]) {
       std::string command;
       std::getline (std::cin, command);
 
-      if (!parseCommand (graph, *testing_graph, trainer, *testing_trainer, command))
+      if (!parseCommand (class_manager, datasets, graph, *testing_graph, trainer, *testing_trainer, command))
         break;
     }
   }
@@ -210,7 +211,7 @@ void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::
 }
 
 
-bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, std::string& command) {
+bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*>& datasets, Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, std::string& command) {
   if (command.compare ("q") == 0 || command.compare ("quit") == 0) {
     return false;
   } else if (command.compare (0, 5, "train") == 0) {
@@ -393,6 +394,49 @@ bool parseCommand (Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::T
     trainer.SetStatsDuringTraining(enable_tstat == 1);
     testing_trainer.SetStatsDuringTraining(enable_tstat == 1);
     LOGDEBUG << "Training stats enabled: " << enable_tstat;
+  }
+  else if (command.compare(0, 7, "dsload ") == 0) {
+    std::string dataset_filename;
+    Conv::ParseStringParamIfPossible(command, "file", dataset_filename);
+
+    // Open dataset configuration file
+    std::ifstream dataset_config_file (dataset_filename, std::ios::in);
+
+    if (!dataset_config_file.good()) {
+      FATAL ("Cannot open dataset configuration file!");
+    }
+
+    Conv::Dataset* dataset = Conv::JSONDatasetFactory::ConstructDataset(Conv::JSON::parse(dataset_config_file), &class_manager);
+    datasets.push_back(dataset);
+
+    LOGINFO << "Currently loaded datasets:";
+    for(unsigned int d = 0; d < datasets.size(); d++) {
+      LOGINFO << "  Dataset " << d << ": " << datasets[d]->GetName();
+    }
+  }
+  else if (command.compare(0,6, "dslist") == 0) {
+    LOGINFO << "Currently loaded datasets:";
+    for (unsigned int d = 0; d < datasets.size(); d++) {
+      LOGINFO << "  Dataset " << d << ": " << datasets[d]->GetName();
+    }
+    Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
+    if(input_layer != nullptr) {
+      LOGINFO << "Active dataset: " << input_layer->GetActiveDataset()->GetName();
+    }
+  }
+  else if (command.compare(0,9,"dsselect ") == 0) {
+    unsigned int id = 0;
+    Conv::ParseCountIfPossible(command, "id", id);
+    if(id < datasets.size()) {
+      Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
+      if (input_layer != nullptr) {
+        input_layer->SetActiveDataset(datasets[id]);
+      } else {
+        LOGERROR << "Cannot find dataset input layer";
+      }
+    } else {
+      LOGERROR << "Dataset " << id << " does not exist!";
+    }
   }
 	else {
     LOGWARN << "Unknown command: " << command;
