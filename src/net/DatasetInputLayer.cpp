@@ -18,6 +18,8 @@
 #include <cstring>
 
 #include "NetGraph.h"
+#include "StatAggregator.h"
+#include "Init.h"
 #include "DatasetInputLayer.h"
 
 namespace Conv {
@@ -68,6 +70,8 @@ void DatasetInputLayer::SetActiveDataset(Dataset *dataset) {
   RedoPermutation();
   current_element_testing_ = 0;
   current_element_ = 0;
+
+  System::stat_aggregator->SetCurrentDataset(dataset->GetName());
 }
 
 bool DatasetInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inputs,
