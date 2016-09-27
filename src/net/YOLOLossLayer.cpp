@@ -123,7 +123,7 @@ void YOLOLossLayer::FeedForward() {
         const datum box_ymax = ((datum)(vcell+ 1)) / (datum)vertical_cells_;
 
         // Find matching ground truth box
-        BoundingBox* truth_box;
+        BoundingBox* truth_box = nullptr;
         bool found_box = false;
         for(unsigned int t = 0; t < truth_boxes->size(); t++) {
           BoundingBox* tbox = &((*truth_boxes)[t]);

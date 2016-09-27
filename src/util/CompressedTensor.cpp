@@ -225,7 +225,7 @@ void CompressedTensor::CompressData(void* uncompressed, const std::size_t& uncom
   const datum* data_ptr_const = (const datum*) uncompressed;
   
   for(std::size_t pos = 0; pos <= uncompressed_elements; pos++) {
-    Conv::datum current_symbol;
+    Conv::datum current_symbol = 0;
     if(pos < uncompressed_elements) {
       current_symbol = data_ptr_const[pos];
       if(current_symbol == last_symbol) {
