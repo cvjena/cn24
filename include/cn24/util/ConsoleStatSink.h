@@ -47,7 +47,11 @@ public:
   virtual void SetCurrentExperiment(std::string current_experiment) {
     LOGINFO << "Beginning Experiment: " << current_experiment;
   }
-  
+
+  virtual void SetCurrentDataset(std::string current_dataset) {
+    LOGINFO << "Switching to Dataset: " << current_dataset;
+  }
+
 private:
   std::vector<StatDescriptor*> stat_descriptors_;
 };
