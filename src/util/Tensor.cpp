@@ -173,7 +173,8 @@ void Tensor::Extend(const std::size_t samples) {
   }
 
   // Make backup
-  Tensor temp_tensor(*this);
+  Tensor temp_tensor;
+  temp_tensor.Resize(*this);
   Tensor::Copy(*this, temp_tensor);
 
   Resize(samples, width_, height_, maps_);
