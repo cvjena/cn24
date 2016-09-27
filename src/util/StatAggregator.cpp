@@ -149,5 +149,16 @@ void StatAggregator::SetCurrentExperiment(std::string current_experiment) {
     stat_sinks_[s]->SetCurrentExperiment(current_experiment);
   }
 }
+
+void StatAggregator::SetCurrentDataset(std::string current_dataset) {
+   // Only change dataset name when not recording and already initialized
+  if(state_!=STOPPED)
+    return;
+
+  // Call all StatSinks' SetCurrentExperiment method
+  for(unsigned int s = 0; s < stat_sink_count_; s++) {
+    stat_sinks_[s]->SetCurrentDataset(current_dataset);
+  }
+}
   
 }

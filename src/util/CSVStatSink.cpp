@@ -33,6 +33,7 @@ void CSVStatSink::Process(Conv::HardcodedStats &hardcoded_stats, std::vector<Sta
   (*csv_stream_) << hardcoded_stats.epoch << ",";
   (*csv_stream_) << hardcoded_stats.iterations << ",";
   (*csv_stream_) << std::setprecision(std::numeric_limits<double>::digits10 + 1) << hardcoded_stats.seconds_elapsed << ",";
+  (*csv_stream_) << "\"" << current_dataset_ << "\",";
   
   // Write values...
   for (unsigned int s = 0; s < stat_descriptors_.size(); s++) {
@@ -75,7 +76,7 @@ void CSVStatSink::SetCurrentExperiment(std::string current_experiment) {
     csv_stream_ = nullptr;
   }
   // Write header for hardcoded stats
-  (*csv_stream_) << "IsTraining,Epoch,Iterations,SecondsElapsed,";
+  (*csv_stream_) << "IsTraining,Epoch,Iterations,SecondsElapsed,Dataset,";
   
   // Write header for non-hardcoded stats
   for (unsigned int s = 0; s < stat_descriptors_.size(); s++) {
@@ -89,6 +90,10 @@ void CSVStatSink::SetCurrentExperiment(std::string current_experiment) {
   }
   (*csv_stream_) << "\n";
   (*csv_stream_) << std::flush;
+}
+
+void CSVStatSink::SetCurrentDataset(std::string current_dataset) {
+  current_dataset_ = current_dataset;
 }
   
 }
