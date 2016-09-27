@@ -445,6 +445,9 @@ void CLHelper::Init(unsigned int platform_number, unsigned int device_number) {
     FATAL("Call to clblasSetup failed. Error: " << err);
 #endif
 
+#else
+  UNREFERENCED_PARAMETER(platform_number);
+  UNREFERENCED_PARAMETER(device_number);
 #endif
 
 }

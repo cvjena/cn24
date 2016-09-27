@@ -27,7 +27,7 @@ int main() {
   cl_platform_id* platform_ids = new cl_platform_id[platform_count];
   clGetPlatformIDs(platform_count, platform_ids, 0);
   
-  for(int i = 0; i < platform_count; i++) {
+  for(unsigned int i = 0; i < platform_count; i++) {
     cl_uint device_count = 0;
     clGetDeviceIDs(platform_ids[i], CL_DEVICE_TYPE_ALL, 0, 0, &device_count);
     LOGINFO << "Platform " << i << ": " << device_count << " devices";
@@ -36,7 +36,7 @@ int main() {
     clGetDeviceIDs(platform_ids[i], CL_DEVICE_TYPE_ALL, device_count,
       device_ids, 0);
     
-    for(int j = 0; j < device_count; j++) {
+    for(unsigned int j = 0; j < device_count; j++) {
       char buf[256];
       clGetDeviceInfo(device_ids[j], CL_DEVICE_NAME, 256, buf, 0);
       LOGINFO << "Platform " << i << ", device " << j << ": "

@@ -91,8 +91,6 @@ void DropoutLayer::FeedForward() {
     dropout_mask_.MoveToCPU(true);
 #endif
     datum* mask_ptr = dropout_mask_.data_ptr();
-    const datum* in_data_ptr = input_->data.data_ptr_const();
-    datum* out_data_ptr = output_->data.data_ptr();
 
     std::bernoulli_distribution dist = std::bernoulli_distribution(1.0 - dropout_fraction_);
     for (unsigned int element = 0; element < input_->data.elements(); element++) {
@@ -132,6 +130,8 @@ void DropoutLayer::FeedForward() {
     }
 #endif
 #else
+    const datum* in_data_ptr = input_->data.data_ptr_const();
+    datum* out_data_ptr = output_->data.data_ptr();
 #pragma omp parallel for default(shared)
     for (unsigned int element = 0; element < input_->data.elements(); element++) {
       out_data_ptr[element] = in_data_ptr[element] * mask_ptr[element];

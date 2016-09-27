@@ -37,6 +37,7 @@ SparsityLossLayer::SparsityLossLayer(JSON configuration) : Layer(configuration){
 
 bool SparsityLossLayer::CreateOutputs(const std::vector<CombinedTensor *> &inputs,
                                       std::vector<CombinedTensor *> &outputs) {
+  UNREFERENCED_PARAMETER(outputs);
   if(inputs.size() != 1) {
     LOGERROR << "Needs exacly one input!";
     return false;
@@ -47,6 +48,8 @@ bool SparsityLossLayer::CreateOutputs(const std::vector<CombinedTensor *> &input
 
 bool SparsityLossLayer::Connect(const std::vector<CombinedTensor *> &inputs,
                                 const std::vector<CombinedTensor *> &outputs, const NetStatus *net) {
+  UNREFERENCED_PARAMETER(outputs);
+  UNREFERENCED_PARAMETER(net);
   if(inputs.size() != 1) {
     LOGERROR << "Needs exacly one input!";
     return false;

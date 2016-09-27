@@ -546,6 +546,8 @@ void NetGraph::PrepareNode(NetGraphNode* node) {
 		LOGINFO << "OpenCL x-fer  " << node->unique_name << " (" << node->layer->GetLayerDescription() << ") time:\t" << pass_duration.count() << "s";
 #endif
 	}
+#else
+  UNREFERENCED_PARAMETER(node);
 #endif
 }
 

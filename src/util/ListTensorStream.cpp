@@ -229,8 +229,6 @@ namespace Conv {
 				}
 			}
 	
-			int label_tensor_width = number_of_classes; 
-			
 			ListTensorMetadata image_md(image_directory + image_fname, image_tensor.width(), image_tensor.height(), image_tensor.maps(), image_tensor.samples());
 			ListTensorMetadata label_md(label_directory + label_fname, label_rgb_tensor.width(), label_rgb_tensor.height(), number_of_classes, label_rgb_tensor.samples());
 

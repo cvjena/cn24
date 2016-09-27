@@ -55,6 +55,7 @@ void MNISTDataset::Load(JSON descriptor) {
 
 bool MNISTDataset::GetTrainingSample(Tensor &data_tensor, Tensor &label_tensor, Tensor &helper_tensor,
                                      Tensor &weight_tensor, unsigned int sample, unsigned int index) {
+  UNREFERENCED_PARAMETER(helper_tensor);
   const std::size_t train_label_offset = 8;
   uint8_t label = train_labels_[train_label_offset + index];
 
@@ -84,6 +85,7 @@ bool MNISTDataset::GetTrainingSample(Tensor &data_tensor, Tensor &label_tensor, 
 
 bool MNISTDataset::GetTestingSample(Tensor &data_tensor, Tensor &label_tensor, Tensor &helper_tensor,
                                     Tensor &weight_tensor, unsigned int sample, unsigned int index) {
+  UNREFERENCED_PARAMETER(helper_tensor);
   const std::size_t test_label_offset = 8;
   uint8_t label = test_labels_[test_label_offset + index];
 

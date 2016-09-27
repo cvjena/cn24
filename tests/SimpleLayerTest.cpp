@@ -45,6 +45,7 @@ std::vector<std::pair<std::string, bool>> test_layers_and_runs = {
 
 // UTILITIES
 Conv::datum SimpleSumLoss(Conv::Layer* layer, const Conv::Tensor& tensor) {
+	UNREFERENCED_PARAMETER(layer);
 #ifdef BUILD_OPENCL
   ((Conv::Tensor&)tensor).MoveToCPU();
 #endif

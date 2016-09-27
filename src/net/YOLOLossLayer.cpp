@@ -94,7 +94,7 @@ bool YOLOLossLayer::Connect ( const std::vector< CombinedTensor* >& inputs,
 }
 
 void YOLOLossLayer::FeedForward() {
-  unsigned int total_maps = first_->data.maps();
+  unsigned int total_maps = (unsigned int)first_->data.maps();
   unsigned int maps_per_cell = total_maps / (horizontal_cells_ * vertical_cells_);
   classes_ = maps_per_cell - (5 * boxes_per_cell_);
 
@@ -105,12 +105,10 @@ void YOLOLossLayer::FeedForward() {
   current_loss_ = 0;
 
   for (unsigned int sample = 0; sample < first_->data.samples(); sample++ ) {
-    // Clear output vector
-    std::vector<BoundingBox>* sample_boxes = (std::vector<BoundingBox>*)first_->metadata[sample];
     std::vector<BoundingBox>* truth_boxes = (std::vector<BoundingBox>*)second_->metadata[sample];
 
     // Prepare indices into the prediction array
-    unsigned int sample_index = sample * first_->data.maps();
+    unsigned int sample_index = (unsigned int)(sample * first_->data.maps());
     unsigned int class_index = sample_index;
     unsigned int confidence_index = sample_index + (classes_ * vertical_cells_ * horizontal_cells_);
     unsigned int coords_index = confidence_index + vertical_cells_ * horizontal_cells_ * boxes_per_cell_;

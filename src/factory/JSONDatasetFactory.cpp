@@ -19,13 +19,15 @@ Dataset* JSONDatasetFactory::ConstructDataset(JSON descriptor, ClassManager* cla
       segmentation_dataset->Load(descriptor, false, LOAD_BOTH);
       return segmentation_dataset;
     } else if(task.compare("classification") == 0) {
-
+      FATAL("Not implemented yet!");
+      return nullptr;
     } else if (task.compare("detection") == 0) {
       JSONDetectionDataset* detection_dataset = new JSONDetectionDataset(class_manager);
       detection_dataset->Load(descriptor, false, LOAD_BOTH);
       return detection_dataset;
     } else {
       FATAL("Invalid task: " << task);
+      return nullptr;
     }
   } else if(descriptor.count("special") == 1) {
     std::string special_dataset = descriptor["special"];
@@ -33,6 +35,9 @@ Dataset* JSONDatasetFactory::ConstructDataset(JSON descriptor, ClassManager* cla
       MNISTDataset* mnist_dataset = new MNISTDataset(class_manager);
       mnist_dataset->Load(descriptor);
       return mnist_dataset;
+    } else {
+      FATAL("Unknown special dataset: " << special_dataset);
+      return nullptr;
     }
   } else {
     FATAL("Not a valid dataset (no task or special dataset)");

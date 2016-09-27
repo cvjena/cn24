@@ -65,7 +65,6 @@ int main (int argc, char* argv[]) {
 
   Conv::ClassManager class_manager;
   Conv::Dataset* dataset = Conv::JSONDatasetFactory::ConstructDataset(dataset_json, &class_manager);
-  unsigned int CLASSES = class_manager.GetMaxClassId() + 1;
 
   // Load image
   Conv::Tensor original_data_tensor(input_image_fname);
@@ -182,6 +181,7 @@ int main (int argc, char* argv[]) {
 
     if(dataset->GetTask() == Conv::CLASSIFICATION) {
       Conv::Tensor *net_output_tensor = &graph.GetDefaultOutputNode()->output_buffers[0].combined_tensor->data;
+      UNREFERENCED_PARAMETER(net_output_tensor);
       // TODO display scores
     } else {
       Conv::DatasetMetadataPointer* net_output = graph.GetDefaultOutputNode()->output_buffers[0].combined_tensor->metadata;
@@ -200,36 +200,36 @@ int main (int argc, char* argv[]) {
         LOGINFO << "  Size: (" << box.w << "x" << box.h << ")";
 
         // Draw box into original data tensor
-        for(int bx = (box.x - (box.w / 2)); bx <= (box.x + (box.w / 2)); bx++) {
-          int by_top = box.y - (box.h / 2);
-          int by_bot = box.y + (box.h / 2);
-          if(bx >= 0 && bx < original_width) {
-            if (by_top >= 0 && by_top < original_height) {
-              *(original_data_tensor.data_ptr(bx, by_top, 0, 0)) = 1.0;
-              *(original_data_tensor.data_ptr(bx, by_top, 1, 0)) = 1.0;
-              *(original_data_tensor.data_ptr(bx, by_top, 2, 0)) = 1.0;
+        for(int bx = (int)(box.x - (box.w / 2)); bx <= (box.x + (box.w / 2)); bx++) {
+          int by_top = (int)(box.y - (box.h / 2));
+          int by_bot = (int)(box.y + (box.h / 2));
+          if(bx >= 0 && bx < (int)original_width) {
+            if (by_top >= 0 && by_top < (int)original_height) {
+              *(original_data_tensor.data_ptr((const size_t)bx, (const size_t)by_top, 0, 0)) = 1.0;
+              *(original_data_tensor.data_ptr((const size_t)bx, (const size_t)by_top, 1, 0)) = 1.0;
+              *(original_data_tensor.data_ptr((const size_t)bx, (const size_t)by_top, 2, 0)) = 1.0;
             }
-            if (by_bot >= 0 && by_bot < original_height) {
-              *(original_data_tensor.data_ptr(bx, by_bot, 0, 0)) = 1.0;
-              *(original_data_tensor.data_ptr(bx, by_bot, 1, 0)) = 1.0;
-              *(original_data_tensor.data_ptr(bx, by_bot, 2, 0)) = 1.0;
+            if (by_bot >= 0 && by_bot < (int)original_height) {
+              *(original_data_tensor.data_ptr((const size_t)bx, (const size_t)by_bot, 0, 0)) = 1.0;
+              *(original_data_tensor.data_ptr((const size_t)bx, (const size_t)by_bot, 1, 0)) = 1.0;
+              *(original_data_tensor.data_ptr((const size_t)bx, (const size_t)by_bot, 2, 0)) = 1.0;
             }
           }
         }
         // Draw vertical lines
-        for(int by = (box.y - (box.h / 2)); by <= (box.y + (box.h / 2)); by++) {
-          int bx_top = box.x - (box.w / 2);
-          int bx_bot = box.x + (box.w / 2);
-          if(by >= 0 && by < original_height) {
-            if (bx_top >= 0 && bx_top < original_width) {
-              *(original_data_tensor.data_ptr(bx_top, by, 0, 0)) = 1.0;
-              *(original_data_tensor.data_ptr(bx_top, by, 1, 0)) = 1.0;
-              *(original_data_tensor.data_ptr(bx_top, by, 2, 0)) = 1.0;
+        for(int by = (int)(box.y - (box.h / 2)); by <= (box.y + (box.h / 2)); by++) {
+          int bx_top = (int)(box.x - (box.w / 2));
+          int bx_bot = (int)(box.x + (box.w / 2));
+          if(by >= 0 && by < (int)original_height) {
+            if (bx_top >= 0 && bx_top < (int)original_width) {
+              *(original_data_tensor.data_ptr((const std::size_t)bx_top, (const std::size_t)by, 0, 0)) = 1.0;
+              *(original_data_tensor.data_ptr((const std::size_t)bx_top, (const std::size_t)by, 1, 0)) = 1.0;
+              *(original_data_tensor.data_ptr((const std::size_t)bx_top, (const std::size_t)by, 2, 0)) = 1.0;
             }
-            if (bx_bot >= 0 && bx_bot < original_width) {
-              *(original_data_tensor.data_ptr(bx_bot, by, 0, 0)) = 1.0;
-              *(original_data_tensor.data_ptr(bx_bot, by, 1, 0)) = 1.0;
-              *(original_data_tensor.data_ptr(bx_bot, by, 2, 0)) = 1.0;
+            if (bx_bot >= 0 && bx_bot < (int)original_width) {
+              *(original_data_tensor.data_ptr((const std::size_t)bx_bot, (const std::size_t)by, 0, 0)) = 1.0;
+              *(original_data_tensor.data_ptr((const std::size_t)bx_bot, (const std::size_t)by, 1, 0)) = 1.0;
+              *(original_data_tensor.data_ptr((const std::size_t)bx_bot, (const std::size_t)by, 2, 0)) = 1.0;
             }
           }
         }

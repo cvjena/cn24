@@ -51,6 +51,7 @@ int main ( int argc, char** argv ) {
   // Load dataset
   Conv::ClassManager class_manager;
   Conv::TensorStreamDataset* dataset = Conv::TensorStreamDataset::CreateFromConfiguration ( dataset_config_file, true, Conv::LOAD_BOTH, &class_manager);
+  UNREFERENCED_PARAMETER(dataset);
 
   unsigned int number_of_classes = class_manager.GetMaxClassId() + 1;
   // arrays to store class colors in an easy to index way

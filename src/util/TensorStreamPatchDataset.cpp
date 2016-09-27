@@ -340,7 +340,7 @@ TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std
       ParseCountIfPossible (line, "classes", classes);
 
       if (classes != 0) {
-        for (int c = 0; c < classes; c++) {
+        for (unsigned int c = 0; c < classes; c++) {
           std::string class_name;
           std::getline (file, class_name);
           class_names.push_back (class_name);
@@ -350,7 +350,7 @@ TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std
 
     if (StartsWithIdentifier (line, "colors")) {
       if (classes != 0) {
-        for (int c = 0; c < classes; c++) {
+        for (unsigned int c = 0; c < classes; c++) {
           std::string color;
           std::getline (file, color);
           unsigned long color_val_l = std::strtoul (color.c_str(), nullptr, 16);
@@ -366,7 +366,7 @@ TensorStreamPatchDataset* TensorStreamPatchDataset::CreateFromConfiguration (std
 
 		if (StartsWithIdentifier(line, "weights")) {
 			if (classes != 0) {
-				for (int c = 0; c < classes; c++) {
+				for (unsigned int c = 0; c < classes; c++) {
 					std::string weight;
 					datum dweight;
 					std::getline(file, weight);

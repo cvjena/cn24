@@ -26,9 +26,9 @@ namespace Conv {
 	public:
 		ListTensorMetadata(std::string filename, std::size_t width, std::size_t height, std::size_t maps, std::size_t samples) :
 			filename(filename), width(width), height(height), maps(maps), samples(samples) {};
-			
-		std::size_t width = 0, height = 0, maps = 0, samples = 0;
+
 		std::string filename;
+		std::size_t width = 0, height = 0, maps = 0, samples = 0;
 		bool ignore = false;
 	};
   

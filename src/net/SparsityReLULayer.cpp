@@ -125,7 +125,6 @@ void SparsityReLULayer::BackPropagate() {
   const datum a = weights_->data.data_ptr_const()[0];
   const datum b = weights_->data.data_ptr_const()[1];
 
-  const datum log_a = log(a);
   datum a_delta_kl = 0.0;
   datum b_delta_kl = 0.0;
   datum a_delta_other = 0.0;
@@ -135,7 +134,6 @@ void SparsityReLULayer::BackPropagate() {
 
   for (std::size_t element = 0; element < input_->data.elements(); element++) {
     const datum input_data = input_->data.data_ptr_const() [element];
-    const datum output_data = output_->data.data_ptr_const() [element];
     const datum output_delta = output_->delta.data_ptr_const ()[element];
     const datum transformed_input = a * input_data + b;
 

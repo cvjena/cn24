@@ -459,7 +459,7 @@ void TensorMath::DOWN(const Tensor& source, Tensor& target, const int region_wid
     const int target_height = target.height();
     const int source_width = source.width();
     const int source_height = source.height();
-    cl_uint error = 0;
+    cl_int error = 0;
 
     error |= clSetKernelArg (CLHelper::k_down, 0, sizeof (cl_mem), &(((Tensor&)source).cl_data_ptr_));
     error |= clSetKernelArg (CLHelper::k_down, 1, sizeof (cl_mem), &(target.cl_data_ptr_));
@@ -491,24 +491,24 @@ void TensorMath::DOWN(const Tensor& source, Tensor& target, const int region_wid
 #endif
   } else {
 #endif
-    const int target_width = target.width();
-    const int target_height = target.height();
-    const int maps = target.maps();
-    const int samples = target.samples();
+    const int target_width = (int)target.width();
+    const int target_height = (int)target.height();
+    const int maps = (int)target.maps();
+    const int samples = (int)target.samples();
     for(int sample = 0; sample < samples; sample++) {
       for(int map = 0; map < maps; map++) {
-        for(unsigned int target_y = 0; target_y < target_height; target_y++) {
-          const unsigned int source_y = region_height * target_y;
-          for(unsigned int target_x = 0; target_x < target_width; target_x++) {
-            const unsigned int source_x = region_width * target_x;
+        for(int target_y = 0; target_y < target_height; target_y++) {
+          const int source_y = region_height * target_y;
+          for(int target_x = 0; target_x < target_width; target_x++) {
+            const int source_x = region_width * target_x;
             datum sum = 0;
-            for(unsigned int ry = 0; ry < region_height; ry++) {
-              for(unsigned int rx = 0; rx < region_width; rx++) {
-                const datum* src = source.data_ptr_const(source_x + rx, source_y + ry, map, sample);
+            for(int ry = 0; ry < region_height; ry++) {
+              for(int rx = 0; rx < region_width; rx++) {
+                const datum* src = source.data_ptr_const((const size_t)(source_x + rx), (const size_t)(source_y + ry), (const size_t)map, (const size_t)sample);
                 sum += *src;
               }
             }
-            datum* tgt = target.data_ptr(target_x, target_y, map, sample);
+            datum* tgt = target.data_ptr((const size_t)target_x, (const size_t)target_y, (const size_t)map, (const size_t)sample);
             *tgt = sum * target_factor;
           }
         }
@@ -528,11 +528,11 @@ void TensorMath::UP(const Tensor& source, Tensor& target, const int region_width
   if(source.cl_gpu_ || target.cl_gpu_) {
     ((Tensor&)source).MoveToGPU();
     target.MoveToGPU(true);
-    const int target_width = target.width();
-    const int target_height = target.height();
-    const int source_width = source.width();
-    const int source_height = source.height();
-    cl_uint error = 0;
+    const int target_width = (int)target.width();
+    const int target_height = (int)target.height();
+    const int source_width = (int)source.width();
+    const int source_height = (int)source.height();
+    cl_int error = 0;
 
     error |= clSetKernelArg (CLHelper::k_up, 0, sizeof (cl_mem), &(((Tensor&)source).cl_data_ptr_));
     error |= clSetKernelArg (CLHelper::k_up, 1, sizeof (cl_mem), &(target.cl_data_ptr_));
@@ -564,21 +564,21 @@ void TensorMath::UP(const Tensor& source, Tensor& target, const int region_width
 #endif
   } else {
 #endif
-    const int width = source.width();
-    const int height = source.height();
-    const int maps = source.maps();
-    const int samples = source.samples();
+    const int width = (int)source.width();
+    const int height = (int)source.height();
+    const int maps = (int)source.maps();
+    const int samples = (int)source.samples();
     for(int sample = 0; sample < samples; sample++) {
       for(int map = 0; map < maps; map++) {
-        for(unsigned int y = 0; y < height; y++) {
-          const unsigned int iy = region_height * y;
-          for(unsigned int x = 0; x < width; x++) {
-            const unsigned int ix = region_width * x;
-            const datum* src = source.data_ptr_const(x, y, map, sample);
+        for(int y = 0; y < height; y++) {
+          const int iy = region_height * y;
+          for(int x = 0; x < width; x++) {
+            const int ix = region_width * x;
+            const datum* src = source.data_ptr_const((const size_t)x, (const size_t)y, (const size_t)map, (const size_t)sample);
             datum sum = *src;
-            for(unsigned int ry = 0; ry < region_height; ry++) {
-              for(unsigned int rx = 0; rx < region_width; rx++) {
-                datum* tgt = target.data_ptr(ix + rx, iy + ry, map, sample);
+            for(int ry = 0; ry < region_height; ry++) {
+              for(int rx = 0; rx < region_width; rx++) {
+                datum* tgt = target.data_ptr((const size_t)(ix + rx), (const size_t)(iy + ry), (const size_t)map, (const size_t)sample);
                 *tgt = sum * target_factor;
               }
             }

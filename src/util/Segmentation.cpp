@@ -103,20 +103,20 @@ void Segmentation::ExtractLabels (const int patchsize_x,
                                   const int source_sample,
                                   const int ignore_class) {
 
-  int image_width = source.width();
-  int image_height = source.height();
+  int image_width = (int)source.width();
+  int image_height = (int)source.height();
 
   // new version
-  unsigned int npatches = image_width * image_height;
+  int npatches = image_width * image_height;
   int offsetx = (patchsize_x / 2);
   int offsety = (patchsize_y / 2);
 
-  labels.Resize (npatches, 1, 1, 1);
-  weight.Resize (npatches);
+  labels.Resize ((const size_t)npatches, 1, 1, 1);
+  weight.Resize ((const size_t)npatches);
 
   for (int px = 0; px < image_width; px++) {
     for (int py = 0; py < image_height; py++) {
-      unsigned int element =  image_width * py + px;
+      unsigned int element =  (unsigned int)(image_width * py + px);
       const int ipy = (patchsize_y / 2) + 1;
       int image_y = py + ipy - offsety;
       if (image_y < 0)
@@ -132,13 +132,13 @@ void Segmentation::ExtractLabels (const int patchsize_x,
         image_x = -1 + image_width + image_width - image_x;
 
       // Copy pixel
-      const duint nlabel = * ( (duint*) source.data_ptr_const (image_x, image_y, 0,
-                               source_sample));
+      const duint nlabel = * ( (duint*) source.data_ptr_const ((const size_t)image_x, (const size_t)image_y, 0,
+                                                               (const size_t)source_sample));
       *labels.data_ptr (0, 0, 0, element) =
-        *source.data_ptr_const (image_x, image_y, 0, source_sample);
+        *source.data_ptr_const ((const size_t)image_x, (const size_t)image_y, 0, (const size_t)source_sample);
 
       // Assign weight
-      if (nlabel != ignore_class)
+      if (nlabel != (duint)ignore_class)
         *weight.data_ptr (0, 0, 0, element) = 1.0;
       else
         *weight.data_ptr (0, 0, 0, element) = 0.0;

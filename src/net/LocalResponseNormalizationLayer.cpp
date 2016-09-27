@@ -85,17 +85,17 @@ void LocalResponseNormalizationLayer::FeedForward() {
         for(unsigned int y = 0; y < input_height_; y++) {
           for(unsigned int x = 0; x < input_height_; x++) {
             datum region_sum = 0;
-            unsigned int region_size = 0;
-            for(unsigned int iy = (((int)y-sub) > 0 ? (int)y-sub : 0); (iy < input_height_) && (iy <= ((int)y+add)); iy++) {
-              for(unsigned int ix = (((int)x-sub) > 0 ? (int)x-sub : 0); (ix < input_width_) && (ix <= ((int)x+add)); ix++) {
-                const datum input_value = (*input_->data.data_ptr_const(ix,iy,map,sample));
+            int region_size = 0;
+            for(int iy = (((int)y-sub) > 0 ? (int)y-sub : 0); (iy < (int)input_height_) && (iy <= ((int)y+add)); iy++) {
+              for(int ix = (((int)x-sub) > 0 ? (int)x-sub : 0); (ix < (int)input_width_) && (ix <= ((int)x+add)); ix++) {
+                const datum input_value = (*input_->data.data_ptr_const((const size_t)ix,(const size_t)iy,map,sample));
                 region_sum += input_value * input_value;
                 region_size++;
               }
             }
             
             (*region_sums_.data_ptr(x,y,map,sample)) = region_sum;
-            datum divisor = pow(1.0 + ((alpha_/((datum)region_size))*region_sum), beta_);
+            datum divisor = (datum)pow(1.0 + ((alpha_/((datum)region_size))*region_sum), beta_);
             (*output_->data.data_ptr(x,y,map,sample)) = (*input_->data.data_ptr_const(x,y,map,sample)) / divisor;
           }
         }
@@ -106,14 +106,14 @@ void LocalResponseNormalizationLayer::FeedForward() {
           for(unsigned int x = 0; x < input_height_; x++) {
             datum region_sum = 0;
             unsigned int region_size = 0;
-            for(unsigned int imap = (((int)map-sub) > 0 ? (int)map-sub : 0); (imap < maps_) && (imap <= ((int)map+add)); imap++) {
-              const datum input_value = (*input_->data.data_ptr_const(x,y,imap,sample));
+            for(int imap = (((int)map-sub) > 0 ? (int)map-sub : 0); (imap < (int)maps_) && (imap <= ((int)map+add)); imap++) {
+              const datum input_value = (*input_->data.data_ptr_const(x,y,(const size_t)imap,sample));
               region_sum += input_value * input_value;
               region_size++;
             }
             
             (*region_sums_.data_ptr(x,y,map,sample)) = region_sum;
-            datum divisor = pow(1.0 + ((alpha_/((datum)region_size))*region_sum), beta_);
+            datum divisor = (datum)pow(1.0 + ((alpha_/((datum)region_size))*region_sum), beta_);
             (*output_->data.data_ptr(x,y,map,sample)) = (*input_->data.data_ptr_const(x,y,map,sample)) / divisor;
           }
         }
@@ -138,21 +138,21 @@ void LocalResponseNormalizationLayer::BackPropagate() {
           for(unsigned int x = 0; x < input_height_; x++) {
             datum region_sum = (*region_sums_.data_ptr_const(x,y,map,sample));
             unsigned int region_size = 0;
-            for(unsigned int iy = (((int)y-sub) > 0 ? (int)y-sub : 0); (iy < input_height_) && (iy <= ((int)y+add)); iy++) {
-              for(unsigned int ix = (((int)x-sub) > 0 ? (int)x-sub : 0); (ix < input_width_) && (ix <= ((int)x+add)); ix++) {
+            for(int iy = (((int)y-sub) > 0 ? (int)y-sub : 0); (iy < (int)input_height_) && (iy <= ((int)y+add)); iy++) {
+              for(int ix = (((int)x-sub) > 0 ? (int)x-sub : 0); (ix < (int)input_width_) && (ix <= ((int)x+add)); ix++) {
                 region_size++;
               }
             }
             
-            datum divisor = pow(1.0 + ((alpha_/((datum)region_size))*region_sum), beta_);
+            datum divisor = (datum)pow(1.0 + ((alpha_/((datum)region_size))*region_sum), beta_);
             datum divisor2 = divisor * divisor;
             const datum xi = *input_->data.data_ptr_const(x,y,map,sample);
             const datum dxi = *output_->delta.data_ptr_const(x,y,map,sample);
             
-            for(unsigned int iy = (((int)y-sub) > 0 ? (int)y-sub : 0); (iy < input_height_) && (iy <= ((int)y+add)); iy++) {
-              for(unsigned int ix = (((int)x-sub) > 0 ? (int)x-sub : 0); (ix < input_width_) && (ix <= ((int)x+add)); ix++) {
-                const datum xj = *input_->data.data_ptr_const(ix,iy,map,sample);
-                (*input_->delta.data_ptr(ix,iy,map,sample)) -= (dxi * xi * (datum)2.0 * beta_ * (alpha_ / (datum)region_size) * xj *
+            for(int iy = (((int)y-sub) > 0 ? (int)y-sub : 0); (iy < (int)input_height_) && (iy <= ((int)y+add)); iy++) {
+              for(int ix = (((int)x-sub) > 0 ? (int)x-sub : 0); (ix < (int)input_width_) && (ix <= ((int)x+add)); ix++) {
+                const datum xj = *input_->data.data_ptr_const((const size_t)ix,(const size_t)iy,map,sample);
+                (*input_->delta.data_ptr((const size_t)ix,(const size_t)iy,map,sample)) -= (dxi * xi * (datum)2.0 * beta_ * (alpha_ / (datum)region_size) * xj *
                   (datum)pow((datum)1.0 + (alpha_ / (datum)region_size) * region_sum, beta_ - (datum)1.0)) / divisor2;
               }
             }
@@ -166,18 +166,18 @@ void LocalResponseNormalizationLayer::BackPropagate() {
           for(unsigned int x = 0; x < input_height_; x++) {
             datum region_sum = (*region_sums_.data_ptr_const(x,y,map,sample));
             unsigned int region_size = 0;
-            for(unsigned int imap = (((int)map-sub) > 0 ? (int)map-sub : 0); (imap < maps_) && (imap <= ((int)map+add)); imap++) {
+            for(int imap = (((int)map-sub) > 0 ? (int)map-sub : 0); (imap < (int)maps_) && (imap <= ((int)map+add)); imap++) {
               region_size++;
             }
             
-            datum divisor = pow(1.0 + ((alpha_/((datum)region_size))*region_sum), beta_);
+            datum divisor = (datum)pow(1.0 + ((alpha_/((datum)region_size))*region_sum), beta_);
             datum divisor2 = divisor * divisor;
             const datum xi = *input_->data.data_ptr_const(x,y,map,sample);
             const datum dxi = *output_->delta.data_ptr_const(x,y,map,sample);
             
-            for(unsigned int imap = (((int)map-sub) > 0 ? (int)map-sub : 0); (imap < maps_) && (imap <= ((int)map+add)); imap++) {
-                const datum xj = *input_->data.data_ptr_const(x,y,imap,sample);
-                (*input_->delta.data_ptr(x,y,imap,sample)) -= (dxi * xi * (datum)2.0 * beta_ * (alpha_ / (datum)region_size) * xj *
+            for(int imap = (((int)map-sub) > 0 ? (int)map-sub : 0); (imap < (int)maps_) && (imap <= ((int)map+add)); imap++) {
+                const datum xj = *input_->data.data_ptr_const(x,y,(const size_t)imap,sample);
+                (*input_->delta.data_ptr(x,y,(const size_t)imap,sample)) -= (dxi * xi * (datum)2.0 * beta_ * (alpha_ / (datum)region_size) * xj *
                   (datum)pow((datum)1.0 + (alpha_ / (datum)region_size) * region_sum, beta_ - (datum)1.0)) / divisor2;
             }
             (*input_->delta.data_ptr(x,y,map,sample)) += dxi / divisor;

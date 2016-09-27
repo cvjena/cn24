@@ -28,6 +28,8 @@ public:
 };
 
 int main(int argc, char **argv) {
+  UNREFERENCED_PARAMETER(argc);
+  UNREFERENCED_PARAMETER(argv);
   std::vector<NamedTensorArray*> tensors;
   Conv::System::Init();
 

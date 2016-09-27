@@ -113,7 +113,7 @@ ConvolutionLayer::ConvolutionLayer(JSON configuration) :
 	}
 	
 	if(configuration.count("llr") == 1 && configuration["llr"].is_number()) {
-		local_lr_ = configuration["llr"];
+		local_lr = configuration["llr"];
 	}
   
 	if(configuration.count("seed") == 1 && configuration["seed"].is_number()) {
@@ -333,19 +333,30 @@ void ConvolutionLayer::BackPropagate() {
     /*
     * 2. Weight gradient calculation
     */
-    TensorMath::GEMM (true, false, true, output_maps_ / group_,
-          (kernel_width_ * kernel_height_ * input_maps_) / group_,
-          output_width_ * output_height_ * input_->data.samples(),
-          1.0, sms2_bp_buffer, (g * output_maps_) / group_, output_width_ * output_height_ * input_->data.samples(),
-          im2col_ff_buffer, (kernel_width_ * kernel_height_ * input_maps_ * g) / group_, output_width_ * output_height_ * input_->data.samples(),
-          0.0, weights_->delta, (g * output_maps_) / group_, (kernel_width_ * kernel_height_ * input_maps_) / group_);
+    if(local_lr_ > 0) {
+      TensorMath::GEMM(true, false, true, output_maps_ / group_,
+                       (kernel_width_ * kernel_height_ * input_maps_) / group_,
+                       output_width_ * output_height_ * input_->data.samples(),
+                       1.0, sms2_bp_buffer, (g * output_maps_) / group_,
+                       output_width_ * output_height_ * input_->data.samples(),
+                       im2col_ff_buffer, (kernel_width_ * kernel_height_ * input_maps_ * g) / group_,
+                       output_width_ * output_height_ * input_->data.samples(),
+                       0.0, weights_->delta, (g * output_maps_) / group_,
+                       (kernel_width_ * kernel_height_ * input_maps_) / group_);
+    } else {
+      weights_->delta.Clear(0);
+    }
   }
   /*
   * 3. Bias gradient calculation
   */
-  TensorMath::GEMV(true, false, output_maps_, output_width_ * output_height_ * input_->data.samples(), 1.0,
-        sms2_bp_buffer, 0, output_width_ * output_height_ * input_->data.samples(),
-        ones_, 0, 1, 0.0, bias_->delta, 0, 1);
+  if(local_lr_ > 0) {
+    TensorMath::GEMV(true, false, output_maps_, output_width_ * output_height_ * input_->data.samples(), 1.0,
+                     sms2_bp_buffer, 0, output_width_ * output_height_ * input_->data.samples(),
+                     ones_, 0, 1, 0.0, bias_->delta, 0, 1);
+  } else {
+    bias_->delta.Clear(0);
+  }
 
   
   if(backprop_enabled_)

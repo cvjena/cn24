@@ -23,6 +23,10 @@ JSONSegmentationDataset::~JSONSegmentationDataset() {
 }
 
 void JSONSegmentationDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSelection selection) {
+  // TODO Make these work
+  UNREFERENCED_PARAMETER(dont_load);
+  UNREFERENCED_PARAMETER(selection);
+
 	// TODO Validate JSON
 	
 	std::string dataset_name = dataset_json["name"];

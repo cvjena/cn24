@@ -204,12 +204,6 @@ void YOLODetectionLayer::FeedForward() {
                             sample_boxes->end());
       }
     }
-
-    // Display boxes
-    for(unsigned int b = 0; b < sample_boxes->size(); b++) {
-      BoundingBox& box = (*sample_boxes)[b];
-      // LOGDEBUG << " Box " << b << ": " << "(" << box.x << "," << box.y << "), size (" << box.w << "," << box.h << "). Class " << box.c << " (score " << box.score << ")";
-    }
   }
 
 }

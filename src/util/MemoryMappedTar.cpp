@@ -19,6 +19,11 @@ extern "C" {
 namespace Conv {
 
 MemoryMappedTar::MemoryMappedTar(void* address, std::size_t length, std::vector<MemoryMappedTarFileInfo>* parent_files) {
+#ifndef BUILD_LIBARCHIVE
+  UNREFERENCED_PARAMETER(address);
+  UNREFERENCED_PARAMETER(length);
+  UNREFERENCED_PARAMETER(parent_files);
+#endif
 
 #ifdef BUILD_LIBARCHIVE
   archive* tar_archive;

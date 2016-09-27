@@ -185,7 +185,7 @@ void Tensor::Extend(const std::size_t samples) {
 #endif
 
   // Restore data
-  for(int s = 0; s < temp_tensor.samples(); s++) {
+  for(unsigned int s = 0; s < temp_tensor.samples(); s++) {
     Tensor::CopySample(temp_tensor, s, *this, s);
   }
 }

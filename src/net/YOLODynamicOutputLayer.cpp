@@ -198,7 +198,6 @@ void YOLODynamicOutputLayer::BackPropagate() {
     const datum *input_data_ptr = input_->data.data_ptr_const(0, 0, 0, sample);
     datum *input_delta_ptr = input_->delta.data_ptr(0, 0, 0, sample);
     const datum *output_delta_ptr = output_->delta.data_ptr_const(0, 0, 0, sample);
-    const datum *output_data_ptr = output_->data.data_ptr_const(0, 0, 0, sample);
 
     // Weight gradients
     // Box weights

@@ -28,14 +28,8 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
 void help();
 
 int main (int argc, char* argv[]) {
-  bool GRADIENT_CHECK = false;
   bool FROM_SCRIPT = false;
   int requested_log_level = -1;
-#ifdef LAYERTIME
-  const Conv::datum it_factor = 0.01;
-#else
-  const Conv::datum it_factor = 1;
-#endif
   const Conv::datum loss_sampling_p = 0.5;
   
   if(argc > 1) {
@@ -56,7 +50,7 @@ int main (int argc, char* argv[]) {
   std::string script_fname;
 
   if (argc > 3 && std::string (argv[3]).compare ("gradient_check") == 0) {
-    GRADIENT_CHECK = true;
+    FATAL("Gradient check is now part of the test suite!");
   } else if (argc > 3) {
     FROM_SCRIPT = true;
     script_fname = argv[3];
@@ -249,7 +243,6 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
     Conv::System::stat_aggregator->Reset();
   } else if (command.compare (0, 4, "load") == 0) {
     std::string param_file_name;
-    unsigned int last_layer = 0;
     Conv::ParseStringParamIfPossible (command, "file", param_file_name);
 
     if (param_file_name.length() == 0) {
@@ -364,7 +357,6 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
 
       for (Conv::NetGraphNode *node : graph.GetNodes()) {
         if (node->unique_name.compare(node_uid) == 0) {
-          unsigned int p = 0;
           for (Conv::CombinedTensor *param_tensor : node->layer->parameters()) {
             param_tensor->data.Serialize(param_file, true);
           }

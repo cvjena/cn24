@@ -138,13 +138,13 @@ void DetectionStatLayer::UpdateAll() {
       detection_precision[i] = std::max(detection_precision[i], detection_precision[i+1]);
     }
     std::vector<int> different_indices;
-    for(int i = 1; i < detection_recall.size(); i++) {
+    for(int i = 1; i < (int)detection_recall.size(); i++) {
       if(detection_recall[i] != detection_recall[i-1])
         different_indices.push_back(i);
     }
 
     datum ap = 0;
-    for(int i = 0; i < different_indices.size(); i++) {
+    for(int i = 0; i < (int)different_indices.size(); i++) {
       ap += (detection_recall[different_indices[i]] - detection_recall[different_indices[i] - 1]) * detection_precision[different_indices[i]];
     }
     LOGDEBUG << "AP class " << it->first << ": " << ap * 100.0;
@@ -208,7 +208,6 @@ bool DetectionStatLayer::Connect ( const std::vector< CombinedTensor* >& inputs,
   // We ignore the shape for now...
   CombinedTensor* first = inputs[0];
   CombinedTensor* second = inputs[1];
-  CombinedTensor* third = inputs[2];
   bool valid = first != nullptr && second != nullptr &&
                first->data.samples() == second->data.samples() &&
                first->metadata != nullptr &&

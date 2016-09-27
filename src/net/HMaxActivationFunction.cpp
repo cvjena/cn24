@@ -165,8 +165,7 @@ void HMaxActivationFunction::BackPropagate() {
   
   // Calculate gradient w.r.t. input
   const datum a = weights_->data.data_ptr_const()[0];
-  const datum b = weights_->data.data_ptr_const()[1];
-  
+
   // weights the regularization term
   const datum lambda_sparse_regularization = loss_weight_;
 

@@ -25,6 +25,10 @@ JSONDetectionDataset::~JSONDetectionDataset() {
 }
 
 void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSelection selection) {
+  // TODO Make those work
+  UNREFERENCED_PARAMETER(dont_load);
+  UNREFERENCED_PARAMETER(selection);
+
 	// TODO Validate JSON
 	
 	std::string dataset_name = dataset_json["name"];
@@ -57,7 +61,7 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
 				class_weight = class_json["weight"];
 			}
 
-      bool result = class_manager_->RegisterClassByName(class_name, class_color, 1.0);
+      bool result = class_manager_->RegisterClassByName(class_name, class_color, class_weight);
       if(!result) {
         FATAL("Could not register class " << class_name << " with ClassManager");
       }
@@ -252,6 +256,8 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
 
 
 bool JSONDetectionDataset::GetTrainingSample(Tensor& data_tensor, Tensor& label_tensor, Tensor& helper_tensor, Tensor& weight_tensor, unsigned int sample, unsigned int index) {
+  UNREFERENCED_PARAMETER(label_tensor);
+  UNREFERENCED_PARAMETER(helper_tensor);
   if (index < tensor_count_training_) {
     bool success = true;
 
@@ -267,6 +273,8 @@ bool JSONDetectionDataset::GetTrainingSample(Tensor& data_tensor, Tensor& label_
 }
 
 bool JSONDetectionDataset::GetTestingSample(Tensor& data_tensor, Tensor& label_tensor,Tensor& helper_tensor, Tensor& weight_tensor,  unsigned int sample, unsigned int index) {
+  UNREFERENCED_PARAMETER(label_tensor);
+  UNREFERENCED_PARAMETER(helper_tensor);
   if (index < tensor_count_testing_) {
     bool success = true;
 

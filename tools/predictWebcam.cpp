@@ -21,6 +21,8 @@
 
 #ifndef BUILD_OPENCV
 int main (int argc, char* argv[]) {
+  UNREFERENCED_PARAMETER(argc);
+  UNREFERENCED_PARAMETER(argv);
   Conv::System::Init();
   LOGINFO << "Not built with OpenCV!";
   LOGEND;

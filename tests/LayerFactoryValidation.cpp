@@ -11,6 +11,8 @@
 #include <string>
 
 int main(int argc, char* argv[]) {
+  UNREFERENCED_PARAMETER(argc);
+  UNREFERENCED_PARAMETER(argv);
   Conv::System::Init();
   
   std::vector<std::string> working_descriptors = {

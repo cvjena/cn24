@@ -45,9 +45,9 @@ public:
     delta (samples, width, height, maps), metadata(metadata), is_dynamic(is_dynamic) {}
 
 
-  DatasetMetadataPointer* metadata;
   Tensor data;
   Tensor delta;
+  DatasetMetadataPointer* metadata;
   bool is_dynamic;
 };
 

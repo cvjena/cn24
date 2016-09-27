@@ -20,8 +20,13 @@ public:
   DummyErrorLayer() : Layer(JSON::object()) {};
 
   // Implementations for Layer
-  bool CreateOutputs (const std::vector< CombinedTensor* >& inputs, std::vector< CombinedTensor* >& outputs) { return true; }
+  bool CreateOutputs (const std::vector< CombinedTensor* >& inputs, std::vector< CombinedTensor* >& outputs) {
+		UNREFERENCED_PARAMETER(inputs);
+		UNREFERENCED_PARAMETER(outputs);
+		return true; }
   bool Connect (const std::vector< CombinedTensor* >& inputs, const std::vector< CombinedTensor* >& outputs, const NetStatus* net ) {
+		UNREFERENCED_PARAMETER(outputs);
+		UNREFERENCED_PARAMETER(net);
 		first_ = inputs[0];
 		second_ = inputs[1];
 		third_ = inputs[2];
