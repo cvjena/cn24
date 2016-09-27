@@ -68,22 +68,34 @@ JSON ClassManager::SaveToFile() {
 }
 
 bool ClassManager::RegisterClassByName(std::string name, unsigned int color, datum weight) {
-  Info info;
-  info.id = next_class_id_;
-  info.color = color;
-  info.weight = weight;
-  auto result = classes_.emplace(name, info);
+  if(GetClassIdByName(name) != UNKNOWN_CLASS) {
+    Info current_info = GetClassInfoByName(name);
+    if(current_info.color != color) {
+      LOGWARN << "Class \"" << name << "\" color mismatch";
+    }
+    if(current_info.weight != weight) {
+      LOGWARN << "Class \"" << name << "\" weight mismatch";
+    }
+    return true;
+  } else {
+    Info info;
+    info.id = next_class_id_;
+    info.color = color;
+    info.weight = weight;
+    auto result = classes_.emplace(name, info);
 
-  if(result.second) {
-    std::pair<std::string,Info> p;
-    p.first = name;
-    p.second = info;
-    by_id_.emplace(info.id, p);
-    next_class_id_++;
+    if (result.second) {
+      std::pair<std::string, Info> p;
+      p.first = name;
+      p.second = info;
+      by_id_.emplace(info.id, p);
+      next_class_id_++;
+    }
+
+    for (std::vector<ClassUpdateHandler *>::iterator it = handlers_.begin(); it != handlers_.end(); it++)
+      (*it)->OnClassUpdate();
+    return result.second;
   }
-
-  for(std::vector<ClassUpdateHandler*>::iterator it = handlers_.begin(); it != handlers_.end(); it++)(*it)->OnClassUpdate();
-  return result.second;
 }
 
 unsigned int ClassManager::GetClassIdByName(const std::string& name) const {
