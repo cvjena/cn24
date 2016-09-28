@@ -138,9 +138,9 @@ void YOLODetectionLayer::FeedForward() {
 
     // Prepare indices into the prediction array
     unsigned int sample_index = sample * input_->data.maps();
-    unsigned int class_index = sample_index;
-    unsigned int iou_index = sample_index + (classes_ * vertical_cells_ * horizontal_cells_);
-    unsigned int coords_index = iou_index + vertical_cells_ * horizontal_cells_ * boxes_per_cell_;
+    unsigned int class_index = sample_index + (vertical_cells_ * horizontal_cells_ * boxes_per_cell_ * 5);
+    unsigned int iou_index = sample_index;
+    unsigned int coords_index = sample_index;
 
     // Loop over all cells
     for (unsigned int vcell = 0; vcell < vertical_cells_; vcell++) {
@@ -153,8 +153,8 @@ void YOLODetectionLayer::FeedForward() {
         for (unsigned int b = 0; b < boxes_per_cell_; b++) {
 
           // Get predicted IOU
-          const datum iou = input_->data.data_ptr_const()[iou_index + cell_id * boxes_per_cell_ + b];
-          unsigned int box_coords_index = coords_index + 4 * (boxes_per_cell_ * cell_id + b);
+          const datum iou = input_->data.data_ptr_const()[iou_index + (cell_id * boxes_per_cell_ + b) * 5 + 4];
+          unsigned int box_coords_index = coords_index + 5 * (boxes_per_cell_ * cell_id + b);
           // Remove boxes where IOU is less than threshold, because IOU*score will be less as well
           if(iou > confidence_threshold_) {
             // Calculate in-image coordinates

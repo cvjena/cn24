@@ -153,8 +153,8 @@ int main(int argc, char **argv) {
         continue;
       }
 
-      Conv::JSON net_json = Conv::JSON::parse(net_input);
-      Conv::JSON nodes_json = net_json["net"]["nodes"];
+      Conv::JSON net_json = Conv::JSON::parse(net_input)["net"];
+      Conv::JSON nodes_json = net_json["nodes"];
 
       LOGINFO << "Processing " << nodes_json.size() << " nodes";
 
@@ -165,11 +165,28 @@ int main(int argc, char **argv) {
         if(node_json["layer"].is_object()) {
           std::string layer_type = node_json["layer"]["type"];
           Conv::JSON layer_json = node_json["layer"];
-          if(layer_type.compare("convolution") == 0) {
+          if(layer_type.compare("convolution") == 0 || layer_type.compare("yolo_output") == 0) {
             LOGINFO << "Processing layer " << node_json_iterator.key();
-            unsigned int kernel_width = layer_json["size"][0];
-            unsigned int kernel_height = layer_json["size"][1];
-            unsigned int kernel_count = layer_json["kernels"];
+            unsigned int kernel_width = 1;
+            unsigned int kernel_height = 1;
+            unsigned int kernel_count = 0;
+            if(layer_type.compare("convolution") == 0) {
+              kernel_width = layer_json["size"][0];
+              kernel_height = layer_json["size"][1];
+              kernel_count = layer_json["kernels"];
+            } else if(layer_type.compare("yolo_output") == 0) {
+              Conv::JSON yolo_config_json = net_json["yolo_configuration"];
+              try {
+                unsigned int boxes_per_cell = yolo_config_json["boxes_per_cell"];
+                unsigned int horizontal_cells = yolo_config_json["horizontal_cells"];
+                unsigned int vertical_cells = yolo_config_json["vertical_cells"];
+                unsigned int original_classes = yolo_config_json["original_classes"];
+                kernel_count = horizontal_cells * vertical_cells * (boxes_per_cell * 5 + original_classes);
+                LOGINFO << "Calculated output length of " << kernel_count;
+              } catch (const std::exception& ex) {
+                FATAL("Exception: " << ex.what() << ". Please check the yolo_configuration part of your JSON file and remember to insert the original_classes property");
+              }
+            }
             NamedTensorArray* array = new NamedTensorArray(node_json_iterator.key());
 
             Conv::Tensor* bias_tensor = new Conv::Tensor(1, kernel_count, 1, 1);
@@ -177,9 +194,9 @@ int main(int argc, char **argv) {
             input.read((char*) bias_tensor->data_ptr(), sizeof(Conv::datum) * kernel_count);
 
             Conv::Tensor* weight_tensor = new Conv::Tensor(kernel_count, kernel_width, kernel_height, input_maps);
-            if(layer_json.count("transpose") == 1 && layer_json["transpose"].is_number() && (unsigned int)(layer_json["transpose"]) == 1) {
+            if((layer_json.count("transpose") == 1 && layer_json["transpose"].is_number() && (unsigned int)(layer_json["transpose"]) == 1) || layer_type.compare("yolo_output") == 0) {
               if(kernel_width == 1) {
-                LOGINFO << "Transposing weights (simple)";
+                LOGINFO << "Transposing weights (simple) for " << layer_type;
                 Conv::Tensor *temp_tensor = new Conv::Tensor(input_maps, kernel_width, kernel_height, kernel_count);
                 input.read((char *) temp_tensor->data_ptr(),
                            sizeof(Conv::datum) * kernel_count * kernel_width * kernel_height * input_maps);
@@ -193,7 +210,7 @@ int main(int argc, char **argv) {
 
                 delete temp_tensor;
               } else {
-                LOGINFO << "Transposing weights (complex)";
+                LOGINFO << "Transposing weights (complex) for " << layer_type;
                 Conv::Tensor *temp_tensor = new Conv::Tensor(input_maps, kernel_width, kernel_height, kernel_count);
                 input.read((char *) temp_tensor->data_ptr(),
                            sizeof(Conv::datum) * kernel_count * kernel_width * kernel_height * input_maps);
@@ -219,8 +236,69 @@ int main(int argc, char **argv) {
                          sizeof(Conv::datum) * kernel_count * kernel_width * kernel_height * input_maps);
             }
 
-            array->tensors.push_back(weight_tensor);
-            array->tensors.push_back(bias_tensor);
+            // If this is a yolo output layer, we need to move the weights around to support CN24's arrangement of outputs
+            if(layer_type.compare("yolo_output") == 0) {
+              Conv::Tensor* box_weights = new Conv::Tensor, *box_biases = new Conv::Tensor, *class_weights = new Conv::Tensor, *class_biases = new Conv::Tensor;
+              Conv::JSON yolo_config_json = net_json["yolo_configuration"];
+              unsigned int boxes_per_cell = yolo_config_json["boxes_per_cell"];
+              unsigned int horizontal_cells = yolo_config_json["horizontal_cells"];
+              unsigned int vertical_cells = yolo_config_json["vertical_cells"];
+              unsigned int original_classes = yolo_config_json["original_classes"];
+
+              box_weights->Resize(horizontal_cells * vertical_cells * boxes_per_cell * 5, 1, 1, input_maps);
+              box_biases->Resize(horizontal_cells * vertical_cells * boxes_per_cell * 5, 1, 1, 1);
+              class_weights->Resize(horizontal_cells * vertical_cells * original_classes, 1, 1, input_maps);
+              class_biases->Resize(horizontal_cells * vertical_cells * original_classes, 1, 1, 1);
+
+              unsigned int iou_index = original_classes * vertical_cells * horizontal_cells;
+              unsigned int coords_index = iou_index + vertical_cells * horizontal_cells * boxes_per_cell;
+
+              // Loop over all cells
+              for (unsigned int vcell = 0; vcell < vertical_cells; vcell++) {
+                for (unsigned int hcell = 0; hcell < horizontal_cells; hcell++) {
+                  unsigned int cell_id = vcell * horizontal_cells + hcell;
+                  // Loop over all possible boxes
+                  for (unsigned int b = 0; b < boxes_per_cell; b++) {
+                    unsigned int box_coords_index = coords_index + 4 * (boxes_per_cell * cell_id + b);
+                    unsigned int box_iou_index = iou_index + cell_id * boxes_per_cell + b;
+                    // IoU weights
+                    Conv::Tensor::CopySample(*weight_tensor, box_iou_index, *box_weights, ((cell_id * boxes_per_cell + b) * 5) + 4);
+
+                    // IoU biases
+                    *(box_biases->data_ptr(0, 0, 0, ((cell_id * boxes_per_cell + b) * 5) + 4)) = bias_tensor->data_ptr_const()[box_iou_index];
+
+                    // Coord weights
+                    Conv::Tensor::CopySample(*weight_tensor, box_coords_index, *box_weights, ((cell_id * boxes_per_cell + b) * 5));
+                    Conv::Tensor::CopySample(*weight_tensor, box_coords_index + 1, *box_weights, ((cell_id * boxes_per_cell + b) * 5) + 1);
+                    Conv::Tensor::CopySample(*weight_tensor, box_coords_index + 2, *box_weights, ((cell_id * boxes_per_cell + b) * 5) + 2);
+                    Conv::Tensor::CopySample(*weight_tensor, box_coords_index + 3, *box_weights, ((cell_id * boxes_per_cell + b) * 5) + 3);
+
+                    // Coord biases
+                    *(box_biases->data_ptr(0, 0, 0, ((cell_id * boxes_per_cell + b) * 5))) = bias_tensor->data_ptr_const()[box_coords_index];
+                    *(box_biases->data_ptr(0, 0, 0, ((cell_id * boxes_per_cell + b) * 5) + 1)) = bias_tensor->data_ptr_const()[
+                        box_coords_index + 1];
+                    *(box_biases->data_ptr(0, 0, 0, ((cell_id * boxes_per_cell + b) * 5) + 2)) = bias_tensor->data_ptr_const()[
+                        box_coords_index + 2];
+                    *(box_biases->data_ptr(0, 0, 0, ((cell_id * boxes_per_cell + b) * 5) + 3)) = bias_tensor->data_ptr_const()[
+                        box_coords_index + 3];
+
+                  }
+                  for (unsigned int c = 0; c < original_classes; c++) {
+                    // Class weights
+                    Conv::Tensor::CopySample(*weight_tensor, (cell_id * original_classes) + c, *class_weights, (cell_id * original_classes) + c);
+                    // Class biases
+                    *(class_biases->data_ptr(0,0,0,(cell_id * original_classes) + c)) = bias_tensor->data_ptr_const()[(cell_id * original_classes) + c];
+                  }
+                }
+              }
+              array->tensors.push_back(box_weights);
+              array->tensors.push_back(box_biases);
+              array->tensors.push_back(class_weights);
+              array->tensors.push_back(class_biases);
+            } else {
+              array->tensors.push_back(weight_tensor);
+              array->tensors.push_back(bias_tensor);
+            }
 
             tensors.push_back(array);
             input_maps = kernel_count;
