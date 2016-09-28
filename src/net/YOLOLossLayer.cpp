@@ -109,9 +109,9 @@ void YOLOLossLayer::FeedForward() {
 
     // Prepare indices into the prediction array
     unsigned int sample_index = (unsigned int)(sample * first_->data.maps());
-    unsigned int class_index = sample_index;
-    unsigned int confidence_index = sample_index + (classes_ * vertical_cells_ * horizontal_cells_);
-    unsigned int coords_index = confidence_index + vertical_cells_ * horizontal_cells_ * boxes_per_cell_;
+    unsigned int class_index = sample_index + (vertical_cells_ * horizontal_cells_ * boxes_per_cell_ * 5);
+    unsigned int confidence_index = sample_index;
+    unsigned int coords_index = sample_index;
 
     // Loop over all cells
     for (unsigned int vcell = 0; vcell < vertical_cells_; vcell++) {
@@ -140,7 +140,7 @@ void YOLOLossLayer::FeedForward() {
         // Loop over all possible boxes to find "responsible" box
         if(found_box) {
           for (unsigned int b = 0; b < boxes_per_cell_; b++) {
-            unsigned int box_coords_index = coords_index + 4 * (boxes_per_cell_ * cell_id + b);
+            unsigned int box_coords_index = coords_index + 5 * (boxes_per_cell_ * cell_id + b);
 
             // Calculate in-image coordinates
             const datum x = box_xmin + (first_->data.data_ptr_const()[box_coords_index] / (datum) horizontal_cells_);
@@ -174,12 +174,12 @@ void YOLOLossLayer::FeedForward() {
         // Loop over all boxes to calculate loss
         for (unsigned int b = 0; b < boxes_per_cell_; b++) {
           // Box predicted iou is needed for both cases
-          unsigned int box_confidence_index = confidence_index + (boxes_per_cell_ * cell_id) + b;
+          unsigned int box_confidence_index = confidence_index + (cell_id * boxes_per_cell_ + b) * 5 + 4;
           const datum box_confidence = first_->data.data_ptr_const()[box_confidence_index];
 
           if(((int)b) == responsible_box) {
             // Box b is "responsible" for the detection
-            unsigned int box_coords_index = coords_index + 4 * (boxes_per_cell_ * cell_id + b);
+            unsigned int box_coords_index = coords_index + 5 * (boxes_per_cell_ * cell_id + b);
 
             // Calculate in-image coordinates
             const datum x = box_xmin + (first_->data.data_ptr_const()[box_coords_index] / (datum) horizontal_cells_);
