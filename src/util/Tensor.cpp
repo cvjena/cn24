@@ -172,22 +172,25 @@ void Tensor::Extend(const std::size_t samples) {
     return;
   }
 
+#ifdef BUILD_OPENCL
+  MoveToCPU(true);
+#endif
+
   // Make backup
   Tensor temp_tensor;
   temp_tensor.Resize(*this);
-  Tensor::Copy(*this, temp_tensor);
+  if(!Tensor::Copy(*this, temp_tensor)) {
+    FATAL("Failed to backup Tensor before extension!")
+  }
 
   Resize(samples, width_, height_, maps_);
   Clear();
 
-#ifdef BUILD_OPENCL
-  MoveToCPU(true);
-  temp_tensor.MoveToCPU();
-#endif
-
   // Restore data
   for(unsigned int s = 0; s < temp_tensor.samples(); s++) {
-    Tensor::CopySample(temp_tensor, s, *this, s);
+    if(!Tensor::CopySample(temp_tensor, s, *this, s)) {
+      FATAL("Failed to restore Tensor after extension!");
+    }
   }
 }
 void Tensor::Resize ( const Tensor& tensor ) {
@@ -364,7 +367,7 @@ bool Tensor::Copy (const Tensor& source, Tensor& target) {
     return true;
   } else {
 #endif
-    std::memcpy((void*)target.data_ptr(), (const void*)target.data_ptr_const(), source.elements() * sizeof(datum));
+    std::memcpy((void*)target.data_ptr(), (const void*)source.data_ptr_const(), source.elements() * sizeof(datum));
     return true; // std::memcpy does not return an error, maybe use try/catch?
 #ifdef BUILD_OPENCL
   }
