@@ -167,7 +167,7 @@ void YOLODetectionLayer::FeedForward() {
             for (unsigned int c = 0; c < classes_; c++) {
 
               // Remove classes where IOU*score is less than threshold
-              datum class_prob = input_->data.data_ptr_const()[class_index + cell_id * classes_ + c] * iou;
+              datum class_prob = input_->data.data_ptr_const()[class_index + (horizontal_cells_ * vertical_cells_ * c) + cell_id] * iou;
               if(class_prob >= confidence_threshold_) {
                 // Add bounding box to output
                 BoundingBox box(x,y,w,h);

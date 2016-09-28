@@ -162,7 +162,7 @@ void YOLOLossLayer::FeedForward() {
 
           // Loop over all classes to assign loss for each
           for (unsigned int c = 0; c < classes_; c++) {
-            unsigned int cell_class_index = class_index + cell_id * classes_ + c;
+            unsigned int cell_class_index = class_index + (horizontal_cells_ * vertical_cells_ * c) + cell_id;
             const datum predicted_class_prob = first_->data.data_ptr_const()[cell_class_index];
 
             const datum class_delta = predicted_class_prob - (truth_box->c == c ? (datum)1.0 : (datum)0.0);

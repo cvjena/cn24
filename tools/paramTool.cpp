@@ -285,9 +285,9 @@ int main(int argc, char **argv) {
                   }
                   for (unsigned int c = 0; c < original_classes; c++) {
                     // Class weights
-                    Conv::Tensor::CopySample(*weight_tensor, (cell_id * original_classes) + c, *class_weights, (cell_id * original_classes) + c);
+                    Conv::Tensor::CopySample(*weight_tensor, (cell_id * original_classes) + c, *class_weights, (horizontal_cells * vertical_cells * c) + cell_id);
                     // Class biases
-                    *(class_biases->data_ptr(0,0,0,(cell_id * original_classes) + c)) = bias_tensor->data_ptr_const()[(cell_id * original_classes) + c];
+                    *(class_biases->data_ptr(0,0,0,(horizontal_cells * vertical_cells * c) + cell_id)) = bias_tensor->data_ptr_const()[(cell_id * original_classes) + c];
                   }
                 }
               }
