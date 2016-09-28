@@ -178,6 +178,7 @@ void Tensor::Extend(const std::size_t samples) {
   Tensor::Copy(*this, temp_tensor);
 
   Resize(samples, width_, height_, maps_);
+  Clear();
 
 #ifdef BUILD_OPENCL
   MoveToCPU(true);
