@@ -332,7 +332,7 @@ void TensorMath::COL2IM(Tensor& source, const int source_width, const int source
           if(iy >= 0 && iy < source_height) {
             for(int ox = 0; ox < target_width; ox++) {
               int ix = ox * stride_width - pad_width + kx;
-              if(ix >= 0 && iy < source_width) {
+              if(ix >= 0 && ix < source_width) {
                 source_ptr[(imap * source_height + iy) * source_width + ix] +=
                   target_ptr[(sample * target_height + oy) * target_width + ox];
               } 
