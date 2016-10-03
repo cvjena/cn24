@@ -151,6 +151,7 @@ void StatAggregator::SetCurrentExperiment(std::string current_experiment) {
 }
 
 void StatAggregator::SetCurrentDataset(std::string current_dataset) {
+  hardcoded_stats_.current_dataset = current_dataset;
    // Only change dataset name when not recording and already initialized
   if(state_!=STOPPED)
     return;

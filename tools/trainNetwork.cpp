@@ -137,6 +137,7 @@ int main (int argc, char* argv[]) {
   testing_trainer = &trainer;
 
   Conv::System::stat_aggregator->Initialize();
+  Conv::System::stat_aggregator->SetCurrentDataset(initial_dataset->GetName());
   LOGINFO << "Current training settings: " << factory->GetHyperparameters().dump();
 
   if (FROM_SCRIPT) {
