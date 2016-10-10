@@ -29,49 +29,38 @@ DatasetInputLayer::DatasetInputLayer (Dataset* initial_dataset,
                                       const datum loss_sampling_p,
                                       const unsigned int seed) :
   Layer(JSON::object()),
-  active_dataset_(initial_dataset), batch_size_ (batch_size),
+  batch_size_ (batch_size),
   loss_sampling_p_ (loss_sampling_p),
   generator_ (seed), dist_ (0.0, 1.0) {
   LOGDEBUG << "Instance created.";
 
-  label_maps_ = active_dataset_->GetLabelMaps();
-  input_maps_ = active_dataset_->GetInputMaps();
+  label_maps_ = initial_dataset->GetLabelMaps();
+  input_maps_ = initial_dataset->GetInputMaps();
 
   if (seed == 0) {
     LOGWARN << "Random seed is zero";
   }
 
-  if(active_dataset_->GetMethod() == FCN && active_dataset_->GetTask() == SEMANTIC_SEGMENTATION) {
+  if(initial_dataset->GetMethod() == FCN && initial_dataset->GetTask() == SEMANTIC_SEGMENTATION) {
     LOGDEBUG << "Using loss sampling probability: " << loss_sampling_p_;
   } else {
     loss_sampling_p_ = 1.0;
   }
 
-  SetActiveDataset(active_dataset_);
+  AddDataset(initial_dataset, 1);
+
+  SetActiveTestingDataset(initial_dataset);
 }
 
-void DatasetInputLayer::SetActiveDataset(Dataset *dataset) {
-  active_dataset_ = dataset;
-  LOGDEBUG << "Switching to dataset " << dataset->GetName();
-  elements_training_ = dataset->GetTrainingSamples();
+void DatasetInputLayer::SetActiveTestingDataset(Dataset *dataset) {
+  testing_dataset_ = dataset;
+  LOGDEBUG << "Switching to testing dataset " << dataset->GetName();
   elements_testing_ = dataset->GetTestingSamples();
-  elements_total_ = elements_training_ + elements_testing_;
 
-  LOGDEBUG << "Total samples: " << elements_total_;
-
-  // Generate random permutation of the samples
-  // First, we need an array of ascending numbers
-  LOGDEBUG << "Generating random permutation..." << std::flush;
-  perm_.clear();
-  for (unsigned int i = 0; i < elements_training_; i++) {
-    perm_.push_back (i);
-  }
-
-  RedoPermutation();
   current_element_testing_ = 0;
   current_element_ = 0;
 
-  System::stat_aggregator->SetCurrentDataset(dataset->GetName());
+  System::stat_aggregator->SetCurrentTestingDataset(dataset->GetName());
 }
 
 bool DatasetInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inputs,

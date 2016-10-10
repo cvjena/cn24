@@ -41,7 +41,7 @@ public:
       const unsigned int seed = 0
 		    );
 
-  void SetActiveDataset(Dataset* dataset);
+  void SetActiveTestingDataset(Dataset* dataset);
   Dataset* GetActiveDataset() const { return active_dataset_; }
 
   // Implementations for Layer
@@ -72,8 +72,13 @@ public:
 	std::string GetLayerDescription() { return "Dataset Input Layer"; }
 	void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers);
   bool IsOpenCLAware();
+
+  void AddDataset(Dataset* dataset, const datum weight);
+  void SetWeight(Dataset* dataset, const datum weight);
 private:
-  Dataset* active_dataset_;
+  std::vector<Dataset*> datasets_;
+  std::vector<datum> weights_;
+  Dataset* testing_dataset_ = nullptr;
 
   // Outputs
   CombinedTensor* data_output_ = nullptr;
@@ -87,8 +92,7 @@ private:
   
   unsigned int elements_training_ = 0;
   unsigned int elements_testing_ = 0;
-  unsigned int elements_total_ = 0;
-  
+
   bool testing_ = false;
 
   datum loss_sampling_p_ = 1.0;
