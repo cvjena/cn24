@@ -76,7 +76,7 @@ void CSVStatSink::SetCurrentExperiment(std::string current_experiment) {
     csv_stream_ = nullptr;
   }
   // Write header for hardcoded stats
-  (*csv_stream_) << "IsTraining,Epoch,Iterations,SecondsElapsed,Dataset,";
+  (*csv_stream_) << "IsTraining,Epoch,Iterations,SecondsElapsed,TestingDataset,";
   
   // Write header for non-hardcoded stats
   for (unsigned int s = 0; s < stat_descriptors_.size(); s++) {
