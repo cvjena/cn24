@@ -27,8 +27,10 @@ inline std::string methodName (const std::string& prettyFunction) {
     colons = prettyFunction.find ("(");
   size_t begin = prettyFunction.substr (0, colons).rfind (" ") + 1;
   size_t mid = prettyFunction.find ("Conv::");
-  if (mid != std::string::npos)
-    begin = mid + 6;
+  if (mid != std::string::npos) {
+    if(mid < prettyFunction.find("("))
+      begin = mid + 6;
+  }
 
   size_t end = prettyFunction.rfind ("(") - begin;
 
