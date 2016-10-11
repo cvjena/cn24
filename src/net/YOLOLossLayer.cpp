@@ -105,6 +105,12 @@ void YOLOLossLayer::FeedForward() {
   current_loss_ = 0;
 
   for (unsigned int sample = 0; sample < first_->data.samples(); sample++ ) {
+    datum sample_weight = *(third_->data.data_ptr(0, 0, 0, sample));
+    if(sample_weight == 0) {
+      continue;
+    } else if(sample_weight != 1) {
+      FATAL("Unsupported sample weight: " << sample_weight);
+    }
     std::vector<BoundingBox>* truth_boxes = (std::vector<BoundingBox>*)second_->metadata[sample];
 
     // Prepare indices into the prediction array

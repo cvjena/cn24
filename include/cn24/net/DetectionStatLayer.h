@@ -81,6 +81,7 @@ public:
 protected:
   CombinedTensor* first_ = nullptr;
   CombinedTensor* second_ = nullptr;
+  CombinedTensor* third_ = nullptr;
 
   ClassManager* class_manager_ = nullptr;
   unsigned int last_seen_max_id_ = 0;

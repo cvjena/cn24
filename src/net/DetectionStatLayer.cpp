@@ -201,14 +201,16 @@ bool DetectionStatLayer::CreateOutputs ( const std::vector< CombinedTensor* >& i
 bool DetectionStatLayer::Connect ( const std::vector< CombinedTensor* >& inputs, const std::vector< CombinedTensor* >& outputs, const NetStatus* net ) {
   UNREFERENCED_PARAMETER(net);
   // Needs exactly three inputs to calculate the stat
-  if ( inputs.size() < 2 )
+  if ( inputs.size() < 3 )
     return false;
 
   // Also, the two inputs have to have the same number of samples and elements!
   // We ignore the shape for now...
   CombinedTensor* first = inputs[0];
   CombinedTensor* second = inputs[1];
+  CombinedTensor* third = inputs[2];
   bool valid = first != nullptr && second != nullptr &&
+               third != nullptr &&
                first->data.samples() == second->data.samples() &&
                first->metadata != nullptr &&
                second->metadata != nullptr &&
@@ -217,6 +219,7 @@ bool DetectionStatLayer::Connect ( const std::vector< CombinedTensor* >& inputs,
   if ( valid ) {
     first_ = first;
     second_ = second;
+    third_ = third;
   }
 
   return valid;
@@ -229,6 +232,12 @@ void DetectionStatLayer::FeedForward() {
   UpdateClassCount();
 
   for (unsigned int sample = 0; sample < first_->data.samples(); sample++) {
+    datum sample_weight = *(third_->data.data_ptr(0, 0, 0, sample));
+    if(sample_weight == 0) {
+      continue;
+    } else if(sample_weight != 1) {
+      FATAL("Unsupported sample weight: " << sample_weight);
+    }
     std::vector<BoundingBox> *sample_detected_boxes = (std::vector<BoundingBox> *) first_->metadata[sample];
     std::vector<BoundingBox> *sample_truth_boxes = (std::vector<BoundingBox> *) second_->metadata[sample];
 
