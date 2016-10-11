@@ -150,15 +150,15 @@ void StatAggregator::SetCurrentExperiment(std::string current_experiment) {
   }
 }
 
-void StatAggregator::SetCurrentDataset(std::string current_dataset) {
-  hardcoded_stats_.current_dataset = current_dataset;
+void StatAggregator::SetCurrentTestingDataset(std::string current_testing_dataset) {
+  hardcoded_stats_.current_testing_dataset = current_testing_dataset;
    // Only change dataset name when not recording and already initialized
   if(state_!=STOPPED)
     return;
 
   // Call all StatSinks' SetCurrentExperiment method
   for(unsigned int s = 0; s < stat_sink_count_; s++) {
-    stat_sinks_[s]->SetCurrentDataset(current_dataset);
+    stat_sinks_[s]->SetCurrentTestingDataset(current_testing_dataset);
   }
 }
   

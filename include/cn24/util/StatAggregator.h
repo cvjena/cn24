@@ -37,7 +37,7 @@ struct HardcodedStats {
   unsigned long epoch = 0UL;
   bool is_training = false;
   std::string current_experiment = "unnamed";
-  std::string current_dataset = "unnamed";
+  std::string current_testing_dataset = "unnamed";
   
   void Reset() {
     seconds_elapsed = 0.0;
@@ -84,7 +84,7 @@ public:
   void Snapshot();
   
   void SetCurrentExperiment(std::string current_experiment);
-  void SetCurrentDataset(std::string current_dataset);
+  void SetCurrentTestingDataset(std::string current_testing_dataset);
 private:
   // State
   enum StatAggregatorState {

@@ -41,8 +41,8 @@ public:
       const unsigned int seed = 0
 		    );
 
-  void SetActiveDataset(Dataset* dataset);
-  Dataset* GetActiveDataset() const { return active_dataset_; }
+  void SetActiveTestingDataset(Dataset* dataset);
+  Dataset* GetActiveTestingDataset() const { return testing_dataset_; }
 
   // Implementations for Layer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs,
@@ -65,15 +65,22 @@ public:
   inline datum GetLossSamplingProbability() {
     return loss_sampling_p_;
   }
-  inline unsigned int current_element() {
-    return current_element_;
-  }
 
 	std::string GetLayerDescription() { return "Dataset Input Layer"; }
 	void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers);
   bool IsOpenCLAware();
+
+  void AddDataset(Dataset* dataset, const datum weight);
+  void SetWeight(Dataset* dataset, const datum weight);
+
+  const std::vector<Dataset*>& GetDatasets() const { return datasets_; }
+  const std::vector<datum>& GetWeights() const { return weights_; }
 private:
-  Dataset* active_dataset_;
+  void UpdateDatasets();
+  std::vector<Dataset*> datasets_;
+  std::vector<datum> weights_;
+  datum weight_sum_ = 0;
+  Dataset* testing_dataset_ = nullptr;
 
   // Outputs
   CombinedTensor* data_output_ = nullptr;
@@ -87,8 +94,7 @@ private:
   
   unsigned int elements_training_ = 0;
   unsigned int elements_testing_ = 0;
-  unsigned int elements_total_ = 0;
-  
+
   bool testing_ = false;
 
   datum loss_sampling_p_ = 1.0;
@@ -97,17 +103,8 @@ private:
   std::mt19937 generator_;
   std::uniform_real_distribution<datum> dist_;
 
-  // Array containing a random permutation of the training samples
-  std::vector<unsigned int> perm_;
-  unsigned int current_element_ = 0;
-
   unsigned int current_element_testing_ = 0;
   
-  /**
-   * @brief Clears the permutation vector and generates a new one.
-   */
-  void RedoPermutation();
-
   // Metadata buffer
   DatasetMetadataPointer* metadata_buffer_ = nullptr;
 };
