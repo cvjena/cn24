@@ -422,7 +422,7 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
       LOGINFO << "Active testing dataset: " << input_layer->GetActiveTestingDataset()->GetName();
     }
   }
-  else if (command.compare(0,9,"dsselectt ") == 0) {
+  else if (command.compare(0,10,"dsselectt ") == 0) {
     unsigned int id = 0;
     Conv::ParseCountIfPossible(command, "id", id);
     Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
@@ -431,6 +431,25 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
         Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
         if (input_layer != nullptr) {
           input_layer->SetActiveTestingDataset(input_layer->GetDatasets()[id]);
+        } else {
+          LOGERROR << "Cannot find dataset input layer";
+        }
+      } else {
+        LOGERROR << "Dataset " << id << " does not exist!";
+      }
+    }
+  }
+  else if (command.compare(0,12,"dssetweight ") == 0) {
+    unsigned int id = 0;
+    Conv::datum weight = 0;
+    Conv::ParseCountIfPossible(command, "id", id);
+    Conv::ParseDatumParamIfPossible(command, "weight", weight);
+    Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
+    if(input_layer != nullptr) {
+      if (id < input_layer->GetDatasets().size()) {
+        Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
+        if (input_layer != nullptr) {
+          input_layer->SetWeight(input_layer->GetDatasets()[id], weight);
         } else {
           LOGERROR << "Cannot find dataset input layer";
         }
