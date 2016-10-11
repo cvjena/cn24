@@ -72,6 +72,9 @@ public:
 
   void AddDataset(Dataset* dataset, const datum weight);
   void SetWeight(Dataset* dataset, const datum weight);
+
+  const std::vector<Dataset*>& GetDatasets() const { return datasets_; }
+  const std::vector<datum>& GetWeights() const { return weights_; }
 private:
   void UpdateDatasets();
   std::vector<Dataset*> datasets_;
