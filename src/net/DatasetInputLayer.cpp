@@ -216,11 +216,11 @@ void DatasetInputLayer::SelectAndLoadSamples() {
       std::uniform_real_distribution<datum> dist(0.0, weight_sum_);
       datum selection = dist(generator_);
       for(unsigned int i=0; i < datasets_.size(); i++) {
-        if(selection < weights_[i]) {
+        if(selection <= weights_[i]) {
           dataset = datasets_[i];
           break;
         }
-        weight_sum_ -= weights_[i];
+        selection -= weights_[i];
       }
       if(dataset == nullptr) {
         FATAL("This can never happen. Dataset is null.");
