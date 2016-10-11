@@ -206,7 +206,7 @@ void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::
 }
 
 
-bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*>& datasets, Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, std::string& command) {
+bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*>& datasets_o, Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, std::string& command) {
   if (command.compare ("q") == 0 || command.compare ("quit") == 0) {
     return false;
   } else if (command.compare (0, 5, "train") == 0) {
@@ -400,35 +400,43 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
     }
 
     Conv::Dataset* dataset = Conv::JSONDatasetFactory::ConstructDataset(Conv::JSON::parse(dataset_config_file), &class_manager);
-    datasets.push_back(dataset);
+        Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
+    if(input_layer != nullptr) {
+      LOGINFO << "Active testing dataset: " << input_layer->GetActiveTestingDataset()->GetName();
+      input_layer->AddDataset(dataset, 1);
 
-    LOGINFO << "Currently loaded datasets:";
-    for(unsigned int d = 0; d < datasets.size(); d++) {
-      LOGINFO << "  Dataset " << d << ": " << datasets[d]->GetName();
+      LOGINFO << "Currently loaded datasets:";
+      for(unsigned int d = 0; d < input_layer->GetDatasets().size(); d++) {
+        LOGINFO << "  Dataset " << d << ": " << input_layer->GetDatasets()[d]->GetName();
+      }
     }
   }
   else if (command.compare(0,6, "dslist") == 0) {
     LOGINFO << "Currently loaded datasets:";
-    for (unsigned int d = 0; d < datasets.size(); d++) {
-      LOGINFO << "  Dataset " << d << ": " << datasets[d]->GetName();
-    }
     Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
     if(input_layer != nullptr) {
+      for (unsigned int d = 0; d < input_layer->GetDatasets().size(); d++) {
+        LOGINFO << "  Dataset " << d << ": " << input_layer->GetDatasets()[d]->GetName();
+        LOGINFO << "    Weight: " << input_layer->GetWeights()[d];
+      }
       LOGINFO << "Active testing dataset: " << input_layer->GetActiveTestingDataset()->GetName();
     }
   }
-  else if (command.compare(0,9,"dsselect ") == 0) {
+  else if (command.compare(0,9,"dsselectt ") == 0) {
     unsigned int id = 0;
     Conv::ParseCountIfPossible(command, "id", id);
-    if(id < datasets.size()) {
-      Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
-      if (input_layer != nullptr) {
-        input_layer->SetActiveTestingDataset(datasets[id]);
+    Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
+    if(input_layer != nullptr) {
+      if (id < input_layer->GetDatasets().size()) {
+        Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
+        if (input_layer != nullptr) {
+          input_layer->SetActiveTestingDataset(input_layer->GetDatasets()[id]);
+        } else {
+          LOGERROR << "Cannot find dataset input layer";
+        }
       } else {
-        LOGERROR << "Cannot find dataset input layer";
+        LOGERROR << "Dataset " << id << " does not exist!";
       }
-    } else {
-      LOGERROR << "Dataset " << id << " does not exist!";
     }
   }
 	else {
