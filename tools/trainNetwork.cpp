@@ -137,7 +137,7 @@ int main (int argc, char* argv[]) {
   testing_trainer = &trainer;
 
   Conv::System::stat_aggregator->Initialize();
-  Conv::System::stat_aggregator->SetCurrentDataset(initial_dataset->GetName());
+  Conv::System::stat_aggregator->SetCurrentTestingDataset(initial_dataset->GetName());
   LOGINFO << "Current training settings: " << factory->GetHyperparameters().dump();
 
   if (FROM_SCRIPT) {
@@ -414,7 +414,7 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
     }
     Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
     if(input_layer != nullptr) {
-      LOGINFO << "Active dataset: " << input_layer->GetActiveDataset()->GetName();
+      LOGINFO << "Active testing dataset: " << input_layer->GetActiveTestingDataset()->GetName();
     }
   }
   else if (command.compare(0,9,"dsselect ") == 0) {
@@ -423,7 +423,7 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
     if(id < datasets.size()) {
       Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
       if (input_layer != nullptr) {
-        input_layer->SetActiveDataset(datasets[id]);
+        input_layer->SetActiveTestingDataset(datasets[id]);
       } else {
         LOGERROR << "Cannot find dataset input layer";
       }

@@ -58,7 +58,6 @@ void DatasetInputLayer::SetActiveTestingDataset(Dataset *dataset) {
   elements_testing_ = dataset->GetTestingSamples();
 
   current_element_testing_ = 0;
-  current_element_ = 0;
 
   System::stat_aggregator->SetCurrentTestingDataset(dataset->GetName());
 }
@@ -70,32 +69,32 @@ bool DatasetInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inp
     return false;
   }
 
-  if(active_dataset_->GetTask() == SEMANTIC_SEGMENTATION) {
-    if (active_dataset_->GetMethod() == FCN) {
+  if(testing_dataset_->GetTask() == SEMANTIC_SEGMENTATION) {
+    if (testing_dataset_->GetMethod() == FCN) {
       CombinedTensor *data_output =
-          new CombinedTensor(batch_size_, active_dataset_->GetWidth(),
-                             active_dataset_->GetHeight(), input_maps_);
+          new CombinedTensor(batch_size_, testing_dataset_->GetWidth(),
+                             testing_dataset_->GetHeight(), input_maps_);
 
       CombinedTensor *label_output =
-          new CombinedTensor(batch_size_, active_dataset_->GetWidth(),
-                             active_dataset_->GetHeight(), label_maps_);
+          new CombinedTensor(batch_size_, testing_dataset_->GetWidth(),
+                             testing_dataset_->GetHeight(), label_maps_);
 
       CombinedTensor *helper_output =
-          new CombinedTensor(batch_size_, active_dataset_->GetWidth(),
-                             active_dataset_->GetHeight(), 2);
+          new CombinedTensor(batch_size_, testing_dataset_->GetWidth(),
+                             testing_dataset_->GetHeight(), 2);
 
       CombinedTensor *localized_error_output =
-          new CombinedTensor(batch_size_, active_dataset_->GetWidth(),
-                             active_dataset_->GetHeight(), 1);
+          new CombinedTensor(batch_size_, testing_dataset_->GetWidth(),
+                             testing_dataset_->GetHeight(), 1);
 
       outputs.push_back(data_output);
       outputs.push_back(label_output);
       outputs.push_back(helper_output);
       outputs.push_back(localized_error_output);
-    } else if (active_dataset_->GetMethod() == PATCH) {
+    } else if (testing_dataset_->GetMethod() == PATCH) {
       CombinedTensor *data_output =
-          new CombinedTensor(batch_size_, active_dataset_->GetWidth(),
-                             active_dataset_->GetHeight(), input_maps_);
+          new CombinedTensor(batch_size_, testing_dataset_->GetWidth(),
+                             testing_dataset_->GetHeight(), input_maps_);
 
       CombinedTensor *label_output =
           new CombinedTensor(batch_size_, 1,
@@ -114,10 +113,10 @@ bool DatasetInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inp
       outputs.push_back(helper_output);
       outputs.push_back(localized_error_output);
     }
-  } else if (active_dataset_->GetTask() == CLASSIFICATION) {
+  } else if (testing_dataset_->GetTask() == CLASSIFICATION) {
     CombinedTensor *data_output =
-        new CombinedTensor(batch_size_, active_dataset_->GetWidth(),
-                           active_dataset_->GetHeight(), input_maps_);
+        new CombinedTensor(batch_size_, testing_dataset_->GetWidth(),
+                           testing_dataset_->GetHeight(), input_maps_);
 
     CombinedTensor *label_output =
         new CombinedTensor(batch_size_, 1,
@@ -135,10 +134,10 @@ bool DatasetInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inp
     outputs.push_back(label_output);
     outputs.push_back(helper_output);
     outputs.push_back(localized_error_output);
-  } else if(active_dataset_->GetTask() == DETECTION) {
+  } else if(testing_dataset_->GetTask() == DETECTION) {
     CombinedTensor *data_output =
-        new CombinedTensor(batch_size_, active_dataset_->GetWidth(),
-                           active_dataset_->GetHeight(), input_maps_);
+        new CombinedTensor(batch_size_, testing_dataset_->GetWidth(),
+                           testing_dataset_->GetHeight(), input_maps_);
 
     CombinedTensor *label_output =
         new CombinedTensor(batch_size_);
@@ -182,7 +181,7 @@ bool DatasetInputLayer::Connect (const std::vector< CombinedTensor* >& inputs,
     label_output_ = label_output;
     helper_output_ = helper_output;
     localized_error_output_ = localized_error_output;
-    if(active_dataset_->GetTask() == DETECTION)
+    if(testing_dataset_->GetTask() == DETECTION)
       metadata_buffer_ = label_output_->metadata;
   }
 
@@ -195,7 +194,32 @@ void DatasetInputLayer::SelectAndLoadSamples() {
   label_output_->data.MoveToCPU (true);
   localized_error_output_->data.MoveToCPU (true);
 #endif
+  for(unsigned int sample = 0; sample < batch_size_; sample++) {
+    unsigned int selected_element = 0;
+    bool force_no_weight = false;
+    Dataset* dataset = nullptr;
 
+    if(testing_) {
+      // No need to pick a dataset
+      if(current_element_testing_ >= elements_testing_) {
+        // Ignore this and further samples to avoid double testing some
+        force_no_weight = true;
+        selected_element = 0;
+      } else {
+        // Select the next testing element
+        selected_element = current_element_testing_;
+        current_element_testing_++;
+      }
+      dataset = testing_dataset_;
+    } else {
+      // Pick a dataset
+      // TODO dataset = ...
+      std::uniform_int_distribution<unsigned int> element_dist(0, dataset->GetTrainingSamples() - 1);
+      selected_element = element_dist(generator_);
+    }
+
+  }
+  /*
   for (std::size_t sample = 0; sample < batch_size_; sample++) {
     unsigned int selected_element = 0;
     bool force_no_weight = false;
@@ -229,7 +253,7 @@ void DatasetInputLayer::SelectAndLoadSamples() {
     bool success;
 
     if (testing_)
-      success = active_dataset_->GetTestingSample (data_output_->data, label_output_->data, helper_output_->data, localized_error_output_->data, sample, selected_element);
+      success = testing_dataset->GetTestingSample (data_output_->data, label_output_->data, helper_output_->data, localized_error_output_->data, sample, selected_element);
     else
       success = active_dataset_->GetTrainingSample (data_output_->data, label_output_->data, helper_output_->data, localized_error_output_->data, sample, selected_element);
 
@@ -269,7 +293,7 @@ void DatasetInputLayer::SelectAndLoadSamples() {
     if (!success) {
       FATAL ("Cannot load metadata from Dataset!");
     }
-  }
+  }*/
 }
 
 void DatasetInputLayer::FeedForward() {
@@ -285,24 +309,19 @@ unsigned int DatasetInputLayer::GetBatchSize() {
 }
 
 unsigned int DatasetInputLayer::GetLabelWidth() {
-  return (active_dataset_->GetMethod() == PATCH || active_dataset_->GetTask() == CLASSIFICATION || active_dataset_->GetTask() == DETECTION) ? 1 : active_dataset_->GetWidth();
+  return (testing_dataset_->GetMethod() == PATCH || testing_dataset_->GetTask() == CLASSIFICATION || testing_dataset_->GetTask() == DETECTION) ? 1 : testing_dataset_->GetWidth();
 }
 
 unsigned int DatasetInputLayer::GetLabelHeight() {
-  return (active_dataset_->GetMethod() == PATCH || active_dataset_->GetTask() == CLASSIFICATION || active_dataset_->GetTask() == DETECTION) ? 1 : active_dataset_->GetHeight();
+  return (testing_dataset_->GetMethod() == PATCH || testing_dataset_->GetTask() == CLASSIFICATION || testing_dataset_->GetTask() == DETECTION) ? 1 : testing_dataset_->GetHeight();
 }
 
 unsigned int DatasetInputLayer::GetSamplesInTestingSet() {
-  return active_dataset_->GetTestingSamples();
+  return testing_dataset_->GetTestingSamples();
 }
 
 unsigned int DatasetInputLayer::GetSamplesInTrainingSet() {
-  return active_dataset_->GetTrainingSamples();
-}
-
-void DatasetInputLayer::RedoPermutation() {
-  // Shuffle the array
-  std::shuffle (perm_.begin(), perm_.end(), generator_);
+  return testing_dataset_->GetTrainingSamples();
 }
 
 void DatasetInputLayer::SetTestingMode (bool testing) {
@@ -343,5 +362,37 @@ bool DatasetInputLayer::IsOpenCLAware() {
 #endif
 }
 
+void DatasetInputLayer::AddDataset(Dataset *dataset, const datum weight) {
+  datasets_.push_back(dataset);
+  weights_.push_back(weight);
+  UpdateDatasets();
+}
+
+void DatasetInputLayer::SetWeight(Dataset *dataset, const datum weight) {
+  // Find dataset
+  bool found=false;
+  for(unsigned int i=0; i < datasets_.size(); i++) {
+    if(datasets_[i] == dataset) {
+      weights_[i] = weight;
+      found=true;
+    }
+  }
+
+  if(!found) {
+    FATAL("Could not find dataset \"" << dataset->GetName() << "\"");
+  } else {
+    UpdateDatasets();
+  }
+}
+
+void DatasetInputLayer::UpdateDatasets() {
+  // Calculate training elements
+  elements_training_ = 0;
+  weight_sum_ = 0;
+  for(unsigned int i=0; i < datasets_.size(); i++) {
+    elements_training_ += datasets_[i]->GetTrainingSamples();
+    weight_sum_ += weights_[i];
+  }
+}
 
 }

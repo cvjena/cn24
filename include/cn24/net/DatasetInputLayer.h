@@ -42,7 +42,7 @@ public:
 		    );
 
   void SetActiveTestingDataset(Dataset* dataset);
-  Dataset* GetActiveDataset() const { return active_dataset_; }
+  Dataset* GetActiveTestingDataset() const { return testing_dataset_; }
 
   // Implementations for Layer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs,
@@ -65,9 +65,6 @@ public:
   inline datum GetLossSamplingProbability() {
     return loss_sampling_p_;
   }
-  inline unsigned int current_element() {
-    return current_element_;
-  }
 
 	std::string GetLayerDescription() { return "Dataset Input Layer"; }
 	void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers);
@@ -76,8 +73,10 @@ public:
   void AddDataset(Dataset* dataset, const datum weight);
   void SetWeight(Dataset* dataset, const datum weight);
 private:
+  void UpdateDatasets();
   std::vector<Dataset*> datasets_;
   std::vector<datum> weights_;
+  datum weight_sum_ = 0;
   Dataset* testing_dataset_ = nullptr;
 
   // Outputs
@@ -101,17 +100,8 @@ private:
   std::mt19937 generator_;
   std::uniform_real_distribution<datum> dist_;
 
-  // Array containing a random permutation of the training samples
-  std::vector<unsigned int> perm_;
-  unsigned int current_element_ = 0;
-
   unsigned int current_element_testing_ = 0;
   
-  /**
-   * @brief Clears the permutation vector and generates a new one.
-   */
-  void RedoPermutation();
-
   // Metadata buffer
   DatasetMetadataPointer* metadata_buffer_ = nullptr;
 };

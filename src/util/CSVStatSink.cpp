@@ -92,7 +92,7 @@ void CSVStatSink::SetCurrentExperiment(std::string current_experiment) {
   (*csv_stream_) << std::flush;
 }
 
-void CSVStatSink::SetCurrentDataset(std::string current_dataset) {
+void CSVStatSink::SetCurrentTestingDataset(std::string current_dataset) {
   current_dataset_ = current_dataset;
 }
   

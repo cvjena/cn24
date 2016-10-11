@@ -45,11 +45,11 @@ public:
     }
   }
   virtual void SetCurrentExperiment(std::string current_experiment) {
-    LOGINFO << "Beginning Experiment: " << current_experiment;
+    LOGINFO << "Beginning experiment: " << current_experiment;
   }
 
-  virtual void SetCurrentDataset(std::string current_dataset) {
-    LOGINFO << "Switching to Dataset: " << current_dataset;
+  virtual void SetCurrentTestingDataset(std::string current_dataset) {
+    LOGINFO << "Switching to testing dataset: " << current_dataset;
   }
 
 private:
