@@ -54,7 +54,7 @@ DatasetInputLayer::DatasetInputLayer (Dataset* initial_dataset,
 
 void DatasetInputLayer::SetActiveTestingDataset(Dataset *dataset) {
   testing_dataset_ = dataset;
-  LOGDEBUG << "Switching to testing dataset " << dataset->GetName();
+  LOGDEBUG << "Switching to testing dataset: " << dataset->GetName();
   elements_testing_ = dataset->GetTestingSamples();
 
   current_element_testing_ = 0;
@@ -213,56 +213,38 @@ void DatasetInputLayer::SelectAndLoadSamples() {
       dataset = testing_dataset_;
     } else {
       // Pick a dataset
-      // TODO dataset = ...
+      std::uniform_real_distribution<datum> dist(0.0, weight_sum_);
+      datum selection = dist(generator_);
+      for(unsigned int i=0; i < datasets_.size(); i++) {
+        if(selection < weights_[i]) {
+          dataset = datasets_[i];
+          break;
+        }
+        weight_sum_ -= weights_[i];
+      }
+      if(dataset == nullptr) {
+        FATAL("This can never happen. Dataset is null.");
+      }
+
+      // Pick an element
       std::uniform_int_distribution<unsigned int> element_dist(0, dataset->GetTrainingSamples() - 1);
       selected_element = element_dist(generator_);
-    }
-
-  }
-  /*
-  for (std::size_t sample = 0; sample < batch_size_; sample++) {
-    unsigned int selected_element = 0;
-    bool force_no_weight = false;
-
-    if (testing_) {
-      // The testing samples are not randomized
-      if (current_element_testing_ >= elements_testing_) {
-        force_no_weight = true;
-        selected_element = 0;
-      } else {
-        selected_element = current_element_testing_++;
-      }
-
-    } else {
-      // Select samples until one from the right subset is hit
-      // Select a sample from the permutation
-      selected_element = perm_[current_element_];
-
-      // Select next element
-      current_element_++;
-
-      // If this is is out of bounds, start at the beginning and randomize
-      // again.
-      if (current_element_ >= perm_.size()) {
-        current_element_ = 0;
-        RedoPermutation();
-      }
     }
 
     // Copy image and label
     bool success;
 
     if (testing_)
-      success = testing_dataset->GetTestingSample (data_output_->data, label_output_->data, helper_output_->data, localized_error_output_->data, sample, selected_element);
+      success = dataset->GetTestingSample (data_output_->data, label_output_->data, helper_output_->data, localized_error_output_->data, sample, selected_element);
     else
-      success = active_dataset_->GetTrainingSample (data_output_->data, label_output_->data, helper_output_->data, localized_error_output_->data, sample, selected_element);
+      success = dataset->GetTrainingSample (data_output_->data, label_output_->data, helper_output_->data, localized_error_output_->data, sample, selected_element);
 
     if (!success) {
       FATAL ("Cannot load samples from Dataset!");
     }
 
-    if (!testing_ && !force_no_weight && active_dataset_->GetMethod() == FCN && active_dataset_->GetTask() == SEMANTIC_SEGMENTATION) {
-      // Perform loss sampling
+    // Perform loss sampling
+    if (!testing_ && !force_no_weight && dataset->GetMethod() == FCN && dataset->GetTask() == SEMANTIC_SEGMENTATION) {
       const unsigned int block_size = 12;
 
       for (unsigned int y = 0; y < localized_error_output_->data.height(); y += block_size) {
@@ -278,22 +260,23 @@ void DatasetInputLayer::SelectAndLoadSamples() {
       }
     }
 
-    // Copy localized error
+    // Clear localized error if possible
     if (force_no_weight)
       localized_error_output_->data.Clear (0.0, sample);
 
     // Load metadata
-    if(active_dataset_->GetTask() == DETECTION) {
+    if(dataset->GetTask() == DETECTION) {
       if (testing_)
-        success = active_dataset_->GetTestingMetadata(metadata_buffer_,sample, selected_element);
+        success = dataset->GetTestingMetadata(metadata_buffer_,sample, selected_element);
       else
-        success = active_dataset_->GetTrainingMetadata(metadata_buffer_,sample, selected_element);
+        success = dataset->GetTrainingMetadata(metadata_buffer_,sample, selected_element);
     }
 
     if (!success) {
       FATAL ("Cannot load metadata from Dataset!");
     }
-  }*/
+
+  }
 }
 
 void DatasetInputLayer::FeedForward() {
@@ -374,7 +357,9 @@ void DatasetInputLayer::SetWeight(Dataset *dataset, const datum weight) {
   for(unsigned int i=0; i < datasets_.size(); i++) {
     if(datasets_[i] == dataset) {
       weights_[i] = weight;
+      LOGINFO << "Setting dataset \"" << dataset->GetName() << "\" weight: " << weight;
       found=true;
+      break;
     }
   }
 
