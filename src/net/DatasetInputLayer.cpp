@@ -146,7 +146,7 @@ bool DatasetInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inp
         new CombinedTensor(batch_size_);
 
     CombinedTensor *localized_error_output =
-        new CombinedTensor(0);
+        new CombinedTensor(batch_size_);
 
     DatasetMetadataPointer* metadata_buffer = new DatasetMetadataPointer[batch_size_];
 
