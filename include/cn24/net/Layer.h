@@ -29,9 +29,11 @@ namespace Conv {
   class Trainer;
   class GradientTester;
 	class NetGraphBuffer;
+  class NetGraph;
 class Layer {
   friend class Trainer;
   friend class GradientTester;
+  friend class NetGraph;
 public:
   virtual ~Layer() {};
 	
