@@ -368,8 +368,11 @@ void NetGraph::BackPropagate(std::vector<NetGraphNode*>& nodes, bool clear_flag)
 		for (NetGraphNode* node : nodes)
 			node->flag_bp_visited = false;
 
-	for (NetGraphNode* node : nodes)
-		BackPropagate(node);
+	for (NetGraphNode* node : nodes) {
+		// Check if layer actually needs backprop
+		if(node->layer->local_lr_ > 0 && node->layer->parameters_.size() > 0)
+      BackPropagate(node);
+	}
 }
 
 void NetGraph::BackPropagate(NetGraphNode* node) {
