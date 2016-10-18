@@ -155,7 +155,9 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
           bool class_found = box.c != UNKNOWN_CLASS;
 
           if(!class_found) {
-            FATAL("Cannot find class " << class_name);
+            LOGDEBUG << "Autoregistering class " << class_name;
+            class_manager_->RegisterClassByName(class_name, 0, 1.0);
+            box.c = class_manager_->GetClassIdByName(class_name);
           }
 
           accessor.bounding_boxes_.push_back(std::move(box));
