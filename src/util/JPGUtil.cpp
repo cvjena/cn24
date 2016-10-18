@@ -19,6 +19,11 @@
 #include "JPGUtil.h"
 
 namespace Conv {
+#ifdef BUILD_JPG
+void dont_do_anything(j_common_ptr p) {
+  UNREFERENCED_PARAMETER(p);
+}
+#endif
 
 bool JPGUtil::LoadFromFile (const std::string& file, Tensor& tensor) {
 #ifndef BUILD_JPG
@@ -30,6 +35,7 @@ bool JPGUtil::LoadFromFile (const std::string& file, Tensor& tensor) {
   jpeg_decompress_struct cinfo;
   jpeg_error_mgr jerr;
   cinfo.err = jpeg_std_error(&jerr);
+  cinfo.err->error_exit = dont_do_anything;
   jpeg_create_decompress(&cinfo);
   
   FILE* in_file = fopen(file.c_str(), "rb");
@@ -39,7 +45,11 @@ bool JPGUtil::LoadFromFile (const std::string& file, Tensor& tensor) {
   }
   
   jpeg_stdio_src(&cinfo, in_file);
-  jpeg_read_header(&cinfo, true);
+  int ret_val = jpeg_read_header(&cinfo, true);
+  if(ret_val != JPEG_HEADER_OK) {
+    LOGERROR << "Not a JPEG file: " << file;
+    return false;
+  }
   
   jpeg_start_decompress(&cinfo);
 
