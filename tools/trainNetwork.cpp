@@ -230,13 +230,32 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
     Conv::System::stat_aggregator->Reset();
   } else if (command.compare (0, 4, "test") == 0) {
     Conv::System::stat_aggregator->StartRecording();
-    
+
+    unsigned int all = 0;
     unsigned int layerview = 0;
-    Conv::ParseCountIfPossible (command, "view", layerview);
+    Conv::ParseCountIfPossible(command, "view", layerview);
+    Conv::ParseCountIfPossible(command, "all", all);
     testing_graph.SetLayerViewEnabled (layerview == 1);
-    testing_trainer.SetEpoch (trainer.epoch());
-    testing_trainer.Test();
-    testing_graph.SetLayerViewEnabled (false);
+    if(all == 1) {
+      // Test all datasets
+      Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
+      if(input_layer != nullptr) {
+        // Save old testing dataset
+        Conv::Dataset* old_active_testing_dataset = input_layer->GetActiveTestingDataset();
+        for (unsigned int d = 0; d < input_layer->GetDatasets().size(); d++) {
+          // Test each dataset
+          input_layer->SetActiveTestingDataset(input_layer->GetDatasets()[d]);
+          testing_trainer.SetEpoch(trainer.epoch());
+          testing_trainer.Test();
+        }
+        // Restore old testing dataset
+        input_layer->SetActiveTestingDataset(old_active_testing_dataset);
+      }
+    } else {
+      testing_trainer.SetEpoch(trainer.epoch());
+      testing_trainer.Test();
+    }
+    testing_graph.SetLayerViewEnabled(false);
     LOGINFO << "Testing complete.";
     
     Conv::System::stat_aggregator->StopRecording();
