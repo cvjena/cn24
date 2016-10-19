@@ -166,7 +166,18 @@ namespace Conv {
 				
 			} else {
 				// Tensor has an image in it, no transform needed
-				return Tensor::CopySample(rgb_tensor, source_sample, target, target_sample, false, scale);
+        if(rgb_tensor.maps() == 3) {
+          // Tensor is already RGB
+					return Tensor::CopySample(rgb_tensor, source_sample, target, target_sample, false, scale);
+				} else if(rgb_tensor.maps() == 1) {
+					// Tensor is Grayscale
+					bool success = Tensor::CopyMap(rgb_tensor, source_sample, 0, target, target_sample, 0, false, scale);
+					success &= Tensor::CopyMap(rgb_tensor, source_sample, 0, target, target_sample, 1, false, scale);
+					success &= Tensor::CopyMap(rgb_tensor, source_sample, 0, target, target_sample, 2, false, scale);
+          return success;
+				} else {
+					FATAL("Tensors with map count other than 1 or 3 are not supported!");
+				}
 			}
 		} else {
       LOGDEBUG << "Sample " << source_index << " requested";
@@ -228,8 +239,11 @@ namespace Conv {
 					continue;
 				}
 			}
-	
-			ListTensorMetadata image_md(image_directory + image_fname, image_tensor.width(), image_tensor.height(), image_tensor.maps(), image_tensor.samples());
+
+      if(image_tensor.maps() != 1 && image_tensor.maps() != 3) {
+				FATAL("Map counts other than 1 or 3 are not supported! File: " << image_fname);
+			}
+			ListTensorMetadata image_md(image_directory + image_fname, image_tensor.width(), image_tensor.height(), 3, image_tensor.samples());
 			ListTensorMetadata label_md(label_directory + label_fname, label_rgb_tensor.width(), label_rgb_tensor.height(), number_of_classes, label_rgb_tensor.samples());
 
       if(dont_load_labels)
