@@ -26,17 +26,17 @@ DetectionStatLayer::DetectionStatLayer (ClassManager* class_manager)
   UpdateClassCount();
 
   // Initialize stat descriptors
-  stat_tpr_ = new StatDescriptor;
+  stat_pre_ = new StatDescriptor;
   stat_fpr_ = new StatDescriptor;
   stat_map_ = new StatDescriptor;
   stat_rec_ = new StatDescriptor;
 
-  stat_tpr_->description = "True Positive Rate";
-  stat_tpr_->unit = "%";
-  stat_tpr_->nullable = true;
-  stat_tpr_->init_function = [this] (Stat& stat) { stat.is_null = true; stat.value = 0; Reset(); };
-  stat_tpr_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
-  stat_tpr_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
+  stat_pre_->description = "Precision";
+  stat_pre_->unit = "%";
+  stat_pre_->nullable = true;
+  stat_pre_->init_function = [this] (Stat& stat) { stat.is_null = true; stat.value = 0; Reset(); };
+  stat_pre_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
+  stat_pre_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
 
   stat_rec_->description = "Recall";
   stat_rec_->unit = "%";
@@ -44,13 +44,6 @@ DetectionStatLayer::DetectionStatLayer (ClassManager* class_manager)
   stat_rec_->init_function = [this] (Stat& stat) { stat.is_null = true; stat.value = 0; Reset(); };
   stat_rec_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
   stat_rec_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
-
-  stat_fpr_->description = "False Positive Rate";
-  stat_fpr_->unit = "%";
-  stat_fpr_->nullable = true;
-  stat_fpr_->init_function = [this] (Stat& stat) { stat.is_null = true; stat.value = 0; Reset(); };
-  stat_fpr_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
-  stat_fpr_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
 
   stat_map_->description = "mAP";
   stat_map_->unit = "%";
@@ -60,8 +53,7 @@ DetectionStatLayer::DetectionStatLayer (ClassManager* class_manager)
   stat_map_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
 
   // Register stats
-  System::stat_aggregator->RegisterStat(stat_tpr_);
-  System::stat_aggregator->RegisterStat(stat_fpr_);
+  System::stat_aggregator->RegisterStat(stat_pre_);
   System::stat_aggregator->RegisterStat(stat_map_);
   System::stat_aggregator->RegisterStat(stat_rec_);
 }
@@ -85,10 +77,11 @@ void DetectionStatLayer::UpdateClassCount() {
 
 void DetectionStatLayer::UpdateAll() {
   // Global metrics
-  datum global_tpr = 0;
-  datum global_fpr = 0;
-  datum global_rec = 0;
   datum global_ap = 0;
+
+  datum global_positive_samples_ = 0;
+  datum global_true_positives_ = 0;
+  datum global_false_positives_ = 0;
 
   datum sampled_classes = 0;
   for(ClassManager::const_iterator it = class_manager_->begin(); it != class_manager_->end(); it++) {
@@ -121,13 +114,10 @@ void DetectionStatLayer::UpdateAll() {
       detection_recall.push_back(tp_sum / (datum)positive_samples_[c]);
     }
 
-    datum rec = (tp_sum > 0) ? tp_sum / (datum)positive_samples_[c] : 0;
-    datum tpr = tp_sum / (datum)(detections_[c].size());
-    datum fpr = fp_sum / (datum)(detections_[c].size());
+    global_positive_samples_ += (datum)positive_samples_[c];
+    global_true_positives_ += tp_sum;
+    global_false_positives_ += fp_sum;
 
-    global_tpr += tpr;
-    global_fpr += fpr;
-    global_rec += rec;
     sampled_classes += (datum)1.0;
 
     // Calculate AP
@@ -150,9 +140,8 @@ void DetectionStatLayer::UpdateAll() {
     LOGDEBUG << "AP class " << it->first << ": " << ap * 100.0;
     global_ap += ap;
   }
-  if(sampled_classes > 0) System::stat_aggregator->Update(stat_tpr_->stat_id, 100.0 * global_tpr / sampled_classes);
-  if(sampled_classes > 0) System::stat_aggregator->Update(stat_fpr_->stat_id, 100.0 * global_fpr / sampled_classes);
-  if(sampled_classes > 0) System::stat_aggregator->Update(stat_rec_->stat_id, 100.0 * global_rec / sampled_classes);
+  if(sampled_classes > 0) System::stat_aggregator->Update(stat_pre_->stat_id, 100.0 * global_true_positives_ / (global_true_positives_ + global_false_positives_));
+  if(sampled_classes > 0) System::stat_aggregator->Update(stat_rec_->stat_id, 100.0 * global_true_positives_ / global_positive_samples_);
   if(sampled_classes > 0) System::stat_aggregator->Update(stat_map_->stat_id, 100.0 * global_ap / sampled_classes);
 
     // Calculate metrics

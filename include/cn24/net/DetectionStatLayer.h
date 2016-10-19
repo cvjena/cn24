@@ -91,7 +91,7 @@ protected:
   
   bool disabled_ = false;
 
-  StatDescriptor* stat_tpr_ = nullptr;
+  StatDescriptor* stat_pre_ = nullptr;
   StatDescriptor* stat_fpr_ = nullptr;
   StatDescriptor* stat_map_ = nullptr;
   StatDescriptor* stat_rec_ = nullptr;
