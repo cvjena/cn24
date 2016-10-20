@@ -88,13 +88,19 @@ protected:
 
   std::vector<Detection>* detections_ = nullptr;
   unsigned int* positive_samples_ = nullptr;
+
+  datum objectness_tp_ = 0;
+  datum objectness_fp_ = 0;
+  datum objectness_positives_ = 0;
   
   bool disabled_ = false;
 
-  StatDescriptor* stat_pre_ = nullptr;
-  StatDescriptor* stat_fpr_ = nullptr;
+  StatDescriptor* stat_obj_pre_ = nullptr;
+  StatDescriptor* stat_obj_rec_ = nullptr;
   StatDescriptor* stat_map_ = nullptr;
-  StatDescriptor* stat_rec_ = nullptr;
+
+  StatDescriptor* stat_obj_f1_ = nullptr;
+  StatDescriptor* stat_mf1_ = nullptr;
 };
 
 }

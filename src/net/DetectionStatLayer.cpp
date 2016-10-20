@@ -26,24 +26,32 @@ DetectionStatLayer::DetectionStatLayer (ClassManager* class_manager)
   UpdateClassCount();
 
   // Initialize stat descriptors
-  stat_pre_ = new StatDescriptor;
-  stat_fpr_ = new StatDescriptor;
+  stat_obj_pre_ = new StatDescriptor;
+  stat_mf1_ = new StatDescriptor;
   stat_map_ = new StatDescriptor;
-  stat_rec_ = new StatDescriptor;
+  stat_obj_rec_ = new StatDescriptor;
+  stat_obj_f1_ = new StatDescriptor;
 
-  stat_pre_->description = "Precision";
-  stat_pre_->unit = "%";
-  stat_pre_->nullable = true;
-  stat_pre_->init_function = [this] (Stat& stat) { stat.is_null = true; stat.value = 0; Reset(); };
-  stat_pre_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
-  stat_pre_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
+  stat_obj_pre_->description = "Objectness Precision";
+  stat_obj_pre_->unit = "%";
+  stat_obj_pre_->nullable = true;
+  stat_obj_pre_->init_function = [this] (Stat& stat) { stat.is_null = true; stat.value = 0; Reset(); };
+  stat_obj_pre_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
+  stat_obj_pre_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
 
-  stat_rec_->description = "Recall";
-  stat_rec_->unit = "%";
-  stat_rec_->nullable = true;
-  stat_rec_->init_function = [this] (Stat& stat) { stat.is_null = true; stat.value = 0; Reset(); };
-  stat_rec_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
-  stat_rec_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
+  stat_obj_rec_->description = "Objectness Recall";
+  stat_obj_rec_->unit = "%";
+  stat_obj_rec_->nullable = true;
+  stat_obj_rec_->init_function = [this] (Stat& stat) { stat.is_null = true; stat.value = 0; Reset(); };
+  stat_obj_rec_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
+  stat_obj_rec_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
+
+  stat_obj_f1_->description = "Objectness F1";
+  stat_obj_f1_->unit = "%";
+  stat_obj_f1_->nullable = true;
+  stat_obj_f1_->init_function = [this] (Stat& stat) { stat.is_null = true; stat.value = 0; Reset(); };
+  stat_obj_f1_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
+  stat_obj_f1_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
 
   stat_map_->description = "mAP";
   stat_map_->unit = "%";
@@ -52,10 +60,19 @@ DetectionStatLayer::DetectionStatLayer (ClassManager* class_manager)
   stat_map_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
   stat_map_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
 
+  stat_mf1_->description = "mF1";
+  stat_mf1_->unit = "%";
+  stat_mf1_->nullable = true;
+  stat_mf1_->init_function = [] (Stat& stat) { stat.is_null = true; stat.value = 0; };
+  stat_mf1_->update_function = [] (Stat& stat, double user_value) { stat.is_null = false; stat.value = user_value; };
+  stat_mf1_->output_function = [] (HardcodedStats& hc_stats, Stat& stat) -> Stat { UNREFERENCED_PARAMETER(hc_stats); return stat; };
+
   // Register stats
-  System::stat_aggregator->RegisterStat(stat_pre_);
+  System::stat_aggregator->RegisterStat(stat_obj_pre_);
+  System::stat_aggregator->RegisterStat(stat_obj_rec_);
+  System::stat_aggregator->RegisterStat(stat_obj_f1_);
   System::stat_aggregator->RegisterStat(stat_map_);
-  System::stat_aggregator->RegisterStat(stat_rec_);
+  System::stat_aggregator->RegisterStat(stat_mf1_);
 }
 
 void DetectionStatLayer::UpdateClassCount() {
@@ -78,71 +95,89 @@ void DetectionStatLayer::UpdateClassCount() {
 void DetectionStatLayer::UpdateAll() {
   // Global metrics
   datum global_ap = 0;
-
-  datum global_positive_samples_ = 0;
-  datum global_true_positives_ = 0;
-  datum global_false_positives_ = 0;
+  datum global_f1_ = 0;
 
   datum sampled_classes = 0;
   for(ClassManager::const_iterator it = class_manager_->begin(); it != class_manager_->end(); it++) {
     unsigned int c = it->second.id;
     // Skip empty classes
-    if(detections_[c].size() == 0)
-      continue;
-
-    // Sort vector
-    std::sort(detections_[c].begin(), detections_[c].end(),
-              [](Detection &d1, Detection &d2) { return d1.confidence < d2.confidence; });
-
-    // For AP calculation
-    datum fp_sum = 0;
-    datum tp_sum = 0;
-    std::vector<datum> detection_recall;
-    std::vector<datum> detection_precision;
-
-    // Initialize AP calculation
-    detection_precision.push_back((datum)0);
-    detection_recall.push_back((datum)0);
-
-    // Calculate TPR and FPR
-    for(unsigned int d = 0; d < detections_[c].size(); d++) {
-      tp_sum += detections_[c][d].tp;
-      fp_sum += detections_[c][d].fp;
-
-      // Save results for AP calculation
-      detection_precision.push_back(tp_sum / (fp_sum + tp_sum));
-      detection_recall.push_back(tp_sum / (datum)positive_samples_[c]);
+    if(detections_[c].size() == 0) {
+      if(positive_samples_[c] == 0) {
+        continue;
+      } else {
+        sampled_classes += (datum)1.0;
+        LOGDEBUG << "AP class " << it->first << ": 0, none of the samples were detected";
+        continue;
+      }
     }
 
-    global_positive_samples_ += (datum)positive_samples_[c];
-    global_true_positives_ += tp_sum;
-    global_false_positives_ += fp_sum;
+    if(positive_samples_[c] == 0) {
+      LOGDEBUG << "AP class " << it->first << ": 0, only false positives present";
+      sampled_classes += (datum) 1.0;
+    } else {
 
-    sampled_classes += (datum)1.0;
+      // Sort vector
+      std::sort(detections_[c].begin(), detections_[c].end(),
+                [](Detection &d1, Detection &d2) { return d1.confidence < d2.confidence; });
 
-    // Calculate AP
-    detection_precision.push_back((datum)0);
-    detection_recall.push_back((datum)1);
+      // For AP calculation
+      datum fp_sum = 0;
+      datum tp_sum = 0;
+      std::vector<datum> detection_recall;
+      std::vector<datum> detection_precision;
 
-    for(int i = (int)detection_precision.size() - 2; i >= 0; --i) {
-      detection_precision[i] = std::max(detection_precision[i], detection_precision[i+1]);
+      // Initialize AP calculation
+      detection_precision.push_back((datum) 0);
+      detection_recall.push_back((datum) 0);
+
+      // Calculate TPR and FPR
+      for (unsigned int d = 0; d < detections_[c].size(); d++) {
+        tp_sum += detections_[c][d].tp;
+        fp_sum += detections_[c][d].fp;
+
+        // Save results for AP calculation
+        detection_precision.push_back(tp_sum / (fp_sum + tp_sum));
+        detection_recall.push_back(tp_sum / (datum) positive_samples_[c]);
+      }
+
+      if ((fp_sum + tp_sum) > 0) {
+        const datum class_precision = (tp_sum / (fp_sum + tp_sum));
+        const datum class_recall = (tp_sum / (datum) positive_samples_[c]);
+
+        const datum class_f1 = (const datum) (2.0 * class_precision * class_recall / (class_precision + class_recall));
+        global_f1_ += class_f1;
+      }
+
+      sampled_classes += (datum) 1.0;
+
+      // Calculate AP
+      detection_precision.push_back((datum) 0);
+      detection_recall.push_back((datum) 1);
+
+      for (int i = (int) detection_precision.size() - 2; i >= 0; --i) {
+        detection_precision[i] = std::max(detection_precision[i], detection_precision[i + 1]);
+      }
+      std::vector<int> different_indices;
+      for (int i = 1; i < (int) detection_recall.size(); i++) {
+        if (detection_recall[i] != detection_recall[i - 1])
+          different_indices.push_back(i);
+      }
+
+      datum ap = 0;
+      for (int i = 0; i < (int) different_indices.size(); i++) {
+        ap += (detection_recall[different_indices[i]] - detection_recall[different_indices[i] - 1]) *
+              detection_precision[different_indices[i]];
+      }
+      LOGDEBUG << "AP class " << it->first << ": " << ap * 100.0;
+      global_ap += ap;
     }
-    std::vector<int> different_indices;
-    for(int i = 1; i < (int)detection_recall.size(); i++) {
-      if(detection_recall[i] != detection_recall[i-1])
-        different_indices.push_back(i);
-    }
-
-    datum ap = 0;
-    for(int i = 0; i < (int)different_indices.size(); i++) {
-      ap += (detection_recall[different_indices[i]] - detection_recall[different_indices[i] - 1]) * detection_precision[different_indices[i]];
-    }
-    LOGDEBUG << "AP class " << it->first << ": " << ap * 100.0;
-    global_ap += ap;
   }
-  if(sampled_classes > 0) System::stat_aggregator->Update(stat_pre_->stat_id, 100.0 * global_true_positives_ / (global_true_positives_ + global_false_positives_));
-  if(sampled_classes > 0) System::stat_aggregator->Update(stat_rec_->stat_id, 100.0 * global_true_positives_ / global_positive_samples_);
+  if((objectness_tp_ + objectness_fp_) > 0) System::stat_aggregator->Update(stat_obj_pre_->stat_id, 100.0 * objectness_tp_ / (objectness_tp_ + objectness_fp_));
+  if(objectness_positives_ > 0) System::stat_aggregator->Update(stat_obj_rec_->stat_id, 100.0 * objectness_tp_ / objectness_positives_);
+  if((objectness_tp_ + objectness_fp_ > 0) && objectness_positives_ > 0)
+    System::stat_aggregator->Update(stat_obj_f1_->stat_id, 200.0 * ((objectness_tp_ / (objectness_tp_ + objectness_fp_)) * (objectness_tp_ / objectness_positives_)) / ((objectness_tp_ / (objectness_tp_ + objectness_fp_)) + (objectness_tp_ / objectness_positives_)));
   if(sampled_classes > 0) System::stat_aggregator->Update(stat_map_->stat_id, 100.0 * global_ap / sampled_classes);
+  if(sampled_classes > 0) System::stat_aggregator->Update(stat_mf1_->stat_id, 100.0 * global_f1_ / sampled_classes);
 
     // Calculate metrics
 
@@ -151,7 +186,7 @@ void DetectionStatLayer::UpdateAll() {
     if(fpr >= 0) System::stat_aggregator->Update(stat_fpr_->stat_id, 100.0 * fpr);
     if(fnr >= 0) System::stat_aggregator->Update(stat_fnr_->stat_id, 100.0 * fnr);
     if(precision >= 0) System::stat_aggregator->Update(stat_map_->stat_id, 100.0 * precision);
-    if(recall >= 0) System::stat_aggregator->Update(stat_rec_->stat_id, 100.0 * recall);
+    if(recall >= 0) System::stat_aggregator->Update(stat_obj_rec_->stat_id, 100.0 * recall);
     if(acc >= 0) System::stat_aggregator->Update(stat_acc_->stat_id, 100.0 * acc);
     if(f1 >= 0) System::stat_aggregator->Update(stat_f1_->stat_id, 100.0 * f1);*/
 }
@@ -230,6 +265,7 @@ void DetectionStatLayer::FeedForward() {
     std::vector<BoundingBox> *sample_detected_boxes = (std::vector<BoundingBox> *) first_->metadata[sample];
     std::vector<BoundingBox> *sample_truth_boxes = (std::vector<BoundingBox> *) second_->metadata[sample];
 
+    // Per-class stats
     for(ClassManager::const_iterator it = class_manager_->begin(); it != class_manager_->end(); it++) {
       unsigned int c = it->second.id;
       // Loop over all detected boxes
@@ -238,7 +274,7 @@ void DetectionStatLayer::FeedForward() {
           continue;
 
         Detection detection;
-        detection.confidence = (*sample_detected_boxes)[b].c;
+        detection.confidence = (*sample_detected_boxes)[b].score;
 
         // Assign ground truth box
         datum maximum_overlap = (datum) -1;
@@ -281,8 +317,54 @@ void DetectionStatLayer::FeedForward() {
       (*sample_truth_boxes)[t].flag1 = false;
 
       // Count positive samples (ignore difficult boxes)
-      if(!(*sample_truth_boxes)[t].flag2)
+      if(!(*sample_truth_boxes)[t].flag2) {
         positive_samples_[(*sample_truth_boxes)[t].c]++;
+        objectness_positives_++;
+      }
+    }
+
+    // Objectness stats
+
+    // Loop over all detected boxes
+    for(unsigned int b = 0; b < sample_detected_boxes->size(); b++) {
+      Detection detection;
+
+      // Assign ground truth box
+      datum maximum_overlap = (datum) -1;
+      int best_truth_box = -1;
+
+      for (unsigned int t = 0; t < sample_truth_boxes->size(); t++) {
+        // Compute overlap
+        datum overlap = (*sample_detected_boxes)[b].IntersectionOverUnion(&((*sample_truth_boxes)[t]));
+        if(overlap > maximum_overlap) {
+          best_truth_box = t;
+          maximum_overlap = overlap;
+        }
+      }
+
+      if(maximum_overlap > 0.5 && best_truth_box >= 0) { // Second part shouldn't be necessary, but who knows
+        if((*sample_truth_boxes)[best_truth_box].flag2) // Difficult box, ignore completely
+          continue;
+
+        if(!(*sample_truth_boxes)[best_truth_box].flag1) {
+          detection.tp = 1.0;
+          (*sample_truth_boxes)[best_truth_box].flag1 = true;
+        } else {
+          // Double detection -> false positive
+          detection.fp = 1.0;
+        }
+      } else {
+        // No box found or box too small
+        detection.fp = 1.0;
+      }
+
+      objectness_fp_ += detection.fp;
+      objectness_tp_ += detection.tp;
+    }
+
+    // Reset box flags (again)
+    for (unsigned int t = 0; t < sample_truth_boxes->size(); t++) {
+      (*sample_truth_boxes)[t].flag1 = false;
     }
   }
 
@@ -298,6 +380,9 @@ void DetectionStatLayer::Reset() {
     detections_[c].clear();
     positive_samples_[c] = 0;
   }
+  objectness_tp_ = 0;
+  objectness_fp_ = 0;
+  objectness_positives_ = 0;
 }
 
 void DetectionStatLayer::Print ( std::string prefix, bool training ) {
