@@ -229,7 +229,6 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
       Conv::System::stat_aggregator->Generate();
     Conv::System::stat_aggregator->Reset();
   } else if (command.compare (0, 4, "test") == 0) {
-    Conv::System::stat_aggregator->StartRecording();
 
     unsigned int all = 0;
     unsigned int layerview = 0;
@@ -245,8 +244,12 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
         for (unsigned int d = 0; d < input_layer->GetDatasets().size(); d++) {
           // Test each dataset
           input_layer->SetActiveTestingDataset(input_layer->GetDatasets()[d]);
+          Conv::System::stat_aggregator->StartRecording();
           testing_trainer.SetEpoch(trainer.epoch());
           testing_trainer.Test();
+          Conv::System::stat_aggregator->StopRecording();
+          Conv::System::stat_aggregator->Generate();
+          Conv::System::stat_aggregator->Reset();
         }
         // Restore old testing dataset
         input_layer->SetActiveTestingDataset(old_active_testing_dataset);
@@ -256,11 +259,7 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
       testing_trainer.Test();
     }
     testing_graph.SetLayerViewEnabled(false);
-    LOGINFO << "Testing complete.";
-    
-    Conv::System::stat_aggregator->StopRecording();
-    Conv::System::stat_aggregator->Generate();
-    Conv::System::stat_aggregator->Reset();
+
   } else if (command.compare (0, 4, "load") == 0) {
     std::string param_file_name;
     Conv::ParseStringParamIfPossible (command, "file", param_file_name);
