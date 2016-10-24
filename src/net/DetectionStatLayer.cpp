@@ -145,7 +145,8 @@ void DetectionStatLayer::UpdateAll() {
         const datum class_recall = (tp_sum / (datum) positive_samples_[c]);
 
         const datum class_f1 = (const datum) (2.0 * class_precision * class_recall / (class_precision + class_recall));
-        global_f1_ += class_f1;
+        if((class_precision + class_recall) > 0)
+          global_f1_ += class_f1;
       }
 
       sampled_classes += (datum) 1.0;
