@@ -255,8 +255,12 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
         input_layer->SetActiveTestingDataset(old_active_testing_dataset);
       }
     } else {
+      Conv::System::stat_aggregator->StartRecording();
       testing_trainer.SetEpoch(trainer.epoch());
       testing_trainer.Test();
+      Conv::System::stat_aggregator->StopRecording();
+      Conv::System::stat_aggregator->Generate();
+      Conv::System::stat_aggregator->Reset();
     }
     testing_graph.SetLayerViewEnabled(false);
 
