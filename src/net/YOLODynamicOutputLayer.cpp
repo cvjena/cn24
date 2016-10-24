@@ -68,7 +68,7 @@ void YOLODynamicOutputLayer::UpdateTensorSizes() {
     const datum range = sqrt (6) / sqrt (next_layer_gain_ + this_layer_gain);
     std::uniform_real_distribution<datum> dist_weights (-range , range);
 
-    for (std::size_t i = old_class_maps; i < class_weights_->data.elements(); i++) {
+    for (std::size_t i = old_class_maps * input_->data.maps(); i < class_weights_->data.elements(); i++) {
       class_weights_->data[i] = dist_weights (rand_);
     }
     for (std::size_t i = old_class_maps; i < class_biases_->data.elements(); i++) {
