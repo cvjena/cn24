@@ -45,6 +45,8 @@ private:
   CombinedTensor* class_biases_;
 
   std::mt19937 rand_;
+
+  unsigned int next_layer_gain_ = 0;
 };
 }
 

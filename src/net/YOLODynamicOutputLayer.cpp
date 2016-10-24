@@ -52,10 +52,29 @@ void YOLODynamicOutputLayer::UpdateTensorSizes() {
   }
 
   if(class_weights_->data.samples() != class_maps) {
+    unsigned int old_class_maps = class_weights_->data.samples();
+    if(class_maps < old_class_maps) {
+      FATAL("This can never happen!");
+    }
+
     class_weights_->data.Extend(class_maps);
     class_weights_->delta.Extend(class_maps);
     class_biases_->data.Extend(class_maps);
     class_biases_->delta.Extend(class_maps);
+
+    // Randomly initialize new classes
+    unsigned int this_layer_gain = Gain();
+
+    const datum range = sqrt (6) / sqrt (next_layer_gain_ + this_layer_gain);
+    std::uniform_real_distribution<datum> dist_weights (-range , range);
+
+    for (std::size_t i = old_class_maps * input_->data.maps(); i < class_weights_->data.elements(); i++) {
+      class_weights_->data[i] = dist_weights (rand_);
+    }
+    for (std::size_t i = old_class_maps; i < class_biases_->data.elements(); i++) {
+      class_biases_->data[i] = 0; // dist_weights (rand_);
+    }
+
   }
 }
 
@@ -173,14 +192,17 @@ void YOLODynamicOutputLayer::OnLayerConnect(const std::vector<Layer *> next_laye
     box_weights_->data[i] = dist_weights (rand_);
   }
   for (std::size_t i = 0; i < box_biases_->data.elements(); i++) {
-    box_biases_->data[i] = dist_weights (rand_);
+    box_biases_->data[i] = 0; // dist_weights (rand_);
   }
   for (std::size_t i = 0; i < class_weights_->data.elements(); i++) {
     class_weights_->data[i] = dist_weights (rand_);
   }
   for (std::size_t i = 0; i < class_biases_->data.elements(); i++) {
-    class_biases_->data[i] = dist_weights (rand_);
+    class_biases_->data[i] = 0; //dist_weights (rand_);
   }
+
+  // Save gains of next layers for extension on class update
+  next_layer_gain_ = next_layer_gain;
 }
 
 void YOLODynamicOutputLayer::BackPropagate() {
