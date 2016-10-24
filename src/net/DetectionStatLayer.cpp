@@ -377,7 +377,7 @@ void DetectionStatLayer::BackPropagate() {
 }
 
 void DetectionStatLayer::Reset() {
-  for (unsigned int c = 0; c < last_seen_max_id_; c++) {
+  for (unsigned int c = 0; c <= last_seen_max_id_; c++) {
     detections_[c].clear();
     positive_samples_[c] = 0;
   }
