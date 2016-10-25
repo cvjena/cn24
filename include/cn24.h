@@ -44,6 +44,8 @@
 
 #include "cn24/math/TensorMath.h"
 #include "cn24/math/Optimizer.h"
+#include "cn24/math/SGDOptimizer.h"
+#include "cn24/math/AdamOptimizer.h"
 
 #include "cn24/net/Layer.h"
 #include "cn24/net/InputLayer.h"
@@ -85,5 +87,6 @@
 #include "cn24/factory/ConfigurableFactory.h"
 #include "cn24/factory/JSONNetGraphFactory.h"
 #include "cn24/factory/JSONDatasetFactory.h"
+#include "cn24/factory/JSONOptimizerFactory.h"
 
 #endif

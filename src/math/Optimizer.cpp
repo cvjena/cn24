@@ -12,32 +12,70 @@ Optimizer::Optimizer(JSON configuration) : configuration_(configuration) {
   // Don't do anything, lazy initialization happens in Step(3)
 }
 
-void Reset() {
+Optimizer::~Optimizer() {
+  /*for(std::vector<Tensor*>& buffer_set : buffers_)--------------------------------------------------------------------
+    for(Tensor* buffer : buffer_set)
+      delete buffer;*/
+}
+
+void Optimizer::Reset() {
   ResetInner();
+  for(std::vector<Tensor>& buffer_set : buffers_)
+    for(Tensor& buffer : buffer_set)
+      buffer.Clear();
+}
+
+void Optimizer::ResetInner() {
+  // Do nothing here
 }
 
 void Optimizer::Step(const std::vector<CombinedTensor *> &parameters, unsigned int iteration) {
+  bool needs_reset = false;
   // If the optimizer uses buffers, check if parameter count has changed
   if(GetRequiredBufferCount() > 0) {
-    std::size_t parameter_count = 0;
-    for(CombinedTensor* const ctensor : parameters) {
-      parameter_count += ctensor->data.elements();
-    }
-
     // Check if the actual buffer count is okay
-
-
-    // If it has, resize all the buffers
-    if(buffers_[0]->elements() != parameter_count) {
-      for(Tensor* buffer : buffers_) {
-        buffer->Resize(parameter_count);
+    if(buffers_.size() != parameters.size()) {
+      needs_reset = true;
+      for(std::vector<Tensor>& buffer_set : buffers_) {
+        buffer_set.clear();
       }
-      LOGDEBUG << "Resized optimization buffer(s) to " << parameter_count << " elements each.";
-    }
-  }
+      buffers_.clear();
 
-  // Call inner step
-  Step(buffers_, parameters, iteration);
+      // After this loop, buffers_.size() is equal to parameters.size()
+      for(unsigned int p = 0; p < parameters.size(); p++) {
+        buffers_.push_back({});
+      }
+    }
+
+    // Make sure that every buffers_[.] matches required buffer count
+    for(unsigned int p = 0; p < parameters.size(); p++) {
+      if(buffers_[p].size() != GetRequiredBufferCount()) {
+        needs_reset = true;
+        buffers_[p].clear();
+
+        // Create new ones
+        for(unsigned int b = 0; b < GetRequiredBufferCount(); b++) {
+          buffers_[p].push_back(Tensor(parameters[p]->data.elements()));
+        }
+      } else {
+        // Check if inner parameter count matches
+        for(unsigned int b = 0; b < GetRequiredBufferCount(); b++) {
+          if(buffers_[p][b].elements() != parameters[p]->data.elements()) {
+            needs_reset = true;
+            buffers_[p][b].Resize(parameters[p]->data.elements());
+          }
+        }
+      }
+    }
+ }
+
+  if(needs_reset)
+    Reset();
+
+  for(unsigned int p = 0; p < parameters.size(); p++) {
+    // Call inner step
+    Step(buffers_[p], parameters[p], iteration);
+  }
 }
 
 }

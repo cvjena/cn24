@@ -17,16 +17,17 @@ namespace Conv {
 class Optimizer {
 protected:
   Optimizer(JSON configuration);
+  ~Optimizer();
 
   // Number of buffers that match the parameter space in size
   // e.g. buffer for momentum
   virtual unsigned int GetRequiredBufferCount() const = 0;
 
   // Perform an optimization step
-  virtual void Step(std::vector<Tensor*>& buffers, const std::vector<CombinedTensor*>& parameters, unsigned int iteration) = 0;
+  virtual void Step(std::vector<Tensor>& buffers, CombinedTensor* parameters, unsigned int iteration) = 0;
 
   // Reset additional state
-  virtual void ResetInner() = 0;
+  virtual void ResetInner();
 public:
   // Reset/initialize state
   void Reset();
@@ -35,7 +36,7 @@ public:
   void Step(const std::vector<CombinedTensor*>& parameters, unsigned int iteration = 0);
 private:
   JSON configuration_;
-  std::vector<Tensor*> buffers_;
+  std::vector<std::vector<Tensor>> buffers_;
 };
 }
 

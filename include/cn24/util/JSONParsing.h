@@ -10,6 +10,8 @@
 
 #include "json.hpp"
 
+#define JSON_TRY_DATUM(target_var, json_object, key, otherwise) if(json_object.count(key) == 1 && json_object[key].is_number()) \
+{ target_var = json_object[key]; } else { target_var = otherwise; }
 namespace Conv {
   using JSON = nlohmann::json;
 }
