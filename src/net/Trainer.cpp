@@ -111,7 +111,7 @@ Trainer::Trainer(Conv::NetGraph& graph, JSON settings) :
   if(!settings_.count("optimization_method")) settings_["optimization_method"] = "gd";
 
   // Create optimizer
-  optimizer_ = JSONOptimizerFactory::ConstructOptimizer(settings);
+  optimizer_ = JSONOptimizerFactory::ConstructOptimizer(settings_);
   if(optimizer_ == nullptr) {
     FATAL("Could not create optimizer!");
   }
