@@ -17,7 +17,6 @@ namespace Conv {
 class Optimizer {
 protected:
   Optimizer(JSON configuration);
-  ~Optimizer();
 
   // Number of buffers that match the parameter space in size
   // e.g. buffer for momentum
@@ -28,12 +27,18 @@ protected:
 
   // Reset additional state
   virtual void ResetInner();
+
 public:
+  virtual ~Optimizer();
+
   // Reset/initialize state
   void Reset();
 
   // Perform an optimization step (public method)
   void Step(const std::vector<CombinedTensor*>& parameters, unsigned int iteration = 0);
+
+  // Get a string that describes the inner state of the optimizer (e.g. current learning rate)
+  virtual std::string GetStatusDescription() { return ""; }
 private:
   JSON configuration_;
   std::vector<std::vector<Tensor>> buffers_;

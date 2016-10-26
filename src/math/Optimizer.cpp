@@ -13,9 +13,7 @@ Optimizer::Optimizer(JSON configuration) : configuration_(configuration) {
 }
 
 Optimizer::~Optimizer() {
-  /*for(std::vector<Tensor*>& buffer_set : buffers_)--------------------------------------------------------------------
-    for(Tensor* buffer : buffer_set)
-      delete buffer;*/
+  // RAII takes care of our tensors
 }
 
 void Optimizer::Reset() {

@@ -20,6 +20,7 @@
 
 #include "../util/CombinedTensor.h"
 #include "../util/StatAggregator.h"
+#include "../math/Optimizer.h"
 #include "TrainingLayer.h"
 #include "NetGraph.h"
 
@@ -32,17 +33,10 @@ enum OPTIMIZATION_METHOD {
   
 struct TrainerSettings {
 public:
-  datum learning_rate = 0.0001;
   datum l1_weight = 0.001;
   datum l2_weight = 0.0005;
-  datum exponent = 0.75;
-  datum gamma = 0.0003;
-  datum momentum = 0.9;
   datum epoch_training_ratio = 1.0;
   datum testing_ratio = 1.0;
-  datum mu = 1.75;
-  datum eta = 1.5;
-  OPTIMIZATION_METHOD optimization_method = GRADIENT_DESCENT;
   bool stats_during_training = true;
   unsigned int pbatchsize = 1;
   unsigned int sbatchsize = 1;
@@ -58,6 +52,10 @@ public:
 	* @param settings The settings to use in training
 	*/
   Trainer (NetGraph& graph, JSON settings);
+
+  ~Trainer() {
+    delete optimizer_;
+  }
 
   /**
 	* @brief Train the net for the specified number of epochs
@@ -80,12 +78,8 @@ public:
     @brief Resets the Trainer's inner state (last gradients/steps)
   **/
   inline void Reset() {
-    LOGDEBUG << "Resetting Trainer state";
-    for(Tensor* t : last_gradients_)
-      t->Clear();
-    for(Tensor* t : last_steps_)
-      t->Clear();
-    
+    LOGDEBUG << "Resetting Trainer and Optimizer state";
+    optimizer_->Reset();
     first_iteration = true;
   }
 
@@ -101,26 +95,21 @@ public:
   
   inline unsigned int epoch() { return epoch_; }
 
-  inline datum CalculateLR (unsigned int iteration) {
-    return (datum)settings_["learning_rate"] * pow (1.0 + (datum)settings_["learning_rate_gamma"]
-                                          * (datum) iteration,
-                                          -(datum)settings_["learning_rate_exponent"]);
-  }
-  
   inline void SetStatsDuringTraining(bool enable) { settings_["enable_stats_during_training"] = enable; }
 
   void UpdateParameterSizes();
 
 private:
-  void ApplyGradients (datum lr);
+  void ApplyRegularizationAndScaling();
   void InitializeStats();
 
   // References for easy access
   NetGraph& graph_;
   std::vector<CombinedTensor*> parameters_;
-  std::vector<Tensor*> last_steps_;
-  std::vector<Tensor*> last_gradients_;
   std::vector<Tensor*> accumulated_gradients_;
+
+  // Optimizer
+  Optimizer* optimizer_;
   
 	// Saved pointers
 	TrainingLayer* first_training_layer_ = nullptr;
@@ -139,10 +128,6 @@ private:
   // Global state
   static bool stats_are_initialized_;
   static StatDescriptor* stat_aggloss_;
-  static StatDescriptor* stat_qp_caseA_;
-  static StatDescriptor* stat_qp_caseB_;
-  static StatDescriptor* stat_qp_caseC_;
-  static StatDescriptor* stat_qp_caseM_;
   static StatDescriptor* stat_fps_;
   static StatDescriptor* stat_sps_;
 };
