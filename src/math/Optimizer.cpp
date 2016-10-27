@@ -81,6 +81,7 @@ void Optimizer::Step(const std::vector<CombinedTensor *> &parameters, unsigned i
   }
 #endif
 
+#pragma omp parallel for default(shared)
   for(unsigned int p = 0; p < parameters.size(); p++) {
     // Call inner step
     Step(buffers_[p], parameters[p], iteration);
