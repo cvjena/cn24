@@ -280,7 +280,7 @@ void Trainer::Epoch() {
 
   LOGINFO << "Epoch: " << epoch_ << ", it: " << iterations <<
            ", bsize: " << first_training_layer_->GetBatchSize() * (unsigned int)settings_["batch_size_sequential"]
-          << ", " << optimizer_->GetStatusDescription();
+          << ", " << optimizer_->GetStatusDescription(epoch_ * iterations);
 
   for (unsigned int i = 0; i < iterations; i++) {
     if ( (50 * i / iterations) > fiftieth) {
@@ -380,42 +380,44 @@ void Trainer::ApplyRegularizationAndScaling() {
 		Layer* const layer = graph_.GetNodes()[l]->layer;
     datum local_learning_rate = layer->local_lr_;
 
-    if(local_learning_rate > 0) {
+    if(local_learning_rate == 0) {
       for (unsigned int p = 0; p < layer->parameters().size(); p++) {
         CombinedTensor *const current_layer_parameters = layer->parameters_[p];
         current_layer_parameters->delta.Clear();
+        dp++;
       }
     } else {
-    for (unsigned int p = 0; p < layer->parameters().size(); p++) {
-      CombinedTensor *const current_layer_parameters = layer->parameters_[p];
-#ifdef BUILD_OPENCL
-      current_layer_parameters->data.MoveToCPU();
-#endif
+      for (unsigned int p = 0; p < layer->parameters().size(); p++) {
+        CombinedTensor *const current_layer_parameters = layer->parameters_[p];
+  #ifdef BUILD_OPENCL
+        current_layer_parameters->data.MoveToCPU();
+        current_layer_parameters->delta.MoveToCPU(true);
+  #endif
 
-      for (unsigned int w = 0; w < current_layer_parameters->data.elements(); w++) {
-        const datum weight = current_layer_parameters->data(w);
+        for (unsigned int w = 0; w < current_layer_parameters->data.elements(); w++) {
+          const datum weight = current_layer_parameters->data(w);
 
-        // Gradients w.r.t. the weight
-        const datum l1_gradient = (weight > 0) - (weight < 0);
-        const datum l2_gradient = weight;
-        const datum loss_gradient = (*accumulated_gradients_[dp])[w];
+          // Gradients w.r.t. the weight
+          const datum l1_gradient = (weight > 0) - (weight < 0);
+          const datum l2_gradient = weight;
+          const datum loss_gradient = (*accumulated_gradients_[dp])[w];
 
-        const datum batch_size_loss_scaling_factor = ((datum) 1.0) /
-                                                     (((datum) (sample_count_ * _cached_batch_size_sequential)) *
-                                                      first_training_layer_->GetLossSamplingProbability());
-        const datum partial_derivative =
-            // Average of gradient over minibatch
-            local_learning_rate * (loss_gradient * batch_size_loss_scaling_factor) +
-            // Regularization
-            local_learning_rate * (_cached_l2_coefficient * l2_gradient + _cached_l1_coefficient * l1_gradient);
+          const datum batch_size_loss_scaling_factor = ((datum) 1.0) /
+                                                       (((datum) (sample_count_ * _cached_batch_size_sequential)) *
+                                                        first_training_layer_->GetLossSamplingProbability());
+          const datum partial_derivative =
+              // Average of gradient over minibatch
+              local_learning_rate * (loss_gradient * batch_size_loss_scaling_factor) +
+              // Regularization
+              local_learning_rate * (_cached_l2_coefficient * l2_gradient + _cached_l1_coefficient * l1_gradient);
 
 
-        // Save partial derivative
-        current_layer_parameters->delta[w] = partial_derivative;
+          // Save partial derivative
+          current_layer_parameters->delta[w] = partial_derivative;
+        }
+        dp++;
       }
-    }
 
-      dp++;
     }
   }
 }

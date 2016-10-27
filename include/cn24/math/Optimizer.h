@@ -38,7 +38,10 @@ public:
   void Step(const std::vector<CombinedTensor*>& parameters, unsigned int iteration = 0);
 
   // Get a string that describes the inner state of the optimizer (e.g. current learning rate)
-  virtual std::string GetStatusDescription() { return ""; }
+  virtual std::string GetStatusDescription(unsigned int iteration) { UNREFERENCED_PARAMETER(iteration); return ""; }
+
+  // Returns true if optimizer is OpenCL aware
+  virtual bool IsOpenCLAware() { return false; }
 private:
   JSON configuration_;
   std::vector<std::vector<Tensor>> buffers_;
