@@ -21,6 +21,14 @@
 #include <stdexcept>
 
 #ifdef __GNUC__
+extern "C" {
+#include <execinfo.h>
+#include <unistd.h>
+};
+#endif
+
+
+#ifdef __GNUC__
 inline std::string methodName (const std::string& prettyFunction) {
   size_t colons = prettyFunction.find ("::");
   if (colons == std::string::npos)
@@ -68,7 +76,16 @@ inline std::string methodName (const std::string& prettyFunction) {
 
 #define LOGEND {std::cout << std::endl; std::cerr << std::endl;}
 
-#define FATAL(x) { LOGERROR << "FATAL: " << x << std::endl; \
-    throw(std::runtime_error("See log for details.")); }
+#ifdef __GNUC__
+#define FATAL(x) { LOGERROR << "FATAL: " << x << std::endl;\
+  void *frames[10];\
+  size_t size;\
+  size = backtrace(frames, 10);\
+  backtrace_symbols_fd(frames, size, STDERR_FILENO);\
+  throw(std::runtime_error("See log for details.")); }
+#else
+#define FATAL(x) { LOGERROR << "FATAL: " << x << std::endl;\
+  throw(std::runtime_error("See log for details.")); }
+#endif
 
 #endif
