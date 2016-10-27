@@ -280,7 +280,7 @@ void Trainer::Epoch() {
 
   LOGINFO << "Epoch: " << epoch_ << ", it: " << iterations <<
            ", bsize: " << first_training_layer_->GetBatchSize() * (unsigned int)settings_["batch_size_sequential"]
-          << ", " << optimizer_->GetStatusDescription();
+          << ", " << optimizer_->GetStatusDescription() << std::endl << std::flush;
 
   for (unsigned int i = 0; i < iterations; i++) {
     if ( (50 * i / iterations) > fiftieth) {
