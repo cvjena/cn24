@@ -17,8 +17,8 @@ std::vector<Conv::JSON> test_optimizers{
     Conv::JSON::object({
                            {"optimization_method","adam"},
                            {"ad_step_size", 0.1},
-                           {"ad_beta1", 0.0},
-                           {"ad_beta2", 0.0},
+//                           {"ad_beta1", 0.0},
+//                           {"ad_beta2", 0.0},
                            {"ad_epsilon", 0.00000001}
                        })
 };

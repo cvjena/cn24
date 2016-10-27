@@ -20,7 +20,7 @@ AdamOptimizer::AdamOptimizer(JSON descriptor) : Optimizer(descriptor) {
 void AdamOptimizer::Step(std::vector<Tensor> &buffers, CombinedTensor* parameters,
                         unsigned int iteration) {
   Tensor& first_moment = buffers[0];
-  Tensor& second_moment = buffers[0];
+  Tensor& second_moment = buffers[1];
 
   const datum current_step_size = step_size_ / sqrtf(iteration + 1);
 

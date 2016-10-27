@@ -53,7 +53,7 @@ void Optimizer::Step(const std::vector<CombinedTensor *> &parameters, unsigned i
 
         // Create new ones
         for(unsigned int b = 0; b < GetRequiredBufferCount(); b++) {
-          buffers_[p].push_back(Tensor(parameters[p]->data.elements()));
+          buffers_[p].emplace_back(Tensor(parameters[p]->data.elements()));
         }
       } else {
         // Check if inner parameter count matches
