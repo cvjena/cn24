@@ -24,7 +24,7 @@
 extern "C" {
 #include <execinfo.h>
 #include <unistd.h>
-};
+}
 #endif
 
 
