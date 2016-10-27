@@ -16,6 +16,7 @@ public:
   SGDOptimizer(JSON descriptor);
   void Step(std::vector<Tensor> &buffers, CombinedTensor* parameters, unsigned int iteration);
   unsigned int GetRequiredBufferCount() const { return 1; }
+  std::string GetStatusDescription(unsigned int iteration);
 
 private:
   datum learning_rate_;
