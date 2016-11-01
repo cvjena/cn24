@@ -479,6 +479,18 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
         LOGERROR << "Dataset " << id << " does not exist!";
       }
     }
+  } else if (command.compare(0,7,"explore") == 0) {
+    Conv::NetGraphNode* input_node = graph.GetInputNodes()[0];
+
+    Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(input_node->layer);
+    if(input_layer != nullptr) {
+      input_layer->SelectAndLoadSamples();
+      graph.OnBeforeFeedForward();
+      std::vector<Conv::NetGraphNode*> input_nodes = {input_node};
+      graph.FeedForward(input_nodes, true);
+      Conv::NetGraphBuffer& output_buffer = input_node->output_buffers[0];
+      // Conv::System::viewer->show(...)
+    }
   }
 	else {
     LOGWARN << "Unknown command: " << command;
