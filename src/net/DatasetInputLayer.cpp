@@ -304,7 +304,10 @@ unsigned int DatasetInputLayer::GetSamplesInTestingSet() {
 }
 
 unsigned int DatasetInputLayer::GetSamplesInTrainingSet() {
-  return testing_dataset_->GetTrainingSamples();
+  unsigned int samples = 0;
+  for(Dataset* dataset : datasets_)
+    samples += dataset->GetTrainingSamples();
+  return samples;
 }
 
 void DatasetInputLayer::SetTestingMode (bool testing) {
