@@ -365,16 +365,30 @@ static void
 nk_xsurf_draw_image(XSurface *surf, short x, short y, unsigned short w, unsigned short h, struct nk_image image,
     struct nk_color col) {
     if(image.handle.ptr == nullptr) {
-      unsigned long bg = nk_color_from_byte(&col.r);
+      nk_color warn = nk_rgb(255,0,0);
+      unsigned long bg = nk_color_from_byte(&warn.r);
       XSetForeground(surf->dpy, surf->gc, bg);
       XFillRectangle(surf->dpy, surf->drawable, surf->gc, x, y, w, h);
     } else {
       unsigned long bg = nk_color_from_byte(&col.r);
       XSetForeground(surf->dpy, surf->gc, bg);
       XFillRectangle(surf->dpy, surf->drawable, surf->gc, x, y, w, h);
-      XImage* ximage = XCreateImage(surf->dpy, XDefaultVisual(surf->dpy, surf->screen), 24, ZPixmap, 0,
-      (char*)image.handle.ptr, w, h, 32, 0);
-      XPutImage(surf->dpy, surf->drawable, surf->gc, ximage, 0, 0, x, y, image.w, image.h);
+
+      /*XVisualInfo info;
+      XMatchVisualInfo(surf->dpy, surf->screen, 24, TrueColor, &info);
+
+
+      XImage* ximage = XCreateImage(surf->dpy, info.visual, 24, ZPixmap, 0,
+      (char*)image.handle.ptr, image.w, image.h, 8, 0);
+      XPutImage(surf->dpy, surf->drawable, surf->gc, ximage, 0, 0, x, y, image.w, image.h);*/
+      char* ptr = (char*)image.handle.ptr;
+      for(short _y = 0; _y < image.h && _y < h; _y++) {
+        for(short _x = 0; _x < image.w && _x < w; _x++) {
+          unsigned long fg = nk_color_from_byte((const nk_byte*)&(ptr[(image.w * _y + _x) * 3]));
+          XSetForeground(surf->dpy, surf->gc, fg);
+          XDrawPoint(surf->dpy, surf->drawable, surf->gc, _x + x, _y + y);
+        }
+      }
     }
 }
 static void
