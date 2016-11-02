@@ -17,7 +17,7 @@
 
 #include <locale.h>
 
-#ifdef BUILD_GUI
+#ifdef BUILD_GUI_GTK
 #include <gtk/gtk.h>
 #endif
 
@@ -124,7 +124,7 @@ void System::Init(int requested_log_level) {
   }
 
   CLHelper::Init(platform_number, device_number);
-#ifdef BUILD_GUI
+#ifdef BUILD_GUI_GTK
   if(!gtk_init_check ( nullptr, nullptr )) {
     LOGWARN << "Could not initialize GTK!";
   }

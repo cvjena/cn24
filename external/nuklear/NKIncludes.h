@@ -5,15 +5,22 @@
  * For licensing information, see the LICENSE file included with this project.
  */
 
+#ifndef CN24_NKINCLUDES_H
+#define CN24_NKINCLUDES_H
+
+#ifdef BUILD_GUI
+
 // NK_INCLUDE defines here
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
 #define NK_INCLUDE_STANDARD_VARARGS
 #define NK_INCLUDE_DEFAULT_ALLOCATOR
-#define NK_IMPLEMENTATION
 #include "nuklear.h"
 
 #ifdef BUILD_GUI_X11
-#define NK_XLIB_IMPLEMENTATION
 #include "nuklear_xlib.h"
+#endif
+
+#endif
+
 #endif
