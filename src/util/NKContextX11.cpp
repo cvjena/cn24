@@ -77,9 +77,9 @@ void NKContext::Draw() {
   auto current_time = std::chrono::system_clock::now();
   std::chrono::duration<double> t_diff = current_time - last_frame_;
 
-  double frame_interval = 0.02;
+  double frame_interval = 1.0/30.0;
   if(t_diff.count() < frame_interval) {
-    std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(20) - t_diff);
+    std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(frame_interval * 1000.0) - t_diff);
   }
   //XClearWindow(display_, window_);
   nk_xlib_render(window_, nk_rgb(30,30,30));
