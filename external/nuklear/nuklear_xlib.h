@@ -362,6 +362,22 @@ nk_xsurf_draw_text(XSurface *surf, short x, short y, unsigned short w, unsigned 
 }
 
 static void
+nk_xsurf_draw_image(XSurface *surf, short x, short y, unsigned short w, unsigned short h, struct nk_image image,
+    struct nk_color col) {
+    if(image.handle.ptr == nullptr) {
+      unsigned long bg = nk_color_from_byte(&col.r);
+      XSetForeground(surf->dpy, surf->gc, bg);
+      XFillRectangle(surf->dpy, surf->drawable, surf->gc, x, y, w, h);
+    } else {
+      unsigned long bg = nk_color_from_byte(&col.r);
+      XSetForeground(surf->dpy, surf->gc, bg);
+      XFillRectangle(surf->dpy, surf->drawable, surf->gc, x, y, w, h);
+      XImage* ximage = XCreateImage(surf->dpy, XDefaultVisual(surf->dpy, surf->screen), 24, ZPixmap, 0,
+      (char*)image.handle.ptr, w, h, 32, 0);
+      XPutImage(surf->dpy, surf->drawable, surf->gc, ximage, 0, 0, x, y, image.w, image.h);
+    }
+}
+static void
 nk_xsurf_clear(XSurface *surf, unsigned long color)
 {
     XSetForeground(surf->dpy, surf->gc, color);
@@ -680,8 +696,15 @@ nk_xlib_render(Drawable screen, struct nk_color clear)
             nk_xsurf_stroke_curve(surf, q->begin, q->ctrl[0], q->ctrl[1],
                 q->end, 22, q->line_thickness, q->color);
         } break;
+        case NK_COMMAND_IMAGE: {
+            const struct nk_command_image* i = (const struct nk_command_image *)cmd;
+//            nk_xsurf_stroke_rect(surf, i->x, i->y, i->w, i->h, 1, 1, nk_rgb(255,0,0));
+            nk_xsurf_draw_image(surf, i->x, i->y, i->w, i->h, i->img, i->col);
+//            nk_xsurf_stroke_rect(XSurface* surf, short x, short y, unsigned short w,
+//            unsigned short h, unsigned short r, unsigned short line_thickness, struct nk_color col)
+            break;
+        }
         case NK_COMMAND_RECT_MULTI_COLOR:
-        case NK_COMMAND_IMAGE:
         case NK_COMMAND_ARC:
         case NK_COMMAND_ARC_FILLED:
         default: break;
