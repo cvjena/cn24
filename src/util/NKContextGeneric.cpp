@@ -13,5 +13,13 @@ NKContext::NKContext(unsigned int width, unsigned int height):
   width_(width), height_(height) {
   LOGERROR << "GUI not supported due to build options!";
 }
+NKContext::~NKContext() {
+
+}
+void NKContext::ProcessEvents() {
+  
+}
+void NKContext::Draw() {
+  
 }
 #endif

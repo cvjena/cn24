@@ -20,13 +20,24 @@ namespace Conv {
 class NKContext {
 public:
   NKContext(unsigned int width = 800, unsigned int height = 600);
+  ~NKContext();
+  
+  void ProcessEvents();
+  void Draw();
+#ifdef BUILD_GUI
+  nk_context* context_;
+#endif
 private:
   unsigned int width_ = 0;
   unsigned int height_ = 0;
+
+
+
 #ifdef BUILD_GUI_X11
   Display* display_;
   Window window_;
   XEvent event_;
+  int screen_;
 #endif
 };
 }

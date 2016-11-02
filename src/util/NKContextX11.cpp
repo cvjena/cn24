@@ -21,6 +21,36 @@ NKContext::NKContext(unsigned int width, unsigned int height):
   if(display_ == nullptr) {
     FATAL("Cannot open display!");
   }
+  screen_ = DefaultScreen(display_);
+  window_ = XCreateSimpleWindow(display_, RootWindow(display_, screen_),
+    0, 0, width_, height_, 1,
+    BlackPixel(display_, screen_), WhitePixel(display_, screen_));
+  XSelectInput(display_ , window_, ExposureMask | KeyPressMask);
+  XMapWindow(display_, window_);
+  
+  XFont* font = nk_xfont_create(display_, "fixed");
+  context_ = nk_xlib_init(font, display_, screen_, window_, width, height);
+}
+
+NKContext::~NKContext() {
+  XCloseDisplay(display_);
+}
+
+void NKContext::ProcessEvents() {
+  nk_input_begin(context_);
+  XNextEvent(display_, &event_);
+  if (XFilterEvent(&event_, window_)) {
+    
+  } else {
+    nk_xlib_handle_event(display_, screen_, window_, &event_);
+  }
+  nk_input_end(context_);
+}
+
+void NKContext::Draw() {
+  //XClearWindow(display_, window_);
+  nk_xlib_render(window_, nk_rgb(30,30,30));
+  XFlush(display_);
 }
 }
 
