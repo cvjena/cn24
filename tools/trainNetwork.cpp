@@ -505,13 +505,33 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
           context.ProcessEvents();
           if (nk_begin(context, "Data Tensor", nk_rect(0, 0, 500, 600),
                        NK_WINDOW_TITLE | NK_WINDOW_CLOSABLE | NK_WINDOW_SCALABLE | NK_WINDOW_MOVABLE)) {
+            const unsigned int output_width = output_buffer.combined_tensor->data.width();
+            const unsigned int output_height = output_buffer.combined_tensor->data.height();
+
             nk_layout_row_dynamic(context, 30, 1);
             nk_property_int(context, "Sample", 0, &current_sample, output_buffer.combined_tensor->data.samples() - 1, 1, 0.01);
             data_image.SetSample(current_sample);
             nk_layout_row_static(context, output_buffer.combined_tensor->data.height(), output_buffer.combined_tensor->data.width(), 1);
             nk_image(context, data_image);
+
+            if(input_layer->GetActiveTestingDataset()->GetTask() == Conv::DETECTION) {
+              std::vector<Conv::BoundingBox>* boxes = (std::vector<Conv::BoundingBox>*)label_buffer.combined_tensor->metadata[current_sample];
+              for(unsigned int b = 0; b < boxes->size(); b++) {
+                Conv::BoundingBox bbox = boxes->at(b);
+                struct nk_rect bbox_rect = nk_layout_space_rect_to_screen(context, nk_rect((bbox.x - (bbox.w/2.0f)) * (float)output_width, (bbox.y - (bbox.h/2.0f)) * (float)output_height, bbox.w * (float)output_width, bbox.h*(float)output_height));
+                struct nk_rect text_rect = bbox_rect;
+                text_rect.y = bbox_rect.y + bbox_rect.h - 12.0f;
+                text_rect.h = 12.0f;
+                nk_stroke_rect(nk_window_get_canvas(context), bbox_rect,1, 1, nk_rgb(255,255,255));
+                nk_draw_text(nk_window_get_canvas(context), text_rect,
+                  class_manager.GetClassInfoById(bbox.c).first.c_str(),
+                  class_manager.GetClassInfoById(bbox.c).first.length(), context.context_->style.font, nk_rgb(255,255,255), nk_rgb(0,0,0));
+              }
+            }
+
             nk_layout_row_static(context, label_buffer.combined_tensor->data.height(), label_buffer.combined_tensor->data.width(), 1);
             nk_image(context, label_image);
+
           }
           nk_end(context);
           if(nk_begin(context, "Metadata", nk_rect(501, 0, 200, 600),
