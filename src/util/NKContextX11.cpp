@@ -97,9 +97,9 @@ NKImage::NKImage(NKContext &context, const Tensor &tensor, unsigned int sample) 
                         8, 0);
   for(unsigned int y = 0; y < tensor_.height(); y++) {
     for(unsigned int x = 0; x < tensor_.width(); x++) {
-      const unsigned long R = UCHAR_FROM_DATUM(*tensor_.data_ptr(x, y, 0, sample));
-      const unsigned long G = UCHAR_FROM_DATUM(*tensor_.data_ptr(x, y, 1, sample));
-      const unsigned long B = UCHAR_FROM_DATUM(*tensor_.data_ptr(x, y, 2, sample));
+      const unsigned long R = UCHAR_FROM_DATUM(*tensor_.data_ptr(x, y, 0, sample_));
+      const unsigned long G = UCHAR_FROM_DATUM(*tensor_.data_ptr(x, y, 1, sample_));
+      const unsigned long B = UCHAR_FROM_DATUM(*tensor_.data_ptr(x, y, 2, sample_));
       unsigned long color = R << 16 | G << 8 | B;
       XPutPixel(image_, x, y, color);
     }
@@ -118,6 +118,18 @@ NKImage::operator struct nk_image() const {
   x.h = tensor_.height();
   x.w = tensor_.width();
   return x;
+}
+
+void NKImage::Update() {
+  for(unsigned int y = 0; y < tensor_.height(); y++) {
+    for(unsigned int x = 0; x < tensor_.width(); x++) {
+      const unsigned long R = UCHAR_FROM_DATUM(*tensor_.data_ptr(x, y, 0, sample_));
+      const unsigned long G = UCHAR_FROM_DATUM(*tensor_.data_ptr(x, y, 1, sample_));
+      const unsigned long B = UCHAR_FROM_DATUM(*tensor_.data_ptr(x, y, 2, sample_));
+      unsigned long color = R << 16 | G << 8 | B;
+      XPutPixel(image_, x, y, color);
+    }
+  }
 }
 }
 

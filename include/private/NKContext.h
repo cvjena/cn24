@@ -27,6 +27,11 @@ class NKImage {
 public:
   NKImage(NKContext& context, const Tensor& tensor, unsigned int sample);
   ~NKImage();
+  void Update();
+  void SetSample(unsigned int sample) {
+    sample_ = sample;
+    Update();
+  }
   void* ptr();
 #ifdef BUILD_GUI
   operator struct nk_image () const;
