@@ -9,6 +9,7 @@
 #define CN24_NKCONTEXT_H
 
 #include "NKIncludes.h"
+#include "../cn24/util/Tensor.h"
 
 #ifdef BUILD_GUI_X11
 extern "C" {
@@ -19,7 +20,26 @@ extern "C" {
 #endif
 
 namespace Conv {
+
+class NKContext;
+class NKImage {
+  friend class NKContext;
+public:
+  NKImage(NKContext& context, const Tensor& tensor, unsigned int sample);
+  ~NKImage();
+  void* ptr();
+private:
+  NKContext& context_;
+  const Tensor& tensor_;
+  unsigned int sample_;
+#ifdef BUILD_GUI_X11
+  XImage* image_;
+  char* data_;
+#endif
+};
+
 class NKContext {
+  friend class NKImage;
 public:
   NKContext(unsigned int width = 800, unsigned int height = 600);
   ~NKContext();

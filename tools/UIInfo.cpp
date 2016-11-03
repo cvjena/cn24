@@ -17,16 +17,17 @@
 int main() {
   Conv::System::Init(3);
 
-  uint8_t* test_image = new uint8_t[400*400*3];
+  Conv::Tensor test_image(1, 400, 400, 3);
   for(int y = 0; y < 400; y++) {
     for (int x = 0; x < 400; x++) {
-      test_image[3 * (y * 400 + x)] = x / 2;
-      test_image[3 * (y * 400 + x) + 1] = x / 2;
-      test_image[3 * (y * 400 + x) + 2] = x / 2;
+      *test_image.data_ptr(x, y, 0) = x / 2;
+      *test_image.data_ptr(x, y, 1) = x / 2;
+      *test_image.data_ptr(x, y, 2) = x / 2;
     }
   }
   {
     Conv::NKContext context(1200, 800);
+    Conv::NKImage image(context, test_image, 0);
     bool running = true;
     while (running) {
       context.ProcessEvents();
@@ -40,7 +41,7 @@ int main() {
         }
 
         nk_layout_row_dynamic(context, 400, 1);
-        struct nk_image demo_image = nk_image_ptr(test_image);
+        struct nk_image demo_image = nk_image_ptr(image.ptr());
         demo_image.w = 400;
         demo_image.h = 400;
         nk_image(context, demo_image);
@@ -52,7 +53,6 @@ int main() {
       context.Draw();
     }
   }
-  delete[] test_image;
   LOGEND;
   
   return 0;

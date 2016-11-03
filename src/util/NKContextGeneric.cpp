@@ -22,4 +22,16 @@ void NKContext::ProcessEvents() {
 void NKContext::Draw() {
   
 }
+
+NKImage::NKImage(NKContext &context, const Tensor &tensor, unsigned int sample) :
+  context_(context), tensor_(tensor), sample_(sample) {
+
+}
+NKImage::~NKImage() {
+
+}
+void* NKImage::ptr() {
+  return nullptr;
+}
+}
 #endif

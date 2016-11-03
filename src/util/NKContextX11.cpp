@@ -6,12 +6,15 @@
  */
 
 #ifdef BUILD_GUI_X11
+#include "Config.h"
+#include "Tensor.h"
 #include "NKIncludes.h"
 #include "NKContext.h"
 
 #include "Log.h"
 
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 #include <chrono>
 #include <thread>
 
@@ -85,6 +88,29 @@ void NKContext::Draw() {
   nk_xlib_render(window_, nk_rgb(30,30,30));
   XFlush(display_);
   last_frame_ = current_time;
+}
+
+NKImage::NKImage(NKContext &context, const Tensor &tensor, unsigned int sample) :
+  context_(context), tensor_(tensor), sample_(sample) {
+  data_ = new char[tensor_.width() * tensor_.height() * 4];
+  image_ = XCreateImage(context_.display_, context_.visual_, 24, ZPixmap, 0, data_, tensor_.width(), tensor_.height(),
+                        8, 0);
+  for(unsigned int y = 0; y < tensor_.height(); y++) {
+    for(unsigned int x = 0; x < tensor_.width(); x++) {
+      const unsigned long R = UCHAR_FROM_DATUM(*tensor_.data_ptr(x, y, 0, sample));
+      const unsigned long G = UCHAR_FROM_DATUM(*tensor_.data_ptr(x, y, 1, sample));
+      const unsigned long B = UCHAR_FROM_DATUM(*tensor_.data_ptr(x, y, 2, sample));
+      unsigned long color = R << 16 | G << 8 | B;
+      XPutPixel(image_, x, y, color);
+    }
+  }
+}
+
+NKImage::~NKImage() {
+  delete[] data_;
+}
+void* NKImage::ptr() {
+  return (void*)image_;
 }
 }
 

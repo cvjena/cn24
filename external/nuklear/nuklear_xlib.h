@@ -380,7 +380,7 @@ nk_xsurf_draw_image(XSurface *surf, short x, short y, unsigned short w, unsigned
 
       XImage* ximage = XCreateImage(surf->dpy, info.visual, 24, ZPixmap, 0,
       (char*)image.handle.ptr, image.w, image.h, 8, 0);
-      XPutImage(surf->dpy, surf->drawable, surf->gc, ximage, 0, 0, x, y, image.w, image.h);*/
+      XPutImage(surf->dpy, surf->drawable, surf->gc, ximage, 0, 0, x, y, image.w, image.h);
       char* ptr = (char*)image.handle.ptr;
       for(short _y = 0; _y < image.h && _y < h; _y++) {
         for(short _x = 0; _x < image.w && _x < w; _x++) {
@@ -389,6 +389,10 @@ nk_xsurf_draw_image(XSurface *surf, short x, short y, unsigned short w, unsigned
           XDrawPoint(surf->dpy, surf->drawable, surf->gc, _x + x, _y + y);
         }
       }
+      */
+
+      XImage* ptr = (XImage*)image.handle.ptr;
+      XPutImage(surf->dpy, surf->drawable, surf->gc, ptr, 0, 0, x, y, image.w, image.h);
     }
 }
 static void
