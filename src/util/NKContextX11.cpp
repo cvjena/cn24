@@ -107,7 +107,8 @@ NKImage::NKImage(NKContext &context, const Tensor &tensor, unsigned int sample) 
 }
 
 NKImage::~NKImage() {
-  delete[] data_;
+  XDestroyImage(image_);
+  // delete[] data_; (X11 does this for us...)
 }
 void* NKImage::ptr() {
   return (void*)image_;
