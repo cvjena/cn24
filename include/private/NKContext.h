@@ -29,8 +29,10 @@ public:
   ~NKImage();
   void Update();
   void SetSample(unsigned int sample) {
-    sample_ = sample;
-    Update();
+    if(sample_ != sample) {
+      sample_ = sample;
+      Update();
+    }
   }
   void* ptr();
 #ifdef BUILD_GUI
