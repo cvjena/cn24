@@ -392,7 +392,7 @@ nk_xsurf_draw_image(XSurface *surf, short x, short y, unsigned short w, unsigned
       */
 
       XImage* ptr = (XImage*)image.handle.ptr;
-      XPutImage(surf->dpy, surf->drawable, surf->gc, ptr, 0, 0, x, y, image.w, image.h);
+      XPutImage(surf->dpy, surf->drawable, surf->gc, ptr, 0, 0, x, y, MIN(w,image.w), MIN(h,image.h));
     }
 }
 static void
