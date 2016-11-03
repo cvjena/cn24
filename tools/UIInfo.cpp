@@ -41,10 +41,7 @@ int main() {
         }
 
         nk_layout_row_dynamic(context, 400, 1);
-        struct nk_image demo_image = nk_image_ptr(image.ptr());
-        demo_image.w = 400;
-        demo_image.h = 400;
-        nk_image(context, demo_image);
+        nk_image(context, image);
       }
       nk_end(context);
 

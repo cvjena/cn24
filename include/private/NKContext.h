@@ -28,6 +28,9 @@ public:
   NKImage(NKContext& context, const Tensor& tensor, unsigned int sample);
   ~NKImage();
   void* ptr();
+#ifdef BUILD_GUI
+  operator struct nk_image () const;
+#endif
 private:
   NKContext& context_;
   const Tensor& tensor_;

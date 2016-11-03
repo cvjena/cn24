@@ -113,6 +113,12 @@ NKImage::~NKImage() {
 void* NKImage::ptr() {
   return (void*)image_;
 }
+NKImage::operator struct nk_image() const {
+  struct nk_image x = nk_image_ptr((void*)image_);
+  x.h = tensor_.height();
+  x.w = tensor_.width();
+  return x;
+}
 }
 
 #endif
