@@ -5,7 +5,7 @@
  * For licensing information, see the LICENSE file included with this project.
  */
 
-#ifdef BUILD_GUI
+#ifdef BUILD_GUI_GTK
 #include <gtk/gtk.h>
 #include <string>
 #include <thread>
@@ -20,7 +20,7 @@
 
 namespace Conv {
 
-#ifdef BUILD_GUI
+#ifdef BUILD_GUI_GTK
 void copyTV ( Tensor* tensor, GdkPixbuf* targetb, unsigned int amap, unsigned int sample, datum factor, unsigned int scale ) {
   guchar* target = gdk_pixbuf_get_pixels ( targetb );
   unsigned int row_stride = gdk_pixbuf_get_rowstride ( targetb );
@@ -58,7 +58,7 @@ TensorViewer::TensorViewer () {
 }
 
 void TensorViewer::show ( Tensor* tensor, const std::string& title, bool autoclose,unsigned int map, unsigned int sample ) {
-#ifdef BUILD_GUI
+#ifdef BUILD_GUI_GTK
   if(tensor->elements() == 0)
     return;
 
