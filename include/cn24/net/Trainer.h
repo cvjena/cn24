@@ -89,8 +89,10 @@ public:
 	* @param epoch The new epoch number
 	*/
   inline void SetEpoch (unsigned int epoch) {
-    epoch_ = epoch;
-    Reset();
+    if(epoch != epoch_) {
+      epoch_ = epoch;
+      Reset();
+    }
   }
   
   inline unsigned int epoch() { return epoch_; }
