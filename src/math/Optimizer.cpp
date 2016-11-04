@@ -17,6 +17,8 @@ Optimizer::~Optimizer() {
 }
 
 void Optimizer::Reset() {
+  LOGINFO << "Resetting optimizer...";
+  iterations_since_reset_ = 0;
   ResetInner();
   for(std::vector<Tensor>& buffer_set : buffers_)
     for(Tensor& buffer : buffer_set)
@@ -86,6 +88,8 @@ void Optimizer::Step(const std::vector<CombinedTensor *> &parameters, unsigned i
     // Call inner step
     Step(buffers_[p], parameters[p], iteration);
   }
+
+  iterations_since_reset_++;
 }
 
 }

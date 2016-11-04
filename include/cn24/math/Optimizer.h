@@ -45,6 +45,8 @@ public:
 private:
   JSON configuration_;
   std::vector<std::vector<Tensor>> buffers_;
+protected:
+  unsigned int iterations_since_reset_ = 0;
 };
 }
 
