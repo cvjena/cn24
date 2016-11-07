@@ -13,6 +13,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 # Definitions
 set(CN24_SRC "${CN24_SOURCE_DIR}/src")
 set(CN24_INC "${CN24_SOURCE_DIR}/include")
+set(CN24_INC_DIRS "${CN24_SOURCE_DIR}/include" "${CN24_SOURCE_DIR}/include/cn24"
+        "${CN24_SOURCE_DIR}/include/cn24/util" "${CN24_SOURCE_DIR}/include/cn24/net"
+        "${CN24_SOURCE_DIR}/include/cn24/math" "${CN24_SOURCE_DIR}/include/cn24/factory"
+        "${CN24_SOURCE_DIR}/include/private")
 SET(CN24_TES "${CN24_SOURCE_DIR}/tests")
 set(CN24_TOO "${CN24_SOURCE_DIR}/tools")
 set(CN24_BSH "${CN24_SOURCE_DIR}/scripts")
@@ -129,7 +133,7 @@ include_directories("${CN24_SOURCE_DIR}/external/json")
 include_directories("${CN24_SOURCE_DIR}/external/nuklear")
 set(CN24_SOURCES ${CN24_SOURCES} "${CN24_SOURCE_DIR}/external/nuklear/nuklear.cpp")
 
-include_directories(${CN24_INC})
+include_directories(${CN24_INC_DIRS})
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
   add_library(cn24 STATIC ${CN24_SOURCES} ${CN24_HEADERS})
