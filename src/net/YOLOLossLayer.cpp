@@ -61,8 +61,10 @@ bool YOLOLossLayer::Connect ( const std::vector< CombinedTensor* >& inputs,
                            const NetStatus* net ) {
   UNREFERENCED_PARAMETER(net);
   // Needs exactly three inputs to calculate the difference
-  if ( inputs.size() != 3 )
+  if ( inputs.size() != 3 ) {
+    LOGERROR << "Need exactly 3 inputs to calculate loss function!";
     return false;
+  }
 
   // Also, the two inputs have to have the same number of samples and elements!
   // We ignore the shape for now...
@@ -71,6 +73,9 @@ bool YOLOLossLayer::Connect ( const std::vector< CombinedTensor* >& inputs,
   CombinedTensor* third = inputs[2];
   bool valid = first != nullptr && second != nullptr &&
                outputs.size() == 0 && second->metadata != nullptr;
+  if(!valid) {
+    LOGERROR << "Failed null pointer and size check!";
+  }
 
   unsigned int total_maps = first->data.maps();
   unsigned int maps_per_cell = total_maps / (horizontal_cells_ * vertical_cells_);
@@ -133,7 +138,8 @@ void YOLOLossLayer::FeedForward() {
         bool found_box = false;
         for(unsigned int t = 0; t < truth_boxes->size(); t++) {
           BoundingBox* tbox = &((*truth_boxes)[t]);
-          if(tbox->x >= box_xmin && tbox->x < box_xmax && tbox->y >= box_ymin && tbox->y < box_ymax) {
+          if(tbox->x >= box_xmin && tbox->x < box_xmax
+          && tbox->y >= box_ymin && tbox->y < box_ymax) {
             truth_box = tbox;
             found_box = true;
             break;
@@ -141,7 +147,7 @@ void YOLOLossLayer::FeedForward() {
         };
 
         datum best_iou = 0;
-        int responsible_box = -1;
+        int responsible_box = -1; // So that no possible index is equal to responsible_box when it is not overwritten
 
         // Loop over all possible boxes to find "responsible" box
         if(found_box) {
@@ -172,7 +178,7 @@ void YOLOLossLayer::FeedForward() {
             const datum predicted_class_prob = first_->data.data_ptr_const()[cell_class_index];
 
             const datum class_delta = predicted_class_prob - (truth_box->c == c ? (datum)1.0 : (datum)0.0);
-            first_->delta[cell_class_index] = class_delta;
+            first_->delta[cell_class_index] = (datum)2.0 * class_delta;
             current_loss_ += (class_delta * class_delta);
           }
         }
@@ -198,29 +204,29 @@ void YOLOLossLayer::FeedForward() {
             datum actual_iou = box.IntersectionOverUnion(truth_box);
 
             // Loss: Box coordinates
-            const datum xcoord_delta = x - truth_box->x;
-            const datum ycoord_delta = y - truth_box->y;
-            first_->delta.data_ptr()[box_coords_index] = scale_coord_ * xcoord_delta;
-            first_->delta.data_ptr()[box_coords_index + 1] = scale_coord_ * ycoord_delta;
+            const datum xcoord_delta = (x - truth_box->x) * (datum)horizontal_cells_;
+            const datum ycoord_delta = (y - truth_box->y) * (datum)vertical_cells_;
+            first_->delta.data_ptr()[box_coords_index] = scale_coord_ * (datum)2.0 * xcoord_delta;
+            first_->delta.data_ptr()[box_coords_index + 1] = scale_coord_ * (datum)2.0 * ycoord_delta;
             current_loss_ += (datum)(scale_coord_ * xcoord_delta * xcoord_delta) + (datum)(scale_coord_ * ycoord_delta * ycoord_delta);
 
             // Loss: Box size
             const datum w_delta = w - std::sqrt(truth_box->w);
             const datum h_delta = h - std::sqrt(truth_box->h);
-            first_->delta.data_ptr()[box_coords_index + 2] = scale_coord_ * w_delta;
-            first_->delta.data_ptr()[box_coords_index + 3] = scale_coord_ * h_delta;
+            first_->delta.data_ptr()[box_coords_index + 2] = scale_coord_ * (datum)2.0 * w_delta;
+            first_->delta.data_ptr()[box_coords_index + 3] = scale_coord_ * (datum)2.0 * h_delta;
             current_loss_ += (datum)(scale_coord_ * w_delta * w_delta) + (datum)(scale_coord_ * h_delta * h_delta);
 
             // Loss: Predicted confidence
             const datum conf_delta = box_confidence - actual_iou;
             current_loss_ += (datum)(conf_delta * conf_delta);
-            first_->delta.data_ptr()[box_confidence_index] = conf_delta;
+            first_->delta.data_ptr()[box_confidence_index] = (datum)2.0 * conf_delta;
           } else {
             // Box b is not "responsible" for the ground truth
 
             // Loss: Box confidence
-            first_->delta.data_ptr()[box_confidence_index] = scale_noobj_* box_confidence;
-            current_loss_ += (datum)(box_confidence * box_confidence);
+            first_->delta.data_ptr()[box_confidence_index] = scale_noobj_* ((datum)2.0 * box_confidence);
+            current_loss_ += (datum)(scale_noobj_ * box_confidence * box_confidence);
           }
         }
 
