@@ -23,9 +23,7 @@
 #include <cn24.h>
 #include <private/ConfigParsing.h>
 
-#ifdef BUILD_GUI
 #include <private/NKContext.h>
-#endif
 
 void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Dataset* dataset, Conv::ClassManager* class_manager);
 bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*>& datasets, Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, std::string& command);

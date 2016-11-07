@@ -35,9 +35,7 @@ public:
     }
   }
   void* ptr();
-#ifdef BUILD_GUI
   operator struct nk_image () const;
-#endif
 private:
   NKContext& context_;
   const Tensor& tensor_;
@@ -56,10 +54,8 @@ public:
   
   void ProcessEvents();
   void Draw();
-#ifdef BUILD_GUI
   nk_context* context_;
   operator nk_context* () const { return context_; }
-#endif
 private:
   unsigned int width_ = 0;
   unsigned int height_ = 0;

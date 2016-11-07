@@ -36,5 +36,9 @@ void* NKImage::ptr() {
 void NKImage::Update() {
 
 }
+NKImage::operator struct nk_image() const {
+  struct nk_image t;
+  return t;
+}
 }
 #endif
