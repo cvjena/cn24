@@ -33,8 +33,8 @@ NKImage::~NKImage() {
 void* NKImage::ptr() {
   return nullptr;
 }
-}
 void NKImage::Update() {
 
+}
 }
 #endif
