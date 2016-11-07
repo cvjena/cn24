@@ -15,5 +15,10 @@ GetGitRevisionDescription.cmake (Boost License 1.0):
 json.hpp (MIT License):
  Niels Lohmann
 
+nuklear (Public Domain):
+ Developed by Micha Mettke and every direct or indirect contributor to the GitHub.
+ Embeds stb_texedit, stb_truetype and stb_rectpack by Sean Barret (public domain)
+ Embeds ProggyClean.ttf font by Tristan Grimmer (MIT license).
+
 YOLO Framework (YOLO License):
  Joseph Redmon
