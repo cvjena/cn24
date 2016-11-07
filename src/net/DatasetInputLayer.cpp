@@ -59,7 +59,17 @@ void DatasetInputLayer::SetActiveTestingDataset(Dataset *dataset) {
 
   current_element_testing_ = 0;
 
-  System::stat_aggregator->SetCurrentTestingDataset(dataset->GetName());
+  bool dataset_found = false;
+  for(unsigned int i = 0; i < datasets_.size(); i++) {
+    if(datasets_[i] == dataset) {
+      System::stat_aggregator->SetCurrentTestingDataset(i);
+      dataset_found = true;
+      break;
+    }
+  }
+  if(!dataset_found) {
+    LOGERROR << "Testing dataset " << dataset->GetName() << " was not registered with DatasetInputLayer before!";
+  }
 }
 
 bool DatasetInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inputs,

@@ -33,12 +33,12 @@ public:
   virtual void Initialize(std::vector<StatDescriptor*>& stat_descriptors);
   virtual void Process(HardcodedStats& hardcoded_stats, std::vector<Stat*>& stats);
   virtual void SetCurrentExperiment(std::string current_experiment);
-  virtual void SetCurrentTestingDataset(std::string current_dataset);
+  virtual void SetCurrentTestingDataset(unsigned int current_dataset);
 
 private:
   std::vector<StatDescriptor*> stat_descriptors_;
   std::ofstream* csv_stream_ = nullptr;
-  std::string current_dataset_;
+  unsigned int current_dataset_;
 };
 
 }

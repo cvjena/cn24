@@ -28,7 +28,7 @@ class StatSink {
 public:
   virtual void Initialize(std::vector<StatDescriptor*>& stat_descriptors) = 0;
   virtual void SetCurrentExperiment(std::string current_experiment) = 0;
-  virtual void SetCurrentTestingDataset(std::string current_dataset) = 0;
+  virtual void SetCurrentTestingDataset(unsigned int current_dataset) = 0;
   virtual void Process(HardcodedStats& hardcoded_stats, std::vector<Stat*>& stats) = 0;
 };
 

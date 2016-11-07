@@ -48,7 +48,7 @@ public:
     LOGINFO << "Beginning experiment: " << current_experiment;
   }
 
-  virtual void SetCurrentTestingDataset(std::string current_dataset) {
+  virtual void SetCurrentTestingDataset(unsigned int current_dataset) {
     LOGINFO << "Switching to testing dataset: " << current_dataset;
   }
 

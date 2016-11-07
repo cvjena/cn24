@@ -84,7 +84,7 @@ public:
   void Snapshot();
   
   void SetCurrentExperiment(std::string current_experiment);
-  void SetCurrentTestingDataset(std::string current_testing_dataset);
+  void SetCurrentTestingDataset(unsigned int current_testing_dataset);
 private:
   // State
   enum StatAggregatorState {
