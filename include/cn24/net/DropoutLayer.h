@@ -35,7 +35,7 @@ public:
 
   virtual std::string GetLayerDescription() { return "Dropout Layer"; }
 
-  virtual bool IsOpenCLAware() { return true; }
+  virtual bool IsGPUMemoryAware() { return true; }
 private:
   std::mt19937 rand_;
   datum dropout_fraction_;

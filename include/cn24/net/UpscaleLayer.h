@@ -43,7 +43,7 @@ public:
   void FeedForward();
   void BackPropagate();
   
-  bool IsOpenCLAware() { return true; }
+  bool IsGPUMemoryAware() { return true; }
   
 	inline std::string GetLayerDescription() {
 		std::ostringstream ss;

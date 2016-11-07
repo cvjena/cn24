@@ -131,7 +131,7 @@ void ResizeLayer::BackPropagate() {
   }
 }
 
-bool ResizeLayer::IsOpenCLAware() {
+bool ResizeLayer::IsGPUMemoryAware() {
 #ifdef BUILD_OPENCL
   return true; 
 #else

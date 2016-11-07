@@ -113,7 +113,7 @@ public:
    * input and output tensors are in the CPU's memory and not
    * the GPU's.
    */
-  virtual bool IsOpenCLAware() { return false; }
+  virtual bool IsGPUMemoryAware() { return false; }
   
   /**
    * @brief Returns true if the layer should be ignored during gradient checks

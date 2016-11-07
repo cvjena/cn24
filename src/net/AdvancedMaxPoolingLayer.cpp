@@ -254,7 +254,7 @@ void AdvancedMaxPoolingLayer::BackPropagate() {
 }
 
 
-bool AdvancedMaxPoolingLayer::IsOpenCLAware() {
+bool AdvancedMaxPoolingLayer::IsGPUMemoryAware() {
 #ifdef BUILD_OPENCL_MAX
   return true;
 #else

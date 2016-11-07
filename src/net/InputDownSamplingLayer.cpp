@@ -88,7 +88,7 @@ void InputDownSamplingLayer::BackPropagate() {
 }
 
 
-bool InputDownSamplingLayer::IsOpenCLAware() {
+bool InputDownSamplingLayer::IsGPUMemoryAware() {
 #ifdef BUILD_OPENCL_MAX
   return true;
 #else

@@ -181,7 +181,7 @@ int main(int argc, char* argv[]) {
 			}
 
 #ifdef BUILD_OPENCL
-      if(layer->IsOpenCLAware()) {
+      if(layer->IsGPUMemoryAware()) {
 				if(seed_generator() % 4 < 2)
           input_data.data.MoveToGPU();
         LOGDEBUG << "    OpenCL aware!";

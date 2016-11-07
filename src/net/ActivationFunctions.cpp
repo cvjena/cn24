@@ -21,7 +21,7 @@
 
 namespace Conv {
 
-bool SigmoidLayer::IsOpenCLAware() {
+bool SigmoidLayer::IsGPUMemoryAware() {
 #ifdef BUILD_OPENCL
   return true;
 #else
@@ -29,7 +29,7 @@ bool SigmoidLayer::IsOpenCLAware() {
 #endif
 }
 
-bool TanhLayer::IsOpenCLAware() {
+bool TanhLayer::IsGPUMemoryAware() {
 #ifdef BUILD_OPENCL
   return true;
 #else
@@ -37,7 +37,7 @@ bool TanhLayer::IsOpenCLAware() {
 #endif
 }
 
-bool LeakyReLULayer::IsOpenCLAware() {
+bool LeakyReLULayer::IsGPUMemoryAware() {
 #ifdef BUILD_OPENCL
   return true;
 #else

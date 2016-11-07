@@ -70,7 +70,7 @@ public:
 		return ss.str();
 	}
   
-  bool IsOpenCLAware();
+  bool IsGPUMemoryAware();
 private:
   Tensor im2col_ff_buffer;
   Tensor sms_ff_buffer;

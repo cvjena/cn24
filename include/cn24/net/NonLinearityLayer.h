@@ -29,7 +29,7 @@ explicit name##Layer(JSON configuration) : NonLinearityLayer(configuration) { LO
 std::string GetLayerDescription() { return #name " Layer";}\
 void FeedForward(); \
 void BackPropagate(); \
-bool IsOpenCLAware(); \
+bool IsGPUMemoryAware(); \
 };
 
 #define NL_LAYER_NOCL(name) class name##Layer : public NonLinearityLayer {\
@@ -39,7 +39,7 @@ explicit name##Layer(JSON configuration) : NonLinearityLayer(configuration) { LO
 std::string GetLayerDescription() { return #name " Layer";}\
 void FeedForward(); \
 void BackPropagate(); \
-bool IsOpenCLAware() { return false; } \
+bool IsGPUMemoryAware() { return false; } \
 };
 
 

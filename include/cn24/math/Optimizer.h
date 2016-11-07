@@ -41,7 +41,7 @@ public:
   virtual std::string GetStatusDescription(unsigned int iteration) { UNREFERENCED_PARAMETER(iteration); return ""; }
 
   // Returns true if optimizer is OpenCL aware
-  virtual bool IsOpenCLAware() { return false; }
+  virtual bool IsGPUMemoryAware() { return false; }
 private:
   JSON configuration_;
   std::vector<std::vector<Tensor>> buffers_;

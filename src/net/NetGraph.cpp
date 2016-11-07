@@ -531,7 +531,7 @@ void NetGraph::InitializeWeights(NetGraphNode* node) {
 
 void NetGraph::PrepareNode(NetGraphNode* node) {
 #ifdef BUILD_OPENCL
-	if (!node->layer->IsOpenCLAware()) {
+	if (!node->layer->IsGPUMemoryAware()) {
 #ifdef LAYERTIME
 		auto t_begin = std::chrono::system_clock::now();
 #endif

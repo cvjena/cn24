@@ -54,7 +54,7 @@ public:
 		return ss.str();
 	}
 
-  bool IsOpenCLAware();
+  bool IsGPUMemoryAware();
 private:
   // Settings
   unsigned int region_width_ = 0;

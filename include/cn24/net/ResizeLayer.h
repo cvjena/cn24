@@ -39,7 +39,7 @@ public:
   bool Connect (const CombinedTensor* input, CombinedTensor* output);
   void FeedForward();
   void BackPropagate();
-  bool IsOpenCLAware();
+  bool IsGPUMemoryAware();
 
 	inline std::string GetLayerDescription() {
 		std::ostringstream ss;

@@ -387,7 +387,7 @@ void ConvolutionLayer::OnLayerConnect (const std::vector<Layer*> next_layers) {
            << next_layer_gain;
 }
 
-bool ConvolutionLayer::IsOpenCLAware() {
+bool ConvolutionLayer::IsGPUMemoryAware() {
 #ifdef BUILD_OPENCL_CONV
   return true;
 #else

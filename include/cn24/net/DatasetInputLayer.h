@@ -68,7 +68,7 @@ public:
 
 	std::string GetLayerDescription() { return "Dataset Input Layer"; }
 	void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers);
-  bool IsOpenCLAware();
+  bool IsGPUMemoryAware();
 
   void AddDataset(Dataset* dataset, const datum weight);
   void SetWeight(Dataset* dataset, const datum weight);

@@ -340,7 +340,7 @@ void DatasetInputLayer::CreateBufferDescriptors(std::vector<NetGraphBuffer>& buf
 	buffers.push_back(weight_buffer);
 }
 
-bool DatasetInputLayer::IsOpenCLAware() {
+bool DatasetInputLayer::IsGPUMemoryAware() {
 #ifdef BUILD_OPENCL
   return true;
 #else

@@ -75,7 +75,7 @@ void Optimizer::Step(const std::vector<CombinedTensor *> &parameters, unsigned i
 
 #ifdef BUILD_OPENCL
   // Need to get the parameter buffers off of the GPU
-  if(!IsOpenCLAware()) {
+  if(!IsGPUMemoryAware()) {
     for (unsigned int p = 0; p < parameters.size(); p++) {
       parameters[p]->data.MoveToCPU();
       parameters[p]->delta.MoveToCPU();
