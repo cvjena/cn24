@@ -12,10 +12,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 # Definitions
 set(CN24_SRC "${CN24_SOURCE_DIR}/src")
-set(CN24_INC "${CN24_SOURCE_DIR}/include" "${CN24_SOURCE_DIR}/include/cn24"
-"${CN24_SOURCE_DIR}/include/cn24/util" "${CN24_SOURCE_DIR}/include/cn24/net"
-"${CN24_SOURCE_DIR}/include/cn24/math" "${CN24_SOURCE_DIR}/include/cn24/factory"
-"${CN24_SOURCE_DIR}/include/private")
+set(CN24_INC "${CN24_SOURCE_DIR}/include")
 SET(CN24_TES "${CN24_SOURCE_DIR}/tests")
 set(CN24_TOO "${CN24_SOURCE_DIR}/tools")
 set(CN24_BSH "${CN24_SOURCE_DIR}/scripts")
@@ -112,6 +109,7 @@ endif()
 # Recurse over files
 file(GLOB_RECURSE CN24_SOURCES ${CN24_SRC}/*.cpp)
 file(GLOB_RECURSE CN24_HEADERS ${CN24_INC}/*.h)
+message(STATUS "Headers: ${CN24_HEADERS}")
 
 set(CN24_VERBOSE OFF CACHE BOOL "Enable CN24 verbose debug output")
 if(CN24_VERBOSE)
