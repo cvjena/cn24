@@ -158,10 +158,11 @@ graph.FeedForward();
 
     const Conv::datum ratio = fd_gradient / gradient;
     if(ratio > 1.2 || ratio < 0.8) {
-      LOGDEBUG << "BP Grad : " << gradient;
+      LOGDEBUG << "Element " << std::setw(5) << w << ", ratio: " << ratio;
+      /*LOGDEBUG << "BP Grad : " << gradient;
       LOGDEBUG << "FD Grad : " << fd_gradient;
       LOGDEBUG << "Ratio   : " << ratio;
-      LOGDEBUG << "Diff    : " << gradient - fd_gradient;
+      LOGDEBUG << "Diff    : " << gradient - fd_gradient;*/
     } else {
       okay++;
     }
