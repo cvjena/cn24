@@ -31,15 +31,21 @@ public:
     JSON file_json = JSON::parse(file);
     net_json_ = file_json["net"];
     hyperparameters_json_ = file_json["hyperparameters"];
+    augmentation_json_ = file_json["augmentation"];
   }
 
   explicit JSONNetGraphFactory(JSON json, unsigned int seed = 0) : seed_(seed) {
     net_json_ = json["net"];
     hyperparameters_json_ = json["hyperparameters"];
+    augmentation_json_ = json["augmentation"];
   }
 
   JSON GetHyperparameters() {
     return hyperparameters_json_;
+  }
+
+  JSON GetAugmentation() {
+    return augmentation_json_;
   }
 
   bool AddLayers(NetGraph& graph, ClassManager* class_manager, unsigned int seed = 0);
@@ -47,6 +53,7 @@ public:
 private:
   JSON net_json_;
   JSON hyperparameters_json_;
+  JSON augmentation_json_;
   unsigned int seed_ = 0;
 };
   

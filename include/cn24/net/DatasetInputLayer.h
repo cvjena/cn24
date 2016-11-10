@@ -36,7 +36,7 @@ public:
 	* @param loss_sampling_p p value for spatial loss sampling
 	* @param seed The random seed to use for sample selection and loss sampling
 	*/
-  DatasetInputLayer(Dataset* initial_dataset, const unsigned int batch_size = 1,
+  DatasetInputLayer(JSON configuration, Dataset* initial_dataset, const unsigned int batch_size = 1,
 			const datum loss_sampling_p = 1.0,
       const unsigned int seed = 0
 		    );
@@ -107,6 +107,17 @@ private:
   
   // Metadata buffer
   DatasetMetadataPointer* metadata_buffer_ = nullptr;
+
+
+  // Augmentation settings
+  datum jitter_;
+  int flip_;
+  bool do_augmentation_;
+
+  // Augmentation buffers
+  DatasetMetadataPointer* preaug_metadata_buffer_ = nullptr;
+  std::vector<std::vector<BoundingBox>> augmented_boxes_;
+  Tensor preaug_data_buffer_;
 };
 
 }

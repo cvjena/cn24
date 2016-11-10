@@ -17,6 +17,7 @@
 
 #include "Log.h"
 #include "TensorViewer.h"
+#include "NKContext.h"
 
 namespace Conv {
 
@@ -57,7 +58,24 @@ TensorViewer::TensorViewer () {
   LOGDEBUG << "Instance created.";
 }
 
-void TensorViewer::show ( Tensor* tensor, const std::string& title, bool autoclose,unsigned int map, unsigned int sample ) {
+void TensorViewer::show ( Tensor* tensor, const std::string& title, bool autoclose, unsigned int map, unsigned int sample ) {
+  NKContext ctx{1280,800};
+  NKImage tensor_image{ctx, *tensor, sample};
+  bool running = true;
+  while(running) {
+    ctx.ProcessEvents();
+    if (nk_begin(ctx, title.c_str(), nk_rect(0, 0, 800, 600), NK_WINDOW_TITLE | NK_WINDOW_CLOSABLE)) {
+      nk_layout_row_dynamic(ctx, 30, 2);
+      nk_value_uint(ctx, "Sample", sample);
+      nk_value_uint(ctx, "Map", map);
+      nk_layout_row_static(ctx, tensor->height(), tensor->width(), 1);
+      nk_image(ctx, tensor_image);
+    }
+    nk_end(ctx);
+    if(nk_window_is_closed(ctx, title.c_str()))
+      running = false;
+    ctx.Draw();
+  }
 #ifdef BUILD_GUI_GTK
   if(tensor->elements() == 0)
     return;

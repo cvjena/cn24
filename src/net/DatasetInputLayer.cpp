@@ -24,11 +24,12 @@
 
 namespace Conv {
 
-DatasetInputLayer::DatasetInputLayer (Dataset* initial_dataset,
+DatasetInputLayer::DatasetInputLayer (JSON configuration,
+                                      Dataset* initial_dataset,
                                       const unsigned int batch_size,
                                       const datum loss_sampling_p,
                                       const unsigned int seed) :
-  Layer(JSON::object()),
+  Layer(configuration),
   batch_size_ (batch_size),
   loss_sampling_p_ (loss_sampling_p),
   generator_ (seed), dist_ (0.0, 1.0) {
@@ -50,6 +51,11 @@ DatasetInputLayer::DatasetInputLayer (Dataset* initial_dataset,
   AddDataset(initial_dataset, 1);
 
   SetActiveTestingDataset(initial_dataset);
+
+  LOGINFO << "AUGMENTATIION: " << configuration_;
+  JSON_TRY_INT(flip_, configuration_, "flip", 0);
+  JSON_TRY_DATUM(jitter_, configuration_, "jitter_factor", 0);
+  do_augmentation_ = (flip_ > 0) || (jitter_ > 0);
 }
 
 void DatasetInputLayer::SetActiveTestingDataset(Dataset *dataset) {
@@ -193,6 +199,15 @@ bool DatasetInputLayer::Connect (const std::vector< CombinedTensor* >& inputs,
     localized_error_output_ = localized_error_output;
     if(testing_dataset_->GetTask() == DETECTION)
       metadata_buffer_ = label_output_->metadata;
+
+    if(do_augmentation_) {
+      preaug_metadata_buffer_ = new DatasetMetadataPointer[batch_size_];
+      preaug_data_buffer_.Resize(data_output->data);
+      augmented_boxes_.resize(batch_size_);
+      for(unsigned int sample = 0; sample < batch_size_; sample++) {
+        metadata_buffer_[sample] = &(augmented_boxes_[sample]);
+      }
+    }
   }
 
   return valid;
@@ -204,6 +219,11 @@ void DatasetInputLayer::SelectAndLoadSamples() {
   label_output_->data.MoveToCPU (true);
   localized_error_output_->data.MoveToCPU (true);
 #endif
+
+  // Augmentation randomizers
+  std::uniform_real_distribution<datum> jitter_dist(- jitter_, jitter_);
+  std::bernoulli_distribution flip_dist;
+
   for(unsigned int sample = 0; sample < batch_size_; sample++) {
     unsigned int selected_element = 0;
     bool force_no_weight = false;
@@ -241,13 +261,57 @@ void DatasetInputLayer::SelectAndLoadSamples() {
       selected_element = element_dist(generator_);
     }
 
+    // Generate scaling and transpose data
+    const datum left_border = jitter_dist(generator_);
+    const datum right_border = (datum)1.0 + jitter_dist(generator_);
+    const datum x_scale = (right_border - left_border);
+    const datum x_transpose_nrm = left_border;
+    const datum x_transpose_img = left_border * (datum)preaug_data_buffer_.width();
+
+    const datum top_border = jitter_dist(generator_);
+    const datum bottom_border = (datum)1.0 + jitter_dist(generator_);
+    const datum y_scale = (bottom_border - top_border);
+    const datum y_transpose_nrm = top_border;
+    const datum y_transpose_img = top_border * (datum)preaug_data_buffer_.height();
+
     // Copy image and label
     bool success;
 
     if (testing_)
       success = dataset->GetTestingSample (data_output_->data, label_output_->data, helper_output_->data, localized_error_output_->data, sample, selected_element);
-    else
-      success = dataset->GetTrainingSample (data_output_->data, label_output_->data, helper_output_->data, localized_error_output_->data, sample, selected_element);
+    else {
+      if(do_augmentation_) {
+        success = dataset->GetTrainingSample(preaug_data_buffer_, label_output_->data, helper_output_->data,
+                                             localized_error_output_->data, sample, selected_element);
+        for(unsigned int map = 0; map < data_output_->data.maps(); map++) {
+#pragma omp parallel for default(shared)
+          for(unsigned int y = 0; y < data_output_->data.height(); y++) {
+
+            datum origin_y = ((datum)y) * y_scale + y_transpose_img;
+            if(origin_y >= 0 && origin_y <= (preaug_data_buffer_.height() - 1)) {
+
+              for (unsigned int x = 0; x < data_output_->data.width(); x++) {
+                datum origin_x = ((datum) x) * x_scale + x_transpose_img;
+
+                if(origin_x >= 0 && origin_x <= (preaug_data_buffer_.width() - 1)) {
+                  *data_output_->data.data_ptr(x, y, map, sample) =
+                      preaug_data_buffer_.GetSmoothData(origin_x, origin_y, map, sample);
+                } else {
+                  *data_output_->data.data_ptr(x, y, map, sample) = 0;
+                }
+              }
+            } else {
+              for (unsigned int x = 0; x < data_output_->data.width(); x++) {
+                *data_output_->data.data_ptr(x, y, map, sample) = 0;
+              }
+            }
+          }
+        }
+      } else {
+        success = dataset->GetTrainingSample(data_output_->data, label_output_->data, helper_output_->data,
+                                             localized_error_output_->data, sample, selected_element);
+      }
+    }
 
     if (!success) {
       FATAL ("Cannot load samples from Dataset!");
@@ -278,8 +342,23 @@ void DatasetInputLayer::SelectAndLoadSamples() {
     if(dataset->GetTask() == DETECTION) {
       if (testing_)
         success = dataset->GetTestingMetadata(metadata_buffer_,sample, selected_element);
-      else
-        success = dataset->GetTrainingMetadata(metadata_buffer_,sample, selected_element);
+      else {
+        if(do_augmentation_) {
+          success = dataset->GetTrainingMetadata(preaug_metadata_buffer_, sample, selected_element);
+          std::vector<BoundingBox>* preaug_sample_boxes = (std::vector<BoundingBox>*)preaug_metadata_buffer_[sample];
+          augmented_boxes_[sample].clear();
+          for(BoundingBox bbox : *preaug_sample_boxes) {
+            bbox.x = (bbox.x - x_transpose_nrm) / x_scale;
+            bbox.y = (bbox.y - y_transpose_nrm) / y_scale;
+            bbox.w /= x_scale;
+            bbox.h /= y_scale;
+            augmented_boxes_[sample].push_back(bbox);
+          }
+          //metadata_buffer_[sample] = preaug_metadata_buffer_[sample];
+        } else {
+          success = dataset->GetTrainingMetadata(metadata_buffer_, sample, selected_element);
+        }
+      }
     }
 
     if (!success) {
