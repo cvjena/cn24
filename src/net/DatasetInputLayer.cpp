@@ -52,7 +52,7 @@ DatasetInputLayer::DatasetInputLayer (JSON configuration,
 
   SetActiveTestingDataset(initial_dataset);
 
-  LOGINFO << "AUGMENTATIION: " << configuration_;
+  LOGINFO << "AUGMENTATION: " << configuration_.dump();
   JSON_TRY_INT(flip_, configuration_, "flip", 0);
   JSON_TRY_DATUM(jitter_, configuration_, "jitter_factor", 0);
   do_augmentation_ = (flip_ > 0) || (jitter_ > 0);
