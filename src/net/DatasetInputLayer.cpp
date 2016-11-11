@@ -352,7 +352,12 @@ void DatasetInputLayer::SelectAndLoadSamples() {
             bbox.y = (bbox.y - y_transpose_nrm) / y_scale;
             bbox.w /= x_scale;
             bbox.h /= y_scale;
-            augmented_boxes_[sample].push_back(bbox);
+
+            // Drop boxes with CG outside the image
+            if(bbox.x >= 0 && bbox.x <= 1 && bbox.y >= 0 && bbox.y <= 1)
+              augmented_boxes_[sample].push_back(bbox);
+
+            metadata_buffer_[sample] = &(augmented_boxes_[sample]);
           }
           //metadata_buffer_[sample] = preaug_metadata_buffer_[sample];
         } else {
