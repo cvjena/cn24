@@ -233,8 +233,8 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
 
   // Go trough all accessors and normalize their bounding boxes
   for(unsigned int a = 0; a < training_accessors_.size(); a++) {
-    const datum width = training_accessors_[a].tensor_stream->GetWidth(training_accessors_[a].sample_in_stream) - (datum)1.0;
-    const datum height = training_accessors_[a].tensor_stream->GetHeight(training_accessors_[a].sample_in_stream) - (datum)1.0;
+    const datum width = training_accessors_[a].tensor_stream->GetWidth(training_accessors_[a].sample_in_stream);
+    const datum height = training_accessors_[a].tensor_stream->GetHeight(training_accessors_[a].sample_in_stream);
     for(unsigned int b = 0; b < training_accessors_[a].bounding_boxes_.size(); b++) {
       BoundingBox *box = &(training_accessors_[a].bounding_boxes_[b]);
       box->x /= width;
@@ -244,8 +244,8 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
     }
   }
   for(unsigned int a = 0; a < testing_accessors_.size(); a++) {
-    const datum width = testing_accessors_[a].tensor_stream->GetWidth(testing_accessors_[a].sample_in_stream) - (datum)1.0;
-    const datum height = testing_accessors_[a].tensor_stream->GetHeight(testing_accessors_[a].sample_in_stream) - (datum)1.0;
+    const datum width = testing_accessors_[a].tensor_stream->GetWidth(testing_accessors_[a].sample_in_stream);
+    const datum height = testing_accessors_[a].tensor_stream->GetHeight(testing_accessors_[a].sample_in_stream);
     for(unsigned int b = 0; b < testing_accessors_[a].bounding_boxes_.size(); b++) {
       BoundingBox *box = &(testing_accessors_[a].bounding_boxes_[b]);
       box->x /= width;
