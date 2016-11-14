@@ -266,13 +266,17 @@ void DatasetInputLayer::SelectAndLoadSamples() {
     const datum right_border = (datum)1.0 + jitter_dist(generator_);
     const datum x_scale = (right_border - left_border);
     const datum x_transpose_nrm = left_border;
-    const datum x_transpose_img = left_border * (datum)preaug_data_buffer_.width();
+    const datum x_transpose_img = left_border * (datum)(preaug_data_buffer_.width() - 1);
 
     const datum top_border = jitter_dist(generator_);
     const datum bottom_border = (datum)1.0 + jitter_dist(generator_);
     const datum y_scale = (bottom_border - top_border);
     const datum y_transpose_nrm = top_border;
-    const datum y_transpose_img = top_border * (datum)preaug_data_buffer_.height();
+    const datum y_transpose_img = top_border * (datum)(preaug_data_buffer_.height() - 1);
+
+    const bool flip_horizontal = flip_dist(generator_);
+    const datum flip_offset = data_output_->data.width() - 1;
+    const datum box_offset = flip_offset/(datum)(data_output_->data.width());
 
     // Copy image and label
     bool success;
@@ -287,11 +291,12 @@ void DatasetInputLayer::SelectAndLoadSamples() {
 #pragma omp parallel for default(shared)
           for(unsigned int y = 0; y < data_output_->data.height(); y++) {
 
-            datum origin_y = ((datum)y) * y_scale + y_transpose_img;
+            const datum origin_y = ((datum)y) * y_scale + y_transpose_img;
             if(origin_y >= 0 && origin_y <= (preaug_data_buffer_.height() - 1)) {
 
               for (unsigned int x = 0; x < data_output_->data.width(); x++) {
-                datum origin_x = ((datum) x) * x_scale + x_transpose_img;
+                const datum inner_x = (datum)x;
+                const datum origin_x = flip_horizontal ? flip_offset - (inner_x * x_scale + x_transpose_img) : inner_x * x_scale + x_transpose_img;
 
                 if(origin_x >= 0 && origin_x <= (preaug_data_buffer_.width() - 1)) {
                   *data_output_->data.data_ptr(x, y, map, sample) =
@@ -348,8 +353,19 @@ void DatasetInputLayer::SelectAndLoadSamples() {
           std::vector<BoundingBox>* preaug_sample_boxes = (std::vector<BoundingBox>*)preaug_metadata_buffer_[sample];
           augmented_boxes_[sample].clear();
           for(BoundingBox bbox : *preaug_sample_boxes) {
-            bbox.x = (bbox.x - x_transpose_nrm) / x_scale;
-            bbox.y = (bbox.y - y_transpose_nrm) / y_scale;
+            if(flip_horizontal)
+              bbox.x = box_offset - bbox.x;
+            // Transform into pixel space
+            bbox.x *= (datum)data_output_->data.width();
+            bbox.y *= (datum)data_output_->data.height();
+            bbox.x = (bbox.x - x_transpose_img) / x_scale;
+            bbox.y = (bbox.y - y_transpose_img) / y_scale;
+
+            // And back into normalized space
+            bbox.x /= (datum)data_output_->data.width();
+            bbox.y /= (datum)data_output_->data.height();
+
+            // Apply scale to width and height
             bbox.w /= x_scale;
             bbox.h /= y_scale;
 
@@ -359,7 +375,6 @@ void DatasetInputLayer::SelectAndLoadSamples() {
 
             metadata_buffer_[sample] = &(augmented_boxes_[sample]);
           }
-          //metadata_buffer_[sample] = preaug_metadata_buffer_[sample];
         } else {
           success = dataset->GetTrainingMetadata(metadata_buffer_, sample, selected_element);
         }
