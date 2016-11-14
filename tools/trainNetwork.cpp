@@ -516,7 +516,7 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
               std::vector<Conv::BoundingBox>* boxes = (std::vector<Conv::BoundingBox>*)label_buffer.combined_tensor->metadata[current_sample];
               for(unsigned int b = 0; b < boxes->size(); b++) {
                 Conv::BoundingBox bbox = boxes->at(b);
-                struct nk_rect bbox_rect = nk_layout_space_rect_to_screen(context, nk_rect((bbox.x - (bbox.w/2.0f)) * (float)output_width, (bbox.y - (bbox.h/2.0f)) * (float)output_height, bbox.w * (float)output_width, bbox.h*(float)output_height));
+                struct nk_rect bbox_rect = nk_layout_space_rect_to_screen(context, nk_rect(4.0 + (bbox.x - (bbox.w/2.0f)) * (float)output_width, (bbox.y - (bbox.h/2.0f)) * (float)output_height, bbox.w * (float)output_width, bbox.h*(float)output_height));
                 struct nk_rect text_rect = bbox_rect;
                 text_rect.y = bbox_rect.y + bbox_rect.h - 12.0f;
                 text_rect.h = 12.0f;
