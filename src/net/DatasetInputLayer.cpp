@@ -313,8 +313,6 @@ void DatasetInputLayer::SelectAndLoadSamples() {
           // HSV conversion and exposure / saturation adjustment
           const datum saturation_factor = saturation_dist(generator_);
           const datum exposure_factor = exposure_dist(generator_);
-          LOGDEBUG << "Sat: " << saturation_factor << ", Exp: " << exposure_factor;
-
           AugmentInPlaceSatExp(sample, saturation_factor, exposure_factor);
         }
 
