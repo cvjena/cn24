@@ -77,6 +77,10 @@ public:
   const std::vector<datum>& GetWeights() const { return weights_; }
 private:
   void UpdateDatasets();
+  void LoadSampleAugmented(unsigned int sample, const datum x_scale, const datum x_transpose_img, const datum y_scale,
+                           const datum y_transpose_img, const bool flip_horizontal, const datum flip_offset);
+  void AugmentInPlaceSatExp(unsigned int sample, const datum saturation_factor, const datum exposure_factor);
+
   std::vector<Dataset*> datasets_;
   std::vector<datum> weights_;
   datum weight_sum_ = 0;
@@ -111,6 +115,8 @@ private:
 
   // Augmentation settings
   datum jitter_;
+  datum exposure_;
+  datum saturation_;
   int flip_;
   bool do_augmentation_;
 
@@ -118,6 +124,7 @@ private:
   DatasetMetadataPointer* preaug_metadata_buffer_ = nullptr;
   std::vector<std::vector<BoundingBox>> augmented_boxes_;
   Tensor preaug_data_buffer_;
+
 };
 
 }

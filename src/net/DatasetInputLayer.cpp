@@ -16,11 +16,16 @@
 #include <random>
 #include <algorithm>
 #include <cstring>
+#include <cmath>
 
 #include "NetGraph.h"
 #include "StatAggregator.h"
 #include "Init.h"
 #include "DatasetInputLayer.h"
+
+#define MAX_3(a,b,c) (a > b ? a : b) > c ? (a > b ? a : b) : c
+#define MIN_3(a,b,c) (a < b ? a : b) < c ? (a < b ? a : b) : c
+#define CLAMP(a) a < 0 ? 0 : (a > 1 ? 1 : a)
 
 namespace Conv {
 
@@ -52,10 +57,22 @@ DatasetInputLayer::DatasetInputLayer (JSON configuration,
 
   SetActiveTestingDataset(initial_dataset);
 
-  LOGINFO << "AUGMENTATION: " << configuration_.dump();
   JSON_TRY_INT(flip_, configuration_, "flip", 0);
   JSON_TRY_DATUM(jitter_, configuration_, "jitter_factor", 0);
-  do_augmentation_ = (flip_ > 0) || (jitter_ > 0);
+  JSON_TRY_DATUM(exposure_, configuration_, "exposure", 1);
+  JSON_TRY_DATUM(saturation_, configuration_, "saturation", 1);
+  do_augmentation_ = (flip_ > 0) || (jitter_ > 0) || (exposure_ > 1) || (saturation_ > 1);
+  if(do_augmentation_) {
+    LOGINFO << "Using data augmentation: ";
+    if(flip_ > 0)
+      LOGDEBUG << " - Flipping";
+    if(jitter_ > 0)
+      LOGDEBUG << " - Random scaling (" << jitter_ << ")";
+    if(exposure_ > 1)
+      LOGDEBUG << " - Random exposure (" << exposure_ << ")";
+    if(saturation_ > 1)
+      LOGDEBUG << " - Random saturation (" << saturation_ << ")";
+  }
 }
 
 void DatasetInputLayer::SetActiveTestingDataset(Dataset *dataset) {
@@ -222,9 +239,11 @@ void DatasetInputLayer::SelectAndLoadSamples() {
 
   // Augmentation randomizers
   std::uniform_real_distribution<datum> jitter_dist(- jitter_, jitter_);
-  std::bernoulli_distribution flip_dist;
+  std::bernoulli_distribution binary_dist;
 
   for(unsigned int sample = 0; sample < batch_size_; sample++) {
+    std::uniform_real_distribution<datum> exposure_dist(1.0, binary_dist(generator_) ? exposure_ : (datum)1.0 / exposure_);
+    std::uniform_real_distribution<datum> saturation_dist(1.0, binary_dist(generator_) ? saturation_ : (datum) 1.0 / saturation_);
     unsigned int selected_element = 0;
     bool force_no_weight = false;
     Dataset* dataset = nullptr;
@@ -274,9 +293,10 @@ void DatasetInputLayer::SelectAndLoadSamples() {
     const datum y_transpose_nrm = top_border;
     const datum y_transpose_img = top_border * (datum)(preaug_data_buffer_.height() - 1);
 
-    const bool flip_horizontal = flip_dist(generator_);
+    const bool flip_horizontal = binary_dist(generator_);
     const datum flip_offset = data_output_->data.width() - 1;
     const datum box_offset = flip_offset/(datum)(data_output_->data.width());
+
 
     // Copy image and label
     bool success;
@@ -287,31 +307,17 @@ void DatasetInputLayer::SelectAndLoadSamples() {
       if(do_augmentation_) {
         success = dataset->GetTrainingSample(preaug_data_buffer_, label_output_->data, helper_output_->data,
                                              localized_error_output_->data, sample, selected_element);
-        for(unsigned int map = 0; map < data_output_->data.maps(); map++) {
-#pragma omp parallel for default(shared)
-          for(unsigned int y = 0; y < data_output_->data.height(); y++) {
+        LoadSampleAugmented(sample, x_scale, x_transpose_img, y_scale, y_transpose_img, flip_horizontal, flip_offset);
 
-            const datum origin_y = ((datum)y) * y_scale + y_transpose_img;
-            if(origin_y >= 0 && origin_y <= (preaug_data_buffer_.height() - 1)) {
+        if(data_output_->data.maps() == 3) {
+          // HSV conversion and exposure / saturation adjustment
+          const datum saturation_factor = saturation_dist(generator_);
+          const datum exposure_factor = exposure_dist(generator_);
+          LOGDEBUG << "Sat: " << saturation_factor << ", Exp: " << exposure_factor;
 
-              for (unsigned int x = 0; x < data_output_->data.width(); x++) {
-                const datum inner_x = (datum)x;
-                const datum origin_x = flip_horizontal ? flip_offset - (inner_x * x_scale + x_transpose_img) : inner_x * x_scale + x_transpose_img;
-
-                if(origin_x >= 0 && origin_x <= (preaug_data_buffer_.width() - 1)) {
-                  *data_output_->data.data_ptr(x, y, map, sample) =
-                      preaug_data_buffer_.GetSmoothData(origin_x, origin_y, map, sample);
-                } else {
-                  *data_output_->data.data_ptr(x, y, map, sample) = 0;
-                }
-              }
-            } else {
-              for (unsigned int x = 0; x < data_output_->data.width(); x++) {
-                *data_output_->data.data_ptr(x, y, map, sample) = 0;
-              }
-            }
-          }
+          AugmentInPlaceSatExp(sample, saturation_factor, exposure_factor);
         }
+
       } else {
         success = dataset->GetTrainingSample(data_output_->data, label_output_->data, helper_output_->data,
                                              localized_error_output_->data, sample, selected_element);
@@ -386,6 +392,127 @@ void DatasetInputLayer::SelectAndLoadSamples() {
     }
 
   }
+}
+
+void DatasetInputLayer::AugmentInPlaceSatExp(unsigned int sample, const datum saturation_factor,
+                                             const datum exposure_factor) {
+  for (unsigned int y = 0; y < data_output_->data.height(); y++) {
+            for (unsigned int x = 0; x < data_output_->data.width(); x++) {
+              // Convert RGB pixel to HSV pixel
+              const datum R = *data_output_->data.data_ptr_const(x, y, 0, sample);
+              const datum G = *data_output_->data.data_ptr_const(x, y, 1, sample);
+              const datum B = *data_output_->data.data_ptr_const(x, y, 2, sample);
+
+              const datum Cmax = MAX_3(R, G, B);
+              const datum Cmin = MIN_3(R, G, B);
+              const datum Delta = Cmax - Cmin;
+
+              datum H = 0;
+              datum S = 0;
+              datum V = Cmax;
+              if(Delta > 0) {
+                S = Delta / Cmax;
+                if(Cmax == R) {
+                  H =(G - B) / Delta;
+                } else if(Cmax == G) {
+                  H = 2 + (B - R) / Delta;
+                } else if(Cmax == B) {
+                  H = 4 + (R - G) / Delta;
+                }
+                H *= 60;
+                if(H < 0)
+                  H += 360;
+              }
+
+              // Apply exposure and saturation scaling
+              S = CLAMP(S * saturation_factor);
+              V = CLAMP(V * exposure_factor);
+
+
+              // Convert HSV back to RGB
+              datum NR = 0;
+              datum NG = 0;
+              datum NB = 0;
+              if(S == 0) {
+                NR = NG = NB = V;
+              } else {
+                H /= 60;
+                int i = (int) floor(H);
+                const datum f = H - (datum) i;
+                const datum p = V * ((datum) 1 - S);
+                const datum q = V * ((datum) 1 - S * f);
+                const datum t = V * ((datum) 1 - S * ((datum) 1 - f));
+
+                switch (i) {
+                  case 0:
+                    NR = V;
+                    NG = t;
+                    NB = p;
+                    break;
+                  case 1:
+                    NR = q;
+                    NG = V;
+                    NB = p;
+                    break;
+                  case 2:
+                    NR = p;
+                    NG = V;
+                    NB = t;
+                    break;
+                  case 3:
+                    NR = p;
+                    NG = q;
+                    NB = V;
+                    break;
+                  case 4:
+                    NR = t;
+                    NG = p;
+                    NB = V;
+                    break;
+                  case 5:
+                  default:
+                    NR = V;
+                    NG = p;
+                    NB = q;
+                    break;
+                }
+              }
+
+              *data_output_->data.data_ptr(x, y, 0, sample) = CLAMP(NR);
+              *data_output_->data.data_ptr(x, y, 1, sample) = CLAMP(NG);
+              *data_output_->data.data_ptr(x, y, 2, sample) = CLAMP(NB);
+            }
+          }
+}
+
+void DatasetInputLayer::LoadSampleAugmented(unsigned int sample, const datum x_scale, const datum x_transpose_img,
+                                            const datum y_scale, const datum y_transpose_img,
+                                            const bool flip_horizontal, const datum flip_offset) {
+  for(unsigned int map = 0; map < data_output_->data.maps(); map++) {
+#pragma omp parallel for default(shared)
+          for(unsigned int y = 0; y < data_output_->data.height(); y++) {
+
+            const datum origin_y = ((datum)y) * y_scale + y_transpose_img;
+            if(origin_y >= 0 && origin_y <= (preaug_data_buffer_.height() - 1)) {
+
+              for (unsigned int x = 0; x < data_output_->data.width(); x++) {
+                const datum inner_x = (datum)x;
+                const datum origin_x = flip_horizontal ? flip_offset - (inner_x * x_scale + x_transpose_img) : inner_x * x_scale + x_transpose_img;
+
+                if(origin_x >= 0 && origin_x <= (preaug_data_buffer_.width() - 1)) {
+                  *data_output_->data.data_ptr(x, y, map, sample) =
+                      preaug_data_buffer_.GetSmoothData(origin_x, origin_y, map, sample);
+                } else {
+                  *data_output_->data.data_ptr(x, y, map, sample) = 0;
+                }
+              }
+            } else {
+              for (unsigned int x = 0; x < data_output_->data.width(); x++) {
+                *data_output_->data.data_ptr(x, y, map, sample) = 0;
+              }
+            }
+          }
+        }
 }
 
 void DatasetInputLayer::FeedForward() {
