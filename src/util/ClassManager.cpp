@@ -120,6 +120,7 @@ std::pair<std::string, ClassManager::Info> ClassManager::GetClassInfoById(unsign
     return element->second;
   }
   std::pair<std::string, Info> p;
+  p.first = "Unknown";
   p.second.id = UNKNOWN_CLASS;
   return p;
 }

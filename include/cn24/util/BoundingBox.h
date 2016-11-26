@@ -39,6 +39,8 @@ public:
   // Flag 1 is used for calculations, always set it to false after using it
   // Flag 2 is used by certain datasets, don't ever change it!
   bool flag1 = false, flag2 = false;
+
+  bool unknown = false;
 };
 
 }

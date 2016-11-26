@@ -10,6 +10,7 @@
 #include "CombinedTensor.h"
 #include "Log.h"
 #include "BoundingBox.h"
+#include "ClassManager.h"
 
 #include "YOLODetectionLayer.h"
 
@@ -163,6 +164,7 @@ void YOLODetectionLayer::FeedForward() {
             const datum w = input_->data.data_ptr_const()[box_coords_index + 2] * input_->data.data_ptr_const()[box_coords_index + 2];
             const datum h = input_->data.data_ptr_const()[box_coords_index + 3] * input_->data.data_ptr_const()[box_coords_index + 3];
 
+            bool found_class = false;
             // Loop over all classes
             for (unsigned int c = 0; c < classes_; c++) {
 
@@ -175,7 +177,16 @@ void YOLODetectionLayer::FeedForward() {
                 box.score = class_prob;
 
                 sample_boxes->push_back(box);
+                found_class = true;
               }
+            }
+
+            if(!found_class) {
+              BoundingBox box(x,y,w,h);
+              box.c = UNKNOWN_CLASS;
+              box.unknown = true;
+              box.score = iou;
+              sample_boxes->push_back(box);
             }
           }
         }
