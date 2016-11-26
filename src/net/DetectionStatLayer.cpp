@@ -112,8 +112,8 @@ void DetectionStatLayer::UpdateAll() {
     }
 
     if(positive_samples_[c] == 0) {
-      LOGDEBUG << "AP class " << it->first << ": 0, only false positives present";
-      sampled_classes += (datum) 1.0;
+      LOGDEBUG << "AP class " << it->first << ": 0, only false positives present (not counting)";
+      // sampled_classes += (datum) 1.0; do not count classes that are not present in the dataset
     } else {
 
       // Sort vector
