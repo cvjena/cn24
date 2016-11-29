@@ -72,7 +72,9 @@ public:
    * @brief Gets the number of input maps in this Dataset.
    */
   virtual unsigned int GetInputMaps() const = 0;
-  
+
+  virtual void RestrictTrainingSamples(unsigned int samples) { LOGWARN << "This dataset does not support training sample restriction"; }
+
   /**
    * @brief Gets the number of label maps in this Dataset.
    */
@@ -376,6 +378,7 @@ public:
   virtual unsigned int GetHeight() const { return max_height_; }
   virtual unsigned int GetInputMaps() const { return input_maps_; }
   virtual unsigned int GetLabelMaps() const { return label_maps_; }
+  virtual void RestrictTrainingSamples(unsigned int samples) { tensor_count_training_ = samples; }
   virtual unsigned int GetTrainingSamples() const { return tensor_count_training_; }
   virtual unsigned int GetTestingSamples() const { return tensor_count_testing_; }
   virtual bool SupportsTesting() const { return tensor_count_testing_ > 0; }
