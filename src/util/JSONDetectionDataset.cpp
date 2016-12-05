@@ -6,6 +6,8 @@
  */  
 
 #include <fstream>
+#include <random>
+#include <algorithm>
 
 #include "JSONParsing.h"
 
