@@ -6,6 +6,8 @@
  */  
 
 #include <fstream>
+#include <random>
+#include <algorithm>
 
 #include "JSONParsing.h"
 
@@ -253,6 +255,15 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
       box->w /= width;
       box->h /= height;
     }
+  }
+
+  // Randomize order of accessors if specified
+  int random_seed = 0;
+  JSON_TRY_INT(random_seed, dataset_json, "training_random_seed", 0);
+  if(random_seed != 0) {
+    LOGINFO << "Randomizing training samples using seed " << random_seed;
+    std::mt19937_64 training_randomizer(random_seed);
+    std::shuffle(training_accessors_.begin(), training_accessors_.end(), training_randomizer);
   }
 }	
 

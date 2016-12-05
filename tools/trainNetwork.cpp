@@ -414,7 +414,9 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
   }
   else if (command.compare(0, 7, "dsload ") == 0) {
     std::string dataset_filename;
+    unsigned int restrict_samples = 0;
     Conv::ParseStringParamIfPossible(command, "file", dataset_filename);
+    Conv::ParseCountIfPossible(command, "restrict", restrict_samples);
 
     // Open dataset configuration file
     std::ifstream dataset_config_file (dataset_filename, std::ios::in);
@@ -424,7 +426,12 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
     }
 
     Conv::Dataset* dataset = Conv::JSONDatasetFactory::ConstructDataset(Conv::JSON::parse(dataset_config_file), &class_manager);
-        Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
+    if(restrict_samples > 0) {
+      LOGINFO << "Restricting training samples to first " << restrict_samples;
+      dataset->RestrictTrainingSamples(restrict_samples);
+    }
+    
+    Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
     if(input_layer != nullptr) {
       LOGINFO << "Active testing dataset: " << input_layer->GetActiveTestingDataset()->GetName();
       input_layer->AddDataset(dataset, 1);
