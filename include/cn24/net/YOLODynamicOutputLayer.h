@@ -11,7 +11,7 @@
 #include <random>
 
 #include "SimpleLayer.h"
-#include "ClassManager.h"
+#include "../util/ClassManager.h"
 
 namespace Conv {
 class YOLODynamicOutputLayer : public SimpleLayer, public ClassManager::ClassUpdateHandler {

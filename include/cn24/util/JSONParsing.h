@@ -8,7 +8,7 @@
 #ifndef CONV_JSONPARSING_H
 #define CONV_JSONPARSING_H
 
-#include "json.hpp"
+#include "../../../external/json/json.hpp"
 
 #define JSON_TRY_DATUM(target_var, json_object, key, otherwise) if(json_object.count(key) == 1 && json_object[key].is_number()) \
 { target_var = json_object[key]; } else { target_var = otherwise; }

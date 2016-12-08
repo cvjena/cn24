@@ -13,7 +13,7 @@
 
 #include "SimpleLayer.h"
 #include "LossFunctionLayer.h"
-#include "util/StatAggregator.h"
+#include "../util/StatAggregator.h"
 
 namespace Conv {
   

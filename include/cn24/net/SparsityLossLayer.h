@@ -19,7 +19,7 @@
 #include <sstream>
 
 #include "Layer.h"
-#include "JSONParsing.h"
+#include "../util/JSONParsing.h"
 #include "LossFunctionLayer.h"
 
 

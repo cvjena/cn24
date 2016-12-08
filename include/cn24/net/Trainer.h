@@ -16,7 +16,7 @@
 #define CONV_TRAINER_H
 
 #include <cmath>
-#include "JSONParsing.h"
+#include "../util/JSONParsing.h"
 
 #include "../util/CombinedTensor.h"
 #include "../util/StatAggregator.h"
