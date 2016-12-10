@@ -8,6 +8,7 @@
 #include "AdamOptimizer.h"
 
 #include <cmath>
+#include <sstream>
 
 namespace Conv {
 AdamOptimizer::AdamOptimizer(JSON descriptor) : Optimizer(descriptor) {
@@ -15,17 +16,24 @@ AdamOptimizer::AdamOptimizer(JSON descriptor) : Optimizer(descriptor) {
   JSON_TRY_DATUM(beta1_, descriptor, "ad_beta1", 0.9);
   JSON_TRY_DATUM(beta2_, descriptor, "ad_beta2", 0.999);
   JSON_TRY_DATUM(epsilon_, descriptor, "ad_epsilon", 0.00000001);
+  JSON_TRY_BOOL(sqrt_ss_, descriptor, "ad_sqrt_step_size", false);
 }
 
 void AdamOptimizer::Step(std::vector<Tensor> &buffers, CombinedTensor* parameters,
                         unsigned int reported_iteration) {
-  UNREFERENCED_PARAMETER(reported_iteration);
+  datum current_step_size = step_size_;
+
+  if(sqrt_ss_) {
+    current_step_size /= sqrtf(reported_iteration);
+  } else {
+    UNREFERENCED_PARAMETER(reported_iteration);
+  }
+
   // Do not use the reported iteration, it doesn't reset!
   const float actual_iteration = iterations_since_reset_ + 1;
   Tensor& first_moment = buffers[0];
   Tensor& second_moment = buffers[1];
 
-  const datum current_step_size = step_size_; /// sqrtf(actual_iteration);
 
   for(std::size_t p = 0; p < parameters->data.elements(); p++) {
     const datum g_t = parameters->delta(p);
@@ -44,5 +52,21 @@ void AdamOptimizer::Step(std::vector<Tensor> &buffers, CombinedTensor* parameter
     first_moment[p] = m_t;
     second_moment[p] = v_t;
   }
+}
+
+std::string AdamOptimizer::GetStatusDescription(unsigned int iteration) {
+  datum current_step_size = step_size_;
+  if(sqrt_ss_) {
+    current_step_size /= sqrtf(iteration);
+  }
+  std::stringstream ss;
+  ss << "Current step size: " << current_step_size << ", ";
+  if(sqrt_ss_) {
+    ss << "sqrt schedule";
+  } else {
+    ss << "fixed";
+  }
+
+  return ss.str();
 }
 }

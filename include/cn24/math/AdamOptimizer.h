@@ -16,12 +16,14 @@ public:
   AdamOptimizer(JSON descriptor);
   void Step(std::vector<Tensor> &buffers, CombinedTensor* parameters, unsigned int iteration);
   unsigned int GetRequiredBufferCount() const { return 2; }
+  std::string GetStatusDescription(unsigned int iteration);
 
 private:
   datum step_size_;
   datum beta1_;
   datum beta2_;
   datum epsilon_;
+  bool sqrt_ss_;
 };
 }
 #endif
