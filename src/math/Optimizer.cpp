@@ -17,7 +17,7 @@ Optimizer::~Optimizer() {
 }
 
 void Optimizer::Reset() {
-  LOGINFO << "Resetting optimizer...";
+  // LOGINFO << "Resetting optimizer...";
   iterations_since_reset_ = 0;
   ResetInner();
   for(std::vector<Tensor>& buffer_set : buffers_)
