@@ -12,7 +12,8 @@
 namespace Conv {
 
 bool Segment::CopyDetectionSample(JSON sample, unsigned int target_index, Tensor *data,
-                                  DetectionMetadataPointer metadata, CopyMode copy_mode) {
+                                  DetectionMetadataPointer metadata, ClassManager& class_manager,
+                                  CopyMode copy_mode) {
   return false;
 }
 

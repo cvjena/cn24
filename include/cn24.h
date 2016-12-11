@@ -42,6 +42,7 @@
 #include "cn24/util/Test.h"
 #include "cn24/util/ClassManager.h"
 #include "cn24/util/Segment.h"
+#include "cn24/util/SegmentSet.h"
 
 #include "cn24/math/TensorMath.h"
 #include "cn24/math/Optimizer.h"

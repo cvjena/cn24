@@ -14,6 +14,7 @@
 #include "BoundingBox.h"
 #include "Tensor.h"
 #include "JSONParsing.h"
+#include "ClassManager.h"
 
 namespace Conv {
 typedef std::vector<BoundingBox>* DetectionMetadataPointer;
@@ -34,9 +35,10 @@ public:
     unsigned int target_index,
     Tensor* data,
     DetectionMetadataPointer metadata,
+    ClassManager& class_manager,
     CopyMode copy_mode = NEVER_RESIZE);
 
-  unsigned int GetSampleCount() { return (unsigned int)samples_.size(); }
+  unsigned int GetSampleCount() const { return (unsigned int)samples_.size(); }
   JSON GetSample( unsigned int index) {return samples_[index]; }
 
   JSON Serialize();
