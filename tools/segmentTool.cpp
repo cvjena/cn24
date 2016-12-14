@@ -27,10 +27,12 @@ int main(int argc, char** argv) {
       std::string segment_name = "Unnamed segment";
       std::string image_list_fname;
       std::string metadata_fname;
+      std::string folder_hint;
 
       Conv::ParseStringParamIfPossible(command, "name", segment_name);
       Conv::ParseStringParamIfPossible(command, "list", image_list_fname);
       Conv::ParseStringParamIfPossible(command, "meta", metadata_fname);
+      Conv::ParseStringParamIfPossible(command, "hint", folder_hint);
 
       // Open image list
       if(image_list_fname.length() == 0) {
@@ -82,7 +84,7 @@ int main(int argc, char** argv) {
 
         // Add filename to sample descriptor
         sample_json["image_filename"] = image_fname;
-        bool result = segment->AddSample(sample_json);
+        bool result = segment->AddSample(sample_json, folder_hint);
         if(!result) {
           LOGERROR << "Could not add sample " << processed_samples << " to segment!";
           LOGERROR << "Sample dump: " << sample_json.dump();
