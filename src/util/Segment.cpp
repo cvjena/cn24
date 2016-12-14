@@ -7,6 +7,7 @@
 
 #include "Segment.h"
 
+#include "PathFinder.h"
 #include "Log.h"
 
 namespace Conv {
@@ -49,6 +50,20 @@ bool Segment::Deserialize(JSON segment_descriptor, std::string folder_hint, int 
 }
 
 bool Segment::AddSample(JSON sample_descriptor, std::string folder_hint) {
-  return false;
+  if(sample_descriptor.count("image_filename") == 1 && sample_descriptor["image_filename"].is_string()) {
+    std::string image_filename = sample_descriptor["image_filename"];
+    std::string resolved_path = PathFinder::FindPath(image_filename, folder_hint);
+    if(resolved_path.length() > 0) {
+      sample_descriptor["image_rpath"] = resolved_path;
+      samples_.push_back(sample_descriptor);
+      return  true;
+    } else {
+      LOGERROR << "Could not find sample \"" << image_filename << "\", skipping!";
+      return false;
+    }
+  } else {
+    LOGERROR << "Sample is missing image file name: " << sample_descriptor.dump();
+    return false;
+  }
 }
 }
