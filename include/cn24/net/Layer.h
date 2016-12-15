@@ -18,6 +18,7 @@
 
 #include <string>
 #include <vector>
+#include <fstream>
 
 #include "../util/Tensor.h"
 #include "../util/CombinedTensor.h"
@@ -124,6 +125,20 @@ public:
    * @brief Returns true if the layer is aware of dynamically resizable inputs
    */
   virtual bool IsDynamicTensorAware() { return false; }
+
+  /**
+   * @brief Returs true if layer can (de)serialize on its own
+   */
+  virtual bool IsSerializationAware() { return false; }
+
+  virtual bool Deserialize(unsigned int metadata_length, const char* metadata, unsigned int parameter_set_size, std::istream& input_stream) {
+    UNREFERENCED_PARAMETER(metadata_length);
+    UNREFERENCED_PARAMETER(metadata);
+    UNREFERENCED_PARAMETER(parameter_set_size);
+    UNREFERENCED_PARAMETER(input_stream);
+    return false;
+  }
+  virtual bool Serialize(std::ostream& output_stream) {UNREFERENCED_PARAMETER(output_stream); return false;}
 
   virtual JSON GetLayerConfiguration() { return configuration_; }
 	virtual std::string GetLayerDescription() { return "Layer"; }
