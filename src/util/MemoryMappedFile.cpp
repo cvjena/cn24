@@ -58,8 +58,10 @@ MemoryMappedFile::MemoryMappedFile(std::string path) {
 }
 
 MemoryMappedFile::~MemoryMappedFile() {
+#ifdef BUILD_POSIX
   munmap(address_, length_);
   close(file_descriptor);
+#endif
 }
 
 }
