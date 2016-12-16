@@ -262,4 +262,30 @@ void YOLODynamicOutputLayer::BackPropagate() {
   }
 
 }
+
+bool YOLODynamicOutputLayer::Deserialize(unsigned int metadata_length, const char* metadata,
+  unsigned int parameter_set_size, std::istream& input_stream) {
+  if (parameter_set_size == 4 && metadata_length == 0) {
+    box_weights_->data.Deserialize(input_stream);
+    box_biases_->data.Deserialize(input_stream);
+    class_weights_->data.Deserialize(input_stream);
+    class_biases_->data.Deserialize(input_stream);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool YOLODynamicOutputLayer::Serialize(std::ostream& output_stream) {
+  unsigned int metadata_length = 0;
+  output_stream.write((const char*)&metadata_length, sizeof(unsigned int) / sizeof(char));
+
+  unsigned int parameter_set_size = 4;
+  output_stream.write((const char*)&parameter_set_size, sizeof(unsigned int) / sizeof(char));
+  box_weights_->data.Serialize(output_stream);
+  box_biases_->data.Serialize(output_stream);
+  class_weights_->data.Serialize(output_stream);
+  class_biases_->data.Serialize(output_stream);
+  return true;
+}
 }

@@ -9,6 +9,7 @@
 #define CONV_YOLODYNAMICOUTPUTLAYER_H
 
 #include <random>
+#include <fstream>
 
 #include "SimpleLayer.h"
 #include "../util/ClassManager.h"
@@ -29,6 +30,11 @@ public:
   void BackPropagate();
   std::string GetLayerDescription() { return "YOLO Dynamic Output Layer"; }
   void OnLayerConnect (const std::vector<Layer*> next_layer, bool no_init);
+
+  bool Serialize(std::ostream& output_stream);
+  bool Deserialize(unsigned int metadata_length, const char* metadata, unsigned int parameter_set_size, std::istream& input_stream);
+
+  bool IsSerializationAware() { return true;  }
 
   inline unsigned int Gain() {
     return input_->data.maps();
