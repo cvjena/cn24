@@ -413,9 +413,9 @@ void NetGraph::GetParameters (std::vector< CombinedTensor* >& parameters) {
 }
 
 void NetGraph::SerializeParameters(std::ostream& output) {
-	uint64_t magic = CN24_PAR_MAGIC;
+	uint64_t magic = CN24_PAREX_MAGIC;
 	output.write((char*)&magic, sizeof(uint64_t)/sizeof(char));
-
+    
 	for (unsigned int l = 0; l < nodes_.size(); l++) {
     NetGraphNode* node = nodes_[l];
     Layer* layer = nodes_[l]->layer;
@@ -425,14 +425,21 @@ void NetGraph::SerializeParameters(std::ostream& output) {
       unsigned int node_unique_name_length = node->unique_name.length();
 			unsigned int parameter_set_size = node->layer->parameters().size();
       output.write((const char*)&node_unique_name_length, sizeof(unsigned int)/sizeof(char));
-			output.write((const char*)&parameter_set_size, sizeof(unsigned int)/sizeof(char));
+      if (layer->IsSerializationAware()) {
+        layer->Serialize(output);
+      } else {
+        unsigned int metadata_length = 0;
 
-      // Write node name
-      output.write(node->unique_name.c_str(), node_unique_name_length);
+        // Write node name
+        output.write(node->unique_name.c_str(), node_unique_name_length);
 
-      // Write parameters
-      for (unsigned int p = 0; p < layer->parameters().size(); p++) {
-        layer->parameters()[p]->data.Serialize(output);
+        output.write((const char*)&metadata_length, sizeof(unsigned int) / sizeof(char));
+        output.write((const char*)&parameter_set_size, sizeof(unsigned int) / sizeof(char));
+
+        // Write parameters
+        for (unsigned int p = 0; p < layer->parameters().size(); p++) {
+          layer->parameters()[p]->data.Serialize(output);
+        }
       }
     }
 	}
