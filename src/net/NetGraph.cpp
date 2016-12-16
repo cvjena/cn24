@@ -425,13 +425,19 @@ void NetGraph::SerializeParameters(std::ostream& output) {
       unsigned int node_unique_name_length = node->unique_name.length();
 			unsigned int parameter_set_size = node->layer->parameters().size();
       output.write((const char*)&node_unique_name_length, sizeof(unsigned int)/sizeof(char));
+      // Write node name
+      output.write(node->unique_name.c_str(), node_unique_name_length);
+
       if (layer->IsSerializationAware()) {
-        layer->Serialize(output);
+        bool success = layer->Serialize(output);
+        if (!success) {
+          LOGERROR << "Could not serialize " << node->unique_name << ", lost the stream.";
+          return;
+        }
       } else {
         unsigned int metadata_length = 0;
 
-        // Write node name
-        output.write(node->unique_name.c_str(), node_unique_name_length);
+        
 
         output.write((const char*)&metadata_length, sizeof(unsigned int) / sizeof(char));
         output.write((const char*)&parameter_set_size, sizeof(unsigned int) / sizeof(char));
