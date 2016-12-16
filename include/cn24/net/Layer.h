@@ -96,7 +96,7 @@ public:
   /**
    * @brief This is called by the net when this layer has a child layer.
    */
-  virtual void OnLayerConnect (const std::vector<Layer*> next_layers) {
+  virtual void OnLayerConnect (const std::vector<Layer*> next_layers, bool no_init) {
 		gain = 0;
 		for (Layer* next_layer : next_layers)
 			gain += next_layer->Gain();

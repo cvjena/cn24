@@ -213,7 +213,7 @@ int main(int argc, char* argv[]) {
 				continue;
 			}
 			
-			layer->OnLayerConnect({});
+			layer->OnLayerConnect({}, false);
 			
 			if(layer->parameters().size() == 0) {
 				LOGDEBUG << "    Layer has no weights";

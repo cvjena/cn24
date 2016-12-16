@@ -87,7 +87,7 @@ public:
 	void BackPropagate(std::vector<NetGraphNode*>& nodes, bool clear_flag = true);
 
 	// Parameter management
-  void InitializeWeights();
+  void InitializeWeights(bool no_init = false);
   void GetParameters(std::vector<CombinedTensor*>& parameters);
   void SerializeParameters(std::ostream& output);
   void DeserializeParameters(std::istream& input);
@@ -116,7 +116,7 @@ private:
 	void FeedForward(NetGraphNode* node);
 	void BackPropagate(NetGraphNode* node);
 	void InitializeNode(NetGraphNode* node);
-  void InitializeWeights(NetGraphNode* node);
+  void InitializeWeights(NetGraphNode* node, bool no_init = false);
 	std::vector<NetGraphNode*> nodes_;
 
 	std::vector<NetGraphNode*> input_nodes_;

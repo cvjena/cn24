@@ -365,7 +365,7 @@ void ConvolutionLayer::BackPropagate() {
 }
 
 
-void ConvolutionLayer::OnLayerConnect (const std::vector<Layer*> next_layers) {
+void ConvolutionLayer::OnLayerConnect (const std::vector<Layer*> next_layers, bool no_init) {
 	unsigned int next_layer_gain = 0;
 	for (Layer* next_layer: next_layers)
 		next_layer_gain += next_layer->Gain();
@@ -377,14 +377,19 @@ void ConvolutionLayer::OnLayerConnect (const std::vector<Layer*> next_layers) {
 #ifdef BUILD_OPENCL
   weights_->data.MoveToCPU();
 #endif
-  std::uniform_real_distribution<datum> dist_weights (-range , range);
+  if (!no_init) {
+    std::uniform_real_distribution<datum> dist_weights(-range, range);
 
-  for (std::size_t i = 0; i < weights_->data.elements(); i++) {
-    weights_->data[i] = dist_weights (rand_);
+    for (std::size_t i = 0; i < weights_->data.elements(); i++) {
+      weights_->data[i] = dist_weights(rand_);
+    }
+
+    LOGDEBUG << "Updating weights: " << this_layer_gain << " -> "
+      << next_layer_gain;
   }
-
-  LOGDEBUG << "Updating weights: " << this_layer_gain << " -> "
-           << next_layer_gain;
+  else {
+    LOGDEBUG << "Skipping initialization";
+  }
 }
 
 bool ConvolutionLayer::IsGPUMemoryAware() {

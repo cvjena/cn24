@@ -31,6 +31,7 @@ void help();
 
 int main (int argc, char* argv[]) {
   bool FROM_SCRIPT = false;
+  bool NO_INIT = false;
   int requested_log_level = -1;
   const Conv::datum loss_sampling_p = 0.5;
   
@@ -53,7 +54,13 @@ int main (int argc, char* argv[]) {
 
   if (argc > 3 && std::string (argv[3]).compare ("gradient_check") == 0) {
     FATAL("Gradient check is now part of the test suite!");
-  } else if (argc > 3) {
+  } else if ((argc > 3 && std::string(argv[3]).compare("noinit") == 0) ||
+    (argc > 4 && std::string(argv[4]).compare("noinit") == 0)) {
+    NO_INIT = true;
+    LOGINFO << "Skipping initialization...";
+    argc--;
+  }
+  if (argc > 3) {
     FROM_SCRIPT = true;
     script_fname = argv[3];
   }
@@ -128,7 +135,8 @@ int main (int argc, char* argv[]) {
 
   // Initialize net with random weights
 	graph.Initialize();
-  graph.InitializeWeights();
+
+  graph.InitializeWeights(NO_INIT);
 
   Conv::Trainer trainer (graph, factory->GetHyperparameters());
 

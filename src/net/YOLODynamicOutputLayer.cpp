@@ -178,27 +178,29 @@ void YOLODynamicOutputLayer::FeedForward() {
   }
 }
 
-void YOLODynamicOutputLayer::OnLayerConnect(const std::vector<Layer *> next_layers) {
+void YOLODynamicOutputLayer::OnLayerConnect(const std::vector<Layer *> next_layers, bool no_init) {
   unsigned int next_layer_gain = 0;
   for (Layer* next_layer: next_layers)
     next_layer_gain += next_layer->Gain();
 
   unsigned int this_layer_gain = Gain();
+  
+  if (!no_init) {
+    const datum range = sqrt(6) / sqrt(next_layer_gain + this_layer_gain);
+    std::uniform_real_distribution<datum> dist_weights(-range, range);
 
-  const datum range = sqrt (6) / sqrt (next_layer_gain + this_layer_gain);
-  std::uniform_real_distribution<datum> dist_weights (-range , range);
-
-  for (std::size_t i = 0; i < box_weights_->data.elements(); i++) {
-    box_weights_->data[i] = dist_weights (rand_);
-  }
-  for (std::size_t i = 0; i < box_biases_->data.elements(); i++) {
-    box_biases_->data[i] = 0; // dist_weights (rand_);
-  }
-  for (std::size_t i = 0; i < class_weights_->data.elements(); i++) {
-    class_weights_->data[i] = dist_weights (rand_);
-  }
-  for (std::size_t i = 0; i < class_biases_->data.elements(); i++) {
-    class_biases_->data[i] = 0; //dist_weights (rand_);
+    for (std::size_t i = 0; i < box_weights_->data.elements(); i++) {
+      box_weights_->data[i] = dist_weights(rand_);
+    }
+    for (std::size_t i = 0; i < box_biases_->data.elements(); i++) {
+      box_biases_->data[i] = 0; // dist_weights (rand_);
+    }
+    for (std::size_t i = 0; i < class_weights_->data.elements(); i++) {
+      class_weights_->data[i] = dist_weights(rand_);
+    }
+    for (std::size_t i = 0; i < class_biases_->data.elements(); i++) {
+      class_biases_->data[i] = 0; //dist_weights (rand_);
+    }
   }
 
   // Save gains of next layers for extension on class update

@@ -28,7 +28,7 @@ public:
   void FeedForward();
   void BackPropagate();
   std::string GetLayerDescription() { return "YOLO Dynamic Output Layer"; }
-  void OnLayerConnect (const std::vector<Layer*> next_layer);
+  void OnLayerConnect (const std::vector<Layer*> next_layer, bool no_init);
 
   inline unsigned int Gain() {
     return input_->data.maps();

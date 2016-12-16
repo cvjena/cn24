@@ -587,25 +587,25 @@ void NetGraph::DeserializeParameters(std::istream& input) {
 
 }
 
-void NetGraph::InitializeWeights() {
+void NetGraph::InitializeWeights(bool no_init) {
 	for (NetGraphNode* node : nodes_)
 		node->flag_bp_visited = false;
 
 	for (NetGraphNode* node : nodes_)
-		InitializeWeights(node);
+		InitializeWeights(node, no_init);
 
 	for (NetGraphNode* node : nodes_)
 		node->flag_bp_visited = false;
 }
 
-void NetGraph::InitializeWeights(NetGraphNode* node) {
+void NetGraph::InitializeWeights(NetGraphNode* node, bool no_init) {
 	if (!node->flag_bp_visited) {
 		std::vector<Layer*> layers_to_connect;
 		for (NetGraphBackpropConnection backprop_connection : node->backprop_connections) {
-			InitializeWeights(backprop_connection.node);
+			InitializeWeights(backprop_connection.node, no_init);
 			layers_to_connect.push_back(backprop_connection.node->layer);
 		}
-		node->layer->OnLayerConnect(layers_to_connect);
+		node->layer->OnLayerConnect(layers_to_connect, no_init);
 
 		node->flag_bp_visited = true;
 	}

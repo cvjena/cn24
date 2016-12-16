@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
       FATAL("Layer will not connect!");
     }
 
-    loss_layer.OnLayerConnect({});
+    loss_layer.OnLayerConnect({}, false);
 
     if(!Conv::GradientTester::DoGradientTest(&loss_layer, input_data.data, input_data.delta, tmp, epsilon, WriteLossDeltas, CalculateLoss)) {
       LOGERROR << "Failed gradient test!";
