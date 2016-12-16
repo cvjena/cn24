@@ -18,7 +18,7 @@ namespace Conv {
 class YOLODynamicOutputLayer : public SimpleLayer, public ClassManager::ClassUpdateHandler {
 public:
   YOLODynamicOutputLayer(JSON configuration, ClassManager* class_manager);
-  void UpdateTensorSizes();
+  void UpdateTensorSizes(bool no_init = false);
   inline void OnClassUpdate() { UpdateTensorSizes(); }
 
   // Implementations for SimpleLayer

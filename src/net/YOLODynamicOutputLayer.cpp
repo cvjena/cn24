@@ -42,7 +42,7 @@ YOLODynamicOutputLayer::YOLODynamicOutputLayer(JSON configuration, ClassManager 
   rand_.seed(seed);
 }
 
-void YOLODynamicOutputLayer::UpdateTensorSizes() {
+void YOLODynamicOutputLayer::UpdateTensorSizes(bool no_init) {
   unsigned int class_maps = horizontal_cells_ * vertical_cells_ * (class_manager_->GetMaxClassId() + 1);
   unsigned int output_maps = horizontal_cells_ * vertical_cells_ * (boxes_per_cell_ * 5 + (class_manager_->GetMaxClassId() + 1));
 
@@ -62,14 +62,21 @@ void YOLODynamicOutputLayer::UpdateTensorSizes() {
     class_biases_->data.Extend(class_maps);
     class_biases_->delta.Extend(class_maps);
 
-    // Randomly initialize new classes
-    unsigned int this_layer_gain = Gain();
+    if (!no_init) {
+      // Randomly initialize new classes
+      unsigned int this_layer_gain = Gain();
 
-    const datum range = sqrt (6) / sqrt (next_layer_gain_ + this_layer_gain);
-    std::uniform_real_distribution<datum> dist_weights (-range , range);
+      const datum range = sqrt(6) / sqrt(next_layer_gain_ + this_layer_gain);
+      std::uniform_real_distribution<datum> dist_weights(-range, range);
 
-    for (std::size_t i = old_class_maps * input_->data.maps(); i < class_weights_->data.elements(); i++) {
-      class_weights_->data[i] = dist_weights (rand_);
+      for (std::size_t i = old_class_maps * input_->data.maps(); i < class_weights_->data.elements(); i++) {
+        class_weights_->data[i] = dist_weights(rand_);
+      }
+    }
+    else {
+      for (std::size_t i = old_class_maps * input_->data.maps(); i < class_weights_->data.elements(); i++) {
+        class_weights_->data[i] = 0;
+      }
     }
     for (std::size_t i = old_class_maps; i < class_biases_->data.elements(); i++) {
       class_biases_->data[i] = 0; // dist_weights (rand_);
@@ -265,11 +272,44 @@ void YOLODynamicOutputLayer::BackPropagate() {
 
 bool YOLODynamicOutputLayer::Deserialize(unsigned int metadata_length, const char* metadata,
   unsigned int parameter_set_size, std::istream& input_stream) {
-  if (parameter_set_size == 4 && metadata_length == 0) {
+  if (parameter_set_size == 4) {
+    JSON metadata_json = JSON::parse(std::string(metadata));
     box_weights_->data.Deserialize(input_stream);
     box_biases_->data.Deserialize(input_stream);
-    class_weights_->data.Deserialize(input_stream);
-    class_biases_->data.Deserialize(input_stream);
+    Tensor temp_class_weights, temp_class_biases;
+    temp_class_weights.Deserialize(input_stream);
+    temp_class_biases.Deserialize(input_stream);
+
+    // Read and register classes
+    JSON classes_json = metadata_json["classes"];
+    for (unsigned int c = 0; c < classes_json.size(); c++) {
+      JSON class_json = classes_json[c];
+      std::string class_name = class_json["name"];
+      unsigned int class_original_id = class_json["id"];
+
+      unsigned int class_new_id = class_manager_->GetClassIdByName(class_name);
+      if (class_new_id == UNKNOWN_CLASS) {
+        LOGINFO << "Registering class " << class_name;
+        if (!class_manager_->RegisterClassByName(class_name, 0, 1)) {
+          LOGERROR << "Failed to register class " << class_name;
+          return false;
+        }
+      }
+    }
+
+    UpdateTensorSizes(true);
+
+    // Copy data for classes
+    for (unsigned int c = 0; c < classes_json.size(); c++) {
+      JSON class_json = classes_json[c];
+      std::string class_name = class_json["name"];
+      unsigned int class_original_id = class_json["id"];
+      unsigned int class_new_id = class_manager_->GetClassIdByName(class_name);
+      class_biases_->data[class_new_id] = temp_class_biases(class_original_id);
+      for (unsigned int i = 0; i < input_->data.maps(); i++) {
+        *(class_weights_->data.data_ptr(0, 0, i, class_new_id)) = *(temp_class_weights.data_ptr_const(0, 0, i, class_original_id));
+      }
+    }
     return true;
   } else {
     return false;
@@ -277,8 +317,22 @@ bool YOLODynamicOutputLayer::Deserialize(unsigned int metadata_length, const cha
 }
 
 bool YOLODynamicOutputLayer::Serialize(std::ostream& output_stream) {
-  unsigned int metadata_length = 0;
+  JSON metadata_json = JSON::object();
+
+  // Save class order to json array
+  JSON classes_json = JSON::array();
+  for (ClassManager::const_iterator it = class_manager_->begin(); it != class_manager_->end(); it++) {
+    JSON class_json = JSON::object();
+    class_json["name"] = it->first;
+    class_json["id"] = it->second.id;
+    classes_json.push_back(class_json);
+  }
+  metadata_json["classes"] = classes_json;
+
+  std::string metadata_str = metadata_json.dump();
+  unsigned int metadata_length = metadata_str.length();
   output_stream.write((const char*)&metadata_length, sizeof(unsigned int) / sizeof(char));
+  output_stream.write(metadata_str.c_str(), metadata_length);
 
   unsigned int parameter_set_size = 4;
   output_stream.write((const char*)&parameter_set_size, sizeof(unsigned int) / sizeof(char));
