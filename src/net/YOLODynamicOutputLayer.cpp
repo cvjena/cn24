@@ -297,17 +297,29 @@ bool YOLODynamicOutputLayer::Deserialize(unsigned int metadata_length, const cha
       }
     }
 
+    LOGINFO << "Class weights: " << temp_class_weights;
+    LOGINFO << "Class biases: " << temp_class_biases;
     UpdateTensorSizes(true);
 
+    LOGINFO << "Class weights: " << class_weights_->data;
+    LOGINFO << "Class biases: " << class_biases_->data;
     // Copy data for classes
     for (unsigned int c = 0; c < classes_json.size(); c++) {
       JSON class_json = classes_json[c];
       std::string class_name = class_json["name"];
       unsigned int class_original_id = class_json["id"];
       unsigned int class_new_id = class_manager_->GetClassIdByName(class_name);
-      class_biases_->data[class_new_id] = temp_class_biases(class_original_id);
-      for (unsigned int i = 0; i < input_->data.maps(); i++) {
-        *(class_weights_->data.data_ptr(0, 0, i, class_new_id)) = *(temp_class_weights.data_ptr_const(0, 0, i, class_original_id));
+      if (class_new_id == UNKNOWN_CLASS) {
+        LOGERROR << "This should not happen! Class " << class_name << " is unknown";
+      }
+      LOGINFO << "Moving class " << class_original_id << " to id " << class_new_id;
+      unsigned int class_new_offset = class_new_id * (horizontal_cells_) * (vertical_cells_);
+      unsigned int class_original_offset = class_original_id * (horizontal_cells_) * (vertical_cells_);
+      for (unsigned int cell = 0; cell < (horizontal_cells_ * vertical_cells_); cell++) {
+        class_biases_->data[class_new_offset + cell] = temp_class_biases(class_original_offset + cell);
+        for (unsigned int i = 0; i < input_->data.maps(); i++) {
+          *(class_weights_->data.data_ptr(0, 0, i, class_new_offset + cell)) = *(temp_class_weights.data_ptr_const(0, 0, i, class_original_offset + cell));
+        }
       }
     }
     return true;
@@ -338,6 +350,9 @@ bool YOLODynamicOutputLayer::Serialize(std::ostream& output_stream) {
   output_stream.write((const char*)&parameter_set_size, sizeof(unsigned int) / sizeof(char));
   box_weights_->data.Serialize(output_stream);
   box_biases_->data.Serialize(output_stream);
+
+  LOGINFO << "Class weights: " << class_weights_->data;
+  LOGINFO << "Class biases: " << class_biases_->data;
   class_weights_->data.Serialize(output_stream);
   class_biases_->data.Serialize(output_stream);
   return true;
