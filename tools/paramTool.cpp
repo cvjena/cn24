@@ -125,8 +125,7 @@ int main(int argc, char **argv) {
           input.peek();
         }
       }
-    }
-    if (command.compare(0, 13, "load_darknet ") == 0) {
+    } else if (command.compare(0, 13, "load_darknet ") == 0) {
       std::string param_file_name;
       Conv::ParseStringParamIfPossible(command, "file", param_file_name);
 
@@ -339,8 +338,7 @@ int main(int argc, char **argv) {
           }
         }
       }
-    }
-    else if (command.compare(0, 7, "rename ") == 0) {
+    } else if (command.compare(0, 7, "rename ") == 0) {
       // Rename parameter sets for new models
       unsigned int id = 0;
       std::string new_node_name = "unnamed";
@@ -354,8 +352,28 @@ int main(int argc, char **argv) {
       else {
         LOGERROR << "No parameter set with id " << id;
       }
-    }
-    else if (command.compare(0, 4, "list") == 0) {
+    } else if (command.compare(0, 4, "dump") == 0) {
+      // Rename parameter sets for new models
+      unsigned int id = 0;
+      Conv::ParseCountIfPossible(command, "id", id);
+      unsigned int t = 0;
+      Conv::ParseCountIfPossible(command, "tensor", t);
+
+      if(id < tensors.size()) {
+        std::string target_file = "binoutput.data";
+        Conv::ParseStringParamIfPossible(command, "file", target_file);
+
+        std::ofstream o ( target_file, std::ios::out | std::ios::binary );
+        if(!o.good()) {
+          LOGERROR << "Could not write to " << target_file << "!";
+        } else {
+          tensors[id]->tensors[t]->Serialize(o, true);
+        }
+      }
+      else {
+        LOGERROR << "No parameter set with id " << id;
+      }
+    } else if (command.compare(0, 4, "list") == 0) {
       // List all tensors
       for(unsigned int i=0; i < tensors.size(); i++) {
         LOGINFO << "(" << i << ")\tName: " << tensors[i]->name;
@@ -371,6 +389,8 @@ int main(int argc, char **argv) {
           << "    Loads parameter sets from the specified file. Format will be detected automatically.\n\n"
           << "  save file=<name>\n"
           << "    Writes the parameters sets to the specified file in the new format.\n\n"
+          << "  dump id=<id> tensor=<tensor> file=<name>\n"
+          << "    Writes the specified tensor of the parameter set with the specified id to file in binary format\n\n"
           << "  list\n"
           << "    Lists all parameters sets with their names and ids.\n\n"
           << "  rename id=<id> to=<new name>\n"
