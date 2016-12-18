@@ -443,66 +443,148 @@ void NetGraph::DeserializeParameters(std::istream& input) {
 	uint64_t magic = 0;
 	input.read((char*)&magic, sizeof(uint64_t)/sizeof(char));
 
-	if(magic != CN24_PAR_MAGIC) {
-		FATAL("Wrong magic at start of stream!");
-	}
+	if(magic == CN24_PAR_MAGIC) {
+		while (input.good() && !input.eof()) {
+			// Read node name length
+			unsigned int node_unique_name_length;
+			unsigned int parameter_set_size;
+			input.read((char *) &node_unique_name_length, sizeof(unsigned int) / sizeof(char));
+			input.read((char *) &parameter_set_size, sizeof(unsigned int) / sizeof(char));
 
-  while(input.good() && !input.eof()) {
-    // Read node name length
-    unsigned int node_unique_name_length;
-		unsigned int parameter_set_size;
-    input.read((char*)&node_unique_name_length, sizeof(unsigned int) / sizeof(char));
-		input.read((char*)&parameter_set_size, sizeof(unsigned int) / sizeof(char));
+			// Read node name
+			char *node_name_cstr = new char[node_unique_name_length + 1];
 
-    // Read node name
-    char* node_name_cstr = new char[node_unique_name_length + 1];
+			input.read(node_name_cstr, node_unique_name_length);
+			node_name_cstr[node_unique_name_length] = '\0';
 
-    input.read(node_name_cstr, node_unique_name_length);
-    node_name_cstr[node_unique_name_length] = '\0';
+			std::string node_name(node_name_cstr);
 
-    std::string node_name(node_name_cstr);
+			// Find node
+			bool found_node = false;
+			for (NetGraphNode *node : nodes_) {
+				if (node->unique_name.compare(node_name) == 0) {
+					if (node->layer->parameters().size() != parameter_set_size) {
+						LOGERROR << "Node name matches, but parameter set size does not";
+						continue;
+					}
+					found_node = true;
+					Layer *layer = node->layer;
 
-    // Find node
-    bool found_node = false;
-    for(NetGraphNode* node : nodes_) {
-      if(node->unique_name.compare(node_name) == 0) {
-				if(node->layer->parameters().size() != parameter_set_size) {
-					LOGERROR << "Node name matches, but parameter set size does not";
-					continue;
+					// Read parameters
+					for (unsigned int p = 0; p < layer->parameters().size(); p++) {
+						unsigned int elements_before = layer->parameters()[p]->data.elements();
+						layer->parameters()[p]->data.Deserialize(input);
+						unsigned int elements_after = layer->parameters()[p]->data.elements();
+						LOGDEBUG << "Loaded parameters for node \"" << node->unique_name << "\" parameter set " << p << ": " <<
+										 layer->parameters()[p]->data;
+						if (elements_before != elements_after) {
+							LOGERROR << "Deserialization changed layer parameter count!";
+						}
+					}
+
+					// Update EOF flag
+					input.peek();
+					break;
 				}
-        found_node = true;
-        Layer* layer = node->layer;
-
-        // Read parameters
-        for(unsigned int p = 0; p < layer->parameters().size(); p++) {
-          unsigned int elements_before = layer->parameters()[p]->data.elements();
-          layer->parameters()[p]->data.Deserialize(input);
-          unsigned int elements_after = layer->parameters()[p]->data.elements();
-          LOGDEBUG << "Loaded parameters for node \"" <<  node->unique_name << "\" parameter set " << p << ": " <<
-                  layer->parameters()[p]->data;
-          if (elements_before != elements_after) {
-            LOGERROR << "Deserialization changed layer parameter count!";
-          }
-        }
-
-        // Update EOF flag
-        input.peek();
-        break;
-      }
-    }
-    if(!found_node) {
-      LOGWARN << "Could not find node \"" << node_name << "\"";
-			for(unsigned int p = 0; p < parameter_set_size; p++) {
-				Tensor* t = new Tensor();
-				t->Deserialize(input);
-				LOGDEBUG << "Skipping parameter set for node " << node_name << *t;
-				delete t;
 			}
-			input.peek();
-    }
+			if (!found_node) {
+				LOGWARN << "Could not find node \"" << node_name << "\"";
+				for (unsigned int p = 0; p < parameter_set_size; p++) {
+					Tensor *t = new Tensor();
+					t->Deserialize(input);
+					LOGDEBUG << "Skipping parameter set for node " << node_name << *t;
+					delete t;
+				}
+				input.peek();
+			}
 
-    delete[] node_name_cstr;
+			delete[] node_name_cstr;
+		}
+	} else if(magic == CN24_PAREX_MAGIC) {
+    // New extended format
+		while (input.good() && !input.eof()) {
+			// Read node name length
+			unsigned int node_unique_name_length;
+			unsigned int metadata_length;
+			unsigned int parameter_set_size;
+
+			input.read((char *) &node_unique_name_length, sizeof(unsigned int) / sizeof(char));
+
+			// Read node name
+			char *node_name_cstr = new char[node_unique_name_length + 1];
+			input.read(node_name_cstr, node_unique_name_length);
+			node_name_cstr[node_unique_name_length] = '\0';
+			std::string node_name(node_name_cstr);
+
+
+			// Read metadata
+			input.read((char *) &metadata_length, sizeof(unsigned int) / sizeof(char));
+			char *metadata_cstr = new char[metadata_length + 1];
+			if(metadata_length > 0) {
+				input.read(metadata_cstr, metadata_length);
+			}
+			metadata_cstr[metadata_length] = '\0';
+
+			input.read((char *) &parameter_set_size, sizeof(unsigned int) / sizeof(char));
+			// Find node
+			bool found_node = false;
+			for (NetGraphNode *node : nodes_) {
+				if (node->unique_name.compare(node_name) == 0) {
+					if (node->layer->parameters().size() != parameter_set_size) {
+						LOGERROR << "Node name matches, but parameter set size does not";
+						continue;
+					}
+					found_node = true;
+					Layer *layer = node->layer;
+
+          if(layer->IsSerializationAware() > 0) {
+						// Use new extended deserializer
+						bool success = layer->Deserialize(metadata_length, metadata_cstr, parameter_set_size, input);
+						if(!success) {
+							LOGERROR << "Error when deserializing " << node_name << ", lost the stream";
+							return;
+						}
+					} else {
+						// Read parameters
+						for (unsigned int p = 0; p < layer->parameters().size(); p++) {
+							unsigned int elements_before = layer->parameters()[p]->data.elements();
+							layer->parameters()[p]->data.Deserialize(input);
+							unsigned int elements_after = layer->parameters()[p]->data.elements();
+							LOGDEBUG << "Loaded parameters for node \"" << node->unique_name << "\" parameter set " << p << ": " <<
+											 layer->parameters()[p]->data;
+							if (elements_before != elements_after) {
+								LOGERROR << "Deserialization changed layer parameter count!";
+							}
+						}
+					}
+
+					// Update EOF flag
+					input.peek();
+					break;
+				}
+			}
+			if (!found_node) {
+				if(node_name.compare(0, 2, "__") == 0) {
+					// Skip this info
+					LOGDEBUG << "Skipping metadata segment " << node_name;
+				} else {
+					LOGWARN << "Could not find node \"" << node_name << "\"";
+				}
+				for (unsigned int p = 0; p < parameter_set_size; p++) {
+					Tensor *t = new Tensor();
+					t->Deserialize(input);
+					LOGDEBUG << "Skipping parameter set for node " << node_name << *t;
+					delete t;
+				}
+				input.peek();
+			}
+
+			delete[] node_name_cstr;
+		}
+	} else {
+    FATAL("Wrong magic at start of stream!");
   }
+
 }
 
 void NetGraph::InitializeWeights() {
