@@ -34,7 +34,7 @@ public:
   JSON GetSample(unsigned int index);
 
   JSON Serialize();
-  bool Deserialize(JSON segment_set_descriptor);
+  bool Deserialize(JSON segment_set_descriptor, std::string folder_hint = {});
   void AddSegment(Segment* segment);
 
   unsigned int GetSegmentCount() const { return segments_.size();}

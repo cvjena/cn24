@@ -66,11 +66,32 @@ std::pair<Segment*, unsigned int> SegmentSet::GetSegmentWithSampleIndex(unsigned
 }
 
 JSON SegmentSet::Serialize() {
-  return JSON::object();
+  JSON serialized_set = JSON::object();
+  JSON serialized_segments = JSON::array();
+  for(unsigned int s = 0; s < segments_.size(); s++) {
+    JSON serialized_segment = segments_[s]->Serialize();
+    serialized_segments.push_back(serialized_segment);
+  }
+  serialized_set["segments"] = serialized_segments;
+  serialized_set["name"] = name;
+  return serialized_set;
 }
 
-bool SegmentSet::Deserialize(JSON segment_set_descriptor) {
-  return false;
+bool SegmentSet::Deserialize(JSON segment_set_descriptor, std::string folder_hint) {
+  if(segment_set_descriptor.count("segments") == 1 && segment_set_descriptor["segments"].is_array()) {
+    if(segment_set_descriptor.count("name") == 1 && segment_set_descriptor["name"].is_string()) {
+      name = segment_set_descriptor["name"];
+    }
+    bool success = true;
+    for(unsigned int s = 0; s < segment_set_descriptor["segments"].size(); s++) {
+      std::string segment_name = "Unnamed segment";
+      Segment* segment = new Segment(segment_name);
+      success &= segment->Deserialize(segment_set_descriptor["segments"][s], folder_hint);
+    }
+    return success;
+  } else {
+    return false;
+  }
 }
 
 }

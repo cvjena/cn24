@@ -101,6 +101,7 @@ int main(int argc, char** argv) {
 
       set.AddSegment(segment);
       LOGINFO << "Added segment \"" << segment->name << "\" with " << segment->GetSampleCount() << " samples.";
+      goto list;
     } else if(command.compare(0, 8, "seg-save") == 0) {
       std::string segment_name = "Unnamed segment";
       std::string file_name;
@@ -136,6 +137,31 @@ int main(int argc, char** argv) {
 
       set.AddSegment(segment);
       LOGINFO << "Added segment \"" << segment->name << "\" with " << segment->GetSampleCount() << " samples.";
+      goto list;
+    } else if(command.compare(0, 8, "set-load") == 0) {
+      std::string file_name, folder_hint;
+      Conv::ParseStringParamIfPossible(command, "file", file_name);
+      Conv::ParseStringParamIfPossible(command, "hint", folder_hint);
+
+      Conv::JSON segment_set_descriptor = Conv::JSON::parse(std::ifstream(file_name, std::ios::in));
+      set.Deserialize(segment_set_descriptor, folder_hint);
+      LOGINFO << "Deserialized segment set " << set.name;
+      goto list;
+    } else if(command.compare(0, 8, "set-save") == 0) {
+      std::string file_name;
+      Conv::ParseStringParamIfPossible(command, "file", file_name);
+
+      Conv::JSON segment_set_descriptor = set.Serialize();
+      std::ofstream output(file_name, std::ios::out);
+      std::string segment_set_descriptor_serialized = segment_set_descriptor.dump();
+      output.write(segment_set_descriptor_serialized.c_str(), segment_set_descriptor_serialized.length());
+    } else if(command.compare(0, 4, "list") == 0) {
+      list:
+      LOGINFO << "Listing segment set \"" << set.name << "\":";
+      for(unsigned int s = 0; s < set.GetSegmentCount(); s++) {
+        Conv::Segment* segment = set.GetSegment(s);
+        LOGINFO << "  Segment " << s << " \"" << segment->name << "\": " << segment->GetSampleCount() << " samples";
+      }
     } else if(command.compare(0, 1, "q") == 0) {
       return 0;
     } else {
