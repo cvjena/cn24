@@ -101,6 +101,41 @@ int main(int argc, char** argv) {
 
       set.AddSegment(segment);
       LOGINFO << "Added segment \"" << segment->name << "\" with " << segment->GetSampleCount() << " samples.";
+    } else if(command.compare(0, 8, "seg-save") == 0) {
+      std::string segment_name = "Unnamed segment";
+      std::string file_name;
+      Conv::ParseStringParamIfPossible(command, "name", segment_name);
+      Conv::ParseStringParamIfPossible(command, "file", file_name);
+
+      int segment_index = set.GetSegmentIndex(segment_name);
+      if(segment_index >= 0) {
+        Conv::Segment* segment = set.GetSegment(segment_index);
+        Conv::JSON serialized_segment = segment->Serialize();
+        std::string serialized_segment_dump = serialized_segment.dump();
+        std::ofstream output(file_name, std::ios::out);
+        if(output.good()) {
+          output.write(serialized_segment_dump.c_str(), serialized_segment_dump.length());
+        } else {
+          LOGERROR << "Could not open " << file_name;
+        }
+      } else {
+        LOGERROR << "Segment \"" << segment_name << "\" could not be found!";
+      }
+
+    } else if(command.compare(0, 8, "seg-load") == 0) {
+      std::string file_name, folder_hint;
+      unsigned int range_begin = 0, range_end = (unsigned int)-1;
+      Conv::ParseStringParamIfPossible(command, "file", file_name);
+      Conv::ParseStringParamIfPossible(command, "hint", folder_hint);
+      Conv::ParseCountIfPossible(command, "range_begin", range_begin);
+      Conv::ParseCountIfPossible(command, "range_end", range_end);
+
+      Conv::Segment* segment = new Conv::Segment("Unnamed segment");
+      Conv::JSON segment_descriptor = Conv::JSON::parse(std::ifstream(file_name, std::ios::in));
+      segment->Deserialize(segment_descriptor, folder_hint, range_begin, (signed int)range_end);
+
+      set.AddSegment(segment);
+      LOGINFO << "Added segment \"" << segment->name << "\" with " << segment->GetSampleCount() << " samples.";
     } else if(command.compare(0, 1, "q") == 0) {
       return 0;
     } else {

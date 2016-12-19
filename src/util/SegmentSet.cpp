@@ -65,4 +65,12 @@ std::pair<Segment*, unsigned int> SegmentSet::GetSegmentWithSampleIndex(unsigned
   return p;
 }
 
+JSON SegmentSet::Serialize() {
+  return JSON::object();
+}
+
+bool SegmentSet::Deserialize(JSON segment_set_descriptor) {
+  return false;
+}
+
 }

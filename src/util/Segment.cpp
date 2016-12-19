@@ -19,7 +19,16 @@ bool Segment::CopyDetectionSample(JSON sample, unsigned int target_index, Tensor
 }
 
 JSON Segment::Serialize() {
-  return JSON::object();
+  JSON serialized = JSON::object();
+  JSON samples_array = JSON::array();
+  for(unsigned int s = 0; s < samples_.size(); s++) {
+    JSON sample = samples_[s];
+    sample.erase("image_rpath");
+    samples_array.push_back(samples_[s]);
+  }
+  serialized["samples"] = samples_array;
+  serialized["name"] = name;
+  return serialized;
 }
 
 bool Segment::Deserialize(JSON segment_descriptor, std::string folder_hint, int range_begin, int range_end) {
@@ -45,6 +54,9 @@ bool Segment::Deserialize(JSON segment_descriptor, std::string folder_hint, int 
         LOGWARN << "Segment \"" << name << "\": Not an object: " << segment_descriptor["samples"][s].dump() << ", skipping";
       }
     }
+  }
+  if(segment_descriptor.count("name") == 1 && segment_descriptor["name"].is_string()) {
+    name = segment_descriptor["name"];
   }
   return success;
 }

@@ -37,6 +37,11 @@ public:
   bool Deserialize(JSON segment_set_descriptor);
   void AddSegment(Segment* segment);
 
+  unsigned int GetSegmentCount() const { return segments_.size();}
+  Segment* GetSegment(unsigned int index) { return segments_[index];}
+  int GetSegmentIndex(const std::string& name) { for(unsigned int i = 0; i < segments_.size(); i++) if(segments_[i]->name.compare(name) == 0) return i; return -1; }
+  bool RemoveSegment(unsigned int index) { if(index < segments_.size()) { segments_.erase(segments_.begin() + index); return true; } else { return false;}}
+
 private:
   std::pair<Segment*, unsigned int> GetSegmentWithSampleIndex(unsigned int index);
   std::vector<Segment*> segments_;
