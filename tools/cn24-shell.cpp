@@ -5,8 +5,8 @@
  * For licensing information, see the LICENSE file included with this project.
  */
 /**
- * @file trainNetwork.cpp
- * @brief Trains a convolutional neural net for prediction.
+ * @file cn24-shell.cpp
+ * @brief cn24 command line
  *
  * @author Clemens-Alexander Brust(ikosa dot de at gmail dot com)
  */
@@ -25,13 +25,12 @@
 
 #include <private/NKContext.h>
 
-void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Dataset* dataset, Conv::ClassManager* class_manager);
-bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*>& datasets, Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, std::string& command);
+void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Task task, Conv::ClassManager* class_manager);
+bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer* input_layer, Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, std::string& command);
 void help();
 
 int main (int argc, char* argv[]) {
   bool FROM_SCRIPT = false;
-  bool NO_INIT = false;
   int requested_log_level = -1;
   const Conv::datum loss_sampling_p = 0.5;
   
@@ -44,29 +43,20 @@ int main (int argc, char* argv[]) {
   }
   
 
-  if (argc < 3) {
-    LOGERROR << "USAGE: " << argv[0] << " [-v] <dataset config file> <net config file> {[script file]|gradient_check}";
+  if (argc < 2) {
+    LOGERROR << "USAGE: " << argv[0] << " [-v] <net config file> [script file]";
     LOGEND;
     return -1;
   }
 
   std::string script_fname;
 
-  if (argc > 3 && std::string (argv[3]).compare ("gradient_check") == 0) {
-    FATAL("Gradient check is now part of the test suite!");
-  } else if ((argc > 3 && std::string(argv[3]).compare("noinit") == 0) ||
-    (argc > 4 && std::string(argv[4]).compare("noinit") == 0)) {
-    NO_INIT = true;
-    LOGINFO << "Skipping initialization...";
-    argc--;
-  }
-  if (argc > 3) {
+  if (argc > 2) {
     FROM_SCRIPT = true;
-    script_fname = argv[3];
+    script_fname = argv[2];
   }
 
-  std::string net_config_fname (argv[2]);
-  std::string dataset_config_fname (argv[1]);
+  std::string net_config_fname (argv[1]);
 
   Conv::System::Init(requested_log_level);
   
@@ -88,37 +78,23 @@ int main (int argc, char* argv[]) {
   LOGDEBUG << "Parsing network config file..." << std::flush;
   Conv::JSONNetGraphFactory* factory = new Conv::JSONNetGraphFactory (*net_config_file, 8347734);
 
-  // Open dataset configuration file
-  std::ifstream dataset_config_file (dataset_config_fname, std::ios::in);
-
-  if (!dataset_config_file.good()) {
-    FATAL ("Cannot open dataset configuration file!");
-  }
-
-  dataset_config_fname = dataset_config_fname.substr (dataset_config_fname.rfind ("/") + 1);
-
-
   // Extract parallel batch size from parsed configuration
   unsigned int batch_size_parallel = 1;
   if(factory->GetHyperparameters().count("batch_size_parallel") == 1 && factory->GetHyperparameters()["batch_size_parallel"].is_number()) {
     batch_size_parallel = factory->GetHyperparameters()["batch_size_parallel"];
   }
 
-  // Load dataset
   Conv::ClassManager class_manager;
-  LOGINFO << "Loading dataset, this can take a long time depending on the size!" << std::flush;
 
-  Conv::Dataset* initial_dataset = Conv::JSONDatasetFactory::ConstructDataset(Conv::JSON::parse(dataset_config_file), &class_manager);
-  std::vector<Conv::Dataset*> datasets;
-  datasets.push_back(initial_dataset);
+  std::vector<Conv::SegmentSet*> sets_;
 
   // Assemble net
   Conv::NetGraph graph;
-  Conv::DatasetInputLayer* data_layer = nullptr;
+  Conv::SegmentSetInputLayer* input_layer = nullptr;
 	Conv::NetGraphNode* input_node = nullptr;
 
-  data_layer = new Conv::DatasetInputLayer (factory->GetDataInput(), initial_dataset, batch_size_parallel, loss_sampling_p, 983923);
-  input_node = new Conv::NetGraphNode(data_layer);
+  input_layer = new Conv::SegmentSetInputLayer (factory->GetDataInput(), Conv::DETECTION, &class_manager, batch_size_parallel, 983923);
+  input_node = new Conv::NetGraphNode(input_layer);
   input_node->is_input = true;
   graph.AddNode(input_node);
 
@@ -128,23 +104,16 @@ int main (int argc, char* argv[]) {
   if(!completeness)
     FATAL("Graph completeness test failed after factory run!");
 
-	addStatLayers(graph, input_node, initial_dataset, &class_manager);
+	addStatLayers(graph, input_node, Conv::DETECTION, &class_manager);
   
   if(!completeness)
     FATAL("Graph completeness test failed after adding stat layer!");
 
   // Initialize net with random weights
 	graph.Initialize();
-
-  graph.InitializeWeights(NO_INIT);
+  graph.InitializeWeights();
 
   Conv::Trainer trainer (graph, factory->GetHyperparameters());
-
-  Conv::NetGraph* testing_graph;
-  Conv::Trainer* testing_trainer;
-
-  testing_graph = &graph;
-  testing_trainer = &trainer;
 
   Conv::System::stat_aggregator->Initialize();
   Conv::System::stat_aggregator->SetCurrentTestingDataset(0);
@@ -162,7 +131,7 @@ int main (int argc, char* argv[]) {
       std::string command;
       std::getline (script_file, command);
 
-      if (!parseCommand (class_manager, datasets, graph, *testing_graph, trainer, *testing_trainer, command) || script_file.eof())
+      if (!parseCommand (class_manager, input_layer, graph, graph, trainer, trainer, command) || script_file.eof())
         break;
     }
   } else {
@@ -173,7 +142,7 @@ int main (int argc, char* argv[]) {
       std::string command;
       std::getline (std::cin, command);
 
-      if (!parseCommand (class_manager, datasets, graph, *testing_graph, trainer, *testing_trainer, command))
+      if (!parseCommand (class_manager, input_layer, graph, graph, trainer, trainer, command))
         break;
     }
   }
@@ -183,8 +152,8 @@ int main (int argc, char* argv[]) {
   return 0;
 }
 
-void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Dataset* dataset, Conv::ClassManager* class_manager) {
-  if(dataset->GetTask() == Conv::SEMANTIC_SEGMENTATION || dataset->GetTask() == Conv::CLASSIFICATION) {
+void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Task task, Conv::ClassManager* class_manager) {
+  if(task == Conv::SEMANTIC_SEGMENTATION || task == Conv::CLASSIFICATION) {
     for (Conv::NetGraphNode *output_node : graph.GetOutputNodes()) {
       // Add appropriate statistics layer
       Conv::NetGraphNode *stat_node = nullptr;
@@ -200,7 +169,7 @@ void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::
       stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node, 3));
       graph.AddNode(stat_node);
     }
-  } else if(dataset->GetTask() == Conv::DETECTION) {
+  } else if(task == Conv::DETECTION) {
     for (Conv::NetGraphNode *output_node : graph.GetOutputNodes()) {
       // Add appropriate statistics layer
       Conv::NetGraphNode *stat_node = nullptr;
@@ -216,7 +185,7 @@ void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::
 }
 
 
-bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*>& datasets_o, Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, std::string& command) {
+bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer* input_layer, Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, std::string& command) {
   if (command.compare ("q") == 0 || command.compare ("quit") == 0) {
     return false;
   } else if (command.compare (0, 5, "train") == 0) {
@@ -500,75 +469,72 @@ bool parseCommand (Conv::ClassManager& class_manager, std::vector<Conv::Dataset*
   else if (command.compare(0,7,"explore") == 0) {
     Conv::NetGraphNode* input_node = graph.GetInputNodes()[0];
 
-    Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(input_node->layer);
-    if(input_layer != nullptr) {
-      input_layer->SelectAndLoadSamples();
-      graph.OnBeforeFeedForward();
-      std::vector<Conv::NetGraphNode*> input_nodes = {input_node};
-      graph.FeedForward(input_nodes, true);
-      Conv::NetGraphBuffer& output_buffer = input_node->output_buffers[0];
-      Conv::NetGraphBuffer& label_buffer = input_node->output_buffers[1];
-      // Conv::System::viewer->show(...)
-      {
-        Conv::NKContext context{};
-        int current_sample = 0;
-        Conv::NKImage data_image(context, output_buffer.combined_tensor->data, current_sample);
-        Conv::NKImage label_image(context, label_buffer.combined_tensor->data, current_sample);
-        while(true) {
-          context.ProcessEvents();
-          if (nk_begin(context, "Data Tensor", nk_rect(0, 0, 500, 600),
-                       NK_WINDOW_TITLE | NK_WINDOW_CLOSABLE | NK_WINDOW_SCALABLE | NK_WINDOW_MOVABLE)) {
-            const unsigned int output_width = output_buffer.combined_tensor->data.width();
-            const unsigned int output_height = output_buffer.combined_tensor->data.height();
+    input_layer->SelectAndLoadSamples();
+    graph.OnBeforeFeedForward();
+    std::vector<Conv::NetGraphNode*> input_nodes = {input_node};
+    graph.FeedForward(input_nodes, true);
+    Conv::NetGraphBuffer& output_buffer = input_node->output_buffers[0];
+    Conv::NetGraphBuffer& label_buffer = input_node->output_buffers[1];
+    // Conv::System::viewer->show(...)
+    {
+      Conv::NKContext context{};
+      int current_sample = 0;
+      Conv::NKImage data_image(context, output_buffer.combined_tensor->data, current_sample);
+      Conv::NKImage label_image(context, label_buffer.combined_tensor->data, current_sample);
+      while(true) {
+        context.ProcessEvents();
+        if (nk_begin(context, "Data Tensor", nk_rect(0, 0, 500, 600),
+                     NK_WINDOW_TITLE | NK_WINDOW_CLOSABLE | NK_WINDOW_SCALABLE | NK_WINDOW_MOVABLE)) {
+          const unsigned int output_width = output_buffer.combined_tensor->data.width();
+          const unsigned int output_height = output_buffer.combined_tensor->data.height();
 
-            nk_layout_row_dynamic(context, 30, 1);
-            nk_property_int(context, "Sample", 0, &current_sample, output_buffer.combined_tensor->data.samples() - 1, 1, 0.01);
-            data_image.SetSample(current_sample);
-            nk_layout_row_static(context, output_buffer.combined_tensor->data.height(), output_buffer.combined_tensor->data.width(), 1);
-            nk_image(context, data_image);
+          nk_layout_row_dynamic(context, 30, 1);
+          nk_property_int(context, "Sample", 0, &current_sample, output_buffer.combined_tensor->data.samples() - 1, 1, 0.01);
+          data_image.SetSample(current_sample);
+          nk_layout_row_static(context, output_buffer.combined_tensor->data.height(), output_buffer.combined_tensor->data.width(), 1);
+          nk_image(context, data_image);
 
-            if(input_layer->GetActiveTestingDataset()->GetTask() == Conv::DETECTION) {
-              std::vector<Conv::BoundingBox>* boxes = (std::vector<Conv::BoundingBox>*)label_buffer.combined_tensor->metadata[current_sample];
-              for(unsigned int b = 0; b < boxes->size(); b++) {
-                Conv::BoundingBox bbox = boxes->at(b);
-                struct nk_rect bbox_rect = nk_layout_space_rect_to_screen(context, nk_rect(4.0 + (bbox.x - (bbox.w/2.0f)) * (float)output_width, (bbox.y - (bbox.h/2.0f)) * (float)output_height, bbox.w * (float)output_width, bbox.h*(float)output_height));
-                struct nk_rect text_rect = bbox_rect;
-                text_rect.y = bbox_rect.y + bbox_rect.h - 12.0f;
-                text_rect.h = 12.0f;
-                nk_stroke_rect(nk_window_get_canvas(context), bbox_rect,1, 1, nk_rgb(255,255,255));
-                nk_draw_text(nk_window_get_canvas(context), text_rect,
-                  class_manager.GetClassInfoById(bbox.c).first.c_str(),
-                  class_manager.GetClassInfoById(bbox.c).first.length(), context.context_->style.font, nk_rgb(255,255,255), nk_rgb(0,0,0));
-              }
-            }
-
-            nk_layout_row_static(context, label_buffer.combined_tensor->data.height(), label_buffer.combined_tensor->data.width(), 1);
-            nk_image(context, label_image);
-
-          }
-          nk_end(context);
-          if(nk_begin(context, "Metadata", nk_rect(501, 0, 200, 600),
-                      NK_WINDOW_TITLE | NK_WINDOW_MOVABLE)) {
-            nk_layout_row_dynamic(context, 30, 1);
-            if(nk_button_label(context, "Select new samples")){
-              input_layer->SelectAndLoadSamples();
-              data_image.Update();
-              label_image.Update();
-            }
-            if(input_layer->GetActiveTestingDataset()->GetTask() == Conv::DETECTION) {
-              nk_layout_row_dynamic(context, 30, 2);
-              std::vector<Conv::BoundingBox>* boxes = (std::vector<Conv::BoundingBox>*)label_buffer.combined_tensor->metadata[current_sample];
-              for(unsigned int b = 0; b < boxes->size(); b++) {
-                Conv::BoundingBox bbox = boxes->at(b);
-                nk_label(context, class_manager.GetClassInfoById(bbox.c).first.c_str(), NK_TEXT_ALIGN_LEFT);
-              }
+          if(input_layer->GetTask() == Conv::DETECTION) {
+            std::vector<Conv::BoundingBox>* boxes = (std::vector<Conv::BoundingBox>*)label_buffer.combined_tensor->metadata[current_sample];
+            for(unsigned int b = 0; b < boxes->size(); b++) {
+              Conv::BoundingBox bbox = boxes->at(b);
+              struct nk_rect bbox_rect = nk_layout_space_rect_to_screen(context, nk_rect(4.0 + (bbox.x - (bbox.w/2.0f)) * (float)output_width, (bbox.y - (bbox.h/2.0f)) * (float)output_height, bbox.w * (float)output_width, bbox.h*(float)output_height));
+              struct nk_rect text_rect = bbox_rect;
+              text_rect.y = bbox_rect.y + bbox_rect.h - 12.0f;
+              text_rect.h = 12.0f;
+              nk_stroke_rect(nk_window_get_canvas(context), bbox_rect,1, 1, nk_rgb(255,255,255));
+              nk_draw_text(nk_window_get_canvas(context), text_rect,
+                class_manager.GetClassInfoById(bbox.c).first.c_str(),
+                class_manager.GetClassInfoById(bbox.c).first.length(), context.context_->style.font, nk_rgb(255,255,255), nk_rgb(0,0,0));
             }
           }
-          nk_end(context);
-          if(nk_window_is_closed(context, "Data Tensor"))
-            break;
-          context.Draw();
+
+          nk_layout_row_static(context, label_buffer.combined_tensor->data.height(), label_buffer.combined_tensor->data.width(), 1);
+          nk_image(context, label_image);
+
         }
+        nk_end(context);
+        if(nk_begin(context, "Metadata", nk_rect(501, 0, 200, 600),
+                    NK_WINDOW_TITLE | NK_WINDOW_MOVABLE)) {
+          nk_layout_row_dynamic(context, 30, 1);
+          if(nk_button_label(context, "Select new samples")){
+            input_layer->SelectAndLoadSamples();
+            data_image.Update();
+            label_image.Update();
+          }
+          if(input_layer->GetTask() == Conv::DETECTION) {
+            nk_layout_row_dynamic(context, 30, 2);
+            std::vector<Conv::BoundingBox>* boxes = (std::vector<Conv::BoundingBox>*)label_buffer.combined_tensor->metadata[current_sample];
+            for(unsigned int b = 0; b < boxes->size(); b++) {
+              Conv::BoundingBox bbox = boxes->at(b);
+              nk_label(context, class_manager.GetClassInfoById(bbox.c).first.c_str(), NK_TEXT_ALIGN_LEFT);
+            }
+          }
+        }
+        nk_end(context);
+        if(nk_window_is_closed(context, "Data Tensor"))
+          break;
+        context.Draw();
       }
     }
   }
