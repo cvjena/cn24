@@ -26,8 +26,32 @@
 #include <private/NKContext.h>
 
 void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Task task, Conv::ClassManager* class_manager);
-bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer* input_layer, Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, std::string& command);
+bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer* input_layer, Conv::NetGraph& graph, Conv::Trainer& trainer, std::string& command);
+void exploreData(const Conv::ClassManager &class_manager, Conv::SegmentSetInputLayer *input_layer, Conv::NetGraph &graph);
+void showWeightStats(Conv::NetGraph &graph, const std::string &command);
 void help();
+
+void train(Conv::NetGraph &graph, Conv::Trainer &trainer, const std::string &command);
+
+void test(Conv::NetGraph &graph, Conv::Trainer &trainer, const std::string &command);
+
+void loadModel(Conv::NetGraph &graph, const std::string &command);
+
+void saveModel(Conv::NetGraph &graph, const std::string &command);
+
+void setExperimentProperty(const std::string &command);
+
+void setEpoch(Conv::Trainer &trainer, const std::string &command);
+
+void resetTrainer(Conv::NetGraph &graph, Conv::Trainer &trainer);
+
+void dumpNetGraph(Conv::NetGraph &graph, const std::string &command);
+
+void dumpLayerData(Conv::NetGraph &graph, const std::string &command);
+
+void showDataBufferStats(Conv::NetGraph &graph, const std::string &command);
+
+void setTrainerStats(Conv::Trainer &trainer, const std::string &command);
 
 int main (int argc, char* argv[]) {
   bool FROM_SCRIPT = false;
@@ -131,7 +155,7 @@ int main (int argc, char* argv[]) {
       std::string command;
       std::getline (script_file, command);
 
-      if (!parseCommand (class_manager, input_layer, graph, graph, trainer, trainer, command) || script_file.eof())
+      if (!parseCommand (class_manager, input_layer, graph, trainer, command) || script_file.eof())
         break;
     }
   } else {
@@ -142,7 +166,7 @@ int main (int argc, char* argv[]) {
       std::string command;
       std::getline (std::cin, command);
 
-      if (!parseCommand (class_manager, input_layer, graph, graph, trainer, trainer, command))
+      if (!parseCommand (class_manager, input_layer, graph, trainer, command))
         break;
     }
   }
@@ -185,191 +209,55 @@ void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::
 }
 
 
-bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer* input_layer, Conv::NetGraph& graph, Conv::NetGraph& testing_graph, Conv::Trainer& trainer, Conv::Trainer& testing_trainer, std::string& command) {
+bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer* input_layer, Conv::NetGraph& graph, Conv::Trainer& trainer, std::string& command) {
   if (command.compare ("q") == 0 || command.compare ("quit") == 0) {
     return false;
   } else if (command.compare (0, 5, "train") == 0) {
-    Conv::System::stat_aggregator->StartRecording();
-    
-    unsigned int epochs = 1;
-    unsigned int layerview = 0;
-    unsigned int no_snapshots = 0;
-    Conv::ParseCountIfPossible (command, "view", layerview);
-    graph.SetLayerViewEnabled (layerview == 1);
-    Conv::ParseCountIfPossible (command, "epochs", epochs);
-    Conv::ParseCountIfPossible(command, "no_snapshots", no_snapshots);
-    trainer.Train (epochs, no_snapshots != 1);
-    testing_trainer.SetEpoch (trainer.epoch());
-    graph.SetLayerViewEnabled (false);
-    LOGINFO << "Training complete.";
-    
-    Conv::System::stat_aggregator->StopRecording();
-    if(no_snapshots == 1)
-      Conv::System::stat_aggregator->Generate();
-    Conv::System::stat_aggregator->Reset();
+    train(graph, trainer, command);
   } else if (command.compare (0, 4, "test") == 0) {
-
-    unsigned int all = 0;
-    unsigned int layerview = 0;
-    Conv::ParseCountIfPossible(command, "view", layerview);
-    Conv::ParseCountIfPossible(command, "all", all);
-    testing_graph.SetLayerViewEnabled (layerview == 1);
-    if(all == 1) {
-      // Test all datasets
-      Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
-      if(input_layer != nullptr) {
-        // Save old testing dataset
-        Conv::Dataset* old_active_testing_dataset = input_layer->GetActiveTestingDataset();
-        for (unsigned int d = 0; d < input_layer->GetDatasets().size(); d++) {
-          // Test each dataset
-          input_layer->SetActiveTestingDataset(input_layer->GetDatasets()[d]);
-          Conv::System::stat_aggregator->StartRecording();
-          testing_trainer.SetEpoch(trainer.epoch());
-          testing_trainer.Test();
-          Conv::System::stat_aggregator->StopRecording();
-          Conv::System::stat_aggregator->Generate();
-          Conv::System::stat_aggregator->Reset();
-        }
-        // Restore old testing dataset
-        input_layer->SetActiveTestingDataset(old_active_testing_dataset);
-      }
-    } else {
-      Conv::System::stat_aggregator->StartRecording();
-      testing_trainer.SetEpoch(trainer.epoch());
-      testing_trainer.Test();
-      Conv::System::stat_aggregator->StopRecording();
-      Conv::System::stat_aggregator->Generate();
-      Conv::System::stat_aggregator->Reset();
-    }
-    testing_graph.SetLayerViewEnabled(false);
-
+    test(graph, trainer, command);
   } else if (command.compare (0, 4, "load") == 0) {
-    std::string param_file_name;
-    Conv::ParseStringParamIfPossible (command, "file", param_file_name);
-
-    if (param_file_name.length() == 0) {
-      LOGERROR << "Filename needed!";
-    } else {
-      std::ifstream param_file (param_file_name, std::ios::in | std::ios::binary);
-
-      if (param_file.good()) {
-        graph.DeserializeParameters (param_file);
-        LOGINFO << "Loaded parameters from " << param_file_name;
-      } else {
-        LOGERROR << "Cannot open " << param_file_name;
-      }
-
-      param_file.close();
-    }
+    loadModel(graph, command);
   } else if (command.compare (0, 4, "save") == 0) {
-    std::string param_file_name;
-    Conv::ParseStringParamIfPossible (command, "file", param_file_name);
-
-    if (param_file_name.length() == 0) {
-      LOGERROR << "Filename needed!";
-    } else {
-      std::ofstream param_file (param_file_name, std::ios::out | std::ios::binary);
-
-      if (param_file.good()) {
-        graph.SerializeParameters (param_file);
-        LOGINFO << "Written parameters to " << param_file_name;
-      } else {
-        LOGERROR << "Cannot open " << param_file_name;
-      }
-
-      param_file.close();
-    }
+    saveModel(graph, command);
   } else if (command.compare (0, 14, "set experiment") == 0) {
-    std::string experiment_name = "";
-    Conv::ParseStringParamIfPossible(command, "name", experiment_name);
-    if(experiment_name.length() > 0)
-      Conv::System::stat_aggregator->SetCurrentExperiment(experiment_name);
-    else
-      LOGINFO << "Experiment name not specified, not changing!";
+    setExperimentProperty(command);
   } else if (command.compare (0, 9, "set epoch") == 0) {
-    unsigned int epoch = 0;
-    Conv::ParseCountIfPossible (command, "epoch", epoch);
-    LOGINFO << "Setting current epoch to " << epoch;
-    trainer.SetEpoch (epoch);
-    testing_trainer.SetEpoch (trainer.epoch());
-    trainer.Reset();
+    setEpoch(trainer, command);
   } else if (command.compare (0, 5, "reset") == 0) {
-    LOGINFO << "Resetting parameters";
-    graph.InitializeWeights();
-    trainer.Reset();
+    resetTrainer(graph, trainer);
   } else if (command.compare (0, 4, "help") == 0) {
     help();
 	} else if (command.compare (0, 5, "graph") == 0) {
-    std::string param_file_name;
-    Conv::ParseStringParamIfPossible (command, "file", param_file_name);
+    dumpNetGraph(graph, command);
+  } else if (command.compare(0, 5, "wstat") == 0) {
+    showWeightStats(graph, command);
+  } else if (command.compare(0, 5, "dump ") == 0) {
+    dumpLayerData(graph, command);
+  } else if (command.compare(0, 5, "dstat") == 0) {
+    showDataBufferStats(graph, command);
+  } else if (command.compare(0, 5, "tstat") == 0) {
+    setTrainerStats(trainer, command);
+  } else if (command.compare(0,7,"explore") == 0) {
+    exploreData(class_manager, input_layer, graph);
+  } else {
+    LOGWARN << "Unknown command: " << command;
+  }
 
-		if (param_file_name.length() == 0) {
-			LOGERROR << "Filename needed!";
-		}
-		else {
-			std::ofstream graph_output(param_file_name, std::ios::out);
-			graph_output << "digraph G {";
-			if (command.find("test") != std::string::npos) {
-				testing_graph.PrintGraph(graph_output);
-			} else {
-				graph.PrintGraph(graph_output);
-			}
-			graph_output << "}";
-			graph_output.close();
-		}
-	}
-	else if (command.compare(0, 5, "wstat") == 0) {
-    std::string node_uid;
-    unsigned int show = 0;
-    unsigned int map = 0;
-    unsigned int sample = 0;
-		Conv::ParseStringParamIfPossible(command, "node", node_uid);
-    Conv::ParseCountIfPossible(command, "show", show);
-    Conv::ParseCountIfPossible(command, "map", map);
-    Conv::ParseCountIfPossible(command, "sample", sample);
+  return true;
+}
 
-		for (Conv::NetGraphNode* node : graph.GetNodes()) {
-			if (node->unique_name.compare(node_uid) == 0) {
-				unsigned int p = 0;
-				for (Conv::CombinedTensor* param_tensor : node->layer->parameters()) {
-          if(show == 1) {
-            Conv::System::viewer->show(&(param_tensor->data), "Tensor Viewer", false, map, sample);
-          } else {
-            LOGINFO << "Reporting stats on parameter set " << p++ << " " << param_tensor->data;
-            LOGINFO << "Weight stats:";
-            param_tensor->data.PrintStats();
-            LOGINFO << "Gradient stats:";
-            param_tensor->delta.PrintStats();
-          }
-				}
-			}
-		}
-	}
-  else if (command.compare(0, 5, "dump ") == 0) {
-    std::string node_uid;
-		Conv::ParseStringParamIfPossible(command, "node", node_uid);
+void setTrainerStats(Conv::Trainer &trainer, const std::string &command) {
+  unsigned int enable_tstat = 1;
+  Conv::ParseCountIfPossible(command, "enable", enable_tstat);
+  trainer.SetStatsDuringTraining(enable_tstat == 1);
+  LOGDEBUG << "Training stats enabled: " << enable_tstat;
+}
 
-    std::string param_file_name;
-    Conv::ParseStringParamIfPossible (command, "file", param_file_name);
-
-    if (param_file_name.length() == 0) {
-      LOGERROR << "Filename needed!";
-    } else {
-      std::ofstream param_file(param_file_name, std::ios::out | std::ios::binary);
-
-      for (Conv::NetGraphNode *node : graph.GetNodes()) {
-        if (node->unique_name.compare(node_uid) == 0) {
-          for (Conv::CombinedTensor *param_tensor : node->layer->parameters()) {
-            param_tensor->data.Serialize(param_file, true);
-          }
-        }
-      }
-    }
-	}
-	else if (command.compare(0, 5, "dstat") == 0) {
-    std::string node_uid;
-		Conv::ParseStringParamIfPossible(command, "node", node_uid);
-		for (Conv::NetGraphNode* node : graph.GetNodes()) {
+void showDataBufferStats(Conv::NetGraph &graph, const std::string &command) {
+  std::__cxx11::string node_uid;
+  Conv::ParseStringParamIfPossible(command, "node", node_uid);
+  for (Conv::NetGraphNode* node : graph.GetNodes()) {
 			if (node->unique_name.compare(node_uid) == 0) {
 				for (Conv::NetGraphBuffer& output_buffer : node->output_buffers) {
 					Conv::CombinedTensor* output_tensor = output_buffer.combined_tensor;
@@ -381,102 +269,203 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
 				}
 			}
 		}
-	}
-	else if (command.compare(0, 5, "tstat") == 0) {
-    unsigned int enable_tstat = 1;
-    Conv::ParseCountIfPossible(command, "enable", enable_tstat);
-    trainer.SetStatsDuringTraining(enable_tstat == 1);
-    testing_trainer.SetStatsDuringTraining(enable_tstat == 1);
-    LOGDEBUG << "Training stats enabled: " << enable_tstat;
-  }
-  else if (command.compare(0, 7, "dsload ") == 0) {
-    std::string dataset_filename;
-    unsigned int restrict_samples = 0;
-    Conv::ParseStringParamIfPossible(command, "file", dataset_filename);
-    Conv::ParseCountIfPossible(command, "restrict", restrict_samples);
+}
 
-    // Open dataset configuration file
-    std::ifstream dataset_config_file (dataset_filename, std::ios::in);
+void dumpLayerData(Conv::NetGraph &graph, const std::string &command) {
+  std::__cxx11::string node_uid;
+  Conv::ParseStringParamIfPossible(command, "node", node_uid);
 
-    if (!dataset_config_file.good()) {
-      FATAL ("Cannot open dataset configuration file!");
-    }
+  std::__cxx11::string param_file_name;
+  Conv::ParseStringParamIfPossible (command, "file", param_file_name);
 
-    Conv::Dataset* dataset = Conv::JSONDatasetFactory::ConstructDataset(Conv::JSON::parse(dataset_config_file), &class_manager);
-    if(restrict_samples > 0) {
-      LOGINFO << "Restricting training samples to first " << restrict_samples;
-      dataset->RestrictTrainingSamples(restrict_samples);
-    }
-    
-    Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
-    if(input_layer != nullptr) {
-      LOGINFO << "Active testing dataset: " << input_layer->GetActiveTestingDataset()->GetName();
-      input_layer->AddDataset(dataset, 1);
+  if (param_file_name.length() == 0) {
+      LOGERROR << "Filename needed!";
+    } else {
+      std::ofstream param_file(param_file_name, std::ios_base::out | std::ios_base::binary);
 
-      LOGINFO << "Currently loaded datasets:";
-      for(unsigned int d = 0; d < input_layer->GetDatasets().size(); d++) {
-        LOGINFO << "  Dataset " << d << ": " << input_layer->GetDatasets()[d]->GetName();
-      }
-    }
-  }
-  else if (command.compare(0,6, "dslist") == 0) {
-    LOGINFO << "Currently loaded datasets:";
-    Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
-    if(input_layer != nullptr) {
-      for (unsigned int d = 0; d < input_layer->GetDatasets().size(); d++) {
-        LOGINFO << "  Dataset " << d << ": " << input_layer->GetDatasets()[d]->GetName();
-        LOGINFO << "    Weight: " << input_layer->GetWeights()[d];
-      }
-      LOGINFO << "Active testing dataset: " << input_layer->GetActiveTestingDataset()->GetName();
-    }
-  }
-  else if (command.compare(0,10,"dsselectt ") == 0) {
-    unsigned int id = 0;
-    Conv::ParseCountIfPossible(command, "id", id);
-    Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
-    if(input_layer != nullptr) {
-      if (id < input_layer->GetDatasets().size()) {
-        Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
-        if (input_layer != nullptr) {
-          input_layer->SetActiveTestingDataset(input_layer->GetDatasets()[id]);
-        } else {
-          LOGERROR << "Cannot find dataset input layer";
+      for (Conv::NetGraphNode *node : graph.GetNodes()) {
+        if (node->unique_name.compare(node_uid) == 0) {
+          for (Conv::CombinedTensor *param_tensor : node->layer->parameters()) {
+            param_tensor->data.Serialize(param_file, true);
+          }
         }
-      } else {
-        LOGERROR << "Dataset " << id << " does not exist!";
       }
     }
-  }
-  else if (command.compare(0,12,"dssetweight ") == 0) {
-    unsigned int id = 0;
-    Conv::datum weight = 0;
-    Conv::ParseCountIfPossible(command, "id", id);
-    Conv::ParseDatumParamIfPossible(command, "weight", weight);
-    Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
-    if(input_layer != nullptr) {
-      if (id < input_layer->GetDatasets().size()) {
-        Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
-        if (input_layer != nullptr) {
-          input_layer->SetWeight(input_layer->GetDatasets()[id], weight);
-        } else {
-          LOGERROR << "Cannot find dataset input layer";
-        }
-      } else {
-        LOGERROR << "Dataset " << id << " does not exist!";
-      }
-    }
-  }
-  else if (command.compare(0,7,"explore") == 0) {
-    Conv::NetGraphNode* input_node = graph.GetInputNodes()[0];
+}
 
-    input_layer->SelectAndLoadSamples();
-    graph.OnBeforeFeedForward();
-    std::vector<Conv::NetGraphNode*> input_nodes = {input_node};
-    graph.FeedForward(input_nodes, true);
-    Conv::NetGraphBuffer& output_buffer = input_node->output_buffers[0];
-    Conv::NetGraphBuffer& label_buffer = input_node->output_buffers[1];
-    // Conv::System::viewer->show(...)
-    {
+void dumpNetGraph(Conv::NetGraph &graph, const std::string &command) {
+  std::__cxx11::string param_file_name;
+  Conv::ParseStringParamIfPossible (command, "file", param_file_name);
+
+  if (param_file_name.length() == 0) {
+			LOGERROR << "Filename needed!";
+		}
+		else {
+			std::ofstream graph_output(param_file_name, std::ios_base::out);
+			graph_output << "digraph G {";
+      graph.PrintGraph(graph_output);
+			graph_output << "}";
+			graph_output.close();
+		}
+}
+
+void resetTrainer(Conv::NetGraph &graph, Conv::Trainer &trainer) {
+  LOGINFO << "Resetting parameters";
+  graph.InitializeWeights();
+  trainer.Reset();
+}
+
+void setEpoch(Conv::Trainer &trainer, const std::string &command) {
+  unsigned int epoch = 0;
+  Conv::ParseCountIfPossible (command, "epoch", epoch);
+  LOGINFO << "Setting current epoch to " << epoch;
+  trainer.SetEpoch (epoch);
+  trainer.Reset();
+}
+
+void setExperimentProperty(const std::string &command) {
+  std::__cxx11::string experiment_name = "";
+  Conv::ParseStringParamIfPossible(command, "name", experiment_name);
+  if(experiment_name.length() > 0) {
+      Conv::System::stat_aggregator->SetCurrentExperiment(experiment_name);
+  } else {
+      LOGINFO << "Experiment name not specified, not changing!";
+    }
+}
+
+void saveModel(Conv::NetGraph &graph, const std::string &command) {
+  std::__cxx11::string param_file_name;
+  Conv::ParseStringParamIfPossible (command, "file", param_file_name);
+
+  if (param_file_name.length() == 0) {
+      LOGERROR << "Filename needed!";
+    } else {
+      std::ofstream param_file (param_file_name, std::ios_base::out | std::ios_base::binary);
+
+      if (param_file.good()) {
+        graph.SerializeParameters (param_file);
+        LOGINFO << "Written parameters to " << param_file_name;
+      } else {
+        LOGERROR << "Cannot open " << param_file_name;
+      }
+
+      param_file.close();
+    }
+}
+
+void loadModel(Conv::NetGraph &graph, const std::string &command) {
+  std::__cxx11::string param_file_name;
+  Conv::ParseStringParamIfPossible (command, "file", param_file_name);
+
+  if (param_file_name.length() == 0) {
+      LOGERROR << "Filename needed!";
+    } else {
+      std::ifstream param_file (param_file_name, std::ios_base::in | std::ios_base::binary);
+
+      if (param_file.good()) {
+        graph.DeserializeParameters (param_file);
+        LOGINFO << "Loaded parameters from " << param_file_name;
+      } else {
+        LOGERROR << "Cannot open " << param_file_name;
+      }
+
+      param_file.close();
+    }
+}
+
+void test(Conv::NetGraph &graph, Conv::Trainer &trainer, const std::string &command) {
+  unsigned int all = 0;
+  unsigned int layerview = 0;
+  Conv::ParseCountIfPossible(command, "view", layerview);
+  Conv::ParseCountIfPossible(command, "all", all);
+  graph.SetLayerViewEnabled (layerview == 1);
+  if(all == 1) {
+      // Test all datasets
+      Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
+      if(input_layer != nullptr) {
+        // Save old testing dataset
+        Conv::Dataset* old_active_testing_dataset = input_layer->GetActiveTestingDataset();
+        for (unsigned int d = 0; d < input_layer->GetDatasets().size(); d++) {
+          // Test each dataset
+          input_layer->SetActiveTestingDataset(input_layer->GetDatasets()[d]);
+          Conv::System::stat_aggregator->StartRecording();
+          trainer.Test();
+          Conv::System::stat_aggregator->StopRecording();
+          Conv::System::stat_aggregator->Generate();
+          Conv::System::stat_aggregator->Reset();
+        }
+        // Restore old testing dataset
+        input_layer->SetActiveTestingDataset(old_active_testing_dataset);
+      }
+    } else {
+      Conv::System::stat_aggregator->StartRecording();
+      trainer.Test();
+      Conv::System::stat_aggregator->StopRecording();
+      Conv::System::stat_aggregator->Generate();
+      Conv::System::stat_aggregator->Reset();
+    }
+  graph.SetLayerViewEnabled(false);
+}
+
+void train(Conv::NetGraph &graph, Conv::Trainer &trainer, const std::string &command) {
+  Conv::System::stat_aggregator->StartRecording();
+
+  unsigned int epochs = 1;
+  unsigned int layerview = 0;
+  unsigned int no_snapshots = 0;
+  Conv::ParseCountIfPossible (command, "view", layerview);
+  graph.SetLayerViewEnabled (layerview == 1);
+  Conv::ParseCountIfPossible (command, "epochs", epochs);
+  Conv::ParseCountIfPossible(command, "no_snapshots", no_snapshots);
+  trainer.Train (epochs, no_snapshots != 1);
+  graph.SetLayerViewEnabled (false);
+  LOGINFO << "Training complete.";
+
+  Conv::System::stat_aggregator->StopRecording();
+  if(no_snapshots == 1)
+      Conv::System::stat_aggregator->Generate();
+  Conv::System::stat_aggregator->Reset();
+}
+
+void showWeightStats(Conv::NetGraph &graph, const std::string &command) {
+  std::string node_uid;
+  unsigned int show = 0;
+  unsigned int map = 0;
+  unsigned int sample = 0;
+  Conv::ParseStringParamIfPossible(command, "node", node_uid);
+  Conv::ParseCountIfPossible(command, "show", show);
+  Conv::ParseCountIfPossible(command, "map", map);
+  Conv::ParseCountIfPossible(command, "sample", sample);
+
+  for (Conv::NetGraphNode* node : graph.GetNodes()) {
+    if (node->unique_name.compare(node_uid) == 0) {
+      unsigned int p = 0;
+      for (Conv::CombinedTensor* param_tensor : node->layer->parameters()) {
+        if(show == 1) {
+          Conv::System::viewer->show(&(param_tensor->data), "Tensor Viewer", false, map, sample);
+        } else {
+          LOGINFO << "Reporting stats on parameter set " << p++ << " " << param_tensor->data;
+          LOGINFO << "Weight stats:";
+          param_tensor->data.PrintStats();
+          LOGINFO << "Gradient stats:";
+          param_tensor->delta.PrintStats();
+        }
+      }
+    }
+  }
+}
+
+void exploreData(const Conv::ClassManager &class_manager, Conv::SegmentSetInputLayer *input_layer, Conv::NetGraph &graph) {
+  Conv::NetGraphNode* input_node = graph.GetInputNodes()[0];
+
+  input_layer->SelectAndLoadSamples();
+  graph.OnBeforeFeedForward();
+  std::vector<Conv::NetGraphNode*> input_nodes = {input_node};
+  graph.FeedForward(input_nodes, true);
+  Conv::NetGraphBuffer& output_buffer = input_node->output_buffers[0];
+  Conv::NetGraphBuffer& label_buffer = input_node->output_buffers[1];
+  // Conv::System::viewer->show(...)
+  {
       Conv::NKContext context{};
       int current_sample = 0;
       Conv::NKImage data_image(context, output_buffer.combined_tensor->data, current_sample);
@@ -537,12 +526,6 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
         context.Draw();
       }
     }
-  }
-	else {
-    LOGWARN << "Unknown command: " << command;
-  }
-
-  return true;
 }
 
 void help() {
