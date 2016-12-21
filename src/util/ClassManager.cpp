@@ -127,7 +127,7 @@ std::pair<std::string, ClassManager::Info> ClassManager::GetClassInfoById(unsign
 
 unsigned int ClassManager::GetMaxClassId() const {
   if(next_class_id_ == 0)
-    return UNKNOWN_CLASS;
+    return 0;
   return next_class_id_ - 1;
 }
 

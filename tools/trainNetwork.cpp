@@ -117,7 +117,7 @@ int main (int argc, char* argv[]) {
   Conv::DatasetInputLayer* data_layer = nullptr;
 	Conv::NetGraphNode* input_node = nullptr;
 
-  data_layer = new Conv::DatasetInputLayer (factory->GetAugmentation(), initial_dataset, batch_size_parallel, loss_sampling_p, 983923);
+  data_layer = new Conv::DatasetInputLayer (factory->GetDataInput(), initial_dataset, batch_size_parallel, loss_sampling_p, 983923);
   input_node = new Conv::NetGraphNode(data_layer);
   input_node->is_input = true;
   graph.AddNode(input_node);
