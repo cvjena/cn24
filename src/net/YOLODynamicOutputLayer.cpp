@@ -289,7 +289,7 @@ bool YOLODynamicOutputLayer::Deserialize(unsigned int metadata_length, const cha
 
       unsigned int class_new_id = class_manager_->GetClassIdByName(class_name);
       if (class_new_id == UNKNOWN_CLASS) {
-        LOGINFO << "Registering class " << class_name;
+        LOGDEBUG << "Registering class " << class_name;
         if (!class_manager_->RegisterClassByName(class_name, 0, 1)) {
           LOGERROR << "Failed to register class " << class_name;
           return false;
@@ -297,12 +297,8 @@ bool YOLODynamicOutputLayer::Deserialize(unsigned int metadata_length, const cha
       }
     }
 
-    LOGINFO << "Class weights: " << temp_class_weights;
-    LOGINFO << "Class biases: " << temp_class_biases;
     UpdateTensorSizes(true);
 
-    LOGINFO << "Class weights: " << class_weights_->data;
-    LOGINFO << "Class biases: " << class_biases_->data;
     // Copy data for classes
     for (unsigned int c = 0; c < classes_json.size(); c++) {
       JSON class_json = classes_json[c];
@@ -312,7 +308,6 @@ bool YOLODynamicOutputLayer::Deserialize(unsigned int metadata_length, const cha
       if (class_new_id == UNKNOWN_CLASS) {
         LOGERROR << "This should not happen! Class " << class_name << " is unknown";
       }
-      LOGINFO << "Moving class " << class_original_id << " to id " << class_new_id;
       unsigned int class_new_offset = class_new_id * (horizontal_cells_) * (vertical_cells_);
       unsigned int class_original_offset = class_original_id * (horizontal_cells_) * (vertical_cells_);
       for (unsigned int cell = 0; cell < (horizontal_cells_ * vertical_cells_); cell++) {
