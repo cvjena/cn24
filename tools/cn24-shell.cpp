@@ -53,6 +53,10 @@ void showDataBufferStats(Conv::NetGraph &graph, const std::string &command);
 
 void setTrainerStats(Conv::Trainer &trainer, const std::string &command);
 
+void displaySegmentSetsInfo(const std::vector<Conv::SegmentSet *> &sets);
+
+Conv::SegmentSet *findSegmentSet(const Conv::SegmentSetInputLayer *input_layer, const std::string &set_name);
+
 int main (int argc, char* argv[]) {
   bool FROM_SCRIPT = false;
   int requested_log_level = -1;
@@ -91,7 +95,7 @@ int main (int argc, char* argv[]) {
   Conv::System::stat_aggregator->RegisterSink(&csv_stat_sink);
   
   // Open network and dataset configuration files
-  std::ifstream* net_config_file = new std::ifstream(net_config_fname, std::ios::in);
+  std::ifstream* net_config_file = new std::ifstream(Conv::PathFinder::FindPath(net_config_fname, {}), std::ios::in);
   if (!net_config_file->good()) {
     FATAL ("Cannot open net configuration file!");
   }
@@ -110,11 +114,9 @@ int main (int argc, char* argv[]) {
 
   Conv::ClassManager class_manager;
 
-  std::vector<Conv::SegmentSet*> sets_;
-
   // Assemble net
-  Conv::NetGraph graph;
   Conv::SegmentSetInputLayer* input_layer = nullptr;
+  Conv::NetGraph graph;
 	Conv::NetGraphNode* input_node = nullptr;
 
   input_layer = new Conv::SegmentSetInputLayer (factory->GetDataInput(), Conv::DETECTION, &class_manager, batch_size_parallel, 983923);
@@ -132,6 +134,14 @@ int main (int argc, char* argv[]) {
   
   if(!completeness)
     FATAL("Graph completeness test failed after adding stat layer!");
+
+  // Assemble initial segment sets
+  Conv::SegmentSet* default_training_set = new Conv::SegmentSet("Default_Training");
+  input_layer->training_sets_.push_back(default_training_set);
+  input_layer->training_weights_.push_back(1);
+  Conv::SegmentSet* default_testing_set = new Conv::SegmentSet("Default_Testing");
+  input_layer->testing_sets_.push_back(default_testing_set);
+  input_layer->UpdateDatasets();
 
   // Initialize net with random weights
 	graph.Initialize();
@@ -220,6 +230,75 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
     loadModel(graph, command);
   } else if (command.compare (0, 4, "save") == 0) {
     saveModel(graph, command);
+  } else if (command.compare (0, 4, "seg-") == 0) {
+    // Segment operation
+    std::string seg_command = command.substr(4);
+    if(seg_command.compare(0, 4, "move") == 0) {
+      std::string source_set_name, segment_name, target_set_name;
+      Conv::ParseStringParamIfPossible(seg_command, "source", source_set_name);
+      Conv::ParseStringParamIfPossible(seg_command, "target", target_set_name);
+      Conv::ParseStringParamIfPossible(seg_command, "segment", segment_name);
+
+      Conv::SegmentSet *source_set = findSegmentSet(input_layer, source_set_name);
+      Conv::SegmentSet *target_set = findSegmentSet(input_layer, target_set_name);
+
+      if(source_set == nullptr) {
+        LOGWARN << "Could not find SegmentSet \"" << source_set_name << "\"";
+      } else if(target_set == nullptr) {
+        LOGWARN << "Could not find SegmentSet \"" << target_set_name << "\"";
+      } else {
+        int segment_index = source_set->GetSegmentIndex(segment_name);
+        if(segment_index >= 0) {
+          Conv::Segment* segment = source_set->GetSegment((unsigned int)segment_index);
+          source_set->RemoveSegment((unsigned int)segment_index);
+          target_set->AddSegment(segment);
+          input_layer->UpdateDatasets();
+          LOGINFO << "Moved segment \"" << segment->name << "\" from SegmentSet \"" << source_set->name << "\" to \"" << target_set->name << "\"";
+        } else {
+          LOGWARN << "Could not find segment \"" << segment_name << "\" in SegmentSet \"" << source_set->name << "\"";
+        }
+      }
+    } else {
+      LOGWARN << "Unknown segment command: " << seg_command;
+    }
+  } else if (command.compare (0, 4, "set-") == 0) {
+    // SegmentSet operation
+    std::string set_command = command.substr(4);
+    if(set_command.compare(0, 4, "load") == 0) {
+      std::string filename, folder_hint;
+      Conv::ParseStringParamIfPossible(set_command, "file", filename);
+      Conv::ParseStringParamIfPossible(set_command, "hint", folder_hint);
+      std::string resolved_path = Conv::PathFinder::FindPath(filename, {});
+      std::ifstream set_file(resolved_path, std::ios::in);
+      if(set_file.good()) {
+        Conv::SegmentSet *set = new Conv::SegmentSet("Unnamed SegmentSet");
+        bool success = set->Deserialize(Conv::JSON::parse(set_file), folder_hint);
+        if(!success) {
+          LOGERROR << "Deserialization failed!";
+          LOGERROR << "Could not open " << filename << " (" << resolved_path << ")";
+          delete set;
+        } else {
+          LOGINFO << "Loaded SegmentSet \"" << set->name << "\" (" << set->GetSampleCount() << " samples).";
+          input_layer->staging_sets_.push_back(set);
+          input_layer->UpdateDatasets();
+        }
+      } else {
+        LOGERROR << "Could not open " << filename << " (" << resolved_path << ")";
+      }
+    } else if(set_command.compare(0, 4, "list") == 0) {
+      LOGINFO << "SegmentSets (TRAINING):";
+      displaySegmentSetsInfo(input_layer->training_sets_);
+      LOGINFO << "Weights (TRAINING):";
+      for(unsigned int set = 0; set < input_layer->training_sets_.size(); set++) {
+        LOGINFO << "  \"" << input_layer->training_sets_[set]->name << "\": " << input_layer->training_weights_[set];
+      }
+      LOGINFO << "SegmentSets (STAGING):";
+      displaySegmentSetsInfo(input_layer->staging_sets_);
+      LOGINFO << "SegmentSets (TESTING):";
+      displaySegmentSetsInfo(input_layer->testing_sets_);
+    } else {
+      LOGWARN << "Unknown set command: " << set_command;
+    }
   } else if (command.compare (0, 14, "set experiment") == 0) {
     setExperimentProperty(command);
   } else if (command.compare (0, 9, "set epoch") == 0) {
@@ -245,6 +324,30 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
   }
 
   return true;
+}
+
+Conv::SegmentSet *findSegmentSet(const Conv::SegmentSetInputLayer *input_layer, const std::string &set_name) {
+  Conv::SegmentSet* set = nullptr;
+  for(Conv::SegmentSet* set_ : input_layer->training_sets_) {
+        if(set_->name.compare(set_name) == 0) { set = set_; }
+      }
+  for(Conv::SegmentSet* set_ : input_layer->staging_sets_) {
+        if(set_->name.compare(set_name) == 0) { set = set_; }
+      }
+  for(Conv::SegmentSet* set_ : input_layer->testing_sets_) {
+        if(set_->name.compare(set_name) == 0) { set = set_; }
+      }
+  return set;
+}
+
+void displaySegmentSetsInfo(const std::vector<Conv::SegmentSet *> &sets) {
+  for(Conv::SegmentSet* set : sets) {
+        LOGINFO << "  \"" << set->name << "\" (" << set->GetSegmentCount() << " segments, " << set->GetSampleCount() << " samples):";
+        for(unsigned int seg = 0; seg < set->GetSegmentCount(); seg++) {
+          Conv::Segment* segment = set->GetSegment(seg);
+          LOGINFO << "    \"" << segment->name << "\" (" << segment->GetSampleCount() << " samples)";
+        }
+      }
 }
 
 void setTrainerStats(Conv::Trainer &trainer, const std::string &command) {
@@ -457,7 +560,6 @@ void showWeightStats(Conv::NetGraph &graph, const std::string &command) {
 
 void exploreData(const Conv::ClassManager &class_manager, Conv::SegmentSetInputLayer *input_layer, Conv::NetGraph &graph) {
   Conv::NetGraphNode* input_node = graph.GetInputNodes()[0];
-
   input_layer->SelectAndLoadSamples();
   graph.OnBeforeFeedForward();
   std::vector<Conv::NetGraphNode*> input_nodes = {input_node};
