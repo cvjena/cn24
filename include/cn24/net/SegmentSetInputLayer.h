@@ -42,7 +42,7 @@ public:
 		    );
 
   void SetActiveTestingSet(unsigned int index);
-  SegmentSet* GetActiveTestingSet() const { return testing_sets_[testing_set_]; }
+  unsigned int GetActiveTestingSet() const { return testing_set_; }
 
   // Implementations for Layer
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs,
