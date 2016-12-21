@@ -30,6 +30,7 @@ public:
 
   explicit Segment(std::string name) : name(name) {}
   std::string name;
+  datum score = 0;
 
   static bool CopyDetectionSample(
     JSON sample,
