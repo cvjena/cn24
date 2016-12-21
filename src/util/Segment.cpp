@@ -8,6 +8,7 @@
 #include "Segment.h"
 
 #include "PathFinder.h"
+#include "Tensor.h"
 #include "Log.h"
 
 namespace Conv {
@@ -15,7 +16,55 @@ namespace Conv {
 bool Segment::CopyDetectionSample(JSON sample, unsigned int target_index, Tensor *data,
                                   DetectionMetadataPointer metadata, ClassManager& class_manager,
                                   CopyMode copy_mode) {
-  return false;
+  // Load image data
+  Tensor image_rgb;
+  image_rgb.LoadFromFile(sample["image_rpath"]);
+
+  // Copy data
+  bool data_success = Tensor::CopySample(image_rgb, 0, *data, target_index, copy_mode != NEVER_RESIZE, copy_mode == SCALE);
+
+  bool metadata_success = true;
+  metadata->clear();
+
+  // Copy metadata
+  if(copy_mode != CROP) {
+    if(sample.count("boxes") == 1 && sample["boxes"].is_array()) {
+      for(unsigned int b = 0; b < sample["boxes"].size(); b++) {
+        JSON& box_json = sample["boxes"][b];
+        BoundingBox box(box_json["x"], box_json["y"], box_json["w"], box_json["h"]);
+        if(box_json.count("difficult") == 1 && box_json["difficult"].is_number()) {
+          unsigned int difficult = box_json["difficult"];
+          box.flag2 = difficult > 0;
+        }
+
+        // Find the class by name
+        std::string class_name = box_json["class"];
+        box.c = class_manager.GetClassIdByName(class_name);
+        bool class_found = box.c != UNKNOWN_CLASS;
+
+        if(!class_found) {
+          LOGDEBUG << "Autoregistering class " << class_name;
+          class_manager.RegisterClassByName(class_name, 0, 1.0);
+          box.c = class_manager.GetClassIdByName(class_name);
+        }
+
+        // Scale the box coordinates
+        const datum width = image_rgb.width();
+        const datum height = image_rgb.height();
+        box.x /= width; box.w /= width;
+        box.y /= height; box.h /= height;
+
+        metadata->push_back(box);
+      }
+    } else {
+      LOGERROR << "Sample is missing metadata: " << sample.dump();
+      metadata_success = false;
+    }
+  } else {
+    LOGERROR << "Cropping for detection is not implemented yet!";
+  }
+
+  return data_success && metadata_success;
 }
 
 JSON Segment::Serialize() {

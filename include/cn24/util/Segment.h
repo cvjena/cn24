@@ -17,6 +17,7 @@
 #include "ClassManager.h"
 
 namespace Conv {
+typedef std::vector<BoundingBox> DetectionMetadata;
 typedef std::vector<BoundingBox>* DetectionMetadataPointer;
 
 class Segment {
