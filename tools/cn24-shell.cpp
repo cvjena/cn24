@@ -358,7 +358,7 @@ void setTrainerStats(Conv::Trainer &trainer, const std::string &command) {
 }
 
 void showDataBufferStats(Conv::NetGraph &graph, const std::string &command) {
-  std::__cxx11::string node_uid;
+  std::string node_uid;
   Conv::ParseStringParamIfPossible(command, "node", node_uid);
   for (Conv::NetGraphNode* node : graph.GetNodes()) {
 			if (node->unique_name.compare(node_uid) == 0) {
@@ -375,10 +375,10 @@ void showDataBufferStats(Conv::NetGraph &graph, const std::string &command) {
 }
 
 void dumpLayerData(Conv::NetGraph &graph, const std::string &command) {
-  std::__cxx11::string node_uid;
+  std::string node_uid;
   Conv::ParseStringParamIfPossible(command, "node", node_uid);
 
-  std::__cxx11::string param_file_name;
+  std::string param_file_name;
   Conv::ParseStringParamIfPossible (command, "file", param_file_name);
 
   if (param_file_name.length() == 0) {
@@ -397,7 +397,7 @@ void dumpLayerData(Conv::NetGraph &graph, const std::string &command) {
 }
 
 void dumpNetGraph(Conv::NetGraph &graph, const std::string &command) {
-  std::__cxx11::string param_file_name;
+  std::string param_file_name;
   Conv::ParseStringParamIfPossible (command, "file", param_file_name);
 
   if (param_file_name.length() == 0) {
@@ -427,7 +427,7 @@ void setEpoch(Conv::Trainer &trainer, const std::string &command) {
 }
 
 void setExperimentProperty(const std::string &command) {
-  std::__cxx11::string experiment_name = "";
+  std::string experiment_name = "";
   Conv::ParseStringParamIfPossible(command, "name", experiment_name);
   if(experiment_name.length() > 0) {
       Conv::System::stat_aggregator->SetCurrentExperiment(experiment_name);
@@ -437,7 +437,7 @@ void setExperimentProperty(const std::string &command) {
 }
 
 void saveModel(Conv::NetGraph &graph, const std::string &command) {
-  std::__cxx11::string param_file_name;
+  std::string param_file_name;
   Conv::ParseStringParamIfPossible (command, "file", param_file_name);
 
   if (param_file_name.length() == 0) {
@@ -457,7 +457,7 @@ void saveModel(Conv::NetGraph &graph, const std::string &command) {
 }
 
 void loadModel(Conv::NetGraph &graph, const std::string &command) {
-  std::__cxx11::string param_file_name;
+  std::string param_file_name;
   Conv::ParseStringParamIfPossible (command, "file", param_file_name);
 
   if (param_file_name.length() == 0) {
