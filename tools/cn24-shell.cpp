@@ -238,7 +238,7 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
   } else if (command.compare (0, 4, "seg-") == 0) {
     // Segment operation
     std::string seg_command = command.substr(4);
-    if(seg_command.compare(0, 4, "move") == 0) {
+    if(seg_command.compare(0, 5, "move ") == 0) {
       std::string source_set_name, segment_name, target_set_name;
       Conv::ParseStringParamIfPossible(seg_command, "source", source_set_name);
       Conv::ParseStringParamIfPossible(seg_command, "target", target_set_name);
@@ -262,6 +262,59 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
         } else {
           LOGWARN << "Could not find segment \"" << segment_name << "\" in SegmentSet \"" << source_set->name << "\"";
         }
+      }
+    } else if(seg_command.compare(0, 8, "movebest") == 0) {
+      std::string source_set_name, target_set_name;
+      Conv::ParseStringParamIfPossible(seg_command, "source", source_set_name);
+      Conv::ParseStringParamIfPossible(seg_command, "target", target_set_name);
+
+      Conv::SegmentSet *source_set = findSegmentSet(input_layer, source_set_name);
+      Conv::SegmentSet *target_set = findSegmentSet(input_layer, target_set_name);
+
+      if(source_set == nullptr) {
+        LOGWARN << "Could not find SegmentSet \"" << source_set_name << "\"";
+      } else if(target_set == nullptr) {
+        LOGWARN << "Could not find SegmentSet \"" << target_set_name << "\"";
+      } else {
+        if(source_set->GetSegmentCount() > 0) {
+          Conv::datum max_score = source_set->GetSegment(0)->score;
+          unsigned int max_index = 0;
+          for (unsigned int s = 0; s < source_set->GetSegmentCount(); s++) {
+            Conv::datum score = source_set->GetSegment(s)->score;
+            if(score > max_score) {
+              max_score = score; max_index = s;
+            }
+          }
+          Conv::Segment *segment = source_set->GetSegment(max_index);
+          target_set->AddSegment(segment);
+          source_set->RemoveSegment(max_index);
+
+          input_layer->UpdateDatasets();
+          LOGINFO << "Moved segment \"" << segment->name << "\" from SegmentSet \"" << source_set->name << "\" to \"" << target_set->name << "\"";
+        } else {
+          LOGWARN << "There are no segments in SegmentSet \"" << source_set->name << "\"";
+        }
+      }
+    } else if(seg_command.compare(0, 7, "moveall") == 0) {
+      std::string source_set_name, target_set_name;
+      Conv::ParseStringParamIfPossible(seg_command, "source", source_set_name);
+      Conv::ParseStringParamIfPossible(seg_command, "target", target_set_name);
+
+      Conv::SegmentSet *source_set = findSegmentSet(input_layer, source_set_name);
+      Conv::SegmentSet *target_set = findSegmentSet(input_layer, target_set_name);
+
+      if(source_set == nullptr) {
+        LOGWARN << "Could not find SegmentSet \"" << source_set_name << "\"";
+      } else if(target_set == nullptr) {
+        LOGWARN << "Could not find SegmentSet \"" << target_set_name << "\"";
+      } else {
+        while(source_set->GetSegmentCount() > 0) {
+          Conv::Segment* segment = source_set->GetSegment(0);
+          target_set->AddSegment(segment);
+          source_set->RemoveSegment(0);
+        }
+        input_layer->UpdateDatasets();
+        LOGINFO << "Moved all segments from SegmentSet \"" << source_set->name << "\" to \"" << target_set->name << "\"";
       }
     } else if(seg_command.compare(0, 5, "split") == 0) {
       std::string source_set_name, segment_name, target_set_name;
@@ -296,7 +349,7 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
               split_segment_index++;
             }
 
-
+            LOGINFO << "Split segment \"" << segment->name << "\"";
             input_layer->UpdateDatasets();
           } else {
             LOGWARN << "Could not find segment \"" << segment_name << "\" in SegmentSet \"" << source_set->name << "\"";
@@ -331,6 +384,20 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
         }
       } else {
         LOGERROR << "Could not open " << filename << " (" << resolved_path << ")";
+      }
+    } else if(set_command.compare(0, 5, "score") == 0) {
+      std::string source_set_name;
+      Conv::ParseStringParamIfPossible(set_command, "name", source_set_name);
+      Conv::SegmentSet *source_set = findSegmentSet(input_layer, source_set_name);
+
+      if(source_set == nullptr) {
+        LOGWARN << "Could not find SegmentSet \"" << source_set_name << "\"";
+      } else {
+        for(unsigned int s = 0; s < source_set->GetSegmentCount(); s++) {
+          Conv::Segment* segment = source_set->GetSegment(s);
+          segment->score = 1;
+        }
+        LOGINFO << "Finished scoring SegmentSet \"" << source_set->name << "\"";
       }
     } else if(set_command.compare(0, 3, "new") == 0) {
       std::string name = "Unnamed SegmentSet";
@@ -399,7 +466,7 @@ void displaySegmentSetsInfo(const std::vector<Conv::SegmentSet *> &sets) {
         LOGINFO << "  \"" << set->name << "\" (" << set->GetSegmentCount() << " segments, " << set->GetSampleCount() << " samples):";
         for(unsigned int seg = 0; seg < set->GetSegmentCount(); seg++) {
           Conv::Segment* segment = set->GetSegment(seg);
-          LOGINFO << "    \"" << segment->name << "\" (" << segment->GetSampleCount() << " samples)";
+          LOGINFO << "    \"" << segment->name << "\" (" << segment->GetSampleCount() << " samples, score: " << segment->score << ")";
         }
       }
 }
