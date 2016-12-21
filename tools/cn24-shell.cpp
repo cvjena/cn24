@@ -436,6 +436,52 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
         }
         LOGINFO << "Finished scoring SegmentSet \"" << source_set->name << "\"";
       }
+    } else if(set_command.compare(0, 4, "move") == 0) {
+      std::string source_area, target_area, set_name;
+      Conv::ParseStringParamIfPossible(set_command, "name", set_name);
+      Conv::ParseStringParamIfPossible(set_command, "source", source_area);
+      Conv::ParseStringParamIfPossible(set_command, "target", target_area);
+
+      if(target_area.compare("training") == 0 || target_area.compare("staging") == 0 || target_area.compare("testing") == 0) {
+        Conv::SegmentSet* segment_set = nullptr;
+        if(source_area.compare("training") == 0) {
+          for(unsigned int set = 0; set < input_layer->training_sets_.size(); set++) { if (input_layer->training_sets_[set]->name.compare(set_name) == 0) {
+              segment_set = input_layer->training_sets_[set]; input_layer->training_sets_.erase(input_layer->training_sets_.begin() + set);
+              input_layer->training_weights_.erase(input_layer->training_weights_.begin() + set);
+              break;
+            } }
+        } else if(source_area.compare("staging") == 0) {
+          for(unsigned int set = 0; set < input_layer->staging_sets_.size(); set++) { if (input_layer->staging_sets_[set]->name.compare(set_name) == 0) {
+              segment_set = input_layer->staging_sets_[set]; input_layer->staging_sets_.erase(input_layer->staging_sets_.begin() + set);
+              break;
+            } }
+        } else if(source_area.compare("testing") == 0) {
+          for (unsigned int set = 0; set < input_layer->testing_sets_.size(); set++) { if (input_layer->testing_sets_[set]->name.compare(set_name) == 0) {
+              segment_set = input_layer->testing_sets_[set]; input_layer->testing_sets_.erase(input_layer->testing_sets_.begin() + set);
+              break;
+            }
+          }
+        } else {
+          LOGWARN << "Unknown source area \"" << source_area << "\"";
+        }
+
+        if(segment_set != nullptr) {
+          if(target_area.compare("training") == 0) {
+            input_layer->training_sets_.push_back(segment_set);
+            input_layer->training_weights_.push_back(1);
+          } else if(target_area.compare("staging") == 0) {
+            input_layer->staging_sets_.push_back(segment_set);
+          } else if(target_area.compare("testing") == 0) {
+            input_layer->testing_sets_.push_back(segment_set);
+          }
+          LOGINFO << "Moved SegmentSet " << segment_set->name << " from " << source_area << " to " << target_area;
+          input_layer->UpdateDatasets();
+        } else {
+          LOGWARN << "Unknown SegmentSet \"" << set_name << "\"";
+        }
+      } else {
+        LOGWARN << "Unknown target area \"" << target_area << "\"";
+      }
     } else if(set_command.compare(0, 3, "new") == 0) {
       std::string name = "Unnamed SegmentSet";
       Conv::ParseStringParamIfPossible(set_command, "name", name);
