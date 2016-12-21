@@ -165,10 +165,15 @@ int main (int argc, char* argv[]) {
       std::string command;
       std::getline (script_file, command);
 
-      if (!parseCommand (class_manager, input_layer, graph, trainer, command) || script_file.eof())
+      if(command.compare(0, 5, "shell") == 0) {
+        goto shell_part;
+      }
+      if (!parseCommand (class_manager, input_layer, graph, trainer, command) || script_file.eof()) {
         break;
+      }
     }
   } else {
+    shell_part:
     LOGINFO << "Enter \"help\" for information on how to use this program";
 
     while (true) {
@@ -258,6 +263,48 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
           LOGWARN << "Could not find segment \"" << segment_name << "\" in SegmentSet \"" << source_set->name << "\"";
         }
       }
+    } else if(seg_command.compare(0, 5, "split") == 0) {
+      std::string source_set_name, segment_name, target_set_name;
+      unsigned int bucket_size;
+      Conv::ParseStringParamIfPossible(seg_command, "source", source_set_name);
+      Conv::ParseStringParamIfPossible(seg_command, "target", target_set_name);
+      Conv::ParseStringParamIfPossible(seg_command, "segment", segment_name);
+      Conv::ParseCountIfPossible(seg_command, "size", bucket_size);
+
+      Conv::SegmentSet *source_set = findSegmentSet(input_layer, source_set_name);
+      Conv::SegmentSet *target_set = findSegmentSet(input_layer, target_set_name);
+
+      if(source_set == nullptr) {
+        LOGWARN << "Could not find SegmentSet \"" << source_set_name << "\"";
+      } else if(target_set == nullptr) {
+        LOGWARN << "Could not find SegmentSet \"" << target_set_name << "\"";
+      } else {
+        if(bucket_size > 0) {
+          int segment_index = source_set->GetSegmentIndex(segment_name);
+          if(segment_index >= 0) {
+            Conv::Segment* segment = source_set->GetSegment((unsigned int)segment_index);
+            source_set->RemoveSegment((unsigned int)segment_index);
+
+            unsigned int split_segment_index = 0;
+            for(unsigned int start_sample = 0; start_sample < segment->GetSampleCount(); start_sample+=bucket_size) {
+              std::stringstream ss; ss << segment->name << "_" << split_segment_index;
+              Conv::Segment* split_segment = new Conv::Segment(ss.str());
+              for(unsigned int sample = 0; sample < bucket_size && (start_sample + sample) < segment->GetSampleCount(); sample++) {
+                split_segment->AddSample(segment->GetSample(start_sample + sample), {}, true);
+              }
+              target_set->AddSegment(split_segment);
+              split_segment_index++;
+            }
+
+
+            input_layer->UpdateDatasets();
+          } else {
+            LOGWARN << "Could not find segment \"" << segment_name << "\" in SegmentSet \"" << source_set->name << "\"";
+          }
+        } else {
+          LOGWARN << "Bucket size needs to be at least 1";
+        }
+      }
     } else {
       LOGWARN << "Unknown segment command: " << seg_command;
     }
@@ -285,6 +332,13 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
       } else {
         LOGERROR << "Could not open " << filename << " (" << resolved_path << ")";
       }
+    } else if(set_command.compare(0, 3, "new") == 0) {
+      std::string name = "Unnamed SegmentSet";
+      Conv::ParseStringParamIfPossible(set_command, "name", name);
+      Conv::SegmentSet* set = new Conv::SegmentSet(name);
+
+      input_layer->staging_sets_.push_back(set);
+      input_layer->UpdateDatasets();
     } else if(set_command.compare(0, 4, "list") == 0) {
       LOGINFO << "SegmentSets (TRAINING):";
       displaySegmentSetsInfo(input_layer->training_sets_);

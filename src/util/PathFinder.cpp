@@ -33,7 +33,7 @@ std::string PathFinder::FindPath(std::string path, std::string folder_hint) {
   if(dotfolderwithhint_path.length() > 0)
     return dotfolderwithhint_path;
 
-  return path;
+  return "";
 }
 
 std::string PathFinder::FindPathInternal(std::string path, std::string folder_hint) {

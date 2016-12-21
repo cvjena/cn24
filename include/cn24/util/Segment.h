@@ -50,7 +50,8 @@ public:
     int range_end = -1);
   bool AddSample(
     JSON sample_descriptor,
-    std::string folder_hint = {});
+    std::string folder_hint = {},
+    bool use_rpath = false);
 private:
   std::vector<JSON> samples_;
 };
