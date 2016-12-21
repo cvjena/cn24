@@ -15,6 +15,7 @@ bool SegmentSet::CopyDetectionSample(unsigned int source_index, unsigned int tar
                                      DetectionMetadataPointer metadata, ClassManager &class_manager,
                                      Segment::CopyMode copy_mode) {
   JSON sample = GetSample(source_index);
+  LOGDEBUG << "Copying sample " << source_index << " to index " << target_index << ", sample dump: " << sample.dump();
   if(sample.is_object()) {
     return Segment::CopyDetectionSample(sample, target_index, data, metadata, class_manager, copy_mode);
   } else {
@@ -86,7 +87,12 @@ bool SegmentSet::Deserialize(JSON segment_set_descriptor, std::string folder_hin
     for(unsigned int s = 0; s < segment_set_descriptor["segments"].size(); s++) {
       std::string segment_name = "Unnamed segment";
       Segment* segment = new Segment(segment_name);
+      if(folder_hint.length() == 0 && segment_set_descriptor.count("folder_hint") == 1 && segment_set_descriptor["folder_hint"].is_string()) {
+        folder_hint = segment_set_descriptor["folder_hint"];
+        LOGDEBUG << "Using folder hint \"" << folder_hint << "\" from descriptor.";
+      }
       success &= segment->Deserialize(segment_set_descriptor["segments"][s], folder_hint);
+      segments_.push_back(segment);
     }
     return success;
   } else {
