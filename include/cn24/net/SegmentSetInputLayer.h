@@ -76,8 +76,8 @@ public:
   std::vector<datum> training_weights_;
   std::vector<SegmentSet*> staging_sets_;
   std::vector<SegmentSet*> testing_sets_;
-private:
   void UpdateDatasets();
+private:
   void LoadSampleAugmented(unsigned int sample, const datum x_scale, const datum x_transpose_img, const datum y_scale,
                            const datum y_transpose_img, const bool flip_horizontal, const datum flip_offset);
   void AugmentInPlaceSatExp(unsigned int sample, const datum saturation_factor, const datum exposure_factor);
@@ -90,6 +90,7 @@ private:
   CombinedTensor* label_output_ = nullptr;
   CombinedTensor* helper_output_ = nullptr;
   CombinedTensor* localized_error_output_ = nullptr;
+  std::vector<DetectionMetadata> metadata_;
 
   unsigned int batch_size_;
   unsigned int input_maps_;
@@ -110,10 +111,6 @@ private:
 
   unsigned int current_element_testing_ = 0;
   
-  // Metadata buffer
-  DetectionMetadataPointer * metadata_buffer_ = nullptr;
-
-
   // Augmentation settings
   datum jitter_;
   datum exposure_;
@@ -122,8 +119,7 @@ private:
   bool do_augmentation_;
 
   // Augmentation buffers
-  DetectionMetadataPointer* preaug_metadata_buffer_ = nullptr;
-  std::vector<std::vector<BoundingBox>> augmented_boxes_;
+  std::vector<DetectionMetadata> preaug_metadata_;
   Tensor preaug_data_buffer_;
 
 };

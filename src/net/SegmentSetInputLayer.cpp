@@ -113,9 +113,7 @@ bool SegmentSetInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& 
     CombinedTensor *localized_error_output =
         new CombinedTensor(batch_size_);
 
-    DatasetMetadataPointer* metadata_buffer = new DatasetMetadataPointer[batch_size_];
-
-    label_output->metadata = metadata_buffer;
+    label_output->metadata = new DatasetMetadataPointer[batch_size_];
 
     outputs.push_back(data_output);
     outputs.push_back(label_output);
@@ -146,16 +144,16 @@ bool SegmentSetInputLayer::Connect (const std::vector< CombinedTensor* >& inputs
     label_output_ = label_output;
     helper_output_ = helper_output;
     localized_error_output_ = localized_error_output;
-    if(task_ == DETECTION)
-      metadata_buffer_ = (DetectionMetadataPointer*)label_output_->metadata;
+    if(task_ == DETECTION) {
+      metadata_.resize(batch_size_);
+      for(unsigned int sample = 0; sample < batch_size_; sample++) {
+        label_output_->metadata[sample] = &(metadata_[sample]);
+      }
+    }
 
     if(do_augmentation_) {
-      preaug_metadata_buffer_ = new DetectionMetadataPointer[batch_size_];
       preaug_data_buffer_.Resize(data_output->data);
-      augmented_boxes_.resize(batch_size_);
-      for(unsigned int sample = 0; sample < batch_size_; sample++) {
-        metadata_buffer_[sample] = &(augmented_boxes_[sample]);
-      }
+      preaug_metadata_.resize(batch_size_);
     }
   }
 
@@ -233,8 +231,8 @@ void SegmentSetInputLayer::SelectAndLoadSamples() {
     // Copy image and label
     bool success;
 
-    if(do_augmentation_) {
-      success = set->CopyDetectionSample(selected_element, sample, &(preaug_data_buffer_), preaug_metadata_buffer_[sample], *class_manager_, Segment::SCALE);
+    if(do_augmentation_ && !testing_) {
+      success = set->CopyDetectionSample(selected_element, sample, &(preaug_data_buffer_), &(preaug_metadata_[sample]), *class_manager_, Segment::SCALE);
       LoadSampleAugmented(sample, x_scale, x_transpose_img, y_scale, y_transpose_img, flip_horizontal, flip_offset);
       if(data_output_->data.maps() == 3) {
         // HSV conversion and exposure / saturation adjustment
@@ -243,8 +241,8 @@ void SegmentSetInputLayer::SelectAndLoadSamples() {
         AugmentInPlaceSatExp(sample, saturation_factor, exposure_factor);
       }
 
-      std::vector<BoundingBox>* preaug_sample_boxes = (std::vector<BoundingBox>*)preaug_metadata_buffer_[sample];
-      augmented_boxes_[sample].clear();
+      std::vector<BoundingBox>* preaug_sample_boxes = &(preaug_metadata_[sample]);
+      metadata_[sample].clear();
       for(BoundingBox bbox : *preaug_sample_boxes) {
         if(flip_horizontal)
           bbox.x = box_offset - bbox.x;
@@ -263,15 +261,17 @@ void SegmentSetInputLayer::SelectAndLoadSamples() {
         bbox.h /= y_scale;
 
         // Drop boxes with CG outside the image
-        if(bbox.x >= 0 && bbox.x <= 1 && bbox.y >= 0 && bbox.y <= 1)
-          augmented_boxes_[sample].push_back(bbox);
-
-        metadata_buffer_[sample] = &(augmented_boxes_[sample]);
+        if(bbox.x >= 0 && bbox.x <= 1 && bbox.y >= 0 && bbox.y <= 1) {
+          metadata_[sample].push_back(bbox);
+        }
       }
 
     } else {
-      success = set->CopyDetectionSample(selected_element, sample, &(data_output_->data), metadata_buffer_[sample], *class_manager_, Segment::SCALE);
+      success = set->CopyDetectionSample(selected_element, sample, &(data_output_->data), &(metadata_[sample]), *class_manager_, Segment::SCALE);
     }
+
+    // Set weight tensor
+    localized_error_output_->data.Clear(1.0, sample);
 
     if (!success) {
       FATAL ("Cannot load samples from Dataset!");
@@ -280,11 +280,6 @@ void SegmentSetInputLayer::SelectAndLoadSamples() {
     // Clear localized error if possible
     if (force_no_weight)
       localized_error_output_->data.Clear (0.0, sample);
-
-    if (!success) {
-      FATAL ("Cannot load metadata from Dataset!");
-    }
-
   }
 }
 
@@ -422,11 +417,11 @@ unsigned int SegmentSetInputLayer::GetBatchSize() {
 }
 
 unsigned int SegmentSetInputLayer::GetLabelWidth() {
-  return 0;
+  return 1;
 }
 
 unsigned int SegmentSetInputLayer::GetLabelHeight() {
-  return 0;
+  return 1;
 }
 
 unsigned int SegmentSetInputLayer::GetSamplesInTestingSet() {
@@ -485,6 +480,12 @@ void SegmentSetInputLayer::UpdateDatasets() {
   for(unsigned int i=0; i < training_sets_.size(); i++) {
     elements_training_ += training_sets_[i]->GetSampleCount();
     training_weight_sum_ += training_weights_[i];
+  }
+
+  // Calculate testing elements
+  elements_testing_ = 0;
+  if(testing_sets_.size() > 0 && testing_set_ < testing_sets_.size()) {
+    elements_testing_ = testing_sets_[testing_set_]->GetSampleCount();
   }
 }
 
