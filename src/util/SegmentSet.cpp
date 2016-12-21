@@ -15,7 +15,6 @@ bool SegmentSet::CopyDetectionSample(unsigned int source_index, unsigned int tar
                                      DetectionMetadataPointer metadata, ClassManager &class_manager,
                                      Segment::CopyMode copy_mode) {
   JSON sample = GetSample(source_index);
-  LOGDEBUG << "Copying sample " << source_index << " to index " << target_index << ", sample dump: " << sample.dump();
   if(sample.is_object()) {
     return Segment::CopyDetectionSample(sample, target_index, data, metadata, class_manager, copy_mode);
   } else {
