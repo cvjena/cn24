@@ -33,7 +33,7 @@ void help();
 
 void train(Conv::NetGraph &graph, Conv::Trainer &trainer, const std::string &command);
 
-void test(Conv::NetGraph &graph, Conv::Trainer &trainer, const std::string &command);
+void test(Conv::SegmentSetInputLayer *input_layer, Conv::NetGraph &graph, Conv::Trainer &trainer, const std::string &command);
 
 void loadModel(Conv::NetGraph &graph, const std::string &command);
 
@@ -230,7 +230,7 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
   } else if (command.compare (0, 5, "train") == 0) {
     train(graph, trainer, command);
   } else if (command.compare (0, 4, "test") == 0) {
-    test(graph, trainer, command);
+    test(input_layer, graph, trainer, command);
   } else if (command.compare (0, 4, "load") == 0) {
     loadModel(graph, command);
   } else if (command.compare (0, 4, "save") == 0) {
@@ -384,6 +384,43 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
         }
       } else {
         LOGERROR << "Could not open " << filename << " (" << resolved_path << ")";
+      }
+    } else if(set_command.compare(0, 4, "test") == 0) {
+      std::string source_set_name;
+      Conv::ParseStringParamIfPossible(set_command, "name", source_set_name);
+      bool found = false;
+      for(unsigned int set = 0; set < input_layer->testing_sets_.size(); set++) {
+        if(input_layer->testing_sets_[set]->name.compare(source_set_name) == 0) {
+          input_layer->SetActiveTestingSet(set);
+          LOGINFO << "Set SegmentSet \"" << input_layer->training_sets_[set]->name << "\" to be the active testing dataset";
+          found = true;
+          break;
+        }
+      }
+      if(found) {
+        input_layer->UpdateDatasets();
+      } else {
+        LOGWARN << "Could not find SegmentSet \"" << source_set_name << "\"";
+      }
+
+    } else if(set_command.compare(0, 6, "weight") == 0) {
+      std::string source_set_name;
+      Conv::datum weight = 1;
+      Conv::ParseStringParamIfPossible(set_command, "name", source_set_name);
+      Conv::ParseDatumParamIfPossible(set_command, "weight", weight);
+      bool found = false;
+      for(unsigned int set = 0; set < input_layer->training_sets_.size(); set++) {
+        if(input_layer->training_sets_[set]->name.compare(source_set_name) == 0) {
+          input_layer->training_weights_[set] = weight;
+          LOGINFO << "Set weight of SegmentSet \"" << input_layer->training_sets_[set]->name << "\" to " << weight;
+          found = true;
+          break;
+        }
+      }
+      if(found) {
+        input_layer->UpdateDatasets();
+      } else {
+        LOGWARN << "Could not find SegmentSet \"" << source_set_name << "\"";
       }
     } else if(set_command.compare(0, 5, "score") == 0) {
       std::string source_set_name;
@@ -597,37 +634,33 @@ void loadModel(Conv::NetGraph &graph, const std::string &command) {
     }
 }
 
-void test(Conv::NetGraph &graph, Conv::Trainer &trainer, const std::string &command) {
+void test(Conv::SegmentSetInputLayer *input_layer, Conv::NetGraph &graph, Conv::Trainer &trainer, const std::string &command) {
   unsigned int all = 0;
   unsigned int layerview = 0;
   Conv::ParseCountIfPossible(command, "view", layerview);
   Conv::ParseCountIfPossible(command, "all", all);
   graph.SetLayerViewEnabled (layerview == 1);
   if(all == 1) {
-      // Test all datasets
-      Conv::DatasetInputLayer *input_layer = dynamic_cast<Conv::DatasetInputLayer *>(graph.GetInputNodes()[0]->layer);
-      if(input_layer != nullptr) {
-        // Save old testing dataset
-        Conv::Dataset* old_active_testing_dataset = input_layer->GetActiveTestingDataset();
-        for (unsigned int d = 0; d < input_layer->GetDatasets().size(); d++) {
-          // Test each dataset
-          input_layer->SetActiveTestingDataset(input_layer->GetDatasets()[d]);
-          Conv::System::stat_aggregator->StartRecording();
-          trainer.Test();
-          Conv::System::stat_aggregator->StopRecording();
-          Conv::System::stat_aggregator->Generate();
-          Conv::System::stat_aggregator->Reset();
-        }
-        // Restore old testing dataset
-        input_layer->SetActiveTestingDataset(old_active_testing_dataset);
-      }
-    } else {
+    // Save old testing dataset
+    unsigned int old_active_testing_set = input_layer->GetActiveTestingSet();
+    for (unsigned int d = 0; d < input_layer->testing_sets_.size(); d++) {
+      // Test each dataset
+      input_layer->SetActiveTestingSet(d);
       Conv::System::stat_aggregator->StartRecording();
       trainer.Test();
       Conv::System::stat_aggregator->StopRecording();
       Conv::System::stat_aggregator->Generate();
       Conv::System::stat_aggregator->Reset();
     }
+    // Restore old testing dataset
+    input_layer->SetActiveTestingSet(old_active_testing_set);
+  } else {
+    Conv::System::stat_aggregator->StartRecording();
+    trainer.Test();
+    Conv::System::stat_aggregator->StopRecording();
+    Conv::System::stat_aggregator->Generate();
+    Conv::System::stat_aggregator->Reset();
+  }
   graph.SetLayerViewEnabled(false);
 }
 
