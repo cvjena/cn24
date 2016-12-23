@@ -33,6 +33,14 @@ std::string PathFinder::FindPath(std::string path, std::string folder_hint) {
   if(dotfolderwithhint_path.length() > 0)
     return dotfolderwithhint_path;
 
+  std::string winfolder_path = FindPathInternal(path, "~/cn24");
+  if(winfolder_path.length() > 0)
+    return winfolder_path;
+
+  std::string winfolderwithhint_path = FindPathInternal(path, std::string("~/cn24/") + folder_hint);
+  if(winfolderwithhint_path.length() > 0)
+    return winfolderwithhint_path;
+
   return "";
 }
 
@@ -61,7 +69,8 @@ std::string PathFinder::FindPathInternal(std::string path, std::string folder_hi
   std::string home_path = "";
   WCHAR windows_home_path[MAX_PATH];
   if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_PROFILE, NULL, 0, windows_home_path))) {
-    home_path = path;
+    std::wstring windows_home_path_str = windows_home_path;
+    home_path = std::string(windows_home_path_str.begin(), windows_home_path_str.end());
   }
 #endif
 
