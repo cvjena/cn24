@@ -254,6 +254,8 @@ void Trainer::Test() {
 		(dynamic_cast<TrainingLayer*>(training_node->layer))->SetTestingMode(false);
 
 	delete[] loss_sums;
+
+  UpdateParameterSizes();
 }
 
 void Trainer::Epoch() {
