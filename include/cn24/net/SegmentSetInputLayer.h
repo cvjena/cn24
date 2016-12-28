@@ -62,9 +62,7 @@ public:
   unsigned int GetLabelWidth();
   unsigned int GetLabelHeight();
 
-  inline datum GetLossSamplingProbability() {
-    return 0;
-  }
+  inline datum GetLossSamplingProbability() { return 1; }
 
 	std::string GetLayerDescription() { return "SegmentSet Input Layer"; }
 	void CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers);
