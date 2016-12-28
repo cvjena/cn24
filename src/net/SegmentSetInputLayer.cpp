@@ -172,8 +172,10 @@ void SegmentSetInputLayer::SelectAndLoadSamples() {
   std::bernoulli_distribution binary_dist;
 
   for(unsigned int sample = 0; sample < batch_size_; sample++) {
-    std::uniform_real_distribution<datum> exposure_dist(1.0, binary_dist(generator_) ? exposure_ : (datum)1.0 / exposure_);
-    std::uniform_real_distribution<datum> saturation_dist(1.0, binary_dist(generator_) ? saturation_ : (datum) 1.0 / saturation_);
+    const datum rnd_exp = binary_dist(generator_) ? exposure_ : (datum)1.0 / exposure_;
+    std::uniform_real_distribution<datum> exposure_dist(rnd_exp > 1 ? 1 : rnd_exp, rnd_exp > 1 ? rnd_exp : 1);
+    const datum rnd_sat = binary_dist(generator_) ? saturation_ : (datum)1.0 / saturation_;
+    std::uniform_real_distribution<datum> saturation_dist(rnd_sat > 1 ? 1: rnd_sat, rnd_sat > 1 ? rnd_sat : 1);
     unsigned int selected_element = 0;
     bool force_no_weight = false;
     SegmentSet* set = nullptr;
