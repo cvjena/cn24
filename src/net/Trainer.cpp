@@ -301,8 +301,8 @@ void Trainer::Epoch() {
     for (unsigned int b = 0; b < (unsigned int)settings_["batch_size_sequential"]; b++) {
       // Load data and feed forward
       first_training_layer_->SelectAndLoadSamples();
-      UpdateParameterSizes();
       graph_.FeedForward();
+      UpdateParameterSizes();
 
       // Save errors
 			for (unsigned int n = 0; n < graph_.GetLossNodes().size(); n++) {
