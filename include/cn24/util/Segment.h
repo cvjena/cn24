@@ -41,7 +41,7 @@ public:
     CopyMode copy_mode = NEVER_RESIZE);
 
   unsigned int GetSampleCount() const { return (unsigned int)samples_.size(); }
-  JSON GetSample( unsigned int index) {return samples_[index]; }
+  JSON& GetSample(unsigned int index) {return samples_[index]; }
 
   JSON Serialize();
   bool Deserialize(
