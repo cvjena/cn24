@@ -18,6 +18,7 @@ bool SegmentSet::CopyDetectionSample(unsigned int source_index, unsigned int tar
   if(sample.is_object()) {
     return Segment::CopyDetectionSample(sample, target_index, data, metadata, class_manager, copy_mode);
   } else {
+    LOGERROR << "Sample not an object: " << sample.dump();
     return false;
   }
 }
@@ -38,6 +39,7 @@ JSON SegmentSet::GetSample(unsigned int index) {
     const unsigned int in_segment_index = segment_p.second;
     return segment->GetSample(in_segment_index);
   } else {
+    LOGERROR << "Could not find segment for index " << index;
     return false;
   }
 }
@@ -54,11 +56,11 @@ unsigned int SegmentSet::GetSampleCount() const {
 std::pair<Segment*, unsigned int> SegmentSet::GetSegmentWithSampleIndex(unsigned int index) {
   unsigned int in_segment_index = index;
   for (Segment *segment : segments_) {
-    if (index < segment->GetSampleCount()) {
+    if (in_segment_index < segment->GetSampleCount()) {
       std::pair<Segment *, unsigned int> p(segment, in_segment_index);
       return p;
     } else {
-      index -= segment->GetSampleCount();
+      in_segment_index -= segment->GetSampleCount();
     }
   }
   std::pair<Segment *, unsigned int> p(nullptr, 0);
