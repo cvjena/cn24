@@ -57,6 +57,10 @@ void displaySegmentSetsInfo(const std::vector<Conv::SegmentSet *> &sets);
 
 Conv::SegmentSet *findSegmentSet(const Conv::SegmentSetInputLayer *input_layer, const std::string &set_name);
 
+int stat_id_correct_pred;
+int stat_id_correct_loc;
+int stat_id_wrong_pred;
+
 int main (int argc, char* argv[]) {
   bool FROM_SCRIPT = false;
   int requested_log_level = -1;
@@ -92,7 +96,69 @@ int main (int argc, char* argv[]) {
   Conv::CSVStatSink csv_stat_sink;
   Conv::System::stat_aggregator->RegisterSink(&console_stat_sink);
   Conv::System::stat_aggregator->RegisterSink(&csv_stat_sink);
-  
+
+  // Register stats
+  Conv::StatDescriptor desc_correct_loc;
+  desc_correct_loc.description = "Correctly Localized Predictions";
+  desc_correct_loc.nullable = true;
+  desc_correct_loc.init_function =
+      [](Conv::Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+  desc_correct_loc.unit = "%";
+  desc_correct_loc.update_function =
+    [](Conv::Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+  desc_correct_loc.output_function =
+    [](Conv::HardcodedStats& hc_stats, Conv::Stat& stat) -> Conv::Stat {
+      Conv::Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0) {
+        double d_iterations = (double)hc_stats.iterations;
+        return_stat.value = 100.0 * stat.value / d_iterations;
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
+
+  Conv::StatDescriptor desc_correct_pred;
+  desc_correct_pred.description = "Completely Correct Predictions";
+  desc_correct_pred.nullable = true;
+  desc_correct_pred.init_function =
+      [](Conv::Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+  desc_correct_pred.unit = "%";
+  desc_correct_pred.update_function =
+    [](Conv::Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+  desc_correct_pred.output_function =
+    [](Conv::HardcodedStats& hc_stats, Conv::Stat& stat) -> Conv::Stat {
+      Conv::Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0) {
+        double d_iterations = (double)hc_stats.iterations;
+        return_stat.value = 100.0 * stat.value / d_iterations;
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
+
+  Conv::StatDescriptor desc_wrong_pred;
+  desc_wrong_pred.description = "Wrong Predictions";
+  desc_wrong_pred.nullable = true;
+  desc_wrong_pred.init_function =
+      [](Conv::Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+  desc_wrong_pred.unit = "%";
+  desc_wrong_pred.update_function =
+    [](Conv::Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+  desc_wrong_pred.output_function =
+    [](Conv::HardcodedStats& hc_stats, Conv::Stat& stat) -> Conv::Stat {
+      Conv::Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0) {
+        double d_iterations = (double)hc_stats.iterations;
+        return_stat.value = 100.0 * stat.value / d_iterations;
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
+
+  stat_id_correct_pred = Conv::System::stat_aggregator->RegisterStat(&desc_correct_pred);
+  stat_id_correct_loc = Conv::System::stat_aggregator->RegisterStat(&desc_correct_loc);
+  stat_id_wrong_pred = Conv::System::stat_aggregator->RegisterStat(&desc_wrong_pred);
+
   // Open network and dataset configuration files
   std::ifstream* net_config_file = new std::ifstream(Conv::PathFinder::FindPath(net_config_fname, {}), std::ios::in);
   if (!net_config_file->good()) {
@@ -100,7 +166,7 @@ int main (int argc, char* argv[]) {
   }
 
   net_config_fname = net_config_fname.substr (net_config_fname.rfind ("/") + 1);
-  
+
   // Parse network configuration file
   LOGDEBUG << "Parsing network config file..." << std::flush;
   Conv::JSONNetGraphFactory* factory = new Conv::JSONNetGraphFactory (*net_config_file, 8347734);
@@ -125,12 +191,12 @@ int main (int argc, char* argv[]) {
 
 	bool completeness = factory->AddLayers(graph, &class_manager);
 	LOGDEBUG << "Graph complete: " << completeness;
-  
+
   if(!completeness)
     FATAL("Graph completeness test failed after factory run!");
 
 	addStatLayers(graph, input_node, Conv::DETECTION, &class_manager);
-  
+
   if(!completeness)
     FATAL("Graph completeness test failed after adding stat layer!");
 
@@ -449,25 +515,26 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
       if(source_set == nullptr) {
         LOGWARN << "Could not find SegmentSet \"" << source_set_name << "\"";
       } else {
+        // Statistics
+        Conv::System::stat_aggregator->StartRecording();
+        unsigned int total_labels = 0;
+        unsigned int correct_labels = 0;
+        unsigned int total_predictions = 0;
+        unsigned int correct_predictions = 0;
+        unsigned int only_localised = 0;
+        unsigned int wrong_predictions = 0;
+
+        input_layer->ForceWeightsZero();
+        graph.SetIsTesting(true);
+        unsigned int batch_size = prediction_buffer.combined_tensor->data.samples();
+
+
         for(unsigned int s = 0; s < source_set->GetSegmentCount(); s++) {
           Conv::Segment* segment = source_set->GetSegment(s);
           LOGDEBUG << "Hypothesizing Segment \"" << segment->name << "\"";
-
-          // Statistics
-          unsigned int total_labels = 0;
-          unsigned int correct_labels = 0;
-          unsigned int total_predictions = 0;
-          unsigned int correct_predictions = 0;
-          unsigned int only_localised = 0;
-          unsigned int wrong_predictions = 0;
-
-          input_layer->ForceWeightsZero();
-          graph.SetIsTesting(true);
-          unsigned int batch_size = prediction_buffer.combined_tensor->data.samples();
-
           std::cout << std::endl << std::flush;
-          // for(unsigned int sample = 0; sample < segment->GetSampleCount(); sample+= batch_size) {
-          for(unsigned int sample = 0; sample < 7; sample+= batch_size) {
+
+          for(unsigned int sample = 0; sample < segment->GetSampleCount(); sample+= batch_size) {
             for(unsigned int bindex = 0; bindex < batch_size && (sample+bindex) < segment->GetSampleCount(); bindex++) {
               // for(unsigned int sample = 0; sample < 1; sample++) {
               Conv::JSON& sample_json = segment->GetSample(sample + bindex);
@@ -538,16 +605,26 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
             }
           }
 
-          // Print statistics
-          LOGDEBUG << "Correct predictions  : " << correct_predictions;
-          LOGDEBUG << "Correct localisations: " << only_localised;
-          LOGDEBUG << "Wrong predictions    : " << wrong_predictions;
-          LOGDEBUG << "Total predicted boxes: " << total_predictions;
-          LOGDEBUG << "---------------------------";
-          LOGDEBUG << "Found labeled boxes  : " << correct_labels;
-          LOGDEBUG << "Total labeled boxes  : " << total_labels;
         }
+        // Print statistics
+        LOGDEBUG << "Correct predictions  : " << correct_predictions;
+        LOGDEBUG << "Correct localisations: " << only_localised;
+        LOGDEBUG << "Wrong predictions    : " << wrong_predictions;
+        LOGDEBUG << "Total predicted boxes: " << total_predictions;
+        LOGDEBUG << "---------------------------";
+        LOGDEBUG << "Found labeled boxes  : " << correct_labels;
+        LOGDEBUG << "Total labeled boxes  : " << total_labels;
+
         LOGINFO << "Finished hypothesizing SegmentSet \"" << source_set->name << "\"";
+
+        Conv::System::stat_aggregator->hardcoded_stats_.iterations += total_predictions;
+
+        Conv::System::stat_aggregator->Update(stat_id_correct_loc, only_localised);
+        Conv::System::stat_aggregator->Update(stat_id_correct_pred, correct_predictions);
+        Conv::System::stat_aggregator->Update(stat_id_wrong_pred, wrong_predictions);
+
+        Conv::System::stat_aggregator->StopRecording();
+        Conv::System::stat_aggregator->Generate();
       }
 
     } else if(set_command.compare(0, 4, "move") == 0) {
