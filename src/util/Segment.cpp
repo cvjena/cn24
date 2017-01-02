@@ -49,10 +49,17 @@ bool Segment::CopyDetectionSample(JSON sample, unsigned int target_index, Tensor
         }
 
         // Scale the box coordinates
-        const datum width = image_rgb.width();
-        const datum height = image_rgb.height();
-        box.x /= width; box.w /= width;
-        box.y /= height; box.h /= height;
+        bool dont_scale = false;
+        JSON_TRY_BOOL(dont_scale, box_json, "dont_scale", false);
+
+        if(!dont_scale) {
+          const datum width = image_rgb.width();
+          const datum height = image_rgb.height();
+          box.x /= width;
+          box.w /= width;
+          box.y /= height;
+          box.h /= height;
+        }
 
         metadata->push_back(box);
       }
