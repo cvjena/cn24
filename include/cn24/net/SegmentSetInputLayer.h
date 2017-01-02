@@ -55,6 +55,8 @@ public:
 
   // Implementations for TrainingLayer
   void SelectAndLoadSamples();
+  bool ForceLoadDetection(JSON& sample, unsigned int index);
+  void ForceWeightsZero();
   void SetTestingMode (bool testing);
   unsigned int GetSamplesInTrainingSet();
   unsigned int GetSamplesInTestingSet();
