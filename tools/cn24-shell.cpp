@@ -503,8 +503,22 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
       }
     } else if(set_command.compare(0, 4, "hypo") == 0) {
       std::string source_set_name;
+      Conv::datum confidence_threshold = -1;
       Conv::ParseStringParamIfPossible(set_command, "name", source_set_name);
-      Conv::SegmentSet *source_set = findSegmentSet(input_layer, source_set_name);
+      Conv::ParseDatumParamIfPossible(set_command, "threshold", confidence_threshold);
+      Conv::SegmentSet* source_set = findSegmentSet(input_layer, source_set_name);
+
+      Conv::YOLODetectionLayer* detection_layer = dynamic_cast<Conv::YOLODetectionLayer*>(graph.GetOutputNodes()[0]->layer);
+      if (detection_layer == nullptr) {
+        LOGERROR << "Output node is not a YOLO detection layer!";
+        return true;
+      }
+
+      const Conv::datum old_threshold = detection_layer->GetConfidenceThreshold();
+      if (confidence_threshold > 0) {
+        LOGDEBUG << "Setting confidence threshold to " << confidence_threshold;
+        detection_layer->SetConfidenceThreshold(confidence_threshold);
+      }
 
       Conv::NetGraphNode* input_node = graph.GetInputNodes()[0];
       Conv::NetGraphBuffer& label_buffer = input_node->output_buffers[1];
@@ -627,6 +641,7 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
         Conv::System::stat_aggregator->Generate();
       }
 
+      detection_layer->SetConfidenceThreshold(old_threshold);
     } else if(set_command.compare(0, 4, "move") == 0) {
       std::string source_area, target_area, set_name;
       Conv::ParseStringParamIfPossible(set_command, "name", set_name);
