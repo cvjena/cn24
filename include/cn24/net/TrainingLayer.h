@@ -67,7 +67,7 @@ public:
   /**
    * @brief Loads a detection sample from the specified JSON to the specified index
    */
-  virtual bool ForceLoadDetection(JSON& sample, unsigned int index) { LOGERROR << "Not implemented!"; }
+  virtual bool ForceLoadDetection(JSON& sample, unsigned int index) { LOGERROR << "Not implemented!"; return false; }
 
   /**
    * @brief Sets all the weights in the helper Tensor to zero
