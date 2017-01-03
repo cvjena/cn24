@@ -161,6 +161,10 @@ bool SegmentSetInputLayer::Connect (const std::vector< CombinedTensor* >& inputs
 }
 
 bool SegmentSetInputLayer::ForceLoadDetection(JSON &sample, unsigned int index) {
+#ifdef BUILD_OPENCL
+  data_output_->data.MoveToCPU (true);
+  localized_error_output_->data.MoveToCPU (true);
+#endif
   localized_error_output_->data.Clear(1.0, index);
   return Segment::CopyDetectionSample(sample, index, &(data_output_->data), &(metadata_[index]), *class_manager_, Segment::SCALE);
 }
