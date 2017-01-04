@@ -109,7 +109,7 @@ int main (int argc, char* argv[]) {
   desc_correct_loc.output_function =
     [](Conv::HardcodedStats& hc_stats, Conv::Stat& stat) -> Conv::Stat {
       Conv::Stat return_stat; return_stat.is_null = true;
-      if (hc_stats.iterations > 0) {
+      if (hc_stats.iterations > 0 && !stat.is_null) {
         double d_iterations = (double)hc_stats.iterations;
         return_stat.value = 100.0 * stat.value / d_iterations;
         return_stat.is_null = false;
@@ -128,7 +128,7 @@ int main (int argc, char* argv[]) {
   desc_correct_pred.output_function =
     [](Conv::HardcodedStats& hc_stats, Conv::Stat& stat) -> Conv::Stat {
       Conv::Stat return_stat; return_stat.is_null = true;
-      if (hc_stats.iterations > 0) {
+      if (hc_stats.iterations > 0 && !stat.is_null) {
         double d_iterations = (double)hc_stats.iterations;
         return_stat.value = 100.0 * stat.value / d_iterations;
         return_stat.is_null = false;
@@ -147,7 +147,7 @@ int main (int argc, char* argv[]) {
   desc_wrong_pred.output_function =
     [](Conv::HardcodedStats& hc_stats, Conv::Stat& stat) -> Conv::Stat {
       Conv::Stat return_stat; return_stat.is_null = true;
-      if (hc_stats.iterations > 0) {
+      if (hc_stats.iterations > 0 && !stat.is_null) {
         double d_iterations = (double)hc_stats.iterations;
         return_stat.value = 100.0 * stat.value / d_iterations;
         return_stat.is_null = false;
