@@ -639,6 +639,7 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
 
         Conv::System::stat_aggregator->StopRecording();
         Conv::System::stat_aggregator->Generate();
+        Conv::System::stat_aggregator->Reset();
       }
 
       detection_layer->SetConfidenceThreshold(old_threshold);
