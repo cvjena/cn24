@@ -36,6 +36,9 @@ public:
 
   virtual std::string GetLayerDescription() { return "YOLO Detection Layer"; }
 
+  const datum GetConfidenceThreshold() { return confidence_threshold_;  }
+  void SetConfidenceThreshold(const datum confidence_threshold = 0.2) { confidence_threshold_ = confidence_threshold;  }
+
 private:
   DatasetMetadataPointer* metadata_buffer_ = nullptr;
 

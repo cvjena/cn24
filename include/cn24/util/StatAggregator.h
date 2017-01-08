@@ -85,6 +85,7 @@ public:
   
   void SetCurrentExperiment(std::string current_experiment);
   void SetCurrentTestingDataset(unsigned int current_testing_dataset);
+  HardcodedStats hardcoded_stats_;
 private:
   // State
   enum StatAggregatorState {
@@ -92,7 +93,6 @@ private:
   std::chrono::time_point<std::chrono::system_clock> start_time_;
   
   // Stats
-  HardcodedStats hardcoded_stats_;
   std::vector<Stat> stats_;
   
   // Descriptors

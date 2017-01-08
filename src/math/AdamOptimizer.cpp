@@ -40,8 +40,8 @@ void AdamOptimizer::Step(std::vector<Tensor> &buffers, CombinedTensor* parameter
     const datum m_t = beta1_ * first_moment(p) + ((Conv::datum)1.0 - beta1_) * g_t;
     const datum v_t = beta2_ * second_moment(p) + ((Conv::datum)1.0 - beta2_) * g_t * g_t;
 
-    const datum m_hat_t = m_t / ((Conv::datum)1.0 - (Conv::datum)pow(beta1_, actual_iteration));
-    const datum v_hat_t = v_t / ((Conv::datum)1.0 - (Conv::datum)pow(beta2_, actual_iteration));
+    const datum m_hat_t = actual_iteration > 500 ? m_t : m_t / ((Conv::datum)1.0 - (Conv::datum)pow(beta1_, actual_iteration));
+    const datum v_hat_t = actual_iteration > 50000 ? v_t : v_t / ((Conv::datum)1.0 - (Conv::datum)pow(beta2_, actual_iteration));
 
     if(actual_iteration > 2) {
       parameters->data[p] = parameters->data(p) - current_step_size * (m_hat_t / (sqrtf(v_hat_t) + epsilon_));

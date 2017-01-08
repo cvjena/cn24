@@ -16,6 +16,8 @@
 #ifndef CONV_TRAININGLAYER_H
 #define CONV_TRAININGLAYER_H
 
+#include "../util/JSONParsing.h"
+
 namespace Conv {
   
 class TrainingLayer {
@@ -61,6 +63,16 @@ public:
    * @brief Selects a batch of random samples and loads it into an output buffer
    */
   virtual void SelectAndLoadSamples() = 0;
+
+  /**
+   * @brief Loads a detection sample from the specified JSON to the specified index
+   */
+  virtual bool ForceLoadDetection(JSON& sample, unsigned int index) { LOGERROR << "Not implemented!"; return false; }
+
+  /**
+   * @brief Sets all the weights in the helper Tensor to zero
+   */
+  virtual void ForceWeightsZero() { LOGERROR << "Not implements!"; }
 };
 
 }

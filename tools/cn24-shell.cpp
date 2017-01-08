@@ -57,11 +57,14 @@ void displaySegmentSetsInfo(const std::vector<Conv::SegmentSet *> &sets);
 
 Conv::SegmentSet *findSegmentSet(const Conv::SegmentSetInputLayer *input_layer, const std::string &set_name);
 
+int stat_id_correct_pred;
+int stat_id_correct_loc;
+int stat_id_wrong_pred;
+
 int main (int argc, char* argv[]) {
   bool FROM_SCRIPT = false;
   int requested_log_level = -1;
-  const Conv::datum loss_sampling_p = 0.5;
-  
+
   if(argc > 1) {
     if(std::string(argv[1]).compare("-v") == 0) {
       requested_log_level = 3;
@@ -93,7 +96,69 @@ int main (int argc, char* argv[]) {
   Conv::CSVStatSink csv_stat_sink;
   Conv::System::stat_aggregator->RegisterSink(&console_stat_sink);
   Conv::System::stat_aggregator->RegisterSink(&csv_stat_sink);
-  
+
+  // Register stats
+  Conv::StatDescriptor desc_correct_loc;
+  desc_correct_loc.description = "Correctly Localized Predictions";
+  desc_correct_loc.nullable = true;
+  desc_correct_loc.init_function =
+      [](Conv::Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+  desc_correct_loc.unit = "%";
+  desc_correct_loc.update_function =
+    [](Conv::Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+  desc_correct_loc.output_function =
+    [](Conv::HardcodedStats& hc_stats, Conv::Stat& stat) -> Conv::Stat {
+      Conv::Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0 && !stat.is_null) {
+        double d_iterations = (double)hc_stats.iterations;
+        return_stat.value = 100.0 * stat.value / d_iterations;
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
+
+  Conv::StatDescriptor desc_correct_pred;
+  desc_correct_pred.description = "Completely Correct Predictions";
+  desc_correct_pred.nullable = true;
+  desc_correct_pred.init_function =
+      [](Conv::Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+  desc_correct_pred.unit = "%";
+  desc_correct_pred.update_function =
+    [](Conv::Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+  desc_correct_pred.output_function =
+    [](Conv::HardcodedStats& hc_stats, Conv::Stat& stat) -> Conv::Stat {
+      Conv::Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0 && !stat.is_null) {
+        double d_iterations = (double)hc_stats.iterations;
+        return_stat.value = 100.0 * stat.value / d_iterations;
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
+
+  Conv::StatDescriptor desc_wrong_pred;
+  desc_wrong_pred.description = "Wrong Predictions";
+  desc_wrong_pred.nullable = true;
+  desc_wrong_pred.init_function =
+      [](Conv::Stat& stat) {stat.is_null = true; stat.value = 0.0;};
+  desc_wrong_pred.unit = "%";
+  desc_wrong_pred.update_function =
+    [](Conv::Stat& stat, double user_value) {stat.value += user_value; stat.is_null = false;};
+  desc_wrong_pred.output_function =
+    [](Conv::HardcodedStats& hc_stats, Conv::Stat& stat) -> Conv::Stat {
+      Conv::Stat return_stat; return_stat.is_null = true;
+      if (hc_stats.iterations > 0 && !stat.is_null) {
+        double d_iterations = (double)hc_stats.iterations;
+        return_stat.value = 100.0 * stat.value / d_iterations;
+        return_stat.is_null = false;
+      }
+      return return_stat;
+    };
+
+  stat_id_correct_pred = Conv::System::stat_aggregator->RegisterStat(&desc_correct_pred);
+  stat_id_correct_loc = Conv::System::stat_aggregator->RegisterStat(&desc_correct_loc);
+  stat_id_wrong_pred = Conv::System::stat_aggregator->RegisterStat(&desc_wrong_pred);
+
   // Open network and dataset configuration files
   std::ifstream* net_config_file = new std::ifstream(Conv::PathFinder::FindPath(net_config_fname, {}), std::ios::in);
   if (!net_config_file->good()) {
@@ -101,7 +166,7 @@ int main (int argc, char* argv[]) {
   }
 
   net_config_fname = net_config_fname.substr (net_config_fname.rfind ("/") + 1);
-  
+
   // Parse network configuration file
   LOGDEBUG << "Parsing network config file..." << std::flush;
   Conv::JSONNetGraphFactory* factory = new Conv::JSONNetGraphFactory (*net_config_file, 8347734);
@@ -126,12 +191,12 @@ int main (int argc, char* argv[]) {
 
 	bool completeness = factory->AddLayers(graph, &class_manager);
 	LOGDEBUG << "Graph complete: " << completeness;
-  
+
   if(!completeness)
     FATAL("Graph completeness test failed after factory run!");
 
 	addStatLayers(graph, input_node, Conv::DETECTION, &class_manager);
-  
+
   if(!completeness)
     FATAL("Graph completeness test failed after adding stat layer!");
 
@@ -436,6 +501,148 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
         }
         LOGINFO << "Finished scoring SegmentSet \"" << source_set->name << "\"";
       }
+    } else if(set_command.compare(0, 4, "hypo") == 0) {
+      std::string source_set_name;
+      Conv::datum confidence_threshold = -1;
+      Conv::ParseStringParamIfPossible(set_command, "name", source_set_name);
+      Conv::ParseDatumParamIfPossible(set_command, "threshold", confidence_threshold);
+      Conv::SegmentSet* source_set = findSegmentSet(input_layer, source_set_name);
+
+      Conv::YOLODetectionLayer* detection_layer = dynamic_cast<Conv::YOLODetectionLayer*>(graph.GetOutputNodes()[0]->layer);
+      if (detection_layer == nullptr) {
+        LOGERROR << "Output node is not a YOLO detection layer!";
+        return true;
+      }
+
+      const Conv::datum old_threshold = detection_layer->GetConfidenceThreshold();
+      if (confidence_threshold > 0) {
+        LOGDEBUG << "Setting confidence threshold to " << confidence_threshold;
+        detection_layer->SetConfidenceThreshold(confidence_threshold);
+      }
+
+      Conv::NetGraphNode* input_node = graph.GetInputNodes()[0];
+      Conv::NetGraphBuffer& label_buffer = input_node->output_buffers[1];
+      Conv::NetGraphBuffer& prediction_buffer = graph.GetOutputNodes()[0]->output_buffers[0];
+      Conv::DetectionMetadataPointer* label_metadata = (Conv::DetectionMetadataPointer*)label_buffer.combined_tensor->metadata;
+      Conv::DetectionMetadataPointer* predicted_metadata = (Conv::DetectionMetadataPointer*)prediction_buffer.combined_tensor->metadata;
+
+      if(source_set == nullptr) {
+        LOGWARN << "Could not find SegmentSet \"" << source_set_name << "\"";
+      } else {
+        // Statistics
+        Conv::System::stat_aggregator->StartRecording();
+        unsigned int total_labels = 0;
+        unsigned int correct_labels = 0;
+        unsigned int total_predictions = 0;
+        unsigned int correct_predictions = 0;
+        unsigned int only_localised = 0;
+        unsigned int wrong_predictions = 0;
+
+        input_layer->ForceWeightsZero();
+        graph.SetIsTesting(true);
+        unsigned int batch_size = prediction_buffer.combined_tensor->data.samples();
+
+
+        for(unsigned int s = 0; s < source_set->GetSegmentCount(); s++) {
+          Conv::Segment* segment = source_set->GetSegment(s);
+          LOGDEBUG << "Hypothesizing Segment \"" << segment->name << "\"";
+          std::cout << std::endl << std::flush;
+
+          for(unsigned int sample = 0; sample < segment->GetSampleCount(); sample+= batch_size) {
+            for(unsigned int bindex = 0; bindex < batch_size && (sample+bindex) < segment->GetSampleCount(); bindex++) {
+              // for(unsigned int sample = 0; sample < 1; sample++) {
+              Conv::JSON& sample_json = segment->GetSample(sample + bindex);
+              input_layer->ForceLoadDetection(sample_json, bindex);
+            }
+            graph.FeedForward();
+            for(unsigned int bindex = 0; bindex < batch_size && (sample+bindex) < segment->GetSampleCount(); bindex++) {
+              Conv::JSON& sample_json = segment->GetSample(sample + bindex);
+              sample_json["original_boxes"] = sample_json["boxes"];
+              sample_json["boxes"] = Conv::JSON::array();
+
+              // Go through all labeled boxes to set flag1 to false
+              for (unsigned int lbox = 0; lbox < label_metadata[bindex]->size(); lbox++) {
+                Conv::BoundingBox &lbbox = label_metadata[bindex]->at(lbox);
+                lbbox.flag1 = false;
+                total_labels++;
+              }
+
+              // Go trough all predicted boxes
+              for (unsigned int box = 0; box < predicted_metadata[bindex]->size(); box++) {
+                Conv::BoundingBox &bbox = predicted_metadata[bindex]->at(box);
+                bool found_box = false;
+
+                // Compare to all labeled boxes
+                for (unsigned int lbox = 0; lbox < label_metadata[bindex]->size(); lbox++) {
+                  Conv::BoundingBox &lbbox = label_metadata[bindex]->at(lbox);
+                  Conv::datum iou = lbbox.IntersectionOverUnion(&bbox);
+                  if (iou > 0.5) {
+                    // IoU is enough, this is a match
+                    found_box = true;
+                    lbbox.flag1 = true;
+
+                    // Check classification
+                    if (bbox.c == lbbox.c) {
+                      correct_predictions++;
+                    } else {
+                      only_localised++;
+                    }
+
+                    // Add bounding box to sample
+                    Conv::JSON bbox_json = Conv::JSON::object(); //sample_json["original_boxes"][lbox];
+                    bbox_json["w"] = bbox.w;
+                    bbox_json["h"] = bbox.h;
+                    bbox_json["x"] = bbox.x;
+                    bbox_json["y"] = bbox.y;
+                    bbox_json["class"] = class_manager.GetClassInfoById(lbbox.c).first;
+                    bbox_json["dont_scale"] = 1;
+                    sample_json["boxes"].push_back(bbox_json);
+                    break;
+                  }
+                }
+
+                if (!found_box) {
+                  wrong_predictions++;
+                }
+                total_predictions++;
+              }
+
+              // Go through all labeled boxes to reset flag
+              for (unsigned int lbox = 0; lbox < label_metadata[bindex]->size(); lbox++) {
+                Conv::BoundingBox &lbbox = label_metadata[bindex]->at(lbox);
+                if(lbbox.flag1)
+                  correct_labels++;
+                lbbox.flag1 = false;
+              }
+
+              std::cout << "." << std::flush;
+            }
+          }
+
+        }
+        // Print statistics
+        LOGDEBUG << "Correct predictions  : " << correct_predictions;
+        LOGDEBUG << "Correct localisations: " << only_localised;
+        LOGDEBUG << "Wrong predictions    : " << wrong_predictions;
+        LOGDEBUG << "Total predicted boxes: " << total_predictions;
+        LOGDEBUG << "---------------------------";
+        LOGDEBUG << "Found labeled boxes  : " << correct_labels;
+        LOGDEBUG << "Total labeled boxes  : " << total_labels;
+
+        LOGINFO << "Finished hypothesizing SegmentSet \"" << source_set->name << "\"";
+
+        Conv::System::stat_aggregator->hardcoded_stats_.iterations += total_predictions;
+
+        Conv::System::stat_aggregator->Update(stat_id_correct_loc, only_localised);
+        Conv::System::stat_aggregator->Update(stat_id_correct_pred, correct_predictions);
+        Conv::System::stat_aggregator->Update(stat_id_wrong_pred, wrong_predictions);
+
+        Conv::System::stat_aggregator->StopRecording();
+        Conv::System::stat_aggregator->Generate();
+        Conv::System::stat_aggregator->Reset();
+      }
+
+      detection_layer->SetConfidenceThreshold(old_threshold);
     } else if(set_command.compare(0, 4, "move") == 0) {
       std::string source_area, target_area, set_name;
       Conv::ParseStringParamIfPossible(set_command, "name", set_name);
