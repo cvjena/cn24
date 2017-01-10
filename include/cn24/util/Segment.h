@@ -55,6 +55,7 @@ public:
     bool use_rpath = false);
 private:
   std::vector<JSON> samples_;
+  std::string last_folder_hint_ = {};
 };
 
 }

@@ -84,11 +84,17 @@ JSON Segment::Serialize() {
   }
   serialized["samples"] = samples_array;
   serialized["name"] = name;
+  serialized["last_folder_hint"] = last_folder_hint_;
   return serialized;
 }
 
 bool Segment::Deserialize(JSON segment_descriptor, std::string folder_hint, int range_begin, int range_end) {
   bool success = true;
+
+  if(segment_descriptor.count("folder_hint") == 1 && segment_descriptor["folder_hint"].is_string()) {
+    last_folder_hint_ = segment_descriptor["folder_hint"];
+  }
+
   if(segment_descriptor.count("samples") == 1 && segment_descriptor["samples"].is_array()) {
     if(range_end < 0)
       range_end = segment_descriptor["samples"].size() - 1;
@@ -124,6 +130,13 @@ bool Segment::AddSample(JSON sample_descriptor, std::string folder_hint, bool us
     if (sample_descriptor.count("image_filename") == 1 && sample_descriptor["image_filename"].is_string()) {
       std::string image_filename = sample_descriptor["image_filename"];
       std::string resolved_path = PathFinder::FindPath(image_filename, folder_hint);
+
+      if (resolved_path.length() > 0 && folder_hint.length() > 0)
+        last_folder_hint_ = folder_hint;
+
+      if (resolved_path.length() == 0)
+        resolved_path = PathFinder::FindPath(image_filename, last_folder_hint_);
+
       if (resolved_path.length() > 0) {
         sample_descriptor["image_rpath"] = resolved_path;
         samples_.push_back(sample_descriptor);
