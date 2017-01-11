@@ -84,7 +84,7 @@ JSON Segment::Serialize() {
   }
   serialized["samples"] = samples_array;
   serialized["name"] = name;
-  serialized["last_folder_hint"] = last_folder_hint_;
+  serialized["folder_hint"] = last_folder_hint_;
   return serialized;
 }
 
