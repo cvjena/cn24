@@ -33,12 +33,20 @@ public:
   datum score = 0;
 
   static bool CopyDetectionSample(
-    JSON sample,
+    JSON& sample,
     unsigned int target_index,
     Tensor* data,
     DetectionMetadataPointer metadata,
     ClassManager& class_manager,
     CopyMode copy_mode = NEVER_RESIZE);
+
+  static bool CopyDetectionMetadata(
+    JSON& sample,
+    unsigned int image_width,
+    unsigned int image_height,
+    ClassManager& class_manager,
+    DetectionMetadataPointer metadata
+  );
 
   unsigned int GetSampleCount() const { return (unsigned int)samples_.size(); }
   JSON& GetSample(unsigned int index) {return samples_[index]; }
