@@ -77,6 +77,7 @@ bool Segment::CopyDetectionMetadata(JSON& sample, unsigned int image_width, unsi
     LOGERROR << "Sample is missing metadata: " << sample.dump();
     return false;
   }
+  return true;
 }
 
 JSON Segment::Serialize() {
