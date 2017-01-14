@@ -43,6 +43,11 @@ public:
   unsigned int iterations = 500;
 };
 
+class TrainerProgressUpdateHandler {
+public:
+  virtual void OnTrainerProgressUpdate(datum progress) = 0;
+};
+
 class Trainer {
 public:
   /**
@@ -101,6 +106,8 @@ public:
 
   void UpdateParameterSizes();
 
+  inline void SetUpdateHandler(TrainerProgressUpdateHandler* update_handler) { this->update_handler = update_handler; }
+
 private:
   void ApplyRegularizationAndScaling();
   void InitializeStats();
@@ -126,6 +133,9 @@ private:
   // State
   unsigned int epoch_ = 0;
   bool first_iteration = true;
+
+  // Update handler
+  TrainerProgressUpdateHandler* update_handler = nullptr;
 
   // Global state
   static bool stats_are_initialized_;

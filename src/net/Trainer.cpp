@@ -347,6 +347,10 @@ void Trainer::Epoch() {
     // Update aggregate loss stat
     System::stat_aggregator->Update(stat_aggloss_->stat_id, aggregate_loss
       / (first_training_layer_->GetLossSamplingProbability() * sample_count_ * (datum)settings_["batch_size_sequential"]));
+
+    // Notify update handler if possible
+    if(update_handler != nullptr)
+      update_handler->OnTrainerProgressUpdate((float)i / (float)iterations);
   }
 
   // Submit performance statistics
