@@ -350,7 +350,7 @@ void Trainer::Epoch() {
 
     // Notify update handler if possible
     if(update_handler != nullptr)
-      update_handler->OnTrainerProgressUpdate((float)i / (float)iterations);
+      update_handler->OnTrainerProgressUpdate((float)(i+1) / (float)iterations);
   }
 
   // Submit performance statistics
