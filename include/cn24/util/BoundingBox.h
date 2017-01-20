@@ -30,7 +30,7 @@ public:
   datum Intersection(BoundingBox* bounding_box);
   datum Union(BoundingBox* bounding_box);
 
-  static bool CompareScore(BoundingBox& box1, BoundingBox& box2);
+  static bool CompareScore(const BoundingBox& box1, const BoundingBox& box2);
 
   datum x = 0, y = 0, w = 0, h = 0, score = 0;
 

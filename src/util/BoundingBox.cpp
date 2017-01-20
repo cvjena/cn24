@@ -42,7 +42,7 @@ datum BoundingBox::Union(BoundingBox *bounding_box) {
   return w * h + bounding_box->w * bounding_box->h - intersection;
 }
 
-bool BoundingBox::CompareScore(BoundingBox &box1, BoundingBox &box2) {
+bool BoundingBox::CompareScore(const BoundingBox &box1, const BoundingBox &box2) {
   return box1.score < box2.score;
 }
 
