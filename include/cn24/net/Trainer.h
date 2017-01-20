@@ -108,6 +108,7 @@ public:
 
   inline void SetUpdateHandler(TrainerProgressUpdateHandler* update_handler) { this->update_handler = update_handler; }
 
+  JSON& settings() { return settings_; }
 private:
   void ApplyRegularizationAndScaling();
   void InitializeStats();
