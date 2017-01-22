@@ -254,10 +254,10 @@ void SoftmaxLayer::FeedForward () {
 #pragma omp parallel for default(shared)
   for (std::size_t sample = 0; sample < input_->data.samples (); sample++) {
     float sum = 0.0f;
-    for(std::size_t element = 0; element < input_->data.width (); element++) {
+    for(std::size_t element = 0; element < (input_->data.elements() / input_->data.samples()); element++) {
       sum += exp (*input_->data.data_ptr (element,0,0,sample));
     }
-    for (std::size_t element = 0; element < input_->data.width () ; element++) {
+    for (std::size_t element = 0; element < (input_->data.elements() / input_->data.samples()) ; element++) {
       *output_->data.data_ptr(element,0,0,sample) =
           (datum) exp (*input_->data.data_ptr (element,0,0,sample)) / sum;
     }
