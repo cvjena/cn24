@@ -12,6 +12,7 @@
  */
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <cstring>
 #include <sstream>
@@ -181,8 +182,14 @@ int main (int argc, char* argv[]) {
 
     if(dataset->GetTask() == Conv::CLASSIFICATION) {
       Conv::Tensor *net_output_tensor = &graph.GetDefaultOutputNode()->output_buffers[0].combined_tensor->data;
-      UNREFERENCED_PARAMETER(net_output_tensor);
-      // TODO display scores
+#ifdef BUILD_OPENCL
+      net_output_tensor->MoveToCPU();
+#endif
+      for(unsigned int c = 0; c < net_output_tensor->maps(); c++) {
+        std::string class_name = class_manager.GetClassInfoById(c).first;
+        Conv::datum class_score = *(net_output_tensor->data_ptr_const(0,0,c,0));
+        LOGINFO << "Score for class " << std::setw(2) << c << ": " << std::setw(8) << std::setprecision(6) << class_score << " (" << class_name << ")";
+      }
     } else {
       Conv::DatasetMetadataPointer* net_output = graph.GetDefaultOutputNode()->output_buffers[0].combined_tensor->metadata;
       std::vector<Conv::BoundingBox>* output_boxes = (std::vector<Conv::BoundingBox>*)net_output[0];
