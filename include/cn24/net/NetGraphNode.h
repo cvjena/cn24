@@ -32,15 +32,18 @@ namespace Conv {
 class NetGraphNode {
 public:
 	explicit NetGraphNode(Layer* layer) : layer(layer) {
+    unique_name = "node";
 		layer->CreateBufferDescriptors(output_buffers);
 	}
 
 	NetGraphNode(Layer* layer, NetGraphConnection first_connection) : layer(layer) {
+		unique_name = "node";
 		input_connections.push_back(first_connection);
 		layer->CreateBufferDescriptors(output_buffers);
 	}
 
 	explicit NetGraphNode(JSON descriptor) {
+		unique_name = "node";
 		layer = LayerFactory::ConstructLayer(descriptor);
 		if(layer == nullptr) {
 			FATAL("Unknown layer! Descriptor: " << descriptor.dump());
@@ -49,6 +52,7 @@ public:
 	}
 
   NetGraphNode(JSON descriptor, NetGraphConnection first_connection) {
+		unique_name = "node";
 		input_connections.push_back(first_connection);
 		layer = LayerFactory::ConstructLayer(descriptor);
 		layer->CreateBufferDescriptors(output_buffers);
@@ -60,7 +64,7 @@ public:
 	std::vector<NetGraphBuffer> output_buffers;
 
 	//int unique_id = -1;
-  std::string unique_name = "";
+  std::string unique_name;
 	bool is_output = false;
 	bool is_input = false;
 
