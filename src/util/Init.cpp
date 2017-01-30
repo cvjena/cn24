@@ -14,6 +14,7 @@
 #include "Config.h"
 #include "ConfigParsing.h"
 #include "Log.h"
+#include "PathFinder.h"
 
 #include <locale.h>
 
@@ -102,14 +103,14 @@ void System::Init(int requested_log_level) {
   unsigned int device_number = 0;
   
   // Look for configuration file
-  std::string config_path = binary_path + "config.json";
-  if(!std::ifstream(config_path, std::ios::in).good()) {
-    config_path = binary_path + "../config.json";
+  std::string config_path = PathFinder::FindPath("config.json", binary_path);
+  if(config_path.length() == 0) {
+    config_path = PathFinder::FindPath("config.json", binary_path + "../");
   }
 
   // Load and parse config file
   std::ifstream config_file(config_path, std::ios::in);
-  if(config_file.good()) {
+  if(config_path.length() > 0 && config_file.good()) {
     LOGINFO << "Loading config file: " << config_path;
     JSON config_json = JSON::parse(config_file);
 
@@ -461,14 +462,14 @@ cl_program CLHelper::CreateProgram ( const char* file_name ) {
 
   std::string binary_path;
   System::GetExecutablePath(binary_path);
-  
+
   // Search in binary path first
-  std::string full_path = binary_path + std::string(file_name);
+  std::string full_path = PathFinder::FindPath(std::string(file_name), binary_path);
   
   // If kernel cannot be found, go up one folder (Xcode, Visual Studio and
   // other multi-target build setups)
-  if ( !std::ifstream(full_path, std::ios::in).good()) {
-    full_path = binary_path + "../" + std::string(file_name);
+  if (full_path.length() == 0) {
+    full_path = PathFinder::FindPath(std::string(file_name), binary_path + "../");
   }
   
   std::ifstream kernel_file ( full_path, std::ios::in );
