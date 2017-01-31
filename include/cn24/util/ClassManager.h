@@ -54,6 +54,7 @@ public:
   unsigned int GetMaxClassId() const;
   unsigned int GetClassCount() const { return classes_.size(); }
 
+  bool RenameClass(const std::string& org_name, const std::string new_name);
 private:
   std::map<std::string,Info> classes_;
   std::map<unsigned int, std::pair<std::string,Info>> by_id_;

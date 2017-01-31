@@ -132,6 +132,7 @@ bool Segment::Deserialize(JSON segment_descriptor, std::string folder_hint, int 
 bool Segment::AddSample(JSON sample_descriptor, std::string folder_hint, bool use_rpath) {
   if(use_rpath) {
     samples_.push_back(sample_descriptor);
+    return true;
   } else {
     if (sample_descriptor.count("image_filename") == 1 && sample_descriptor["image_filename"].is_string()) {
       std::string image_filename = sample_descriptor["image_filename"];
@@ -156,5 +157,35 @@ bool Segment::AddSample(JSON sample_descriptor, std::string folder_hint, bool us
       return false;
     }
   }
+}
+
+bool Segment::RenameClass(const std::string &org_name, const std::string new_name) {
+  for(unsigned int s = 0; s < samples_.size(); s++) {
+    Conv::JSON& sample_json = samples_[s];
+    if(sample_json.count("boxes") == 1 && sample_json["boxes"].is_array()) {
+      // Detection sample...
+      Conv::JSON& boxes_json = sample_json["boxes"];
+      for(unsigned int b = 0; b < boxes_json.size(); b++) {
+        Conv::JSON& box_json = boxes_json[b];
+        if(box_json.count("class") == 1 && box_json["class"].is_string()) {
+          std::string original_class = box_json["class"];
+          if(original_class.compare(org_name) == 0) {
+            box_json["class"] = new_name;
+          }
+        } else {
+          LOGERROR << "Sample has box without class: " << sample_json.dump();
+          return false;
+        }
+      }
+    }
+    else if(sample_json.count("image_class") == 1 && sample_json["image_class"].is_string()) {
+      // Classification sample...
+    } else {
+      // Don't know? Warn the user.
+      LOGERROR << "Sample has no class information! " << sample_json.dump();
+      return false;
+    }
+  }
+  return true;
 }
 }

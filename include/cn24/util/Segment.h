@@ -61,6 +61,8 @@ public:
     JSON sample_descriptor,
     std::string folder_hint = {},
     bool use_rpath = false);
+
+  bool RenameClass(const std::string& org_name, const std::string new_name);
 private:
   std::vector<JSON> samples_;
   std::string last_folder_hint_ = {};

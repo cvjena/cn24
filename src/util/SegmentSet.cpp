@@ -101,4 +101,14 @@ bool SegmentSet::Deserialize(JSON segment_set_descriptor, std::string folder_hin
   }
 }
 
+bool SegmentSet::RenameClass(const std::string &org_name, const std::string new_name) {
+  for(unsigned int s = 0; s < segments_.size(); s++) {
+    bool result = segments_[s]->RenameClass(org_name, new_name);
+    if(!result) {
+      return false;
+    }
+  }
+  return true;
+}
+
 }

@@ -15,6 +15,28 @@ ClassManager::ClassManager() {
   LOGDEBUG << "Instance created.";
 }
 
+bool ClassManager::RenameClass(const std::string &org_name, const std::string new_name) {
+  Info class_info = GetClassInfoByName(org_name);
+  if(class_info.id == UNKNOWN_CLASS) {
+    LOGERROR << "Class \"" << org_name << "\" not found!";
+    return false;
+  } else {
+    // Class found
+    // Update classes_ map
+    classes_.erase(org_name);
+    classes_.emplace(new_name, class_info);
+
+    // Update by_id map
+    std::pair<std::string,Info> p;
+    p.first = new_name;
+    p.second = class_info;
+    by_id_.erase(class_info.id);
+    by_id_.emplace(class_info.id, p);
+
+    return true;
+  }
+}
+
 bool ClassManager::LoadFromFile(JSON configuration) {
   for(JSON::iterator it = configuration.begin(); it != configuration.end(); it++) {
     // Check if class name exists
