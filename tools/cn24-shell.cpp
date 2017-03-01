@@ -6,7 +6,10 @@
  */
 
 #include <cn24.h>
+#include <cstdlib>
 #include <unistd.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 int main(int argc, char** argv) {
   int cmdl_log_level = -1;
@@ -27,6 +30,23 @@ int main(int argc, char** argv) {
   
   // Initialize CN24
   Conv::System::Init(cmdl_log_level);
+  
+  // Readline loop
+  char* shell_line = nullptr;
+  while(true) {
+    if(shell_line) {
+      free(shell_line);
+      shell_line = nullptr;
+    }
+    
+    shell_line = readline ("\ncn24> ");
+    
+    if(shell_line && *shell_line) {
+      add_history(shell_line);
+    }
+    
+    // Process input
+  }
   
   // Shutdown CN24
   Conv::System::Shutdown();

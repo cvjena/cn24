@@ -339,6 +339,11 @@ target_link_libraries(cn24 ${CN24_LIBS})
 add_executable(cn24-shell ${CN24_TOO}/cn24-shell.cpp)
 target_link_libraries(cn24-shell cn24 ${CN24_LIBS})
 
+# Readline for shell
+find_package(Readline REQUIRED)
+include_directories(${Readline_INCLUDE_DIR})
+target_link_libraries(cn24-shell ${Readline_LIBRARY})
+
 # Tests
 # Recurse over files
 file(GLOB_RECURSE CN24_TEST_SOURCES ${CN24_TES}/*.cpp)
