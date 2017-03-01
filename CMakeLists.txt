@@ -335,16 +335,9 @@ endif()
 message(STATUS "Final links: ${CN24_LIBS}")
 target_link_libraries(cn24 ${CN24_LIBS})
 
-# Tools
-# Recurse over files
-file(GLOB_RECURSE CN24_TOOL_SOURCES ${CN24_TOO}/*.cpp)
-
-foreach(TOOL_SOURCE ${CN24_TOOL_SOURCES})
-  get_filename_component(TOOL_NAME ${TOOL_SOURCE} NAME_WE)
-  add_executable(${TOOL_NAME} ${TOOL_SOURCE})
-  target_link_libraries(${TOOL_NAME} cn24 ${CN24_LIBS})
-  message(STATUS "Added ${TOOL_NAME} tool.")
-endforeach()
+# Shell
+add_executable(cn24-shell ${CN24_TOO}/cn24-shell.cpp)
+target_link_libraries(cn24-shell cn24 ${CN24_LIBS})
 
 # Tests
 # Recurse over files
