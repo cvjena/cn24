@@ -18,7 +18,7 @@ set(CN24_INC_DIRS "${CN24_SOURCE_DIR}/include" "${CN24_SOURCE_DIR}/include/cn24"
         "${CN24_SOURCE_DIR}/include/cn24/math" "${CN24_SOURCE_DIR}/include/cn24/factory"
         "${CN24_SOURCE_DIR}/include/private")
 SET(CN24_TES "${CN24_SOURCE_DIR}/tests")
-set(CN24_TOO "${CN24_SOURCE_DIR}/tools")
+set(CN24_SHE "${CN24_SOURCE_DIR}/shell")
 set(CN24_BSH "${CN24_SOURCE_DIR}/scripts")
 set(CN24_KER "${CN24_SOURCE_DIR}/kernels")
 set(CN24_LIBS "")
@@ -336,7 +336,7 @@ message(STATUS "Final links: ${CN24_LIBS}")
 target_link_libraries(cn24 ${CN24_LIBS})
 
 # Shell
-add_executable(cn24-shell ${CN24_TOO}/cn24-shell.cpp)
+add_executable(cn24-shell ${CN24_SHE}/cn24-shell.cpp)
 target_link_libraries(cn24-shell cn24 ${CN24_LIBS})
 
 # Readline for shell
