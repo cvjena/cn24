@@ -11,6 +11,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include "ShellState.h"
+
 int main(int argc, char** argv) {
   int cmdl_log_level = -1;
   // Parse command line options
@@ -31,6 +33,9 @@ int main(int argc, char** argv) {
   // Initialize CN24
   Conv::System::Init(cmdl_log_level);
   
+  // Initialize shell state object
+  Conv::ShellState shell_state;
+  
   // Readline loop
   char* shell_line = nullptr;
   while(true) {
@@ -46,6 +51,15 @@ int main(int argc, char** argv) {
     }
     
     // Process input
+    std::string shell_line_str(shell_line);
+    if(shell_line_str.compare("q") == 0 ||
+      shell_line_str.compare("quit") == 0 ||
+      shell_line_str.compare("exit") == 0
+    ) {
+      break;
+    } else {
+      shell_state.ProcessCommand(shell_line_str);
+    }
   }
   
   // Shutdown CN24

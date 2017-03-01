@@ -336,7 +336,8 @@ message(STATUS "Final links: ${CN24_LIBS}")
 target_link_libraries(cn24 ${CN24_LIBS})
 
 # Shell
-add_executable(cn24-shell ${CN24_SHE}/cn24-shell.cpp)
+file(GLOB_RECURSE CN24_SHELL_SOURCES ${CN24_SHE}/*.cpp)
+add_executable(cn24-shell ${CN24_SHELL_SOURCES})
 target_link_libraries(cn24-shell cn24 ${CN24_LIBS})
 
 # Readline for shell
