@@ -13,7 +13,12 @@ namespace Conv {
   
 ShellState::CommandStatus ShellState::ProcessCommand(std::string command)
 {
+  // Skip empty commands
   if(command.length() == 0)
+    return SUCCESS;
+  
+  // Skip comments
+  if(command.length() > 0 && command[0] == '#')
     return SUCCESS;
   
   // Tokenize command list
