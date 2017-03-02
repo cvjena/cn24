@@ -17,6 +17,7 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
   
   char* file = nullptr;
   char* task = nullptr;
+  int predict_only = -1;
   int seed = 0;
   cargo_add_option(cargo, (cargo_option_flags_t)0, "file", "JSON file"
   " containing the architecture", "s", &file);
@@ -30,6 +31,9 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
   " for weight initialization", "i", &seed);
   cargo_add_validation(cargo, (cargo_validation_flags_t)0, "--seed",
     cargo_validate_int_range(0, 99999999));
+  cargo_add_option(cargo, (cargo_option_flags_t)0, "--predict-only",
+    "Skips Trainer initialization. Saves some memory, but disables training",
+    "b", &predict_only);
   
   CN24_SHELL_PARSE_ARGS;
   
@@ -87,7 +91,29 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
   graph_ = new NetGraph();
   graph_->AddNode(input_node);
   
-  factory.AddLayers(*graph_, class_manager_, (unsigned int)(seed + 2));
+  bool add_result =
+    factory.AddLayers(*graph_, class_manager_, (unsigned int)(seed + 2));
+  
+  if(!add_result) {
+    LOGERROR << "Could not add layers to net graph! Destroying net.";
+    delete graph_; graph_ = nullptr;
+    delete input_layer_; input_layer_ = nullptr;
+    delete class_manager_; class_manager_ = nullptr;
+    return FAILURE;
+  }
+  
+  // Initialize DAG
+  graph_->Initialize();
+  graph_->InitializeWeights(true);
+  
+  state_ = NET_LOADED;
+  
+  if(predict_only == 1)
+    return SUCCESS;
+  
+  // Create trainer
+  trainer_ = new Trainer(*graph_, factory.GetHyperparameters());
+  state_ = NET_AND_TRAINER_LOADED;
   
   return SUCCESS;
 }
