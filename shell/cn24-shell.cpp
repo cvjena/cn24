@@ -7,29 +7,56 @@
 
 #include <cn24.h>
 #include <cstdlib>
-#include <unistd.h>
+#include <iostream>
 #include <readline/readline.h>
 #include <readline/history.h>
 
 #include "ShellState.h"
+extern "C" {
+  #include "cargo.h"
+}
 
 int main(int argc, char** argv) {
-  int cmdl_log_level = -1;
+  
   // Parse command line options
-  char c;
-  while((c = getopt(argc, argv, "vq")) != -1) {
-    switch(c) {
-      case 'v':
-	cmdl_log_level = 3;
-	break;
-      case 'q':
-	cmdl_log_level = 0;
-	break;
-      default:
-	break;
-    }
+  cargo_t cargo;
+  if(cargo_init(&cargo, (cargo_flags_t)0, "%s", argv[0])) {
+    std::cerr << "Failed to initialize command line parser!" << std::endl;
+    return -1;
   }
   
+  int cmdl_log_level = -1;
+  
+  // Flags
+  int cmdl_verbose = 0;
+  int cmdl_quiet = 0;
+  char* cmdl_network = nullptr;
+  
+  int success = 0;
+  success |= cargo_add_option(cargo, (cargo_option_flags_t)0, "--verbose -v",
+    "Verbose mode (for debugging)", "b", &cmdl_verbose);
+  success |= cargo_add_option(cargo, (cargo_option_flags_t)0, "--quiet -q",
+    "Quiet mode (for scripting)", "b", &cmdl_quiet);
+  success |= cargo_add_option(cargo, (cargo_option_flags_t)0, "--net",
+    "Specify network architecture", "s", &cmdl_network);
+  
+  if(success != 0) {
+    std::cerr << "Failed to initialize command line parser!" << std::endl;
+    return -1;
+  }
+  
+  // Run parser
+  if(cargo_parse(cargo, (cargo_flags_t)0, 1, argc, argv)) {
+    return -1;
+  }
+  
+  // Process parsing result
+  if(cmdl_verbose == 1) {
+    cmdl_log_level = 3;
+  } else if(cmdl_quiet == 1) {
+    cmdl_log_level = 0;
+  }
+    
   // Initialize CN24
   Conv::System::Init(cmdl_log_level);
   
@@ -38,7 +65,8 @@ int main(int argc, char** argv) {
   
   // Readline loop
   char* shell_line = nullptr;
-  while(true) {
+  bool process_commands = true;
+  while(process_commands) {
     if(shell_line) {
       free(shell_line);
       shell_line = nullptr;
@@ -52,13 +80,17 @@ int main(int argc, char** argv) {
     
     // Process input
     std::string shell_line_str(shell_line);
-    if(shell_line_str.compare("q") == 0 ||
-      shell_line_str.compare("quit") == 0 ||
-      shell_line_str.compare("exit") == 0
-    ) {
-      break;
-    } else {
-      shell_state.ProcessCommand(shell_line_str);
+
+    Conv::ShellState::CommandStatus status = shell_state.ProcessCommand(shell_line_str);
+    switch(status) {
+      case Conv::ShellState::SUCCESS:
+	break;
+      case Conv::ShellState::FAILURE:
+	LOGERROR << "Command execution failed.";
+	break;
+      case Conv::ShellState::REQUEST_QUIT:
+	process_commands = false;
+	break;
     }
   }
   

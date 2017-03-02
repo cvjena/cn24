@@ -9,9 +9,9 @@
 
 namespace Conv {
   
-void ShellState::ProcessCommand(std::string)
+ShellState::CommandStatus ShellState::ProcessCommand(std::string command)
 {
-
+  return SUCCESS;
 }
 
 }
