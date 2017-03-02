@@ -48,6 +48,15 @@ public:
     }
   }
 
+  unsigned int GetParallelBatchSize() {
+    if(hyperparameters_json_.count("batch_size_parallel") == 1 &&
+      hyperparameters_json_["batch_size_parallel"].is_number()) {
+      return hyperparameters_json_["batch_size_parallel"];
+    } else {
+      return 1;
+    }
+  }
+  
   JSON GetHyperparameters() {
     return hyperparameters_json_;
   }
