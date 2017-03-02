@@ -377,8 +377,11 @@ bool Tensor::Copy (const Tensor& source, Tensor& target) {
 bool Tensor::CopySample ( const Tensor& source, const std::size_t source_sample,
                           Tensor& target, const std::size_t target_sample, const bool allow_oversize, const bool scale) {
   // Check if both Tensors have the same amount of feature maps/channels
-  if ( source.maps() != target.maps() )
-    return false;
+  if ( source.maps() != target.maps() ) {
+    if( source.maps() != 1 || target.maps() != 3) {
+      return false;
+    }
+  }
 
   if ( source.width() != target.width() || source.height() != target.height() ) {
     if ( (target.width() < source.width() || target.height() < source.height()) && !allow_oversize && !scale)
@@ -387,9 +390,18 @@ bool Tensor::CopySample ( const Tensor& source, const std::size_t source_sample,
 
   bool result = true;
 
-  for ( std::size_t map = 0; map < source.maps(); map++ ) {
-    result &= CopyMap ( source, source_sample, map,
-                        target, target_sample, map, allow_oversize, scale );
+  if(source.maps() == 1 && target.maps() == 3) {
+      result &= CopyMap ( source, source_sample, 0,
+                          target, target_sample, 0, allow_oversize, scale );
+      result &= CopyMap ( source, source_sample, 0,
+                          target, target_sample, 1, allow_oversize, scale );
+      result &= CopyMap ( source, source_sample, 0,
+                          target, target_sample, 2, allow_oversize, scale );
+  } else {
+    for ( std::size_t map = 0; map < source.maps(); map++ ) {
+      result &= CopyMap ( source, source_sample, map,
+                          target, target_sample, map, allow_oversize, scale );
+    }
   }
 
   return result;
