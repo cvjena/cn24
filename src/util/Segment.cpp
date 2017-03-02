@@ -22,6 +22,10 @@ bool Segment::CopyDetectionSample(JSON& sample, unsigned int target_index, Tenso
 
   // Copy data
   bool data_success = Tensor::CopySample(image_rgb, 0, *data, target_index, copy_mode != NEVER_RESIZE, copy_mode == SCALE);
+  if(!data_success) {
+    LOGERROR << "Could not copy sample for " << sample["image_rpath"];
+    LOGERROR << "Tensor proportions: " << image_rgb;
+  }
 
   bool metadata_success = true;
 
