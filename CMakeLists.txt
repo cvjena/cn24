@@ -337,7 +337,8 @@ target_link_libraries(cn24 ${CN24_LIBS})
 
 # Shell
 file(GLOB_RECURSE CN24_SHELL_SOURCES ${CN24_SHE}/*.cpp)
-add_executable(cn24-shell ${CN24_SHELL_SOURCES})
+add_executable(cn24-shell ${CN24_SHELL_SOURCES} external/cargo/cargo.c external/cargo/cargo.h)
+include_directories(external/cargo)
 target_link_libraries(cn24-shell cn24 ${CN24_LIBS})
 
 # Readline for shell
