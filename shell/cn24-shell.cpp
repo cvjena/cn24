@@ -84,6 +84,7 @@ int main(int argc, char** argv) {
     Conv::ShellState::CommandStatus status = shell_state.ProcessCommand(shell_line_str);
     switch(status) {
       case Conv::ShellState::SUCCESS:
+      case Conv::ShellState::WRONG_PARAMS:
 	break;
       case Conv::ShellState::FAILURE:
 	LOGERROR << "Command execution failed.";
