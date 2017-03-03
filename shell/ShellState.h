@@ -28,6 +28,8 @@ namespace Conv {
   
 class ShellState {
 public:
+  ShellState();
+  
   /**
    * @brief CommandStatus encodes the return value of a command processing
    * operation
@@ -73,6 +75,7 @@ typedef CommandStatus (ShellState::*ShellFunction)(cargo_t cargo, int argc, char
   CN24_SHELL_FUNC(CommandHelp);
   CN24_SHELL_FUNC(NetworkStatus);
   CN24_SHELL_FUNC(NetworkUnload);
+  CN24_SHELL_FUNC(DataList);
 private:
   /*
    * Shell command table
@@ -80,6 +83,7 @@ private:
   std::map<std::string, ShellFunction> cmd_name_func_map { 
     CN24_SHELL_CMD("quit", Quit),
     CN24_SHELL_CMD("help", CommandHelp),
+    CN24_SHELL_CMD("data-list", DataList),
     CN24_SHELL_CMD("net-load", NetworkLoad),
     CN24_SHELL_CMD("net-unload", NetworkUnload),
     CN24_SHELL_CMD("net-status", NetworkStatus)

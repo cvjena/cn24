@@ -11,6 +11,15 @@
 
 namespace Conv {
   
+ShellState::ShellState()
+{
+  Bundle* default_training_bundle = new Bundle("Default_Training");
+  training_bundles_->push_back(default_training_bundle);
+  training_weights_->push_back(1);
+  Bundle* default_testing_bundle = new Bundle("Default_Testing");
+  testing_bundles_->push_back(default_testing_bundle);
+}
+
 ShellState::CommandStatus ShellState::ProcessCommand(std::string command)
 {
   // Skip empty commands
