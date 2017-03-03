@@ -27,7 +27,7 @@
 
 namespace Conv {
 
-class SegmentSetInputLayer : public Layer, public TrainingLayer {
+class BundleInputLayer : public Layer, public TrainingLayer {
 public:
   /**
 	* @brief Constructs a SegmentSetInputLayer
@@ -37,7 +37,7 @@ public:
 	* @param loss_sampling_p p value for spatial loss sampling
 	* @param seed The random seed to use for sample selection and loss sampling
 	*/
-  SegmentSetInputLayer(JSON configuration, Task task, ClassManager* class_manager, const unsigned int batch_size = 1,
+  BundleInputLayer(JSON configuration, Task task, ClassManager* class_manager, const unsigned int batch_size = 1,
       const unsigned int seed = 0
 		    );
 

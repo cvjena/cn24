@@ -26,14 +26,14 @@
 #include <private/NKContext.h>
 
 void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::Task task, Conv::ClassManager* class_manager);
-bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer* input_layer, Conv::NetGraph& graph, Conv::Trainer& trainer, std::string& command);
-void exploreData(const Conv::ClassManager &class_manager, Conv::SegmentSetInputLayer *input_layer, Conv::NetGraph &graph);
+bool parseCommand (Conv::ClassManager& class_manager, Conv::BundleInputLayer* input_layer, Conv::NetGraph& graph, Conv::Trainer& trainer, std::string& command);
+void exploreData(const Conv::ClassManager &class_manager, Conv::BundleInputLayer *input_layer, Conv::NetGraph &graph);
 void showWeightStats(Conv::NetGraph &graph, const std::string &command);
 void help();
 
 void train(Conv::NetGraph &graph, Conv::Trainer &trainer, const std::string &command);
 
-void test(Conv::SegmentSetInputLayer *input_layer, Conv::NetGraph &graph, Conv::Trainer &trainer, const std::string &command);
+void test(Conv::BundleInputLayer *input_layer, Conv::NetGraph &graph, Conv::Trainer &trainer, const std::string &command);
 
 void loadModel(Conv::NetGraph &graph, const std::string &command);
 
@@ -55,7 +55,7 @@ void setTrainerStats(Conv::Trainer &trainer, const std::string &command);
 
 void displaySegmentSetsInfo(const std::vector<Conv::Bundle *> &sets);
 
-Conv::Bundle *findSegmentSet(const Conv::SegmentSetInputLayer *input_layer, const std::string &set_name);
+Conv::Bundle *findSegmentSet(const Conv::BundleInputLayer *input_layer, const std::string &set_name);
 
 int stat_id_correct_pred;
 int stat_id_correct_loc;
@@ -180,11 +180,11 @@ int main (int argc, char* argv[]) {
   Conv::ClassManager class_manager;
 
   // Assemble net
-  Conv::SegmentSetInputLayer* input_layer = nullptr;
+  Conv::BundleInputLayer* input_layer = nullptr;
   Conv::NetGraph graph;
 	Conv::NetGraphNode* input_node = nullptr;
 
-  input_layer = new Conv::SegmentSetInputLayer (factory->GetDataInput(), Conv::DETECTION, &class_manager, batch_size_parallel, 983923);
+  input_layer = new Conv::BundleInputLayer (factory->GetDataInput(), Conv::DETECTION, &class_manager, batch_size_parallel, 983923);
   input_node = new Conv::NetGraphNode(input_layer);
   input_node->is_input = true;
   graph.AddNode(input_node);
@@ -289,7 +289,7 @@ void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::
 }
 
 
-bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer* input_layer, Conv::NetGraph& graph, Conv::Trainer& trainer, std::string& command) {
+bool parseCommand (Conv::ClassManager& class_manager, Conv::BundleInputLayer* input_layer, Conv::NetGraph& graph, Conv::Trainer& trainer, std::string& command) {
   if (command.compare ("q") == 0 || command.compare ("quit") == 0) {
     return false;
   } else if (command.compare (0, 7, "meminfo") == 0) {
@@ -760,7 +760,7 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
   return true;
 }
 
-Conv::Bundle *findSegmentSet(const Conv::SegmentSetInputLayer *input_layer, const std::string &set_name) {
+Conv::Bundle *findSegmentSet(const Conv::BundleInputLayer *input_layer, const std::string &set_name) {
   Conv::Bundle* set = nullptr;
   for(Conv::Bundle* set_ : input_layer->training_sets_) {
         if(set_->name.compare(set_name) == 0) { set = set_; }
@@ -910,7 +910,7 @@ void loadModel(Conv::NetGraph &graph, const std::string &command) {
     }
 }
 
-void test(Conv::SegmentSetInputLayer *input_layer, Conv::NetGraph &graph, Conv::Trainer &trainer, const std::string &command) {
+void test(Conv::BundleInputLayer *input_layer, Conv::NetGraph &graph, Conv::Trainer &trainer, const std::string &command) {
   unsigned int all = 0;
   unsigned int layerview = 0;
   Conv::ParseCountIfPossible(command, "view", layerview);
@@ -988,7 +988,7 @@ void showWeightStats(Conv::NetGraph &graph, const std::string &command) {
   }
 }
 
-void exploreData(const Conv::ClassManager &class_manager, Conv::SegmentSetInputLayer *input_layer, Conv::NetGraph &graph) {
+void exploreData(const Conv::ClassManager &class_manager, Conv::BundleInputLayer *input_layer, Conv::NetGraph &graph) {
   Conv::NetGraphNode* input_node = graph.GetInputNodes()[0];
   input_layer->SelectAndLoadSamples();
   graph.OnBeforeFeedForward();

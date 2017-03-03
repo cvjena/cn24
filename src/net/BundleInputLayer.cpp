@@ -6,7 +6,7 @@
  */
 
 /**
-* @file SegmentSetInputLayer.cpp
+* @file BundleInputLayer.cpp
 * @author Clemens-Alexander Brust (ikosa dot de at gmail dot com)
 */
 
@@ -21,7 +21,7 @@
 #include "NetGraph.h"
 #include "StatAggregator.h"
 #include "Init.h"
-#include "SegmentSetInputLayer.h"
+#include "BundleInputLayer.h"
 
 #define MAX_3(a,b,c) (a > b ? a : b) > c ? (a > b ? a : b) : c
 #define MIN_3(a,b,c) (a < b ? a : b) < c ? (a < b ? a : b) : c
@@ -29,7 +29,7 @@
 
 namespace Conv {
 
-SegmentSetInputLayer::SegmentSetInputLayer (JSON configuration,
+BundleInputLayer::BundleInputLayer (JSON configuration,
                                             Task task,
                                             ClassManager* class_manager,
                                       const unsigned int batch_size,
@@ -73,7 +73,7 @@ SegmentSetInputLayer::SegmentSetInputLayer (JSON configuration,
   UpdateDatasets();
 }
 
-void SegmentSetInputLayer::SetActiveTestingSet(unsigned int index) {
+void BundleInputLayer::SetActiveTestingSet(unsigned int index) {
   if(index < testing_sets_.size()) {
     testing_set_ = index;
     Bundle *set = testing_sets_[index];
@@ -88,7 +88,7 @@ void SegmentSetInputLayer::SetActiveTestingSet(unsigned int index) {
   }
 }
 
-bool SegmentSetInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inputs,
+bool BundleInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inputs,
                                        std::vector< CombinedTensor* >& outputs) {
   if (inputs.size() != 0) {
     LOGERROR << "Inputs specified but not supported";
@@ -123,7 +123,7 @@ bool SegmentSetInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& 
   return true;
 }
 
-bool SegmentSetInputLayer::Connect (const std::vector< CombinedTensor* >& inputs,
+bool BundleInputLayer::Connect (const std::vector< CombinedTensor* >& inputs,
                                  const std::vector< CombinedTensor* >& outputs,
                                  const NetStatus* net) {
   UNREFERENCED_PARAMETER(net);
@@ -160,7 +160,7 @@ bool SegmentSetInputLayer::Connect (const std::vector< CombinedTensor* >& inputs
   return valid;
 }
 
-bool SegmentSetInputLayer::ForceLoadDetection(JSON &sample, unsigned int index) {
+bool BundleInputLayer::ForceLoadDetection(JSON &sample, unsigned int index) {
 #ifdef BUILD_OPENCL
   data_output_->data.MoveToCPU (true);
   localized_error_output_->data.MoveToCPU (true);
@@ -169,13 +169,13 @@ bool SegmentSetInputLayer::ForceLoadDetection(JSON &sample, unsigned int index) 
   return Segment::CopyDetectionSample(sample, index, &(data_output_->data), &(metadata_[index]), *class_manager_, Segment::SCALE);
 }
 
-void SegmentSetInputLayer::ForceWeightsZero() {
+void BundleInputLayer::ForceWeightsZero() {
   for(unsigned int index = 0; index < localized_error_output_->data.samples(); index++) {
     localized_error_output_->data.Clear(0.0, index);
   }
 }
 
-void SegmentSetInputLayer::SelectAndLoadSamples() {
+void BundleInputLayer::SelectAndLoadSamples() {
 #ifdef BUILD_OPENCL
   data_output_->data.MoveToCPU (true);
   label_output_->data.MoveToCPU (true);
@@ -300,7 +300,7 @@ void SegmentSetInputLayer::SelectAndLoadSamples() {
   }
 }
 
-void SegmentSetInputLayer::AugmentInPlaceSatExp(unsigned int sample, const datum saturation_factor,
+void BundleInputLayer::AugmentInPlaceSatExp(unsigned int sample, const datum saturation_factor,
                                              const datum exposure_factor) {
   for (unsigned int y = 0; y < data_output_->data.height(); y++) {
             for (unsigned int x = 0; x < data_output_->data.width(); x++) {
@@ -391,7 +391,7 @@ void SegmentSetInputLayer::AugmentInPlaceSatExp(unsigned int sample, const datum
           }
 }
 
-void SegmentSetInputLayer::LoadSampleAugmented(unsigned int sample, const datum x_scale, const datum x_transpose_img,
+void BundleInputLayer::LoadSampleAugmented(unsigned int sample, const datum x_scale, const datum x_transpose_img,
                                             const datum y_scale, const datum y_transpose_img,
                                             const bool flip_horizontal, const datum flip_offset) {
   for(unsigned int map = 0; map < data_output_->data.maps(); map++) {
@@ -421,38 +421,38 @@ void SegmentSetInputLayer::LoadSampleAugmented(unsigned int sample, const datum 
         }
 }
 
-void SegmentSetInputLayer::FeedForward() {
+void BundleInputLayer::FeedForward() {
   // Nothing to do here
 }
 
-void SegmentSetInputLayer::BackPropagate() {
+void BundleInputLayer::BackPropagate() {
   // No inputs, no backprop.
 }
 
-unsigned int SegmentSetInputLayer::GetBatchSize() {
+unsigned int BundleInputLayer::GetBatchSize() {
   return batch_size_;
 }
 
-unsigned int SegmentSetInputLayer::GetLabelWidth() {
+unsigned int BundleInputLayer::GetLabelWidth() {
   return 1;
 }
 
-unsigned int SegmentSetInputLayer::GetLabelHeight() {
+unsigned int BundleInputLayer::GetLabelHeight() {
   return 1;
 }
 
-unsigned int SegmentSetInputLayer::GetSamplesInTestingSet() {
+unsigned int BundleInputLayer::GetSamplesInTestingSet() {
   return testing_sets_[testing_set_]->GetSampleCount();
 }
 
-unsigned int SegmentSetInputLayer::GetSamplesInTrainingSet() {
+unsigned int BundleInputLayer::GetSamplesInTrainingSet() {
   unsigned int samples = 0;
   for(Bundle* segment_set : training_sets_)
     samples += segment_set->GetSampleCount();
   return samples;
 }
 
-void SegmentSetInputLayer::SetTestingMode (bool testing) {
+void BundleInputLayer::SetTestingMode (bool testing) {
   if (testing != testing_) {
     if (testing) {
       LOGDEBUG << "Enabled testing mode.";
@@ -467,7 +467,7 @@ void SegmentSetInputLayer::SetTestingMode (bool testing) {
   testing_ = testing;
 }
 
-void SegmentSetInputLayer::CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers) {
+void BundleInputLayer::CreateBufferDescriptors(std::vector<NetGraphBuffer>& buffers) {
 	NetGraphBuffer data_buffer;
 	NetGraphBuffer label_buffer;
 	NetGraphBuffer helper_buffer;
@@ -482,7 +482,7 @@ void SegmentSetInputLayer::CreateBufferDescriptors(std::vector<NetGraphBuffer>& 
 	buffers.push_back(weight_buffer);
 }
 
-bool SegmentSetInputLayer::IsGPUMemoryAware() {
+bool BundleInputLayer::IsGPUMemoryAware() {
 #ifdef BUILD_OPENCL
   return true;
 #else
@@ -490,7 +490,7 @@ bool SegmentSetInputLayer::IsGPUMemoryAware() {
 #endif
 }
 
-void SegmentSetInputLayer::UpdateDatasets() {
+void BundleInputLayer::UpdateDatasets() {
   // Calculate training elements
   elements_training_ = 0;
   training_weight_sum_ = 0;

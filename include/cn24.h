@@ -57,7 +57,7 @@
 #include "cn24/net/SimpleLayer.h"
 #include "cn24/net/NonLinearityLayer.h"
 #include "cn24/net/DatasetInputLayer.h"
-#include "cn24/net/SegmentSetInputLayer.h"
+#include "cn24/net/BundleInputLayer.h"
 #include "cn24/net/ResizeLayer.h"
 #include "cn24/net/ConvolutionLayer.h"
 #include "cn24/net/DropoutLayer.h"
