@@ -113,5 +113,52 @@ CN24_SHELL_FUNC_IMPL(BundleLoad) {
   return SUCCESS;
 }
 
+Bundle* ShellState::DataFindBundle(const std::string& name) {
+  for(unsigned int b = 0; b < training_bundles_->size(); b++) {
+    Bundle* bundle = training_bundles_->at(b);
+    if(bundle->name.compare(name) == 0) {
+      return bundle;
+    }
+  }
+  for(unsigned int b = 0; b < staging_bundles_->size(); b++) {
+    Bundle* bundle = staging_bundles_->at(b);
+    if(bundle->name.compare(name) == 0) {
+      return bundle;
+    }
+  }
+  for(unsigned int b = 0; b < testing_bundles_->size(); b++) {
+    Bundle* bundle = testing_bundles_->at(b);
+    if(bundle->name.compare(name) == 0) {
+      return bundle;
+    }
+  }
+  return nullptr;
+}
+
+Bundle* ShellState::DataTakeBundle(const std::string& name) {
+  for(unsigned int b = 0; b < training_bundles_->size(); b++) {
+    Bundle* bundle = training_bundles_->at(b);
+    if(bundle->name.compare(name) == 0) {
+      training_bundles_->erase(training_bundles_->begin() + b);
+      training_weights_->erase(training_weights_->begin() + b);
+      return bundle;
+    }
+  }
+  for(unsigned int b = 0; b < staging_bundles_->size(); b++) {
+    Bundle* bundle = staging_bundles_->at(b);
+    if(bundle->name.compare(name) == 0) {
+      staging_bundles_->erase(staging_bundles_->begin() + b);
+      return bundle;
+    }
+  }
+  for(unsigned int b = 0; b < testing_bundles_->size(); b++) {
+    Bundle* bundle = testing_bundles_->at(b);
+    if(bundle->name.compare(name) == 0) {
+      testing_bundles_->erase(testing_bundles_->begin() + b);
+      return bundle;
+    }
+  }
+  return nullptr;
+}
   
 }

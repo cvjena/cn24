@@ -78,6 +78,9 @@ typedef CommandStatus (ShellState::*ShellFunction)(cargo_t cargo, int argc, char
   CN24_SHELL_FUNC(DataList);
   CN24_SHELL_FUNC(BundleLoad);
 private:
+  Bundle* DataTakeBundle(const std::string& name);
+  Bundle* DataFindBundle(const std::string& name);
+  
   /*
    * Shell command table
    */
