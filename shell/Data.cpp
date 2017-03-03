@@ -76,4 +76,42 @@ CN24_SHELL_FUNC_IMPL(DataList) {
   std::cout << std::endl;
   return SUCCESS;
 }
+
+CN24_SHELL_FUNC_IMPL(DataLoad) {
+  CN24_SHELL_FUNC_DESCRIPTION("Loads a JSON bundle into the staging area");
+  char* file = nullptr;
+  char* folder_hint = nullptr;
+  cargo_add_option(cargo, (cargo_option_flags_t)0, "file", "JSON bundle file",
+                   "s", &file);
+  cargo_add_option(cargo, (cargo_option_flags_t)0, "--folder-hint",
+    "Additional search folder for image data", "s", &folder_hint);
+  CN24_SHELL_PARSE_ARGS;
+  
+  std::string path = PathFinder::FindPath(std::string(file), {});
+  std::ifstream json_file(path, std::ios::in);
+  if(path.length() == 0 || !json_file.good()) {
+    LOGERROR << "Cannot open file: " << file;
+    return FAILURE;
+  }
+  
+  Bundle* bundle = new Bundle("New Import");
+  try {
+    JSON descriptor = JSON::parse(json_file);
+    if(folder_hint != nullptr) {
+      bundle->Deserialize(descriptor, std::string(folder_hint));
+    } else {
+      bundle->Deserialize(descriptor);
+    }
+  } catch (std::exception ex) {
+    LOGERROR << "Could not load " << file << ":";
+    LOGERROR << ex.what();
+    delete bundle;
+    return FAILURE;
+  }
+  
+  staging_bundles_->push_back(bundle);
+  return SUCCESS;
+}
+
+  
 }

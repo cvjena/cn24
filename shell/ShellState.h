@@ -76,6 +76,7 @@ typedef CommandStatus (ShellState::*ShellFunction)(cargo_t cargo, int argc, char
   CN24_SHELL_FUNC(NetworkStatus);
   CN24_SHELL_FUNC(NetworkUnload);
   CN24_SHELL_FUNC(DataList);
+  CN24_SHELL_FUNC(DataLoad);
 private:
   /*
    * Shell command table
@@ -84,6 +85,7 @@ private:
     CN24_SHELL_CMD("quit", Quit),
     CN24_SHELL_CMD("help", CommandHelp),
     CN24_SHELL_CMD("data-list", DataList),
+    CN24_SHELL_CMD("data-load", DataLoad),
     CN24_SHELL_CMD("net-load", NetworkLoad),
     CN24_SHELL_CMD("net-unload", NetworkUnload),
     CN24_SHELL_CMD("net-status", NetworkStatus)
