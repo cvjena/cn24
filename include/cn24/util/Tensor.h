@@ -45,7 +45,7 @@ public:
   /**
    * @brief Constructs an empty Tensor of zero size.
    */
-  Tensor (bool ignore = true, const std::string& owner = "Unknown");
+  explicit Tensor (bool ignore = true, const std::string& owner = "Unknown");
 
   /**
    * @brief Constructs a deep copy of the Tensor
@@ -321,6 +321,7 @@ public:
   
   std::string owner = "Unknown";
   std::string construction = "Unknown";
+  std::string comment = " ";
 private:
   // Pointer to the actual data
   datum* data_ptr_ = nullptr;

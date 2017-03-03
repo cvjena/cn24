@@ -164,7 +164,9 @@ bool ConvolutionLayer::CreateOutputs (
   
   // Create output
   CombinedTensor* output = new CombinedTensor (input->data.samples(),
-      output_width, output_height, output_maps_);
+      output_width, output_height, output_maps_, nullptr, false, "ConvolutionLayer");
+  output->data.comment = "Output Buffer (data)";
+  output->delta.comment = "Output Buffer (delta)";
 
   // Tell network about the output
   outputs.push_back (output);

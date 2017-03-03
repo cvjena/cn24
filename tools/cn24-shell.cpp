@@ -300,7 +300,8 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
     std::cout << std::setw(12) << "Bytes used";
     std::cout << std::setw(5) << "GPU";
     std::cout << std::setw(15) << "Construction";
-    std::cout << std::setw(25) << "Owner" << std::endl;
+    std::cout << std::setw(25) << "Owner";
+    std::cout << std::setw(30) << "Comment" << std::endl;
     
     for(Conv::TensorRegistry::const_iterator it = Conv::System::registry->begin();
         it != Conv::System::registry->end(); it++) {
@@ -311,7 +312,7 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
       "No" : (tensor->cl_gpu_ ? "Yes" : "Yes*"));
       std::cout << std::setw(15) << tensor->construction;
       std::cout << std::setw(25) << tensor->owner;
-      
+      std::cout << std::setw(30) << tensor->comment;
       std::cout << std::endl;
     }
   } else if (command.compare (0, 5, "train") == 0) {
