@@ -112,6 +112,23 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
   
   state_ = NET_LOADED;
   
+  // Switch data around
+  for(unsigned int i = 0; i < training_bundles_->size(); i++)
+    input_layer_->training_sets_.push_back(training_bundles_->at(i));
+  for(unsigned int i = 0; i < training_weights_->size(); i++)
+    input_layer_->training_weights_.push_back(training_weights_->at(i));
+  for(unsigned int i = 0; i < staging_bundles_->size(); i++)
+    input_layer_->staging_sets_.push_back(staging_bundles_->at(i));
+  for(unsigned int i = 0; i < testing_bundles_->size(); i++)
+    input_layer_->testing_sets_.push_back(testing_bundles_->at(i));
+  delete training_bundles_; delete training_weights_;
+  delete staging_bundles_;
+  delete testing_bundles_;
+  training_bundles_ = &(input_layer_->training_sets_);
+  training_weights_ = &(input_layer_->training_weights_);
+  staging_bundles_ = &(input_layer_->staging_sets_);
+  testing_bundles_ = &(input_layer_->testing_sets_);
+  
   if(predict_only == 1)
     return SUCCESS;
   
@@ -122,8 +139,52 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
   return SUCCESS;
 }
 
+CN24_SHELL_FUNC_IMPL(NetworkUnload) {
+  CN24_SHELL_FUNC_DESCRIPTION("Unload the current network");
+  CN24_SHELL_PARSE_ARGS;
+  
+  if(state_ == NOTHING) {
+    LOGERROR << "There is no network loaded currently";
+    return FAILURE;
+  } else {
+    // Unload trainer first
+    if(state_ == NET_AND_TRAINER_LOADED) {
+      delete trainer_;
+      trainer_ = nullptr;
+      state_ = NET_LOADED;
+    }
+    
+    // Create new vectors for bundle areas
+    training_bundles_ = new std::vector<Bundle*>();
+    training_weights_ = new std::vector<datum>();
+    staging_bundles_ = new std::vector<Bundle*>();
+    testing_bundles_ = new std::vector<Bundle*>();
+    
+    // Copy old data
+    for(unsigned int i = 0; i < input_layer_->training_sets_.size(); i++)
+      training_bundles_->push_back(input_layer_->training_sets_[i]);
+    for(unsigned int i = 0; i < input_layer_->training_weights_.size(); i++)
+      training_weights_->push_back(input_layer_->training_weights_[i]);
+    for(unsigned int i = 0; i < input_layer_->staging_sets_.size(); i++)
+      staging_bundles_->push_back(input_layer_->staging_sets_[i]);
+    for(unsigned int i = 0; i < input_layer_->testing_sets_.size(); i++)
+      testing_bundles_->push_back(input_layer_->testing_sets_[i]);
+    
+    // Destroy net
+    delete graph_;
+    graph_ = nullptr;
+    input_layer_ = nullptr;
+    
+    delete class_manager_;
+    class_manager_ = nullptr;
+    
+    state_ = NOTHING;
+    return SUCCESS;
+  }
+}
+
 CN24_SHELL_FUNC_IMPL(NetworkStatus) {
-  CN24_SHELL_FUNC_DESCRIPTION("Displays information about the current network") 
+  CN24_SHELL_FUNC_DESCRIPTION("Displays information about the current network");
   CN24_SHELL_PARSE_ARGS;
   
   switch(state_) {

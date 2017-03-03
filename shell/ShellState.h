@@ -72,6 +72,7 @@ typedef CommandStatus (ShellState::*ShellFunction)(cargo_t cargo, int argc, char
   CN24_SHELL_FUNC(NetworkLoad);
   CN24_SHELL_FUNC(CommandHelp);
   CN24_SHELL_FUNC(NetworkStatus);
+  CN24_SHELL_FUNC(NetworkUnload);
 private:
   /*
    * Shell command table
@@ -80,6 +81,7 @@ private:
     CN24_SHELL_CMD("quit", Quit),
     CN24_SHELL_CMD("help", CommandHelp),
     CN24_SHELL_CMD("net-load", NetworkLoad),
+    CN24_SHELL_CMD("net-unload", NetworkUnload),
     CN24_SHELL_CMD("net-status", NetworkStatus)
   };
   
@@ -99,6 +101,11 @@ private:
   NetGraph* graph_ = nullptr;
   Trainer* trainer_ = nullptr;
   BundleInputLayer* input_layer_ = nullptr;
+  
+  std::vector<Bundle*>* training_bundles_ = new std::vector<Bundle*>();
+  std::vector<datum>* training_weights_ = new std::vector<datum>();
+  std::vector<Bundle*>* staging_bundles_ = new std::vector<Bundle*>();
+  std::vector<Bundle*>* testing_bundles_ = new std::vector<Bundle*>();
   
   int global_random_seed = 19108128;
 };
