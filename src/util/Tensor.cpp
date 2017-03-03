@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <cstring>
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <limits>
 #include <cmath>
@@ -30,20 +31,38 @@
 #include "Config.h"
 #include "Log.h"
 #include "Tensor.h"
+#include "TensorRegistry.h"
 #include "CLHelper.h"
 
 namespace Conv {
 
-Tensor::Tensor() {
-
+Tensor::Tensor(bool ignore, const std::string& owner) : owner(owner) {
+  UNREFERENCED_PARAMETER(ignore);
+  if(System::registry != nullptr) {
+    System::registry->RegisterTensor(this);
+  }
+  construction = "Default";
 }
 
-Tensor::Tensor ( const std::string& filename ) {
+Tensor::Tensor ( const std::string& filename, const std::string& owner ) : owner(owner) {
+  if(System::registry != nullptr) {
+    System::registry->RegisterTensor(this);
+  }
   LoadFromFile ( filename );
+  construction = "File";
 }
 
 
-Tensor::Tensor ( const Tensor& tensor, bool intentional ) {
+Tensor::Tensor ( const Tensor& tensor, bool intentional, const std::string& owner ) : owner(owner) {
+  if(System::registry != nullptr) {
+    System::registry->RegisterTensor(this);
+  }
+  if(intentional) {
+    construction = "Copy";
+  } else {
+    construction = "Unint. copy";
+  }
+  
   // Match size of source Tensor
   Resize ( tensor );
 
@@ -62,7 +81,11 @@ Tensor::Tensor ( const Tensor& tensor, bool intentional ) {
   }
 }
 
-Tensor::Tensor ( Tensor && tensor ) {
+Tensor::Tensor ( Tensor && tensor, const std::string& owner ) : owner(owner) {
+  if(System::registry != nullptr) {
+    System::registry->RegisterTensor(this);
+  }
+  construction = "Move";
 #ifdef BUILD_OPENCL
   tensor.MoveToCPU();
 #endif
@@ -79,13 +102,20 @@ Tensor::Tensor ( Tensor && tensor ) {
 }
 
 Tensor::Tensor ( const std::size_t samples, const std::size_t width,
-                 const std::size_t height, const std::size_t maps ) {
+                 const std::size_t height, const std::size_t maps, const std::string& owner ) : owner(owner) {
+  if(System::registry != nullptr) {
+    System::registry->RegisterTensor(this);
+  }
+  construction = "Size";
   Resize ( samples, width, height, maps );
 }
 
 
 Tensor::~Tensor() {
   DeleteIfPossible();
+  if(System::registry != nullptr) {
+    System::registry->DeregisterTensor(this);
+  }
 }
 
 void Tensor::Clear ( const datum value, const int sample ) {
@@ -803,8 +833,10 @@ datum Tensor::GetSmoothData(datum x, datum y, std::size_t map, std::size_t sampl
 }
 
 std::ostream& operator<< ( std::ostream& output, const Tensor& tensor ) {
-  return output << "(" << tensor.samples() << "s@" << tensor.width() <<
+  std::stringstream ss;
+  ss << "(" << tensor.samples() << "s@" << tensor.width() <<
          "x" << tensor.height() << "x" << tensor.maps() << "m)";
+  return output << ss.str();
 }
 
 

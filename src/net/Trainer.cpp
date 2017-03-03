@@ -120,7 +120,8 @@ Trainer::Trainer(Conv::NetGraph& graph, JSON settings) :
   unsigned int w = 0;
   for (unsigned int p = 0; p < parameters_.size(); p++) {
     w += parameters_[p]->data.elements();
-    Tensor* accumulated_gradient = new Tensor();
+    Tensor* accumulated_gradient = new Tensor(true, "Trainer");
+    accumulated_gradient->comment = "Accumulated Gradient";
     accumulated_gradient->Resize (parameters_[p]->data);
     accumulated_gradient->Clear();
     accumulated_gradients_.push_back (accumulated_gradient);

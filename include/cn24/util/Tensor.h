@@ -45,7 +45,7 @@ public:
   /**
    * @brief Constructs an empty Tensor of zero size.
    */
-  Tensor ();
+  explicit Tensor (bool ignore = true, const std::string& owner = "Unknown");
 
   /**
    * @brief Constructs a deep copy of the Tensor
@@ -53,21 +53,21 @@ public:
    * @param tensor Tensor to copy
    * @param intentional Set this to true if you really wanted to copy a Tensor
    */
-  Tensor (const Tensor& tensor, bool intentional = false);
+  Tensor (const Tensor& tensor, bool intentional = false, const std::string& owner = "Unknown");
 
   /**
    * @brief Moves a Tensor.
    *
    * @param tensor Tensor to move
    */
-  Tensor (Tensor && tensor);
+  Tensor (Tensor && tensor, const std::string& owner = "Unknown");
   
   /**
    * @brief Loads the Tensor from a file
    * 
    * @param filename Full path of the file to load
    */
-  explicit Tensor (const std::string& filename);
+  explicit Tensor (const std::string& filename, const std::string& owner = "Unknown");
   
   /**
    * @brief Constructs an empty Tensor of the specified size.
@@ -78,7 +78,8 @@ public:
    * @param height Height of each feature map
    */
   explicit Tensor (const std::size_t samples, const std::size_t width = 1,
-                   const std::size_t height = 1, const std::size_t maps = 1);
+                   const std::size_t height = 1, const std::size_t maps = 1,
+                   const std::string& owner = "Unknown" );
 
   /**
    * Destructor
@@ -317,7 +318,10 @@ public:
   inline std::size_t elements() const {
     return elements_;
   }
-
+  
+  std::string owner = "Unknown";
+  std::string construction = "Unknown";
+  std::string comment = " ";
 private:
   // Pointer to the actual data
   datum* data_ptr_ = nullptr;

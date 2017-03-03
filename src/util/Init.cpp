@@ -36,6 +36,7 @@
 
 #include "JSONParsing.h"
 #include "TensorViewer.h"
+#include "TensorRegistry.h"
 #include "StatAggregator.h"
 
 namespace Conv {
@@ -78,9 +79,13 @@ cl_kernel CLHelper::k_applyMask = 0;
 
 TensorViewer* System::viewer = nullptr;
 StatAggregator* System::stat_aggregator = nullptr;
+TensorRegistry* System::registry = nullptr;
 int System::log_level = 0;
 
 void System::Init(int requested_log_level) {
+  // Initialize global TensorRegistry
+  registry = new TensorRegistry();
+  
   if(requested_log_level == -1) {
 #ifdef BUILD_VERBOSE
     log_level = 3;
@@ -136,6 +141,7 @@ void System::Init(int requested_log_level) {
   
   // Initialize global StatAggregator
   stat_aggregator = new StatAggregator();
+  
 }
 
 void System::GetExecutablePath(std::string& binary_path) {

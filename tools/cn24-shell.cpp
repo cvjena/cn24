@@ -292,6 +292,29 @@ void addStatLayers(Conv::NetGraph& graph, Conv::NetGraphNode* input_node, Conv::
 bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer* input_layer, Conv::NetGraph& graph, Conv::Trainer& trainer, std::string& command) {
   if (command.compare ("q") == 0 || command.compare ("quit") == 0) {
     return false;
+  } else if (command.compare (0, 7, "meminfo") == 0) {
+    LOGINFO << "There are " << Conv::System::registry->size() << " tensors "
+    << "registered.";
+    std::cout << std::endl;
+    std::cout << std::setw(20) << "Dimensions";
+    std::cout << std::setw(12) << "Bytes used";
+    std::cout << std::setw(5) << "GPU";
+    std::cout << std::setw(15) << "Construction";
+    std::cout << std::setw(25) << "Owner";
+    std::cout << std::setw(30) << "Comment" << std::endl;
+    
+    for(Conv::TensorRegistry::const_iterator it = Conv::System::registry->begin();
+        it != Conv::System::registry->end(); it++) {
+      Conv::Tensor* tensor = *it;
+      std::cout << std::setw(20) << *tensor ;
+      std::cout << std::setw(12) << tensor->elements() * sizeof(Conv::datum);
+      std::cout << std::setw(5) << (tensor->cl_data_ptr_ == nullptr ? 
+      "No" : (tensor->cl_gpu_ ? "Yes" : "Yes*"));
+      std::cout << std::setw(15) << tensor->construction;
+      std::cout << std::setw(25) << tensor->owner;
+      std::cout << std::setw(30) << tensor->comment;
+      std::cout << std::endl;
+    }
   } else if (command.compare (0, 5, "train") == 0) {
     train(graph, trainer, command);
   } else if (command.compare (0, 4, "test") == 0) {
