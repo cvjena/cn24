@@ -113,6 +113,50 @@ CN24_SHELL_FUNC_IMPL(BundleLoad) {
   return SUCCESS;
 }
 
+CN24_SHELL_FUNC_IMPL(BundleMove) {
+  CN24_SHELL_FUNC_DESCRIPTION("Moves a bundle from one area to another");
+  char* name = nullptr;
+  char* target_area = nullptr;
+  cargo_add_option(cargo, (cargo_option_flags_t)0, "bundle", "Name of the bundle to move",
+    "s", &name);
+  cargo_add_option(cargo, (cargo_option_flags_t)0, "target-area", "Name of the target area",
+    "s", &target_area);
+  cargo_add_validation(cargo, (cargo_validation_flags_t)0, "target-area",
+    cargo_validate_choices((cargo_validate_choices_flags_t)
+    CARGO_VALIDATE_CHOICES_CASE_SENSITIVE, CARGO_STRING,
+    3, "training", "staging", "testing"));
+  CN24_SHELL_PARSE_ARGS;
+  
+  std::string name_str(name);
+  Bundle* bundle = DataTakeBundle(name_str);
+  
+  if(bundle == nullptr) {
+    LOGERROR << "Could not find bundle \"" << name_str << "\".";
+    return WRONG_PARAMS;
+  }
+  
+  std::string target_area_str(target_area);
+  if(target_area_str.compare("training") == 0) {
+    training_bundles_->push_back(bundle);
+    training_weights_->push_back(1);
+  } else if(target_area_str.compare("staging") == 0) {
+    staging_bundles_->push_back(bundle);
+  } else if(target_area_str.compare("testing") == 0) {
+    testing_bundles_->push_back(bundle);
+  }
+  
+  switch(state_) {
+    case NOTHING:
+      break;
+    case NET_AND_TRAINER_LOADED:
+    case NET_LOADED:
+      input_layer_->UpdateDatasets();
+      break;
+      
+  }
+  return SUCCESS;
+}
+
 Bundle* ShellState::DataFindBundle(const std::string& name) {
   for(unsigned int b = 0; b < training_bundles_->size(); b++) {
     Bundle* bundle = training_bundles_->at(b);

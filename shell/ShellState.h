@@ -77,6 +77,7 @@ typedef CommandStatus (ShellState::*ShellFunction)(cargo_t cargo, int argc, char
   CN24_SHELL_FUNC(NetworkUnload);
   CN24_SHELL_FUNC(DataList);
   CN24_SHELL_FUNC(BundleLoad);
+  CN24_SHELL_FUNC(BundleMove);
 private:
   Bundle* DataTakeBundle(const std::string& name);
   Bundle* DataFindBundle(const std::string& name);
@@ -89,6 +90,7 @@ private:
     CN24_SHELL_CMD("help", CommandHelp),
     CN24_SHELL_CMD("data-list", DataList),
     CN24_SHELL_CMD("bundle-load", BundleLoad),
+    CN24_SHELL_CMD("bundle-move", BundleMove),
     CN24_SHELL_CMD("net-load", NetworkLoad),
     CN24_SHELL_CMD("net-unload", NetworkUnload),
     CN24_SHELL_CMD("net-status", NetworkStatus)
