@@ -77,7 +77,7 @@ CN24_SHELL_FUNC_IMPL(DataList) {
   return SUCCESS;
 }
 
-CN24_SHELL_FUNC_IMPL(DataLoad) {
+CN24_SHELL_FUNC_IMPL(BundleLoad) {
   CN24_SHELL_FUNC_DESCRIPTION("Loads a JSON bundle into the staging area");
   char* file = nullptr;
   char* folder_hint = nullptr;
