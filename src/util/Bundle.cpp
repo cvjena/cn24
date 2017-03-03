@@ -5,13 +5,12 @@
  * For licensing information, see the LICENSE file included with this project.
  */
 
-#include "SegmentSet.h"
-
+#include "Bundle.h"
 #include "Segment.h"
 
 namespace Conv {
 
-bool SegmentSet::CopyDetectionSample(unsigned int source_index, unsigned int target_index, Tensor *data,
+bool Bundle::CopyDetectionSample(unsigned int source_index, unsigned int target_index, Tensor *data,
                                      DetectionMetadataPointer metadata, ClassManager &class_manager,
                                      Segment::CopyMode copy_mode) {
   JSON sample = GetSample(source_index);
@@ -23,7 +22,7 @@ bool SegmentSet::CopyDetectionSample(unsigned int source_index, unsigned int tar
   }
 }
 
-void SegmentSet::AddSegment(Segment *segment) {
+void Bundle::AddSegment(Segment *segment) {
   if(segment != nullptr) {
     segments_.push_back(segment);
     LOGDEBUG << "Added segment \"" << segment->name << "\" to set: \"" << name << "\"";
@@ -32,7 +31,7 @@ void SegmentSet::AddSegment(Segment *segment) {
   }
 }
 
-JSON SegmentSet::GetSample(unsigned int index) {
+JSON Bundle::GetSample(unsigned int index) {
   auto segment_p = GetSegmentWithSampleIndex(index);
   Segment* const segment = segment_p.first;
   if(segment != nullptr) {
@@ -44,7 +43,7 @@ JSON SegmentSet::GetSample(unsigned int index) {
   }
 }
 
-unsigned int SegmentSet::GetSampleCount() const {
+unsigned int Bundle::GetSampleCount() const {
   unsigned int sample_count = 0;
   for (Segment *segment : segments_) {
     sample_count += segment->GetSampleCount();
@@ -53,7 +52,7 @@ unsigned int SegmentSet::GetSampleCount() const {
 }
 
 
-std::pair<Segment*, unsigned int> SegmentSet::GetSegmentWithSampleIndex(unsigned int index) {
+std::pair<Segment*, unsigned int> Bundle::GetSegmentWithSampleIndex(unsigned int index) {
   unsigned int in_segment_index = index;
   for (Segment *segment : segments_) {
     if (in_segment_index < segment->GetSampleCount()) {
@@ -67,7 +66,7 @@ std::pair<Segment*, unsigned int> SegmentSet::GetSegmentWithSampleIndex(unsigned
   return p;
 }
 
-JSON SegmentSet::Serialize() {
+JSON Bundle::Serialize() {
   JSON serialized_set = JSON::object();
   JSON serialized_segments = JSON::array();
   for(unsigned int s = 0; s < segments_.size(); s++) {
@@ -79,7 +78,7 @@ JSON SegmentSet::Serialize() {
   return serialized_set;
 }
 
-bool SegmentSet::Deserialize(JSON segment_set_descriptor, std::string folder_hint) {
+bool Bundle::Deserialize(JSON segment_set_descriptor, std::string folder_hint) {
   if(segment_set_descriptor.count("segments") == 1 && segment_set_descriptor["segments"].is_array()) {
     if(segment_set_descriptor.count("name") == 1 && segment_set_descriptor["name"].is_string()) {
       name = segment_set_descriptor["name"];
@@ -101,7 +100,7 @@ bool SegmentSet::Deserialize(JSON segment_set_descriptor, std::string folder_hin
   }
 }
 
-bool SegmentSet::RenameClass(const std::string &org_name, const std::string new_name) {
+bool Bundle::RenameClass(const std::string &org_name, const std::string new_name) {
   for(unsigned int s = 0; s < segments_.size(); s++) {
     bool result = segments_[s]->RenameClass(org_name, new_name);
     if(!result) {

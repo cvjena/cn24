@@ -16,9 +16,9 @@
 
 namespace Conv {
 
-class SegmentSet {
+class Bundle {
 public:
-  explicit SegmentSet(std::string name) : name(name) {}
+  explicit Bundle(std::string name) : name(name) {}
 
   std::string name;
 

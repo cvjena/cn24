@@ -53,9 +53,9 @@ void showDataBufferStats(Conv::NetGraph &graph, const std::string &command);
 
 void setTrainerStats(Conv::Trainer &trainer, const std::string &command);
 
-void displaySegmentSetsInfo(const std::vector<Conv::SegmentSet *> &sets);
+void displaySegmentSetsInfo(const std::vector<Conv::Bundle *> &sets);
 
-Conv::SegmentSet *findSegmentSet(const Conv::SegmentSetInputLayer *input_layer, const std::string &set_name);
+Conv::Bundle *findSegmentSet(const Conv::SegmentSetInputLayer *input_layer, const std::string &set_name);
 
 int stat_id_correct_pred;
 int stat_id_correct_loc;
@@ -201,10 +201,10 @@ int main (int argc, char* argv[]) {
     FATAL("Graph completeness test failed after adding stat layer!");
 
   // Assemble initial segment sets
-  Conv::SegmentSet* default_training_set = new Conv::SegmentSet("Default_Training");
+  Conv::Bundle* default_training_set = new Conv::Bundle("Default_Training");
   input_layer->training_sets_.push_back(default_training_set);
   input_layer->training_weights_.push_back(1);
-  Conv::SegmentSet* default_testing_set = new Conv::SegmentSet("Default_Testing");
+  Conv::Bundle* default_testing_set = new Conv::Bundle("Default_Testing");
   input_layer->testing_sets_.push_back(default_testing_set);
   input_layer->UpdateDatasets();
 
@@ -332,8 +332,8 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
       Conv::ParseStringParamIfPossible(seg_command, "target", target_set_name);
       Conv::ParseStringParamIfPossible(seg_command, "segment", segment_name);
 
-      Conv::SegmentSet *source_set = findSegmentSet(input_layer, source_set_name);
-      Conv::SegmentSet *target_set = findSegmentSet(input_layer, target_set_name);
+      Conv::Bundle *source_set = findSegmentSet(input_layer, source_set_name);
+      Conv::Bundle *target_set = findSegmentSet(input_layer, target_set_name);
 
       if(source_set == nullptr) {
         LOGWARN << "Could not find SegmentSet \"" << source_set_name << "\"";
@@ -356,8 +356,8 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
       Conv::ParseStringParamIfPossible(seg_command, "source", source_set_name);
       Conv::ParseStringParamIfPossible(seg_command, "target", target_set_name);
 
-      Conv::SegmentSet *source_set = findSegmentSet(input_layer, source_set_name);
-      Conv::SegmentSet *target_set = findSegmentSet(input_layer, target_set_name);
+      Conv::Bundle *source_set = findSegmentSet(input_layer, source_set_name);
+      Conv::Bundle *target_set = findSegmentSet(input_layer, target_set_name);
 
       if(source_set == nullptr) {
         LOGWARN << "Could not find SegmentSet \"" << source_set_name << "\"";
@@ -388,8 +388,8 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
       Conv::ParseStringParamIfPossible(seg_command, "source", source_set_name);
       Conv::ParseStringParamIfPossible(seg_command, "target", target_set_name);
 
-      Conv::SegmentSet *source_set = findSegmentSet(input_layer, source_set_name);
-      Conv::SegmentSet *target_set = findSegmentSet(input_layer, target_set_name);
+      Conv::Bundle *source_set = findSegmentSet(input_layer, source_set_name);
+      Conv::Bundle *target_set = findSegmentSet(input_layer, target_set_name);
 
       if(source_set == nullptr) {
         LOGWARN << "Could not find SegmentSet \"" << source_set_name << "\"";
@@ -412,8 +412,8 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
       Conv::ParseStringParamIfPossible(seg_command, "segment", segment_name);
       Conv::ParseCountIfPossible(seg_command, "size", bucket_size);
 
-      Conv::SegmentSet *source_set = findSegmentSet(input_layer, source_set_name);
-      Conv::SegmentSet *target_set = findSegmentSet(input_layer, target_set_name);
+      Conv::Bundle *source_set = findSegmentSet(input_layer, source_set_name);
+      Conv::Bundle *target_set = findSegmentSet(input_layer, target_set_name);
 
       if(source_set == nullptr) {
         LOGWARN << "Could not find SegmentSet \"" << source_set_name << "\"";
@@ -459,7 +459,7 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
       std::string resolved_path = Conv::PathFinder::FindPath(filename, {});
       std::ifstream set_file(resolved_path, std::ios::in);
       if(set_file.good()) {
-        Conv::SegmentSet *set = new Conv::SegmentSet("Unnamed SegmentSet");
+        Conv::Bundle *set = new Conv::Bundle("Unnamed SegmentSet");
         bool success = set->Deserialize(Conv::JSON::parse(set_file), folder_hint);
         if(!success) {
           LOGERROR << "Deserialization failed!";
@@ -513,7 +513,7 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
     } else if(set_command.compare(0, 5, "score") == 0) {
       std::string source_set_name;
       Conv::ParseStringParamIfPossible(set_command, "name", source_set_name);
-      Conv::SegmentSet *source_set = findSegmentSet(input_layer, source_set_name);
+      Conv::Bundle *source_set = findSegmentSet(input_layer, source_set_name);
 
       if(source_set == nullptr) {
         LOGWARN << "Could not find SegmentSet \"" << source_set_name << "\"";
@@ -529,7 +529,7 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
       Conv::datum confidence_threshold = -1;
       Conv::ParseStringParamIfPossible(set_command, "name", source_set_name);
       Conv::ParseDatumParamIfPossible(set_command, "threshold", confidence_threshold);
-      Conv::SegmentSet* source_set = findSegmentSet(input_layer, source_set_name);
+      Conv::Bundle* source_set = findSegmentSet(input_layer, source_set_name);
 
       Conv::YOLODetectionLayer* detection_layer = dynamic_cast<Conv::YOLODetectionLayer*>(graph.GetOutputNodes()[0]->layer);
       if (detection_layer == nullptr) {
@@ -673,7 +673,7 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
       Conv::ParseStringParamIfPossible(set_command, "target", target_area);
 
       if(target_area.compare("training") == 0 || target_area.compare("staging") == 0 || target_area.compare("testing") == 0) {
-        Conv::SegmentSet* segment_set = nullptr;
+        Conv::Bundle* segment_set = nullptr;
         if(source_area.compare("training") == 0) {
           for(unsigned int set = 0; set < input_layer->training_sets_.size(); set++) { if (input_layer->training_sets_[set]->name.compare(set_name) == 0) {
               segment_set = input_layer->training_sets_[set]; input_layer->training_sets_.erase(input_layer->training_sets_.begin() + set);
@@ -715,7 +715,7 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
     } else if(set_command.compare(0, 3, "new") == 0) {
       std::string name = "Unnamed SegmentSet";
       Conv::ParseStringParamIfPossible(set_command, "name", name);
-      Conv::SegmentSet* set = new Conv::SegmentSet(name);
+      Conv::Bundle* set = new Conv::Bundle(name);
 
       input_layer->staging_sets_.push_back(set);
       input_layer->UpdateDatasets();
@@ -760,22 +760,22 @@ bool parseCommand (Conv::ClassManager& class_manager, Conv::SegmentSetInputLayer
   return true;
 }
 
-Conv::SegmentSet *findSegmentSet(const Conv::SegmentSetInputLayer *input_layer, const std::string &set_name) {
-  Conv::SegmentSet* set = nullptr;
-  for(Conv::SegmentSet* set_ : input_layer->training_sets_) {
+Conv::Bundle *findSegmentSet(const Conv::SegmentSetInputLayer *input_layer, const std::string &set_name) {
+  Conv::Bundle* set = nullptr;
+  for(Conv::Bundle* set_ : input_layer->training_sets_) {
         if(set_->name.compare(set_name) == 0) { set = set_; }
       }
-  for(Conv::SegmentSet* set_ : input_layer->staging_sets_) {
+  for(Conv::Bundle* set_ : input_layer->staging_sets_) {
         if(set_->name.compare(set_name) == 0) { set = set_; }
       }
-  for(Conv::SegmentSet* set_ : input_layer->testing_sets_) {
+  for(Conv::Bundle* set_ : input_layer->testing_sets_) {
         if(set_->name.compare(set_name) == 0) { set = set_; }
       }
   return set;
 }
 
-void displaySegmentSetsInfo(const std::vector<Conv::SegmentSet *> &sets) {
-  for(Conv::SegmentSet* set : sets) {
+void displaySegmentSetsInfo(const std::vector<Conv::Bundle *> &sets) {
+  for(Conv::Bundle* set : sets) {
         LOGINFO << "  \"" << set->name << "\" (" << set->GetSegmentCount() << " segments, " << set->GetSampleCount() << " samples):";
         for(unsigned int seg = 0; seg < set->GetSegmentCount(); seg++) {
           Conv::Segment* segment = set->GetSegment(seg);

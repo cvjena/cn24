@@ -14,7 +14,7 @@
 int main(int argc, char** argv) {
   Conv::System::Init();
 
-  Conv::SegmentSet set("Unnamed set");
+  Conv::Bundle set("Unnamed set");
   while(true) {
     std::cout << "\n > ";
 

@@ -22,7 +22,7 @@
 #include "Layer.h"
 #include "TrainingLayer.h"
 
-#include "../util/SegmentSet.h"
+#include "../util/Bundle.h"
 #include "../util/Dataset.h"
 
 namespace Conv {
@@ -72,10 +72,10 @@ public:
 
   Task GetTask() const { return task_; }
 
-  std::vector<SegmentSet*> training_sets_;
+  std::vector<Bundle*> training_sets_;
   std::vector<datum> training_weights_;
-  std::vector<SegmentSet*> staging_sets_;
-  std::vector<SegmentSet*> testing_sets_;
+  std::vector<Bundle*> staging_sets_;
+  std::vector<Bundle*> testing_sets_;
   void UpdateDatasets();
 private:
   void LoadSampleAugmented(unsigned int sample, const datum x_scale, const datum x_transpose_img, const datum y_scale,

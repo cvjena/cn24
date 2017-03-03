@@ -76,7 +76,7 @@ SegmentSetInputLayer::SegmentSetInputLayer (JSON configuration,
 void SegmentSetInputLayer::SetActiveTestingSet(unsigned int index) {
   if(index < testing_sets_.size()) {
     testing_set_ = index;
-    SegmentSet *set = testing_sets_[index];
+    Bundle *set = testing_sets_[index];
     LOGDEBUG << "Switching to testing dataset: " << set->name;
     elements_testing_ = set->GetSampleCount();
 
@@ -193,7 +193,7 @@ void SegmentSetInputLayer::SelectAndLoadSamples() {
     std::uniform_real_distribution<datum> saturation_dist(rnd_sat > 1 ? 1: rnd_sat, rnd_sat > 1 ? rnd_sat : 1);
     unsigned int selected_element = 0;
     bool force_no_weight = false;
-    SegmentSet* set = nullptr;
+    Bundle* set = nullptr;
 
     if(testing_) {
       // No need to pick a dataset
@@ -447,7 +447,7 @@ unsigned int SegmentSetInputLayer::GetSamplesInTestingSet() {
 
 unsigned int SegmentSetInputLayer::GetSamplesInTrainingSet() {
   unsigned int samples = 0;
-  for(SegmentSet* segment_set : training_sets_)
+  for(Bundle* segment_set : training_sets_)
     samples += segment_set->GetSampleCount();
   return samples;
 }
