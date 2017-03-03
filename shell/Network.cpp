@@ -18,7 +18,7 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
   char* file = nullptr;
   char* task = nullptr;
   int predict_only = -1;
-  int seed = 0;
+  int seed = global_random_seed;
   cargo_add_option(cargo, (cargo_option_flags_t)0, "file", "JSON file"
   " containing the architecture", "s", &file);
   cargo_add_option(cargo, (cargo_option_flags_t)0, "task", "Task the network"
@@ -80,7 +80,7 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
   
   // Create input layer
   unsigned int batch_size = factory.GetParallelBatchSize();
-  input_layer_ = new SegmentSetInputLayer(factory.GetDataInput(), task_,
+  input_layer_ = new BundleInputLayer(factory.GetDataInput(), task_,
     class_manager_, batch_size, (unsigned int)(seed + 1));
   
   NetGraphNode* input_node = new NetGraphNode(input_layer_);

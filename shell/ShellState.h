@@ -96,7 +96,9 @@ private:
   ClassManager* class_manager_ = nullptr;
   NetGraph* graph_ = nullptr;
   Trainer* trainer_ = nullptr;
-  SegmentSetInputLayer* input_layer_ = nullptr;
+  BundleInputLayer* input_layer_ = nullptr;
+  
+  int global_random_seed = 19108128;
 };
 }
 
