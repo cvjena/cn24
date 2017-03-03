@@ -227,7 +227,7 @@ namespace Conv {
 				break;
 
 			// LOGDEBUG << "Importing files " << image_fname << " and " << label_fname << "...";
-			Conv::Tensor image_tensor ( image_directory + image_fname );
+			Conv::Tensor image_tensor ( image_directory + image_fname, "ListTensorStream");
 			Conv::Tensor label_rgb_tensor;
 
 			if(!dont_load_labels) {
