@@ -30,9 +30,12 @@ namespace Conv
 enum Task {
   SEMANTIC_SEGMENTATION,
 	CLASSIFICATION,
-	DETECTION
+	DETECTION,
+        UNKNOWN
 };
 
+Task TaskFromString(const std::string& task_name);
+  
 enum Method {
   FCN,
   PATCH

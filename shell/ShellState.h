@@ -71,6 +71,7 @@ typedef CommandStatus (ShellState::*ShellFunction)(cargo_t cargo, int argc, char
   CN24_SHELL_FUNC(Quit);
   CN24_SHELL_FUNC(NetworkLoad);
   CN24_SHELL_FUNC(CommandHelp);
+  CN24_SHELL_FUNC(NetworkStatus);
 private:
   /*
    * Shell command table
@@ -78,7 +79,8 @@ private:
   std::map<std::string, ShellFunction> cmd_name_func_map { 
     CN24_SHELL_CMD("quit", Quit),
     CN24_SHELL_CMD("help", CommandHelp),
-    CN24_SHELL_CMD("net-load", NetworkLoad)
+    CN24_SHELL_CMD("net-load", NetworkLoad),
+    CN24_SHELL_CMD("net-status", NetworkStatus)
   };
   
 public:

@@ -64,6 +64,14 @@ public:
   JSON GetDataInput() {
     return data_input_json_;
   }
+  
+  Task GetTask() {
+    if(net_json_.count("task") == 1 && net_json_["task"].is_string()) {
+      return TaskFromString(net_json_["task"]);
+    } else {
+      return UNKNOWN;
+    }
+  }
 
   bool AddLayers(NetGraph& graph, ClassManager* class_manager, unsigned int seed = 0);
 

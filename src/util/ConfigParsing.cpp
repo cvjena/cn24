@@ -9,11 +9,24 @@
 #include "Log.h"
 
 #include "ConfigParsing.h"
+#include "Dataset.h"
 #include <cstdlib>
 
 #include <sstream>
 
 namespace Conv {
+  
+Task TaskFromString(const std::string& task_name) {
+  if(task_name.compare("classification") == 0) {
+    return CLASSIFICATION;
+  } else if(task_name.compare("detection") == 0) {
+    return DETECTION;
+  } else if(task_name.compare("segmentation") == 0) {
+    return SEMANTIC_SEGMENTATION;
+  } else {
+    return UNKNOWN;
+  }
+}
 bool StartsWithIdentifier ( std::string line, std::string identifier ) {
   return ( line.compare ( 0, identifier.length(), identifier ) == 0 );
 }

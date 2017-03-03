@@ -21,7 +21,7 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
   int seed = global_random_seed;
   cargo_add_option(cargo, (cargo_option_flags_t)0, "file", "JSON file"
   " containing the architecture", "s", &file);
-  cargo_add_option(cargo, (cargo_option_flags_t)0, "task", "Task the network"
+  cargo_add_option(cargo, (cargo_option_flags_t)CARGO_OPT_NOT_REQUIRED, "task", "Task the network"
   " is going to be used for", "s", &task);
   cargo_add_validation(cargo, (cargo_validation_flags_t)0, "task",
     cargo_validate_choices((cargo_validate_choices_flags_t)
@@ -36,18 +36,6 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
     "b", &predict_only);
   
   CN24_SHELL_PARSE_ARGS;
-  
-  Task task_ = CLASSIFICATION;
-  std::string task_str(task);
-  if(task_str.compare("detection") == 0) {
-    task_ = DETECTION;
-  } else if(task_str.compare("classification") == 0) {
-    task_ = CLASSIFICATION;
-  } else if(task_str.compare("segmentation") == 0) {
-    task_ = SEMANTIC_SEGMENTATION;
-  } else {
-    return WRONG_PARAMS;
-  }
   
   if(state_ != NOTHING) {
     LOGERROR << "Network already loaded!";
@@ -74,9 +62,25 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
   
   // Create class manager
   class_manager_ = new ClassManager();
+  
   // Use factory
   JSONNetGraphFactory factory = JSONNetGraphFactory(architecture_json,
     (unsigned int)seed);
+  
+  Task task_ = UNKNOWN;
+  if(task != nullptr) {
+    std::string task_str(task);
+    task_ = TaskFromString(task_str);
+  } else {
+    task_ = factory.GetTask();
+  }
+  
+  if(task_ == UNKNOWN) {
+    LOGERROR << "Could not determine task from either command line or architecture";
+    delete class_manager_;
+    class_manager_ = nullptr;
+    return WRONG_PARAMS;
+  }
   
   // Create input layer
   unsigned int batch_size = factory.GetParallelBatchSize();
@@ -115,6 +119,33 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
   trainer_ = new Trainer(*graph_, factory.GetHyperparameters());
   state_ = NET_AND_TRAINER_LOADED;
   
+  return SUCCESS;
+}
+
+CN24_SHELL_FUNC_IMPL(NetworkStatus) {
+  CN24_SHELL_FUNC_DESCRIPTION("Displays information about the current network") 
+  CN24_SHELL_PARSE_ARGS;
+  
+  switch(state_) {
+    case NOTHING:
+      LOGINFO << "No network loaded.";
+      break;
+    case NET_LOADED:
+      LOGINFO << "Network loaded for prediction only.";
+      break;
+    case NET_AND_TRAINER_LOADED:
+      LOGINFO << "Network loaded.";
+      break;
+  }
+  switch(state_) {
+    case NOTHING:
+      break;
+    case NET_AND_TRAINER_LOADED:
+      LOGINFO << "Current epoch: " << trainer_->epoch();
+    case NET_LOADED:
+      LOGINFO << "Network nodes: " << graph_->GetNodes().size();
+      break;
+  }
   return SUCCESS;
 }
 
