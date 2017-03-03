@@ -25,9 +25,9 @@ bool Bundle::CopyDetectionSample(unsigned int source_index, unsigned int target_
 void Bundle::AddSegment(Segment *segment) {
   if(segment != nullptr) {
     segments_.push_back(segment);
-    LOGDEBUG << "Added segment \"" << segment->name << "\" to set: \"" << name << "\"";
+    LOGDEBUG << "Added segment \"" << segment->name << "\" to bundle: \"" << name << "\"";
   } else {
-    LOGERROR << "Tried to add null pointer segment to set: \"" << name << "\"";
+    LOGERROR << "Tried to add null pointer segment to bundle: \"" << name << "\"";
   }
 }
 
