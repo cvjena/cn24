@@ -71,14 +71,18 @@ typedef CommandStatus (ShellState::*ShellFunction)(cargo_t cargo, int argc, char
    * Shell function definitions
    */
   CN24_SHELL_FUNC(Quit);
-  CN24_SHELL_FUNC(NetworkLoad);
   CN24_SHELL_FUNC(CommandHelp);
+
+  CN24_SHELL_FUNC(NetworkLoad);
   CN24_SHELL_FUNC(NetworkStatus);
   CN24_SHELL_FUNC(NetworkUnload);
+
   CN24_SHELL_FUNC(DataList);
   CN24_SHELL_FUNC(BundleLoad);
   CN24_SHELL_FUNC(BundleMove);
   CN24_SHELL_FUNC(SegmentMove);
+
+  CN24_SHELL_FUNC(ModelLoad);
 private:
   Bundle* DataTakeBundle(const std::string& name);
   Bundle* DataFindBundle(const std::string& name);
@@ -95,13 +99,18 @@ private:
   std::map<std::string, ShellFunction> cmd_name_func_map { 
     CN24_SHELL_CMD("quit", Quit),
     CN24_SHELL_CMD("help", CommandHelp),
+
+    CN24_SHELL_CMD("net-load", NetworkLoad),
+    CN24_SHELL_CMD("net-unload", NetworkUnload),
+    CN24_SHELL_CMD("net-status", NetworkStatus),
+
     CN24_SHELL_CMD("data-list", DataList),
     CN24_SHELL_CMD("bundle-load", BundleLoad),
     CN24_SHELL_CMD("bundle-move", BundleMove),
     CN24_SHELL_CMD("segment-move", SegmentMove),
-    CN24_SHELL_CMD("net-load", NetworkLoad),
-    CN24_SHELL_CMD("net-unload", NetworkUnload),
-    CN24_SHELL_CMD("net-status", NetworkStatus)
+
+    CN24_SHELL_CMD("model-load", ModelLoad)
+
   };
   
 public:
