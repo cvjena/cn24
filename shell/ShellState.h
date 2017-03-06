@@ -137,12 +137,14 @@ private:
   NetGraph* graph_ = nullptr;
   Trainer* trainer_ = nullptr;
   BundleInputLayer* input_layer_ = nullptr;
+  std::vector<StatSink*> stat_sinks_;
   
   std::vector<Bundle*>* training_bundles_ = new std::vector<Bundle*>();
   std::vector<datum>* training_weights_ = new std::vector<datum>();
   std::vector<Bundle*>* staging_bundles_ = new std::vector<Bundle*>();
   std::vector<Bundle*>* testing_bundles_ = new std::vector<Bundle*>();
-  
+
+
   int global_random_seed = 19108128;
 };
 }
