@@ -39,7 +39,11 @@ CN24_SHELL_FUNC_IMPL(Test) {
       if(bundle->GetSegmentCount() > 0) {
         input_layer_->SetActiveTestingSet(d);
         // TODO Statistics recording on/off generate reset
+        System::stat_aggregator->StartRecording();
         trainer_->Test();
+        System::stat_aggregator->StopRecording();
+        System::stat_aggregator->Generate();
+        System::stat_aggregator->Reset();
       } else {
         LOGINFO << "Skipping bundle \"" << bundle->name << "\" because it has no samples";
       }

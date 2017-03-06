@@ -13,14 +13,14 @@ CN24_SHELL_FUNC_IMPL(Train) {
   CN24_SHELL_FUNC_DESCRIPTION("Trains the network for a specified number of epochs");
 
   int epochs = 1;
-  int do_snapshot = -1;
+  int no_snapshot = -1;
   int enable_training_stats = -1;
 
   cargo_add_option(cargo, (cargo_option_flags_t)0, "--detailed-statistics -d", "Enables calculation of all statistics "
     "instead of just training loss", "b", &enable_training_stats);
 
-  cargo_add_option(cargo, (cargo_option_flags_t)0, "--do-snapshots -s", "Write metrics every epochs instead of after training only",
-                   "b", &do_snapshot);
+  cargo_add_option(cargo, (cargo_option_flags_t)0, "--no-snapshots -s", "Write metrics after training only instead of every epoch",
+                   "b", &no_snapshot);
 
   cargo_add_option(cargo, (cargo_option_flags_t)CARGO_OPT_NOT_REQUIRED, "epochs", "Number of epochs to train the network for (default: 1)",
     "i", &epochs);
@@ -42,7 +42,15 @@ CN24_SHELL_FUNC_IMPL(Train) {
 
   if(training_samples > 0) {
     trainer_->SetStatsDuringTraining(enable_training_stats == 1);
-    trainer_->Train((unsigned int)epochs, do_snapshot == 1);
+    trainer_->Train((unsigned int)epochs, no_snapshot != 1);
+    System::stat_aggregator->StopRecording();
+
+    // If Trainer didn't run generate we have to do it ourselvers
+    if(no_snapshot == 1) {
+      System::stat_aggregator->Generate();
+    }
+
+    System::stat_aggregator->Reset();
     return SUCCESS;
   } else {
     LOGWARN << "Training skipped, there were no training samples";
