@@ -86,6 +86,7 @@ typedef CommandStatus (ShellState::*ShellFunction)(cargo_t cargo, int argc, char
   CN24_SHELL_FUNC(ModelSave);
 
   CN24_SHELL_FUNC(Train);
+  CN24_SHELL_FUNC(Test);
 private:
   Bundle* DataTakeBundle(const std::string& name);
   Bundle* DataFindBundle(const std::string& name);
@@ -115,7 +116,8 @@ private:
     CN24_SHELL_CMD("model-load", ModelLoad),
     CN24_SHELL_CMD("model-save", ModelSave),
 
-    CN24_SHELL_CMD("train", Train)
+    CN24_SHELL_CMD("train", Train),
+    CN24_SHELL_CMD("test", Test)
 
   };
   
