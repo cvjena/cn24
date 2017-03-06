@@ -92,7 +92,7 @@ CN24_SHELL_FUNC_IMPL(ModelSave) {
     return FAILURE;
   }
 
-  // Load model
+  // Save model
   graph_->SerializeParameters(model_file, skip_nodes_str);
 
   return SUCCESS;
