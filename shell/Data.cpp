@@ -144,16 +144,54 @@ CN24_SHELL_FUNC_IMPL(BundleMove) {
   } else if(target_area_str.compare("testing") == 0) {
     testing_bundles_->push_back(bundle);
   }
-  
-  switch(state_) {
-    case NOTHING:
-      break;
-    case NET_AND_TRAINER_LOADED:
-    case NET_LOADED:
-      input_layer_->UpdateDatasets();
-      break;
-      
+
+  DataUpdated();
+
+  return SUCCESS;
+}
+
+CN24_SHELL_FUNC_IMPL(SegmentMove) {
+  CN24_SHELL_FUNC_DESCRIPTION("Moves a segment from one bundle to another");
+
+  char* segment_name = nullptr;
+  char* source_bundle = nullptr;
+  char* target_bundle = nullptr;
+
+  cargo_add_option(cargo, (cargo_option_flags_t)0, "segment", "Name of the segment to move",
+    "s", &segment_name);
+  cargo_add_option(cargo, (cargo_option_flags_t)0, "source-bundle", "Name of the source bundle",
+    "s", &source_bundle);
+  cargo_add_option(cargo, (cargo_option_flags_t)0, "target-bundle", "Name of the target bundle",
+    "s", &target_bundle);
+
+  CN24_SHELL_PARSE_ARGS;
+
+  std::string segment_name_str(segment_name);
+  std::string source_bundle_str(source_bundle);
+  std::string target_bundle_str(target_bundle);
+
+  // First, check if target bundle exists
+  Bundle* bundle = DataFindBundle(target_bundle);
+
+  if(bundle == nullptr) {
+    LOGERROR << "Could not find bundle \"" << target_bundle_str << "\".";
+    return WRONG_PARAMS;
   }
+
+  // Try to take segment from source bundle
+  Segment* segment = DataTakeSegment(source_bundle_str, segment_name_str);
+
+  if(segment == nullptr) {
+    LOGERROR << "Could not find segment \"" << segment_name_str << "\"" << " in bundle \"" <<
+      source_bundle_str << "\".";
+    return WRONG_PARAMS;
+  }
+
+
+  // Put segment in target bundle
+  bundle->AddSegment(segment);
+
+  DataUpdated();
   return SUCCESS;
 }
 
@@ -204,5 +242,57 @@ Bundle* ShellState::DataTakeBundle(const std::string& name) {
   }
   return nullptr;
 }
-  
+
+Segment* ShellState::DataFindSegment(const std::string &bundle_name, const std::string &segment_name) {
+  // Find bundle
+  Bundle* bundle = DataFindBundle(bundle_name);
+  if(bundle == nullptr) {
+    return nullptr;
+  }
+
+  int segment_index = bundle->GetSegmentIndex(segment_name);
+  if(segment_index == -1) {
+    return nullptr;
+  }
+
+  // Find segment
+  Segment* segment = bundle->GetSegment(segment_index);
+
+  return segment;
+}
+
+Segment* ShellState::DataTakeSegment(const std::string &bundle_name, const std::string &segment_name) {
+  // Find bundle
+  Bundle* bundle = DataFindBundle(bundle_name);
+  if(bundle == nullptr) {
+    return nullptr;
+  }
+
+  int segment_index = bundle->GetSegmentIndex(segment_name);
+  if(segment_index == -1) {
+    return nullptr;
+  }
+
+  // Find segment
+  Segment* segment = bundle->GetSegment(segment_index);
+
+  // Remove segment
+  bundle->RemoveSegment(segment_index);
+
+  return segment;
+}
+
+void ShellState::DataUpdated() {
+  // Update input layer's datasets if possible
+  switch(state_) {
+    case NOTHING:
+      break;
+    case NET_AND_TRAINER_LOADED:
+    case NET_LOADED:
+      input_layer_->UpdateDatasets();
+      break;
+
+  }
+}
+
 }
