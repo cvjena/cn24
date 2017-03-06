@@ -105,6 +105,41 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
     delete class_manager_; class_manager_ = nullptr;
     return FAILURE;
   }
+
+  if(predict_only != 1) {
+    // Add stat layers
+    if (task_ == Conv::SEMANTIC_SEGMENTATION || task_ == Conv::CLASSIFICATION) {
+      for (Conv::NetGraphNode *output_node : graph_->GetOutputNodes()) {
+        // Add appropriate statistics layer
+        Conv::NetGraphNode *stat_node = nullptr;
+        if (class_manager_->GetClassCount() == 1) {
+          Conv::BinaryStatLayer *binary_stat_layer = new Conv::BinaryStatLayer(13, -1, 1);
+          stat_node = new Conv::NetGraphNode(binary_stat_layer);
+        } else {
+          Conv::ConfusionMatrixLayer *confusion_matrix_layer = new Conv::ConfusionMatrixLayer(class_manager_);
+          stat_node = new Conv::NetGraphNode(confusion_matrix_layer);
+        }
+        stat_node->input_connections.push_back(Conv::NetGraphConnection(output_node, 0, false));
+        stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node, 1));
+        stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node, 3));
+        graph_->AddNode(stat_node);
+      }
+    } else if (task_ == Conv::DETECTION) {
+      for (Conv::NetGraphNode *output_node : graph_->GetOutputNodes()) {
+        // Add appropriate statistics layer
+        Conv::NetGraphNode *stat_node = nullptr;
+        Conv::DetectionStatLayer *detection_stat_layer = new Conv::DetectionStatLayer(class_manager_);
+
+        stat_node = new Conv::NetGraphNode(detection_stat_layer);
+        stat_node->input_connections.push_back(Conv::NetGraphConnection(output_node, 0, false));
+        stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node, 1));
+        stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node, 3));
+        graph_->AddNode(stat_node);
+      }
+    } else {
+      LOGWARN << "I don\'t know what statistics layers to add for this task!";
+    }
+  }
   
   // Initialize DAG
   graph_->Initialize();
@@ -135,39 +170,6 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
   // Create trainer
   trainer_ = new Trainer(*graph_, factory.GetHyperparameters());
   state_ = NET_AND_TRAINER_LOADED;
-
-  // Add stat layers
-  if(task_ == Conv::SEMANTIC_SEGMENTATION || task_ == Conv::CLASSIFICATION) {
-    for (Conv::NetGraphNode *output_node : graph_->GetOutputNodes()) {
-      // Add appropriate statistics layer
-      Conv::NetGraphNode *stat_node = nullptr;
-      if (class_manager_->GetClassCount() == 1) {
-        Conv::BinaryStatLayer *binary_stat_layer = new Conv::BinaryStatLayer(13, -1, 1);
-        stat_node = new Conv::NetGraphNode(binary_stat_layer);
-      } else {
-        Conv::ConfusionMatrixLayer *confusion_matrix_layer = new Conv::ConfusionMatrixLayer(class_manager_);
-        stat_node = new Conv::NetGraphNode(confusion_matrix_layer);
-      }
-      stat_node->input_connections.push_back(Conv::NetGraphConnection(output_node, 0, false));
-      stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node, 1));
-      stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node, 3));
-      graph_->AddNode(stat_node);
-    }
-  } else if(task_ == Conv::DETECTION) {
-    for (Conv::NetGraphNode *output_node : graph_->GetOutputNodes()) {
-      // Add appropriate statistics layer
-      Conv::NetGraphNode *stat_node = nullptr;
-      Conv::DetectionStatLayer *detection_stat_layer = new Conv::DetectionStatLayer(class_manager_);
-
-      stat_node = new Conv::NetGraphNode(detection_stat_layer);
-      stat_node->input_connections.push_back(Conv::NetGraphConnection(output_node, 0, false));
-      stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node, 1));
-      stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node, 3));
-      graph_->AddNode(stat_node);
-    }
-  } else {
-    LOGWARN << "I don\'t know what statistics layers to add for this task!";
-  }
 
   // Add console stat sink
   ConsoleStatSink* console_sink = new ConsoleStatSink();
