@@ -30,6 +30,7 @@ public:
   virtual void SetCurrentExperiment(std::string current_experiment) = 0;
   virtual void SetCurrentTestingDataset(unsigned int current_dataset) = 0;
   virtual void Process(HardcodedStats& hardcoded_stats, std::vector<Stat*>& stats) = 0;
+  virtual ~StatSink() {}
 };
 
 }

@@ -52,6 +52,7 @@ public:
     LOGINFO << "Switching to testing dataset: " << current_dataset;
   }
 
+  virtual ~ConsoleStatSink() {}
 private:
   std::vector<StatDescriptor*> stat_descriptors_;
 };
