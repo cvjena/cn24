@@ -89,7 +89,7 @@ public:
 	// Parameter management
   void InitializeWeights(bool no_init = false);
   void GetParameters(std::vector<CombinedTensor*>& parameters);
-  void SerializeParameters(std::ostream& output);
+  void SerializeParameters(std::ostream& output, const std::vector<std::string>& skip_nodes = {});
   void DeserializeParameters(std::istream& input, const std::vector<std::string>& skip_nodes = {});
 
 	// Output

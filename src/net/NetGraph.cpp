@@ -412,7 +412,7 @@ void NetGraph::GetParameters (std::vector< CombinedTensor* >& parameters) {
   }
 }
 
-void NetGraph::SerializeParameters(std::ostream& output) {
+void NetGraph::SerializeParameters(std::ostream& output, const std::vector<std::string>& skip_nodes) {
 	uint64_t magic = CN24_PAREX_MAGIC;
 	output.write((char*)&magic, sizeof(uint64_t)/sizeof(char));
     
@@ -420,7 +420,16 @@ void NetGraph::SerializeParameters(std::ostream& output) {
     NetGraphNode* node = nodes_[l];
     Layer* layer = nodes_[l]->layer;
     unsigned int layer_parameters = layer->parameters().size();
-    if(layer_parameters > 0) {
+
+    bool skip_node = false;
+		for(unsigned int i = 0; i < skip_nodes.size(); i++) {
+			if(node->unique_name.compare(skip_nodes[i]) == 0) {
+				skip_node = true;
+				LOGINFO << "Skipping node \"" << node->unique_name << "\"";
+			}
+		}
+
+    if(layer_parameters > 0 && !skip_node) {
       // Write length of node name
       unsigned int node_unique_name_length = node->unique_name.length();
 			unsigned int parameter_set_size = node->layer->parameters().size();
