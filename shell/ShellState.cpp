@@ -43,8 +43,20 @@ ShellState::CommandStatus ShellState::ProcessCommand(std::string command)
   for(int i = 0; i < command.length(); i++) {
     char current_char = command[i];
     bool skip = false;
-    if(current_char == '\"') {
+    // Handle escapes
+    if(current_char == '\\') {
+      last_char = '\\';
+      current_char = command[++i];
+      if(current_char == '\"' || current_char == '\\') {
+        // Ignore..
+      } else {
+        LOGERROR << "Unknown escape character \"" << current_char << "\"";
+        return WRONG_PARAMS;
+      }
+    }
+    if(current_char == '\"' && last_char != '\\') {
       in_quote = !in_quote;
+      skip = true;
     } else if(current_char == ' ' && !in_quote) {
       if(last_char != ' ') {
 	skip = true;
