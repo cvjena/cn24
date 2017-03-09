@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
       // Calculate L2 diff
       Conv::datum sq_sum = 0;
       for(unsigned int e = 0; e < t1.elements(); e++) {
-        sq_sum += (t1(2) - t2(e)) * (t1(2) - t2(e));
+        sq_sum += (t1(e) - t2(e)) * (t1(e) - t2(e));
       }
 
       sq_sum = (Conv::datum)std::sqrt(sq_sum);
