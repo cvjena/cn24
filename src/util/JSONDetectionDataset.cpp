@@ -66,9 +66,12 @@ void JSONDetectionDataset::Load(JSON dataset_json, bool dont_load, DatasetLoadSe
       bool result = class_manager_->RegisterClassByName(class_name, class_color, class_weight);
       if(!result) {
         FATAL("Could not register class " << class_name << " with ClassManager");
+      } else {
+        LOGDEBUG << "Registered class \"" << class_name << "\".";
       }
 		}
     label_maps_ = 0;
+    input_maps_ = 3;
 	} else {
 		// TODO Validate similarity
 	}
