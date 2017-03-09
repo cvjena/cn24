@@ -36,7 +36,7 @@ int main (int argc, char* argv[]) {
   std::string dataset_config_fname (argv[1]);
   
   // Initialize CN24
-  Conv::System::Init();
+  Conv::System::Init(3);
 
   // Open network and dataset configuration files
   std::ifstream param_tensor_file(param_tensor_fname,std::ios::in | std::ios::binary);
@@ -160,6 +160,15 @@ int main (int argc, char* argv[]) {
     data_tensor.Clear();
     Conv::Tensor::CopySample(original_data_tensor, 0, data_tensor, 0, false, true);
 
+    for(unsigned int map = 0; map < data_tensor.maps(); map++) {
+      for(unsigned int y = 0; y < height; y++) {
+        for(unsigned int x = 0; x < width; x++) {
+          *(data_tensor.data_ptr(x,y,map,0)) *= 2.0;
+          *(data_tensor.data_ptr(x,y,map,0)) -= 1.0;
+        }
+      }
+    }
+
      // Assemble net
     Conv::NetGraph graph;
     Conv::InputLayer input_layer(data_tensor);
@@ -191,8 +200,16 @@ int main (int argc, char* argv[]) {
         LOGINFO << "Score for class " << std::setw(2) << c << ": " << std::setw(8) << std::setprecision(6) << class_score << " (" << class_name << ")";
       }
     } else {
+      Conv::Tensor *net_output_tensor = &graph.GetDefaultOutputNode()->output_buffers[0].combined_tensor->data;
+#ifdef BUILD_OPENCL
+      net_output_tensor->MoveToCPU();
+#endif
       Conv::DatasetMetadataPointer* net_output = graph.GetDefaultOutputNode()->output_buffers[0].combined_tensor->metadata;
       std::vector<Conv::BoundingBox>* output_boxes = (std::vector<Conv::BoundingBox>*)net_output[0];
+      const Conv::JSON& yolo_config = factory->GetYOLOConfiguration();
+      unsigned int horizontal_cells = yolo_config["horizontal_cells"];
+      unsigned int vertical_cells = yolo_config["vertical_cells"];
+      unsigned int boxes_per_cell = yolo_config["boxes_per_cell"];
 
       LOGINFO << "Bounding boxes: " << output_boxes->size();
       for(unsigned int b = 0; b < output_boxes->size(); b++) {
@@ -206,6 +223,8 @@ int main (int argc, char* argv[]) {
         LOGINFO << "  Center: (" << box.x << "," << box.y << ")";
         LOGINFO << "  Size: (" << box.w << "x" << box.h << ")";
 
+        Conv::datum gb = (box.c) < UNKNOWN_CLASS ? 1.0 : 0.0;
+
         // Draw box into original data tensor
         for(int bx = (int)(box.x - (box.w / 2)); bx <= (box.x + (box.w / 2)); bx++) {
           int by_top = (int)(box.y - (box.h / 2));
@@ -213,13 +232,13 @@ int main (int argc, char* argv[]) {
           if(bx >= 0 && bx < (int)original_width) {
             if (by_top >= 0 && by_top < (int)original_height) {
               *(original_data_tensor.data_ptr((const size_t)bx, (const size_t)by_top, 0, 0)) = 1.0;
-              *(original_data_tensor.data_ptr((const size_t)bx, (const size_t)by_top, 1, 0)) = 1.0;
-              *(original_data_tensor.data_ptr((const size_t)bx, (const size_t)by_top, 2, 0)) = 1.0;
+              *(original_data_tensor.data_ptr((const size_t)bx, (const size_t)by_top, 1, 0)) = gb;
+              *(original_data_tensor.data_ptr((const size_t)bx, (const size_t)by_top, 2, 0)) = gb;
             }
             if (by_bot >= 0 && by_bot < (int)original_height) {
               *(original_data_tensor.data_ptr((const size_t)bx, (const size_t)by_bot, 0, 0)) = 1.0;
-              *(original_data_tensor.data_ptr((const size_t)bx, (const size_t)by_bot, 1, 0)) = 1.0;
-              *(original_data_tensor.data_ptr((const size_t)bx, (const size_t)by_bot, 2, 0)) = 1.0;
+              *(original_data_tensor.data_ptr((const size_t)bx, (const size_t)by_bot, 1, 0)) = gb;
+              *(original_data_tensor.data_ptr((const size_t)bx, (const size_t)by_bot, 2, 0)) = gb;
             }
           }
         }
@@ -230,18 +249,47 @@ int main (int argc, char* argv[]) {
           if(by >= 0 && by < (int)original_height) {
             if (bx_top >= 0 && bx_top < (int)original_width) {
               *(original_data_tensor.data_ptr((const std::size_t)bx_top, (const std::size_t)by, 0, 0)) = 1.0;
-              *(original_data_tensor.data_ptr((const std::size_t)bx_top, (const std::size_t)by, 1, 0)) = 1.0;
-              *(original_data_tensor.data_ptr((const std::size_t)bx_top, (const std::size_t)by, 2, 0)) = 1.0;
+              *(original_data_tensor.data_ptr((const std::size_t)bx_top, (const std::size_t)by, 1, 0)) = gb;
+              *(original_data_tensor.data_ptr((const std::size_t)bx_top, (const std::size_t)by, 2, 0)) = gb;
             }
             if (bx_bot >= 0 && bx_bot < (int)original_width) {
               *(original_data_tensor.data_ptr((const std::size_t)bx_bot, (const std::size_t)by, 0, 0)) = 1.0;
-              *(original_data_tensor.data_ptr((const std::size_t)bx_bot, (const std::size_t)by, 1, 0)) = 1.0;
-              *(original_data_tensor.data_ptr((const std::size_t)bx_bot, (const std::size_t)by, 2, 0)) = 1.0;
+              *(original_data_tensor.data_ptr((const std::size_t)bx_bot, (const std::size_t)by, 1, 0)) = gb;
+              *(original_data_tensor.data_ptr((const std::size_t)bx_bot, (const std::size_t)by, 2, 0)) = gb;
             }
           }
         }
       }
+      
+      Conv::datum max_iou = 0;
+      // Draw class info
+      for(int y = 0; y < original_height; y++) {
+      unsigned int vcell = (y * vertical_cells) / original_height;
+      for(int x = 0; x < original_width; x++) {
+        unsigned int hcell = (x * horizontal_cells) / original_width;
+        unsigned int cell_id = vcell * horizontal_cells + hcell;
+        Conv::datum iou = 0;
+        for(unsigned int b = 0; b < boxes_per_cell; b++) {
+          unsigned int iou_idx =  (cell_id * boxes_per_cell + b) * 5 + 4;
+          if((*net_output_tensor)(iou_idx) > iou) {
+            iou = (*net_output_tensor)(iou_idx);
+            if(iou > max_iou)
+              max_iou = iou;
+          }
+        }
+//          LOGINFO << "Cell " << hcell << "," << vcell << " iou: " << iou;
+//           *(original_data_tensor.data_ptr(x, y, 0, 0)) *= (1.0f-iou);
+//           *(original_data_tensor.data_ptr(x, y, 0, 0)) += iou;
+          *(original_data_tensor.data_ptr(x, y, 0, 0)) *= 0.5;
+          *(original_data_tensor.data_ptr(x, y, 1, 0)) *= 0.5;
+          *(original_data_tensor.data_ptr(x, y, 2, 0)) *= 0.5;
+          *(original_data_tensor.data_ptr(x, y, 0, 0)) += iou * 0.5;
+          *(original_data_tensor.data_ptr(x, y, 1, 0)) += iou * 0.5;
+          *(original_data_tensor.data_ptr(x, y, 2, 0)) += iou * 0.5;
+        }
+      }
 
+      LOGINFO << "Max IoU: " << max_iou;
       if(argc > 5)
         original_data_tensor.WriteToFile(output_image_fname);
     }
