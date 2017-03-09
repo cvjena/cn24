@@ -141,7 +141,17 @@ int main(int argc, char **argv) {
         continue;
       }
 
-      input.ignore(4 * sizeof(int));
+      uint32_t major;
+      uint32_t minor;
+      uint32_t revision;
+      uint32_t seen;
+      input.read((char*)&major, sizeof(uint32_t));
+      input.read((char*)&minor, sizeof(uint32_t));
+      input.read((char*)&revision, sizeof(uint32_t));
+      input.read((char*)&seen, sizeof(uint32_t));
+
+      bool do_transpose = (major > 1000) || (minor > 1000);
+      LOGINFO << "Transpose: " << do_transpose;
 
       // Check if input file exists
       std::ifstream net_input (net_file_name, std::ios::in);
@@ -193,50 +203,129 @@ int main(int argc, char **argv) {
             input.read((char*) bias_tensor->data_ptr(), sizeof(Conv::datum) * kernel_count);
 
             Conv::Tensor* weight_tensor = new Conv::Tensor(kernel_count, kernel_width, kernel_height, input_maps);
-            if((layer_json.count("transpose") == 1 && layer_json["transpose"].is_number() && (unsigned int)(layer_json["transpose"]) == 1) || layer_type.compare("yolo_output") == 0) {
-              if(kernel_width == 1) {
-                LOGINFO << "Transposing weights (simple) for " << layer_type;
-                Conv::Tensor *temp_tensor = new Conv::Tensor(input_maps, kernel_width, kernel_height, kernel_count);
-                input.read((char *) temp_tensor->data_ptr(),
-                           sizeof(Conv::datum) * kernel_count * kernel_width * kernel_height * input_maps);
+            if(do_transpose) {
+              if((layer_json.count("transpose") == 1 && layer_json["transpose"].is_number() && (unsigned int)(layer_json["transpose"]) == 1) || ((layer_type.compare("yolo_output") == 0 ))) {
+                if(kernel_width == 1) {
+                  LOGINFO << "Transposing weights (simple) for " << layer_type;
+                  Conv::Tensor *temp_tensor = new Conv::Tensor(input_maps, kernel_width, kernel_height, kernel_count);
+                  input.read((char *) temp_tensor->data_ptr(),
+                             sizeof(Conv::datum) * kernel_count * kernel_width * kernel_height * input_maps);
 
-                for (unsigned int s = 0; s < kernel_count; s++) {
-                  for (unsigned int m = 0; m < input_maps; m++) {
-                        weight_tensor->data_ptr()[input_maps * s + m] =
-                            temp_tensor->data_ptr_const()[kernel_count * m + s];
+                  for (unsigned int s = 0; s < kernel_count; s++) {
+                    for (unsigned int m = 0; m < input_maps; m++) {
+                          weight_tensor->data_ptr()[input_maps * s + m] =
+                              temp_tensor->data_ptr_const()[kernel_count * m + s];
+                    }
+                  }
+
+                  delete temp_tensor;
+                } else {
+                  if(do_transpose) {
+                    LOGINFO << "Transposing weights (complex) for " << layer_type;
+                    Conv::Tensor *temp_tensor = new Conv::Tensor(input_maps, kernel_width, kernel_height, kernel_count);
+                    input.read((char *) temp_tensor->data_ptr(),
+                               sizeof(Conv::datum) * kernel_count * kernel_width * kernel_height * input_maps);
+
+                    for (unsigned int s = 0; s < kernel_count; s++) {
+                      for (unsigned int m = 0; m < input_maps; m++) {
+                        for (unsigned int y = 0; y < kernel_height; y++) {
+                          for (unsigned int x = 0; x < kernel_width; x++) {
+                            weight_tensor->data_ptr()[(input_maps * kernel_width * kernel_height) * s +
+                                                      (kernel_width * kernel_height * m) + (kernel_width * y) + x] =
+
+                                temp_tensor->data_ptr_const()[(kernel_count * kernel_width * kernel_height * m) +
+                                                              (kernel_width * kernel_count * y) + (kernel_count * x) + s];
+                          }
+                        }
+                      }
+                    }
+                    delete temp_tensor;
+                  } else {
                   }
                 }
-
-                delete temp_tensor;
               } else {
-                LOGINFO << "Transposing weights (complex) for " << layer_type;
+                input.read((char *) weight_tensor->data_ptr(),
+                           sizeof(Conv::datum) * kernel_count * kernel_width * kernel_height * input_maps);
+              }
+            } else {
+              // Old YOLO
+              
+              if((layer_json.count("transpose") == 1 && layer_json["transpose"].is_number() && (unsigned int)(layer_json["transpose"]) == 1) || ((layer_type.compare("yolo_output") == 0 ))) {
+                LOGINFO << "Transposing weights (OLD DN) for " << layer_type;
                 Conv::Tensor *temp_tensor = new Conv::Tensor(input_maps, kernel_width, kernel_height, kernel_count);
                 input.read((char *) temp_tensor->data_ptr(),
                            sizeof(Conv::datum) * kernel_count * kernel_width * kernel_height * input_maps);
+                if(kernel_width == 1 && kernel_height == 1) {
+                  LOGINFO << "FLAT (N)";
+                  for (unsigned int s = 0; s < kernel_count; s++) {
+                    for (unsigned int m = 0; m < input_maps; m++) {
+                      weight_tensor->data_ptr()[input_maps * s + m] =
+                        // T
+                        // temp_tensor->data_ptr_const()[kernel_count * m + s];
+                        // N
+                        temp_tensor->data_ptr_const()[input_maps * s + m];
+                    }
+                  }
+                } else {
+                  LOGINFO << "CONV_CONN";
+                  for (unsigned int s = 0; s < kernel_count; s++) {
+                    for (unsigned int m = 0; m < input_maps; m++) {
+                      for (unsigned int y = 0; y < kernel_height; y++) {
+                        for (unsigned int x = 0; x < kernel_width; x++) {
+                          weight_tensor->data_ptr()[(input_maps * kernel_width * kernel_height) * s + (kernel_width * kernel_height * m) + (kernel_width * y) + x] =
+                              //       T  N N++
+                              // SXMY (0  0  0)
+                              // temp_tensor->data_ptr_const()[(kernel_height * kernel_width * input_maps) * s + (kernel_height * input_maps) * x + (kernel_height) * m + y];
+                              // XSYM (0  0  1)
+                              // temp_tensor->data_ptr_const()[(kernel_height * kernel_count * input_maps) * x + (kernel_height * input_maps) * s + (input_maps) * y + m];
+                              // MYSX (4  0  1)
+                              //temp_tensor->data_ptr_const()[(kernel_width * kernel_count * kernel_height) * m + (kernel_width * kernel_count) * y + (kernel_width) * s + x];
+                              // YMXS (4  0)
+                              //temp_tensor->data_ptr_const()[(kernel_width * kernel_count * input_maps) * y + (kernel_width * kernel_count) * m + (kernel_count) * x + s];
+                              // YXMS (4)
+                              //temp_tensor->data_ptr_const()[(kernel_width * kernel_count * input_maps) * y + (input_maps * kernel_count) * x + (kernel_count) * m + s];
+                              // MXYS (4)
+                              //temp_tensor->data_ptr_const()[(kernel_width * kernel_count * kernel_height) * m + (kernel_height * kernel_count) * x + (kernel_count) * y + s];
+                              // MSXY (5)
+                              //temp_tensor->data_ptr_const()[(kernel_width * kernel_count * kernel_height) * m + (kernel_height * kernel_width) * s + (kernel_height) * x + y];
+                              // MSYX (5)
+                              //temp_tensor->data_ptr_const()[(kernel_width * kernel_count * kernel_height) * m + (kernel_height * kernel_width) * s + (kernel_width) * y + x];
+                              // SMXY (8 0)
+                              //temp_tensor->data_ptr_const()[(kernel_width * input_maps * kernel_height) * s + (kernel_height * kernel_width) * m + (kernel_height) * x + y];
+                              // SMYX (8 0)
+                              temp_tensor->data_ptr_const()[(kernel_width * input_maps * kernel_height) * s + (kernel_height * kernel_width) * m + (kernel_width) * y + x];
+                              // SXYM (  0)
+                              //temp_tensor->data_ptr_const()[(kernel_width * input_maps * kernel_height) * s + (kernel_height * input_maps) * x + (input_maps) * y + m];
+                              // SYMX (  0)
+                              //temp_tensor->data_ptr_const()[(kernel_width * input_maps * kernel_height) * s + (input_maps * kernel_width) * y + (kernel_width) * m + x];
+                              // SYXM (  0)
+                              //temp_tensor->data_ptr_const()[(kernel_width * input_maps * kernel_height) * s + (input_maps * kernel_width) * y + (input_maps) * x + m];
 
-                for (unsigned int s = 0; s < kernel_count; s++) {
-                  for (unsigned int m = 0; m < input_maps; m++) {
-                    for (unsigned int y = 0; y < kernel_height; y++) {
-                      for (unsigned int x = 0; x < kernel_width; x++) {
-                        weight_tensor->data_ptr()[(input_maps * kernel_width * kernel_height) * s +
-                                                  (kernel_width * kernel_height * m) + (kernel_width * y) + x] =
-
-                            temp_tensor->data_ptr_const()[(kernel_count * kernel_width * kernel_height * m) +
-                                                          (kernel_width * kernel_count * y) + (kernel_count * x) + s];
+                              // MYXS (     1)
+                              //temp_tensor->data_ptr_const()[(kernel_width * input_maps * kernel_count * y) + (input_maps * kernel_count * x) + (kernel_count * m) + s];
+                              //temp_tensor->data_ptr_const()[(kernel_count * kernel_width * kernel_height * m) +
+                              //                              (kernel_width * kernel_height * s) + (kernel_width * y) + x];
+                              //temp_tensor->data_ptr_const()[(kernel_count * kernel_width * kernel_height * m) +
+                              //                              (kernel_width * kernel_count * y) + (kernel_count * x) + s];
+                              //temp_tensor->data_ptr_const()[(input_maps * kernel_width * kernel_height * s) +
+                              //                              (kernel_width * input_maps * y) + (input_maps * x) + m];
+                        }
                       }
                     }
                   }
                 }
-
                 delete temp_tensor;
+              } else {
+                
+                LOGINFO << "Not transposing weights for " << layer_type;
+                input.read((char *) weight_tensor->data_ptr(),
+                           sizeof(Conv::datum) * kernel_count * kernel_width * kernel_height * input_maps);
               }
-            } else {
-              input.read((char *) weight_tensor->data_ptr(),
-                         sizeof(Conv::datum) * kernel_count * kernel_width * kernel_height * input_maps);
             }
 
             // If this is a yolo output layer, we need to move the weights around to support CN24's arrangement of outputs
             if(layer_type.compare("yolo_output") == 0) {
+              LOGINFO << "Moving weights around for YOLO output";
               Conv::Tensor* box_weights = new Conv::Tensor, *box_biases = new Conv::Tensor, *class_weights = new Conv::Tensor, *class_biases = new Conv::Tensor;
               Conv::JSON yolo_config_json = net_json["yolo_configuration"];
               unsigned int boxes_per_cell = yolo_config_json["boxes_per_cell"];
@@ -303,6 +392,10 @@ int main(int argc, char **argv) {
             input_maps = kernel_count;
           }
         }
+      }
+      
+      if(!net_input.eof()) {
+        LOGWARN << "Net input has not set EOF bit!";
       }
 
     } else if (command.compare(0, 5, "save ") == 0) {
