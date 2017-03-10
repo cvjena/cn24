@@ -190,6 +190,15 @@ bool BundleInputLayer::ForceLoadDetection(JSON &sample, unsigned int index) {
   return Segment::CopyDetectionSample(sample, index, &(data_output_->data), &(metadata_[index]), *class_manager_, Segment::SCALE);
 }
 
+bool BundleInputLayer::ForceLoadClassification(JSON &sample, unsigned int index) {
+#ifdef BUILD_OPENCL
+  data_output_->data.MoveToCPU (true);
+  localized_error_output_->data.MoveToCPU (true);
+#endif
+  localized_error_output_->data.Clear(1.0, index);
+  return Segment::CopyClassificationSample(sample, index, &(data_output_->data), &(label_output_->data), *class_manager_, Segment::SCALE);
+}
+
 void BundleInputLayer::ForceWeightsZero() {
   for(unsigned int index = 0; index < localized_error_output_->data.samples(); index++) {
     localized_error_output_->data.Clear(0.0, index);
