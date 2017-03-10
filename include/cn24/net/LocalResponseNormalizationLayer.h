@@ -32,6 +32,8 @@ public:
   LocalResponseNormalizationLayer(const unsigned int size,
                                   const datum alpha, const datum beta,
                                   const NormalizationMethod normalization_method);
+
+  explicit LocalResponseNormalizationLayer(JSON descriptor);
   
   // SimpleLayer implementations
   bool CreateOutputs (const std::vector< CombinedTensor* >& inputs,

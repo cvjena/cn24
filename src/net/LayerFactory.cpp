@@ -27,6 +27,7 @@
 #include "UpscaleLayer.h"
 #include "LayerFactory.h"
 #include "YOLODetectionLayer.h"
+#include "LocalResponseNormalizationLayer.h"
 
 namespace Conv {
 bool LayerFactory::IsValidDescriptor(std::string descriptor) {
@@ -171,6 +172,7 @@ Layer* LayerFactory::ConstructLayer(JSON descriptor)
   CONV_LAYER_TYPE("gradient_accumulation", GradientAccumulationLayer)
   CONV_LAYER_TYPE("resize", ResizeLayer)
   CONV_LAYER_TYPE("upscale", UpscaleLayer)
+  CONV_LAYER_TYPE("local_response_normalization", LocalResponseNormalizationLayer)
   CONV_LAYER_TYPE("hmax", HMaxActivationFunction)
   CONV_LAYER_TYPE("sparsity_relu", SparsityReLULayer)
   CONV_LAYER_TYPE("sparsity_loss", SparsityLossLayer)

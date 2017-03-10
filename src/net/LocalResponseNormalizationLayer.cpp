@@ -24,6 +24,19 @@ LocalResponseNormalizationLayer::
 
 }
 
+LocalResponseNormalizationLayer::
+  LocalResponseNormalizationLayer(JSON descriptor) :
+  SimpleLayer(descriptor) {
+  JSON_TRY_INT(size_, descriptor, "size", 5);
+  JSON_TRY_DATUM(alpha_, descriptor, "alpha", 0.0001);
+  JSON_TRY_DATUM(beta_, descriptor, "beta", 0.75);
+  normalization_method_ = ACROSS_CHANNELS;
+
+  LOGDEBUG << "Instance created, size: " << size_ << ", alpha: " << alpha_ 
+  << ", beta: " << beta_ << ", method: " << ((normalization_method_ == ACROSS_CHANNELS) ? "across" : "within");
+
+}
+
 bool LocalResponseNormalizationLayer::
   CreateOutputs(const std::vector< CombinedTensor* >& inputs,
   std::vector< CombinedTensor* >& outputs) {
