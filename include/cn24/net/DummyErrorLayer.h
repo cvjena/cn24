@@ -34,6 +34,8 @@ public:
 	}
   void FeedForward() { first_->delta.Clear(); }
   void BackPropagate() { }
+  
+  virtual bool IsDynamicTensorAware() { return true; }
 
   // Implementations for LossFunctionLayer
   datum CalculateLossFunction() { return (datum)0.0; }
