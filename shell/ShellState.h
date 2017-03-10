@@ -89,6 +89,8 @@ typedef CommandStatus (ShellState::*ShellFunction)(cargo_t cargo, int argc, char
 
   CN24_SHELL_FUNC(Train);
   CN24_SHELL_FUNC(Test);
+  
+  CN24_SHELL_FUNC(PredictImage);
 private:
   Bundle* DataTakeBundle(const std::string& name);
   Bundle* DataFindBundle(const std::string& name);
@@ -121,8 +123,9 @@ private:
     CN24_SHELL_CMD("experiment-begin", ExperimentBegin),
 
     CN24_SHELL_CMD("train", Train),
-    CN24_SHELL_CMD("test", Test)
+    CN24_SHELL_CMD("test", Test),
 
+    CN24_SHELL_CMD("predict-image", PredictImage)
   };
   
 public:
