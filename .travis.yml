@@ -56,7 +56,7 @@ before_script:
 script:
   - make
 # OpenCL on Mac OS X supports a maximum work group size of (1,1,1) on CPUs, so we only do a sanity check in that case
-  - if [ "$USE_CLBLAS" == "ON" ] && [ "$TRAVIS_OS_NAME" == "osx" ]; then ./listOpenCLDevices; else make test;fi
+  - if [ "$USE_CLBLAS" != "ON" ] || [ "$TRAVIS_OS_NAME" != "osx" ]; then make test;fi
 
 after_failure:
   - if [ "$USE_CLBLAS" != "ON" ] || [ "$TRAVIS_OS_NAME" != "osx" ]; then ctest -V --rerun-failed; fi
