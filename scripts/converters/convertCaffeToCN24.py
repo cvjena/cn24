@@ -37,6 +37,8 @@ hyper_json = {}
 # Iterate layers
 last_layer_name = ""
 input_layer_name = ""
+current_w = 0
+current_h = 0
 for layer_n in net_p.layer:
   name = layer_n.name
   layer = net.layer_dict[name]
@@ -68,24 +70,38 @@ for layer_n in net_p.layer:
     bias_blob.data.tofile(cnparam)
     
 
+    pad = 0
+    stride = 1
     # Write layer params to JSON
     layer_json["type"] = "convolution"
     layer_json["group"] = layer_n.convolution_param.group
     layer_json["kernels"] = layer_n.convolution_param.num_output
     layer_json["size"] = [layer_n.convolution_param.kernel_size[0],layer_n.convolution_param.kernel_size[0]]
+    kernel = layer_n.convolution_param.kernel_size[0]
     if len(layer_n.convolution_param.stride) > 0:
       layer_json["stride"] = [layer_n.convolution_param.stride[0],layer_n.convolution_param.stride[0]]
+      stride = layer_n.convolution_param.stride[0]
     if len(layer_n.convolution_param.pad) > 0:
       layer_json["pad"] = [layer_n.convolution_param.pad[0],layer_n.convolution_param.pad[0]]
+      pad = layer_n.convolution_param.pad[0]
+
+    current_h = (current_h + 2 * pad - kernel) / stride + 1
+    current_w = (current_w + 2 * pad - kernel) / stride + 1
 
   elif(layer.type == "Pooling"):
     layer_json["type"] = "advanced_maxpooling"
     layer_json["size"] = [layer_n.pooling_param.kernel_size,layer_n.pooling_param.kernel_size]
+    kernel = layer_n.pooling_param.kernel_size
     layer_json["stride"] = [layer_n.pooling_param.stride,layer_n.pooling_param.stride]
+    stride = layer_n.pooling_param.stride
+    pad = 0
     if layer_n.pooling_param.pool != 0:
       print 'Unknown pooling type:', layer_n.pooling_param.pool
 
+    current_h = (current_h + 2 * pad - kernel) / stride + 1
+    current_w = (current_w + 2 * pad - kernel) / stride + 1
   elif(layer.type == "InnerProduct"):
+      
     # Write layer name length
     np.ndarray(shape=(1),dtype=np.uint32, buffer=np.array(len(name))).tofile(cnparam)
     # Write parameter set size
@@ -95,10 +111,16 @@ for layer_n in net_p.layer:
 
     # Write weight (shape): samples, width, height, maps
     weight_blob = net.params[name][0]
-    np.ndarray(shape=(1),dtype=np.uint64, buffer=np.array(weight_blob.num)).tofile(cnparam)
-    np.ndarray(shape=(1),dtype=np.uint64, buffer=np.array(weight_blob.width)).tofile(cnparam)
-    np.ndarray(shape=(1),dtype=np.uint64, buffer=np.array(weight_blob.height)).tofile(cnparam)
-    np.ndarray(shape=(1),dtype=np.uint64, buffer=np.array(weight_blob.channels)).tofile(cnparam)
+    if current_h > 1 and current_w > 1:
+      np.ndarray(shape=(1),dtype=np.uint64, buffer=np.array(weight_blob.num)).tofile(cnparam)
+      np.ndarray(shape=(1),dtype=np.uint64, buffer=np.array(current_w)).tofile(cnparam)
+      np.ndarray(shape=(1),dtype=np.uint64, buffer=np.array(current_h)).tofile(cnparam)
+      np.ndarray(shape=(1),dtype=np.uint64, buffer=np.array(weight_blob.channels/ (current_w * current_h))).tofile(cnparam)
+    else:
+      np.ndarray(shape=(1),dtype=np.uint64, buffer=np.array(weight_blob.num)).tofile(cnparam)
+      np.ndarray(shape=(1),dtype=np.uint64, buffer=np.array(weight_blob.width)).tofile(cnparam)
+      np.ndarray(shape=(1),dtype=np.uint64, buffer=np.array(weight_blob.height)).tofile(cnparam)
+      np.ndarray(shape=(1),dtype=np.uint64, buffer=np.array(weight_blob.channels)).tofile(cnparam)
     # Write weight (buffer)
     weight_blob.data.tofile(cnparam)
     
@@ -113,7 +135,10 @@ for layer_n in net_p.layer:
     
     layer_json["type"] = "convolution"
     layer_json["kernels"] = layer_n.inner_product_param.num_output
-    layer_json["size"] = [1,1]
+    layer_json["size"] = [current_w,current_h]
+
+    current_w = 1
+    current_h = 1
 
   elif(layer.type == "Dropout"):
     layer_json["type"] = "dropout"
@@ -130,6 +155,8 @@ for layer_n in net_p.layer:
   elif(layer.type == "Input"):
     input_json["width"] = layer_n.input_param.shape[0].dim[2]
     input_json["height"] = layer_n.input_param.shape[0].dim[3]
+    current_w = layer_n.input_param.shape[0].dim[2]
+    current_h = layer_n.input_param.shape[0].dim[3]
     last_layer_name = name
     input_layer_name = name
     continue
