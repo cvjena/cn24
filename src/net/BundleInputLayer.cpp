@@ -40,7 +40,7 @@ BundleInputLayer::BundleInputLayer (JSON configuration,
   generator_ (seed), dist_ (0.0, 1.0), task_(task) {
   LOGDEBUG << "Instance created.";
 
-  if(task == DETECTION) {
+  if(task == DETECTION || task == CLASSIFICATION) {
     input_maps_ = 3;
   } else {
     FATAL("NIY");
@@ -98,7 +98,28 @@ bool BundleInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inpu
   if(task_ == SEMANTIC_SEGMENTATION) {
     FATAL("NIY")
   } else if (task_ == CLASSIFICATION) {
-    FATAL("NIY");
+    CombinedTensor *data_output =
+        new CombinedTensor(batch_size_, input_width_,
+                           input_height_, input_maps_);
+
+    unsigned int current_class_count = class_manager_->GetMaxClassId() + 1;
+    CombinedTensor *label_output =
+        new CombinedTensor(current_class_count,1,1,batch_size_);
+    label_output->is_dynamic = true;
+
+    CombinedTensor *helper_output =
+        new CombinedTensor(batch_size_);
+
+    CombinedTensor *localized_error_output =
+        new CombinedTensor(batch_size_);
+
+    label_output->metadata = new DatasetMetadataPointer[batch_size_];
+
+    outputs.push_back(data_output);
+    outputs.push_back(label_output);
+    outputs.push_back(helper_output);
+    outputs.push_back(localized_error_output);
+
   } else if(task_ == DETECTION) {
     CombinedTensor *data_output =
         new CombinedTensor(batch_size_, input_width_,
