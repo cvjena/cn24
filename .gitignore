@@ -31,3 +31,4 @@ thesis.ps
 .idea/*
 build
 ci/clBLAS
+cmake-build-debug
