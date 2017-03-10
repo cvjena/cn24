@@ -84,6 +84,53 @@ bool Segment::CopyDetectionMetadata(JSON& sample, unsigned int image_width, unsi
   return true;
 }
 
+bool Segment::CopyClassificationSample(JSON& sample, unsigned int target_index,
+  Tensor* data, Tensor* label, ClassManager& class_manager, Segment::CopyMode copy_mode)
+{
+  // Load image data
+  Tensor image_rgb;
+  image_rgb.LoadFromFile(sample["image_rpath"]);
+
+  // Copy data
+  bool data_success = Tensor::CopySample(image_rgb, 0, *data, target_index, copy_mode != NEVER_RESIZE, copy_mode == SCALE);
+  if(!data_success) {
+    LOGERROR << "Could not copy sample for " << sample["image_rpath"];
+    LOGERROR << "Tensor proportions: " << image_rgb;
+  }
+
+  bool label_success = true;
+  
+  // Copy label
+  if(sample.count("class") == 1 && sample["class"].is_string()) {
+    const std::string& class_name = sample["class"];
+    int class_id = class_manager.GetClassIdByName(class_name);
+    if(class_id == UNKNOWN_CLASS) {
+      LOGDEBUG << "Autoregistering class " << class_name;
+      if(!class_manager.RegisterClassByName(class_name, 0, 1)) {
+        LOGERROR << "Could not register class \"" << class_name << "\"";
+        return false;
+      }
+    }
+    
+    class_id = class_manager.GetClassIdByName(class_name);
+    
+    // See if tensor dimension are okay
+    if(label->maps() <= class_id) {
+      label->Resize(label->samples(), label->width(), label->height(), class_id + 1);
+      LOGDEBUG << "Extended label tensor";
+    }
+    
+    // Write label
+    label->Clear(0,target_index);
+    *(label->data_ptr(0,0,class_id,target_index)) = 1.0;
+  } else {
+    label_success = false;
+  }
+
+  return data_success && label_success;
+}
+
+
 JSON Segment::Serialize() {
   JSON serialized = JSON::object();
   JSON samples_array = JSON::array();
