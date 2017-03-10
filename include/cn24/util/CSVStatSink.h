@@ -29,13 +29,16 @@ namespace Conv
 {
 class CSVStatSink : public StatSink {
 public:
-  ~CSVStatSink() { if(csv_stream_ != nullptr) {csv_stream_->close(); delete csv_stream_; }}
+  explicit CSVStatSink(std::string preferred_filename = {}) : preferred_filename(preferred_filename) {}
+  virtual ~CSVStatSink() { if(csv_stream_ != nullptr) {csv_stream_->close(); delete csv_stream_; }}
   virtual void Initialize(std::vector<StatDescriptor*>& stat_descriptors);
   virtual void Process(HardcodedStats& hardcoded_stats, std::vector<Stat*>& stats);
   virtual void SetCurrentExperiment(std::string current_experiment);
   virtual void SetCurrentTestingDataset(unsigned int current_dataset);
 
+
 private:
+  std::string preferred_filename;
   std::vector<StatDescriptor*> stat_descriptors_;
   std::ofstream* csv_stream_ = nullptr;
   unsigned int current_dataset_;

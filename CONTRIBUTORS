@@ -9,6 +9,9 @@ Contributors from GitHub:
 FindSQLite3.CMake (New BSD License):
  Andreas Schneider
 
+FindReadline.CMake (BSD License):
+ Bro Project
+
 GetGitRevisionDescription.cmake (Boost License 1.0):
  Ryan A. Pavlik
 
@@ -22,3 +25,6 @@ nuklear (Public Domain):
 
 YOLO Framework (YOLO License):
  Joseph Redmon
+
+CARGO (MIT License):
+ Joakim Soderberg

@@ -15,6 +15,12 @@ namespace Conv {
 unsigned int StatAggregator::RegisterSink(StatSink* stat_sink)
 {
   stat_sinks_.push_back(stat_sink);
+
+  if(state_ != INIT) {
+    // If already initialized, tell the sink about the descriptors
+    stat_sink->Initialize(stat_descriptors_);
+  }
+
   return stat_sink_count_++;
 }
 

@@ -18,7 +18,7 @@ set(CN24_INC_DIRS "${CN24_SOURCE_DIR}/include" "${CN24_SOURCE_DIR}/include/cn24"
         "${CN24_SOURCE_DIR}/include/cn24/math" "${CN24_SOURCE_DIR}/include/cn24/factory"
         "${CN24_SOURCE_DIR}/include/private")
 SET(CN24_TES "${CN24_SOURCE_DIR}/tests")
-set(CN24_TOO "${CN24_SOURCE_DIR}/tools")
+set(CN24_SHE "${CN24_SOURCE_DIR}/shell")
 set(CN24_BSH "${CN24_SOURCE_DIR}/scripts")
 set(CN24_KER "${CN24_SOURCE_DIR}/kernels")
 set(CN24_LIBS "")
@@ -335,16 +335,16 @@ endif()
 message(STATUS "Final links: ${CN24_LIBS}")
 target_link_libraries(cn24 ${CN24_LIBS})
 
-# Tools
-# Recurse over files
-file(GLOB_RECURSE CN24_TOOL_SOURCES ${CN24_TOO}/*.cpp)
+# Shell
+file(GLOB_RECURSE CN24_SHELL_SOURCES ${CN24_SHE}/*.cpp)
+add_executable(cn24-shell ${CN24_SHELL_SOURCES} external/cargo/cargo.c external/cargo/cargo.h)
+include_directories(external/cargo)
+target_link_libraries(cn24-shell cn24 ${CN24_LIBS})
 
-foreach(TOOL_SOURCE ${CN24_TOOL_SOURCES})
-  get_filename_component(TOOL_NAME ${TOOL_SOURCE} NAME_WE)
-  add_executable(${TOOL_NAME} ${TOOL_SOURCE})
-  target_link_libraries(${TOOL_NAME} cn24 ${CN24_LIBS})
-  message(STATUS "Added ${TOOL_NAME} tool.")
-endforeach()
+# Readline for shell
+find_package(Readline REQUIRED)
+include_directories(${Readline_INCLUDE_DIR})
+target_link_libraries(cn24-shell ${Readline_LIBRARY})
 
 # Tests
 # Recurse over files

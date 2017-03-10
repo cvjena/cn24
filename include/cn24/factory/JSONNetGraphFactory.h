@@ -48,12 +48,29 @@ public:
     }
   }
 
+  unsigned int GetParallelBatchSize() {
+    if(hyperparameters_json_.count("batch_size_parallel") == 1 &&
+      hyperparameters_json_["batch_size_parallel"].is_number()) {
+      return hyperparameters_json_["batch_size_parallel"];
+    } else {
+      return 1;
+    }
+  }
+  
   JSON GetHyperparameters() {
     return hyperparameters_json_;
   }
 
   JSON GetDataInput() {
     return data_input_json_;
+  }
+  
+  Task GetTask() {
+    if(net_json_.count("task") == 1 && net_json_["task"].is_string()) {
+      return TaskFromString(net_json_["task"]);
+    } else {
+      return UNKNOWN;
+    }
   }
 
   bool AddLayers(NetGraph& graph, ClassManager* class_manager, unsigned int seed = 0);

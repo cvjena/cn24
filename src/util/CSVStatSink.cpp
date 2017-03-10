@@ -63,7 +63,11 @@ void CSVStatSink::SetCurrentExperiment(std::string current_experiment) {
   
   // Generate filename
   std::stringstream csv_filename_ss;
-  csv_filename_ss << "csv/" << current_experiment << ".csv";
+  if(preferred_filename.length() > 0) {
+    csv_filename_ss << preferred_filename;
+  } else {
+    csv_filename_ss << "csv/" << current_experiment << ".csv";
+  }
   std::string csv_filename=csv_filename_ss.str();
   
   // Open new stream
