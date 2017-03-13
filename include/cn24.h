@@ -80,6 +80,7 @@
 #include "cn24/net/ConcatenationLayer.h"
 #include "cn24/net/GradientAccumulationLayer.h"
 #include "cn24/net/SumLayer.h"
+#include "cn24/net/PreprocessingLayer.h"
 #include "cn24/net/Trainer.h"
 #include "cn24/net/NetGraph.h"
 #include "cn24/net/NetGraphNode.h"
