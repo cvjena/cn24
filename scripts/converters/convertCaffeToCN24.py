@@ -159,6 +159,7 @@ for layer_n in net_p.layer:
     current_h = layer_n.input_param.shape[0].dim[3]
     last_layer_name = name
     input_layer_name = name
+    print name, current_h, current_w
     continue
   else:
     print 'Unknown layer:', layer.type
@@ -173,13 +174,14 @@ for layer_n in net_p.layer:
       node_json["input"] = last_layer_name
   last_layer_name = name
   nodes_json[name] = node_json
+  print name, current_h, current_w
 
 # Piece together JSON structure
 net_json["output"] = last_layer_name
 net_json["nodes"] = nodes_json
 net_json["error_layer"] = "dummy"
 outer_json["net"] = net_json
-outer_json["input"] = input_json
+outer_json["data_input"] = input_json
 outer_json["hyperparameters"] = hyper_json
 
 # Write JSON to file

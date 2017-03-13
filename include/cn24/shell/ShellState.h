@@ -18,7 +18,7 @@
 #include <cn24.h>
 
 extern "C" {
-  #include "cargo.h"
+  #include "../../../external/cargo/cargo.h"
 }
 
 #include <map>
@@ -89,6 +89,8 @@ typedef CommandStatus (ShellState::*ShellFunction)(cargo_t cargo, int argc, char
 
   CN24_SHELL_FUNC(Train);
   CN24_SHELL_FUNC(Test);
+  
+  CN24_SHELL_FUNC(PredictImage);
 private:
   Bundle* DataTakeBundle(const std::string& name);
   Bundle* DataFindBundle(const std::string& name);
@@ -121,12 +123,10 @@ private:
     CN24_SHELL_CMD("experiment-begin", ExperimentBegin),
 
     CN24_SHELL_CMD("train", Train),
-    CN24_SHELL_CMD("test", Test)
+    CN24_SHELL_CMD("test", Test),
 
+    CN24_SHELL_CMD("predict-image", PredictImage)
   };
-  
-public:
-  
   
 private:
   enum State {
@@ -150,6 +150,13 @@ private:
 
 
   int global_random_seed = 19108128;
+  
+public:
+  inline State state() { return state_; }
+  inline NetGraph* graph() { return graph_; }
+  inline BundleInputLayer* input_layer() { return input_layer_; }
+  inline CombinedTensor* net_output() { return graph_->GetDefaultOutputNode()
+    ->output_buffers[0].combined_tensor; }
 };
 }
 

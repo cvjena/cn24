@@ -93,4 +93,6 @@
 #include "cn24/factory/JSONDatasetFactory.h"
 #include "cn24/factory/JSONOptimizerFactory.h"
 
+#include "cn24/shell/ShellState.h"
+
 #endif
