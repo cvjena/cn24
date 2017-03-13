@@ -44,6 +44,7 @@ CN24_SHELL_FUNC_IMPL(PredictImage) {
   // Load sample into net
   switch(input_layer_->GetTask()) {
     case DETECTION:
+      sample_json["boxes"] = JSON::array();
       input_layer_->ForceLoadDetection(sample_json, 0);
       break;
     case CLASSIFICATION:
@@ -71,8 +72,8 @@ CN24_SHELL_FUNC_IMPL(PredictImage) {
       }
       break;
     default:
-      LOGERROR << "Not implemented yet!";
-      return FAILURE;
+      LOGINFO << "Not implemented yet, but the prediction worked.";
+      break;
   }
   
   return SUCCESS;

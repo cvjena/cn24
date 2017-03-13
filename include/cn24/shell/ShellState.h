@@ -155,6 +155,8 @@ public:
   inline State state() { return state_; }
   inline NetGraph* graph() { return graph_; }
   inline BundleInputLayer* input_layer() { return input_layer_; }
+  inline CombinedTensor* net_output() { return graph_->GetDefaultOutputNode()
+    ->output_buffers[0].combined_tensor; }
 };
 }
 
