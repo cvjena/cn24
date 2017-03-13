@@ -16,7 +16,7 @@ set(CN24_INC "${CN24_SOURCE_DIR}/include")
 set(CN24_INC_DIRS "${CN24_SOURCE_DIR}/include" "${CN24_SOURCE_DIR}/include/cn24"
         "${CN24_SOURCE_DIR}/include/cn24/util" "${CN24_SOURCE_DIR}/include/cn24/net"
         "${CN24_SOURCE_DIR}/include/cn24/math" "${CN24_SOURCE_DIR}/include/cn24/factory"
-        "${CN24_SOURCE_DIR}/include/private")
+        "${CN24_SOURCE_DIR}/include/cn24/shell" "${CN24_SOURCE_DIR}/include/private")
 SET(CN24_TES "${CN24_SOURCE_DIR}/tests")
 set(CN24_SHE "${CN24_SOURCE_DIR}/shell")
 set(CN24_BSH "${CN24_SOURCE_DIR}/scripts")
@@ -132,7 +132,8 @@ endif()
 
 include_directories("${CN24_SOURCE_DIR}/external/json")
 include_directories("${CN24_SOURCE_DIR}/external/nuklear")
-set(CN24_SOURCES ${CN24_SOURCES} "${CN24_SOURCE_DIR}/external/nuklear/nuklear.cpp")
+include_directories("${CN24_SOURCE_DIR}/external/cargo")
+set(CN24_SOURCES ${CN24_SOURCES} "${CN24_SOURCE_DIR}/external/nuklear/nuklear.cpp" "${CN24_SOURCE_DIR}/external/cargo/cargo.c" "${CN24_SOURCE_DIR}/external/cargo/cargo.h")
 
 include_directories(${CN24_INC_DIRS})
 
@@ -337,8 +338,7 @@ target_link_libraries(cn24 ${CN24_LIBS})
 
 # Shell
 file(GLOB_RECURSE CN24_SHELL_SOURCES ${CN24_SHE}/*.cpp)
-add_executable(cn24-shell ${CN24_SHELL_SOURCES} external/cargo/cargo.c external/cargo/cargo.h)
-include_directories(external/cargo)
+add_executable(cn24-shell ${CN24_SHELL_SOURCES} )
 target_link_libraries(cn24-shell cn24 ${CN24_LIBS})
 
 # Readline for shell

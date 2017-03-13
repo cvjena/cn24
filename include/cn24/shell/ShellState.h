@@ -18,7 +18,7 @@
 #include <cn24.h>
 
 extern "C" {
-  #include "cargo.h"
+  #include "../../../external/cargo/cargo.h"
 }
 
 #include <map>
@@ -128,9 +128,6 @@ private:
     CN24_SHELL_CMD("predict-image", PredictImage)
   };
   
-public:
-  
-  
 private:
   enum State {
     NOTHING,
@@ -153,6 +150,11 @@ private:
 
 
   int global_random_seed = 19108128;
+  
+public:
+  inline State state() { return state_; }
+  inline NetGraph* graph() { return graph_; }
+  inline BundleInputLayer* input_layer() { return input_layer_; }
 };
 }
 
