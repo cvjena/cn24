@@ -18,7 +18,7 @@ SimpleLayer(configuration)
   JSON_TRY_DATUM(subtract, configuration, "subtract", 0);
   JSON_TRY_BOOL(do_mean_subtraction, configuration, "subtract_mean", false);
   
-  LOGINFO << "Initialized! M: " << multiply << ", S:" << subtract << ", SM: "
+  LOGDEBUG << "Initialized! M: " << multiply << ", S:" << subtract << ", SM: "
   << do_mean_subtraction;
 }
 
