@@ -642,7 +642,10 @@ void Tensor::MoveToCPU ( bool no_copy ) {
 }
 
 #else
-
+void Tensor::MoveToGPU ( bool no_copy ) {
+}
+void Tensor::MoveToCPU ( bool no_copy ) {
+}
 #endif
 
 std::size_t Tensor::Maximum ( std::size_t sample ) {
