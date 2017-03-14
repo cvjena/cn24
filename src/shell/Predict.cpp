@@ -65,6 +65,17 @@ CN24_SHELL_FUNC_IMPL(PredictImage) {
 #endif
   
   switch(input_layer_->GetTask()) {
+    case DETECTION:
+      {
+        DetectionMetadataPointer net_metadata = (DetectionMetadataPointer)(graph_->GetDefaultOutputNode()->output_buffers[0].combined_tensor->metadata[0]);
+        LOGINFO << "Detected " << net_metadata->size() << " objects:";
+        for(unsigned int i = 0; i < net_metadata->size(); i++) {
+          BoundingBox box = net_metadata->at(i);
+          std::string class_name = class_manager_->GetClassInfoById(box.c).first;
+          LOGINFO << "  Box " << i << ": " << class_name << " (" << box.score << ")";
+        }
+      }
+      break;
     case CLASSIFICATION:
       {
         int highest_class = net_output.PixelMaximum(0,0,0);
