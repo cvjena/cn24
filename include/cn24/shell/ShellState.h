@@ -15,7 +15,30 @@
 #ifndef CONV_SHELLSTATE_H
 #define CONV_SHELLSTATE_H
 
-#include <cn24.h>
+#include "../util/Tensor.h"
+#include "../util/Log.h"
+#include "../util/Config.h"
+#include "../util/StatAggregator.h"
+#include "../util/StatSink.h"
+#include "../util/CSVStatSink.h"
+#include "../util/ConsoleStatSink.h"
+#include "../util/Bundle.h"
+#include "../util/Segment.h"
+#include "../util/PathFinder.h"
+
+#include "../net/LayerFactory.h"
+#include "../net/NetGraph.h"
+#include "../net/NetGraphNode.h"
+#include "../net/Trainer.h"
+#include "../net/BundleInputLayer.h"
+#include "../net/StatLayer.h"
+#include "../net/DetectionStatLayer.h"
+#include "../net/BinaryStatLayer.h"
+#include "../net/ConfusionMatrixLayer.h"
+
+#include "../factory/JSONDatasetFactory.h"
+#include "../factory/JSONNetGraphFactory.h"
+#include "../factory/JSONOptimizerFactory.h"
 
 extern "C" {
   #include "../../../external/cargo/cargo.h"
