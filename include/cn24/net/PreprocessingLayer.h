@@ -28,6 +28,12 @@ private:
   datum multiply = 1;
   datum subtract = 0;
   bool do_mean_subtraction = false;
+  bool opencv_channel_swap = false;
+  bool do_mean_image = false;
+  int crop_x = 0;
+  int crop_y = 0;
+  
+  CombinedTensor* mean_image_ = nullptr;
 };
 
 }
