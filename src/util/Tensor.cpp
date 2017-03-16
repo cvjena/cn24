@@ -34,6 +34,8 @@
 #include "TensorRegistry.h"
 #include "CLHelper.h"
 
+#include "base64_default_rfc4648.hpp"
+
 namespace Conv {
 
 Tensor::Tensor(bool ignore, const std::string& owner) : owner(owner) {
@@ -840,6 +842,60 @@ std::ostream& operator<< ( std::ostream& output, const Tensor& tensor ) {
   ss << "(" << tensor.samples() << "s@" << tensor.width() <<
          "x" << tensor.height() << "x" << tensor.maps() << "m)";
   return output << ss.str();
+}
+
+bool Tensor::operator==(const Tensor& rhs) const
+{
+  if(elements() == rhs.elements()) {
+    // Check each element
+    for(std::size_t e = 0; e < elements(); e++) {
+      // This should not be used for authentication purposes :D
+      if ((*this)(e) != rhs(e))
+        return false;
+    }
+    return true;
+  } else {
+    // Can not possibly be equal
+    return false;
+  }
+}
+
+
+std::string Tensor::ToBase64(const int sample)
+{
+  MoveToCPU();
+  if(sample >= 0) {
+    std::size_t elements_per_sample = elements_ / samples_;
+    return base64::encode((const uint8_t*)data_ptr_const(0,0,0,sample), elements_per_sample * sizeof(datum));
+  } else {
+    return base64::encode((const uint8_t*)data_ptr_, elements_ * sizeof(datum));
+  }
+}
+
+bool Tensor::FromBase64(const std::string& base64_, const int sample)
+{
+  MoveToCPU();
+    std::size_t max_elements = base64::decoded_max_size(base64_.length());
+  if(sample >= 0) {
+    std::size_t elements_per_sample = elements_ / samples_;
+    if((elements_per_sample * sizeof(datum)) + 4 > max_elements) { 
+      std::size_t decoded = base64::decode((uint8_t*)data_ptr(0,0,0,sample), max_elements,
+        base64_);
+      if(decoded == elements_per_sample * sizeof(datum))
+        return true;
+      else return false;
+    } else
+    return false;
+  } else {
+    if((elements_ * sizeof(datum)) + 4 > max_elements) { 
+      std::size_t decoded = base64::decode((uint8_t*)data_ptr_, max_elements,
+        base64_);
+      if(decoded == elements_ * sizeof(datum))
+        return true;
+      else return false;
+    } else
+    return false;
+  }
 }
 
 

@@ -133,6 +133,7 @@ endif()
 include_directories("${CN24_SOURCE_DIR}/external/json")
 include_directories("${CN24_SOURCE_DIR}/external/nuklear")
 include_directories("${CN24_SOURCE_DIR}/external/cargo")
+include_directories("${CN24_SOURCE_DIR}/external/cppcodec")
 set(CN24_SOURCES ${CN24_SOURCES} "${CN24_SOURCE_DIR}/external/nuklear/nuklear.cpp" "${CN24_SOURCE_DIR}/external/cargo/cargo.c" "${CN24_SOURCE_DIR}/external/cargo/cargo.h")
 
 include_directories(${CN24_INC_DIRS})

@@ -7,14 +7,17 @@
 
 #include "Config.h"
 #include "Test.h"
+#include "Tensor.h"
 
 namespace Conv {
   template void AssertEqual<datum>(datum expected, datum actual, std::string description);
   template void AssertEqual<int>(int expected, int actual, std::string description);
   template void AssertEqual<bool>(bool expected, bool actual, std::string description);
+  template void AssertEqual<Tensor&>(Tensor& expected, Tensor& actual, std::string description);
   template void AssertNotEqual<datum>(datum expected, datum actual, std::string description);
   template void AssertNotEqual<int>(int expected, int actual, std::string description);
   template void AssertNotEqual<bool>(bool expected, bool actual, std::string description);
+  template void AssertNotEqual<Tensor&>(Tensor& expected, Tensor& actual, std::string description);
   template void AssertLess<datum>(datum expected, datum actual, std::string description);
   template void AssertLess<int>(int expected, int actual, std::string description);
   template void AssertGreater<datum>(datum expected, datum actual, std::string description);

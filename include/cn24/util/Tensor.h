@@ -42,6 +42,9 @@ std::ostream& operator<< (std::ostream& output, const Tensor& tensor);
 
 class Tensor {
 public:
+  bool operator== (const Tensor& rhs) const;
+  bool operator!= (const Tensor& rhs) { return !(*(this) == rhs); }
+  
   /**
    * @brief Constructs an empty Tensor of zero size.
    */
@@ -156,7 +159,21 @@ public:
    * @param convert Convert to byte
    */
   void Serialize (std::ostream& output, bool convert = false);
-
+  
+  /**
+   * @brief Serializes the Tensor to base64
+   * 
+   * @returns base64 representation of the Tensor
+   */
+  std::string ToBase64(const int sample = -1);
+  
+  /**
+   * @brief Deserializes a Tensor from base64
+   * 
+   * @returns True on success
+   */
+  bool FromBase64(const std::string& base64, const int sample = -1);
+  
   /**
    * @brief Deserializes from the stream.
    *
