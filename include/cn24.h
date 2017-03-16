@@ -96,4 +96,5 @@
 
 #include "cn24/shell/ShellState.h"
 
+namespace CN24 = Conv;
 #endif

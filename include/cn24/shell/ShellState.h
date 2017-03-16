@@ -175,7 +175,7 @@ private:
   int global_random_seed = 19108128;
   
 public:
-  inline State state() { return state_; }
+  inline const State state() const { return state_; }
   inline NetGraph* graph() { return graph_; }
   inline BundleInputLayer* input_layer() { return input_layer_; }
   inline CombinedTensor* net_output() { return graph_->GetDefaultOutputNode()
