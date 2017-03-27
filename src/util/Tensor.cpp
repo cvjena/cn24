@@ -727,7 +727,7 @@ void Tensor::LoadFromFile ( const std::string& filename ) {
 
 #endif
 
-  if ( filename.compare ( filename.length() - 3, 3, "Tensor" ) == 0 ) {
+  if ( filename.compare ( filename.length() - 6, 6, "Tensor" ) == 0 ) {
     std::ifstream input_image_file ( filename, std::ios::in | std::ios::binary );
 
     if ( !input_image_file.good() )
@@ -770,7 +770,7 @@ void Tensor::WriteToFile ( const std::string& filename ) {
 
 #endif
 
-  if ( filename.compare ( filename.length() - 3, 3, "Tensor" ) == 0 ) {
+  if ( filename.compare ( filename.length() - 6, 6, "Tensor" ) == 0 ) {
     std::ofstream output_image_file ( filename, std::ios::out | std::ios::binary );
 
     if ( !output_image_file.good() )
