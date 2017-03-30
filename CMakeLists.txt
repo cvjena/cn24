@@ -172,7 +172,7 @@ endif()
 
 set(CN24_BUILD_OPENCV OFF CACHE BOOL "Build CN24 with OpenCV support")
 if(CN24_BUILD_OPENCV)
-  find_package(OpenCV)
+  find_package(OpenCV REQUIRED core videoio)
   if(OpenCV_FOUND)
     include_directories(${OpenCV_INCLUDE_DIR})
     set(CN24_LIBS ${CN24_LIBS} ${OpenCV_LIBS})

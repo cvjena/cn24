@@ -26,6 +26,7 @@
 #include "cn24/util/ListTensorStream.h"
 #include "cn24/util/PNGUtil.h"
 #include "cn24/util/JPGUtil.h"
+#include "cn24/util/VideoUtil.h"
 #include "cn24/util/Log.h"
 #include "cn24/util/KITTIData.h"
 #include "cn24/util/Init.h"
