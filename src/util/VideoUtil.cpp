@@ -30,7 +30,7 @@ struct VideoUtilPimpl {
   VideoUtilPimpl(const std::string& filename) : width(0), height(0), frames(0) {}
 #endif
 };
-VideoUtil::VideoUtil(const std::string& filename) {
+VideoUtil::VideoUtil(const std::string& filename) : filename_(filename) {
   pimpl_ = new VideoUtilPimpl(filename);
 #ifdef BUILD_OPENCV
   if (!pimpl_->capture.isOpened()) {
@@ -50,6 +50,36 @@ VideoUtil::VideoUtil(const std::string& filename) {
 
 VideoUtil::~VideoUtil() {
   delete pimpl_;
+}
+
+bool VideoUtil::ExtractFrame(unsigned int frame, uint8_t* data) {
+#ifdef BUILD_OPENCV
+  if(frame >= pimpl_->frames) {
+    last_error_ = "Requested frame out of bounds";
+    return false;
+  }
+
+  // Seek to frame
+  pimpl_->capture.set(CV_CAP_PROP_POS_FRAMES, (double)frame);
+
+  // Check for null pointer
+  if(data == nullptr) {
+    last_error_ = "Null pointer for target data supplied!";
+    return false;
+  }
+
+  // Get frame
+  cv::Mat mat;
+  pimpl_->capture >> mat;
+
+  // Copy to image
+  std::memcpy(data, mat.data, sizeof(uint8_t) * 3 * pimpl_->width * pimpl_->height);
+
+  return true;
+#else
+  last_error_ = "OpenCV support was not compiled into CN24.";
+  return false;
+#endif
 }
 
 bool VideoUtil::ExtractFrame(unsigned int frame, Tensor &tensor, unsigned int sample) {

@@ -36,11 +36,14 @@ public:
   unsigned int height() const;
 
   bool ExtractFrame(unsigned int frame, Tensor& tensor, unsigned int sample);
+  bool ExtractFrame(unsigned int frame, uint8_t* data);
 
   const std::string& last_error() const { return last_error_; }
+  const std::string& filename() const { return filename_; }
 private:
   VideoUtilPimpl* pimpl_;
   std::string last_error_ = "OK";
+  std::string filename_;
 };
 
 
