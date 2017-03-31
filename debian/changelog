@@ -1,0 +1,5 @@
+cn24 (3.0.0-SNAPSHOT-1) unstable; urgency=medium
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- Clemens-Alexander Brust <clemens-alexander.brust@uni-jena.de>  Fri, 31 Mar 2017 12:44:07 +0000
