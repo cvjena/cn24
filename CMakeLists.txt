@@ -304,7 +304,7 @@ if(CN24_BUILD_MKL)
   add_definitions("-DBLAS_MKL")
 endif()
 
-set(CN24_BUILD_LIBARCHIVE ON CACHE BOOL "Build CN24 with libarchive support")
+set(CN24_BUILD_LIBARCHIVE OFF CACHE BOOL "Build CN24 with libarchive support")
 if(CN24_BUILD_LIBARCHIVE)
   find_package(LibArchive)
   if(LibArchive_FOUND)

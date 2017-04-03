@@ -12,6 +12,10 @@
 int main() {
   Conv::System::Init();
 
+#ifndef BUILD_LIBARCHIVE
+  LOGEND;
+  return 0;
+#else
   const unsigned int test_length = 1024;
   const std::string test_filename = "tmp_test_memmappedfile";
   uint8_t* test_sequence = new uint8_t[test_length];
@@ -59,4 +63,5 @@ int main() {
   delete[] test_sequence;
   LOGEND;
   return 0;
+#endif
 }

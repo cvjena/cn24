@@ -22,7 +22,11 @@
 
 #ifdef __GNUC__
 extern "C" {
+
+#ifndef __MINGW64__
 #include <execinfo.h>
+#endif
+
 #include <unistd.h>
 }
 #endif
@@ -76,7 +80,7 @@ inline std::string methodName (const std::string& prettyFunction) {
 
 #define LOGEND {std::cout << std::endl; std::cerr << std::endl;}
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__MINGW64__)
 #define FATAL(x) { LOGERROR << "FATAL: " << x << std::endl;\
   void *frames[10];\
   size_t size;\
