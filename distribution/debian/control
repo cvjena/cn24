@@ -1,7 +1,7 @@
 Source: cn24
 Priority: optional
 Maintainer: Clemens-Alexander Brust <clemens-alexander.brust@uni-jena.de>
-Build-Depends: debhelper (>=9), cmake, opencl-headers, ocl-icd-libopencl1, ocl-icd-opencl-dev, libpng12-dev, libjpeg-dev
+Build-Depends: debhelper (>=9), cmake, opencl-headers, ocl-icd-libopencl1, ocl-icd-opencl-dev, libpng12-dev, libjpeg-dev, libreadline6-dev, libclblas-dev
 Standards-Version: 3.9.6
 Section: libs
 Homepage: https://github.com/cvjena/cn24
@@ -14,5 +14,5 @@ Description: CN24 Deep Learning Framework (development package)
 
 Package: cn24
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, ocl-icd-libopencl1, libpng12, libjpeg
+Depends: ${shlibs:Depends}, ${misc:Depends}, ocl-icd-libopencl1, libpng12-0, libjpeg8, readline-common, libclblas2
 Description: CN24 Deep Learning Framework
