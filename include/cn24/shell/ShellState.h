@@ -41,7 +41,7 @@
 #include "../factory/JSONOptimizerFactory.h"
 
 extern "C" {
-  #include "../../../external/cargo/cargo.h"
+  #include "../external/cargo.h"
 }
 
 #include <map>

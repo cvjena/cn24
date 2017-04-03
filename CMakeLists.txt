@@ -16,7 +16,9 @@ set(CN24_INC "${CN24_SOURCE_DIR}/include")
 set(CN24_INC_DIRS "${CN24_SOURCE_DIR}/include" "${CN24_SOURCE_DIR}/include/cn24"
         "${CN24_SOURCE_DIR}/include/cn24/util" "${CN24_SOURCE_DIR}/include/cn24/net"
         "${CN24_SOURCE_DIR}/include/cn24/math" "${CN24_SOURCE_DIR}/include/cn24/factory"
-        "${CN24_SOURCE_DIR}/include/cn24/shell" "${CN24_SOURCE_DIR}/include/private")
+        "${CN24_SOURCE_DIR}/include/cn24/shell" "${CN24_SOURCE_DIR}/include/private"
+        "${CN24_SOURCE_DIR}/include/private/cppcodec" "${CN24_SOURCE_DIR}/include/cn24/external" 
+        "${CN24_SOURCE_DIR}/include/cn24/external/json")
 SET(CN24_TES "${CN24_SOURCE_DIR}/tests")
 set(CN24_SHE "${CN24_SOURCE_DIR}/shell")
 set(CN24_BSH "${CN24_SOURCE_DIR}/scripts")
@@ -113,7 +115,7 @@ endif()
 # The library comes first
 # Recurse over files
 file(GLOB_RECURSE CN24_SOURCES ${CN24_SRC}/*.cpp)
-file(GLOB_RECURSE CN24_HEADERS ${CN24_INC}/*.h)
+file(GLOB_RECURSE CN24_HEADERS ${CN24_INC}/*.h ${CN24_INC}/*.hpp)
 message(STATUS "Headers: ${CN24_HEADERS}")
 
 set(CN24_VERBOSE OFF CACHE BOOL "Enable CN24 verbose debug output")
@@ -124,17 +126,13 @@ endif()
 
 set(CN24_BUILD_SQLITE3 OFF CACHE BOOL "Build CN24 with SQLITE3 logging support")
 if(CN24_BUILD_SQLITE3)
-  include_directories("${CN24_SOURCE_DIR}/external/sqlite3")
-  set(CN24_SOURCES ${CN24_SOURCES} "${CN24_SOURCE_DIR}/external/sqlite3/sqlite3.c")
+  include_directories("${CN24_SOURCE_DIR}/src/external/sqlite3")
+  set(CN24_SOURCES ${CN24_SOURCES} "${CN24_SOURCE_DIR}/src/external/sqlite3/sqlite3.c")
   add_definitions("-DBUILD_SQLITE3")
   message(STATUS "Using integrated SQLite3")
 endif()
 
-include_directories("${CN24_SOURCE_DIR}/external/json")
-include_directories("${CN24_SOURCE_DIR}/external/nuklear")
-include_directories("${CN24_SOURCE_DIR}/external/cargo")
-include_directories("${CN24_SOURCE_DIR}/external/cppcodec")
-set(CN24_SOURCES ${CN24_SOURCES} "${CN24_SOURCE_DIR}/external/nuklear/nuklear.cpp" "${CN24_SOURCE_DIR}/external/cargo/cargo.c" "${CN24_SOURCE_DIR}/external/cargo/cargo.h")
+set(CN24_SOURCES ${CN24_SOURCES} "${CN24_SOURCE_DIR}/src/external/cargo/cargo.c")
 
 include_directories(${CN24_INC_DIRS})
 
@@ -316,20 +314,6 @@ if(CN24_BUILD_LIBARCHIVE)
     add_definitions("-DBUILD_LIBARCHIVE")
   else()
     message(STATUS "LibArchive not found!")
-  endif()
-endif()
-
-set(CN24_BUILD_GUI ON CACHE BOOL "Build CN24 with GTK+ support")
-if(CN24_BUILD_GUI)
-  find_package(X11)
-  if(X11_FOUND)
-    include_directories(${X11_INCLUDE_DIR})
-    add_definitions("-DBUILD_GUI")
-    add_definitions("-DBUILD_GUI_X11")
-    set(CN24_LIBS ${CN24_LIBS} ${X11_LIBRARIES})
-    message(STATUS "X11 found, building GUI")
-  else()
-    message(STATUS "X11 not found, not building GUI")
   endif()
 endif()
 
