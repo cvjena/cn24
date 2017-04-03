@@ -5,10 +5,17 @@
  * For licensing information, see the LICENSE file included with this project.
  */
 #include <iostream>
+#include <fstream>
 
 #ifdef BUILD_PNG
 #include <png.h>
 #endif
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 #include "Config.h"
 #include "Log.h"
@@ -44,10 +51,54 @@ void PNGReadFromStream (png_structp png_handle, png_bytep data,
 void PNGWriteToStream (png_structp png_handle, png_bytep data, png_size_t length);
 #endif
 
+void PNGUtil::WriteFunc(void *context, void *data, int size) {
+  std::ostream* stream = (std::ostream*)context;
+  stream->write((const char*)data, size);
+}
+
 bool PNGUtil::LoadFromStream ( std::istream& stream, Tensor& tensor ) {
 #ifndef BUILD_PNG
-  LOGERROR << "PNG is not supported by this build!";
-  return false;
+  // Fall back to STBI
+  int width, height, channels;
+
+  // Seek to end to find file size
+  stream.seekg(0, std::ios::end);
+  std::streamsize file_size = stream.tellg();
+
+  // Rewind stream and load
+  stbi_uc* stream_buffer = new stbi_uc[file_size];
+  stream.seekg(0, std::ios::beg);
+  stream.read((char*)stream_buffer, file_size);
+
+  // Call STBI
+  unsigned char* data = stbi_load_from_memory(stream_buffer, file_size, &width, &height, &channels, 3);
+  if(data == nullptr) {
+    LOGERROR << "Could not load image: " << stbi_failure_reason();
+    delete[] stream_buffer;
+    return false;
+  }
+
+  tensor.Resize(1, width, height, 3);
+  datum* target = tensor.data_ptr();
+
+  // We need to realign the color data because our tensor channels are separate
+  // Also we need to convert from unsigned char to our custom datum type
+  for ( std::size_t channel = 0; channel < channels; channel++ ) {
+    for ( std::size_t y = 0; y < height; y++ ) {
+      std::size_t rc_offset = tensor.Offset ( 0, y, channel, 0 );
+
+      for ( std::size_t x = 0; x < width; x++ ) {
+        stbi_uc pixel = data[ ( width * channels * y ) +
+                                     ( channels * x ) + channel];
+        const datum v = DATUM_FROM_UCHAR ( pixel );
+        target[rc_offset + x] = v;
+      }
+    }
+  }
+
+  delete[] stream_buffer;
+  stbi_image_free(data);
+  return true;
 #else
 
   // Check the header for a valid signature
@@ -197,8 +248,29 @@ bool PNGUtil::LoadFromStream ( std::istream& stream, Tensor& tensor ) {
 
 bool PNGUtil::WriteToStream ( std::ostream& stream, Tensor& tensor ) {
 #ifndef BUILD_PNG
-  LOGERROR << "PNG is not supported by this build!";
-  return false;
+  int width = tensor.width(); int height = tensor.height();
+
+  stbi_uc* data = new stbi_uc[width * height * 3];
+  for(unsigned int y = 0; y < tensor.height(); y++) {
+    for(unsigned int x = 0; x < tensor.width(); x++) {
+      data[3 * tensor.width() * y + 3 * x + 0] = UCHAR_FROM_DATUM(
+	  *tensor.data_ptr_const(x,y,0,0) );
+      data[3 * tensor.width() * y + 3 * x + 1] = UCHAR_FROM_DATUM(
+	  *tensor.data_ptr_const(x,y,tensor.maps() == 3 ? 1 : 0,0) );
+      data[3 * tensor.width() * y + 3 * x + 2] = UCHAR_FROM_DATUM(
+	  *tensor.data_ptr_const(x,y,tensor.maps() == 3 ? 2 : 0,0) );
+    }
+  }
+
+  int result = stbi_write_png_to_func(PNGUtil::WriteFunc, &stream, width, height, 3, data, 0);
+  if(result == 0) {
+    LOGERROR << "Error encountered: " << stbi_failure_reason();
+    delete[] data;
+    return false;
+  }
+
+  delete[] data;
+  return true;
 #else
   if ( tensor.samples() != 1 ) {
     LOGERROR << "Cannot write PNGs with more than 1 sample!";

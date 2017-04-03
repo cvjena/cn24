@@ -699,8 +699,6 @@ std::size_t Tensor::PixelMaximum ( std::size_t x, std::size_t y, std::size_t sam
 
 
 void Tensor::LoadFromFile ( const std::string& filename ) {
-#ifdef BUILD_PNG
-
   if ( ( filename.compare ( filename.length() - 3, 3, "png" ) == 0 )
        || ( filename.compare ( filename.length() - 3, 3, "PNG" ) == 0 )
      ) {
@@ -713,7 +711,6 @@ void Tensor::LoadFromFile ( const std::string& filename ) {
     return;
   }
 
-#endif
 #ifdef BUILD_JPG
 
   if ( ( filename.compare ( filename.length() - 3, 3, "jpg" ) == 0 )
@@ -741,8 +738,6 @@ void Tensor::LoadFromFile ( const std::string& filename ) {
 }
 
 void Tensor::WriteToFile ( const std::string& filename ) {
-#ifdef BUILD_PNG
-
   if ( ( filename.compare ( filename.length() - 3, 3, "png" ) == 0 )
        || ( filename.compare ( filename.length() - 3, 3, "PNG" ) == 0 )
      ) {
@@ -756,7 +751,6 @@ void Tensor::WriteToFile ( const std::string& filename ) {
     return;
   }
 
-#endif
 #ifdef BUILD_JPG
 
   if ( ( filename.compare ( filename.length() - 3, 3, "jpg" ) == 0 )

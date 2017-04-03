@@ -43,6 +43,8 @@ public:
    * @returns True on success, false otherwise
    */
   static bool WriteToStream (std::ostream& stream, Tensor& tensor);
+
+  static void WriteFunc(void* context, void* data, int size);
 };
 
 
