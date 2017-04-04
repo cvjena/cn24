@@ -26,7 +26,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 LicenseFile={#SourcePath}..\..\..\LICENSE
 OutputDir={#SourcePath}\build
-OutputBaseFilename=setup
+OutputBaseFilename=cn24-setup
 Compression=lzma
 SolidCompression=yes
 ChangesEnvironment=yes
@@ -39,10 +39,16 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Files]
 Source: "{#SourcePath}..\dist-tmp\cpu\*"; DestDir: "{app}"; Flags: ignoreversion; Components: cpu_only
 Source: "{#SourcePath}..\dist-tmp\gpu\*"; DestDir: "{app}"; Flags: ignoreversion; Components: opencl_clblas
+Source: "{#SourcePath}..\dist-tmp\gpu-cv\*"; DestDir: "{app}"; Flags: ignoreversion; Components: opencl_clblas_cv
 Source: "{#SourcePath}..\..\..\include\*"; DestDir: "{app}\include"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: devel_stuff
-Source: "{#SourcePath}..\..\..\kernels\*"; DestDir: "{commonappdata}\CN24\kernels"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: opencl_clblas
+Source: "{#SourcePath}..\..\..\kernels\*"; DestDir: "{commonappdata}\CN24\kernels"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: opencl_clblas opencl_clblas_cv
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
-Source: "{#SourcePath}..\packages\clblas\bin\clBLAS.dll"; DestDir: "{app}"; Components: opencl_clblas
+Source: "{#SourcePath}..\packages\clblas\bin\clBLAS.dll"; DestDir: "{app}"; Components: opencl_clblas opencl_clblas_cv
+Source: "{#SourcePath}..\packages\opencv\build2\bin\libopencv_core320.dll"; DestDir: "{app}"; Components: opencl_clblas_cv
+Source: "{#SourcePath}..\packages\opencv\build2\bin\libopencv_videoio320.dll"; DestDir: "{app}"; Components: opencl_clblas_cv
+Source: "{#SourcePath}..\packages\opencv\build2\bin\libopencv_imgproc320.dll"; DestDir: "{app}"; Components: opencl_clblas_cv
+Source: "{#SourcePath}..\packages\opencv\build2\bin\libopencv_imgcodecs320.dll"; DestDir: "{app}"; Components: opencl_clblas_cv
+Source: "{#SourcePath}..\packages\opencv\sources\3rdparty\ffmpeg\opencv_ffmpeg_64.dll"; DestDir: "{app}"; Components: opencl_clblas_cv
 Source: "C:\msys64\mingw64\bin\libgcc_s_seh-1.dll"; DestDir: "{app}"
 Source: "C:\msys64\mingw64\bin\libstdc++-6.dll"; DestDir: "{app}"
 Source: "C:\msys64\mingw64\bin\libreadline7.dll"; DestDir: "{app}"
@@ -59,10 +65,11 @@ Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Flags: nowait postinstall skipifsilent; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"
-Filename: "{tmp}\vc_redist.x64.exe"; Components: opencl_clblas; Check: VCRedistNeedsInstall
+Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /passive /norestart"; Components: opencl_clblas opencl_clblas_cv; Check: VCRedistNeedsInstall
 
 [Components]
-Name: "opencl_clblas"; Description: "CN24 with OpenCL/clBLAS support"; Types: full; Flags: exclusive
+Name: "opencl_clblas_cv"; Description: "CN24 with OpenCL/clBLAS and OpenCV support"; Types: full; Flags: exclusive
+Name: "opencl_clblas"; Description: "CN24 with OpenCL/clBLAS support"; Flags: exclusive
 Name: "cpu_only"; Description: "CN24 for CPUs only"; Flags: exclusive
 Name: "devel_stuff"; Description: "Development Files"; Types: full
 
