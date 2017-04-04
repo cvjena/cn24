@@ -14,7 +14,9 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
-#elif defined(BUILD_WIN32)
+#endif
+#ifdef BUILD_WIN32
+#include <Windows.h>
 #include <Shlobj.h>
 #endif
 
@@ -41,6 +43,30 @@ std::string PathFinder::FindPath(std::string path, std::string folder_hint) {
   if(winfolderwithhint_path.length() > 0)
     return winfolderwithhint_path;
 
+  std::string globalfolder_path = FindPathInternal(path, "/usr/share/cn24/");
+  if(globalfolder_path.length() > 0)
+    return globalfolder_path;
+
+  std::string globalwithhint_path = FindPathInternal(path, std::string("/usr/share/cn24/") + folder_hint);
+  if(globalwithhint_path.length() > 0)
+    return globalwithhint_path;
+
+#ifdef BUILD_WIN32
+  WCHAR windows_cn24_path[MAX_PATH];
+  if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL, 0, windows_cn24_path))) {
+    std::wstring windows_cn24_path_str = windows_cn24_path;
+    std::string cn24_path = std::string(windows_cn24_path_str.begin(), windows_cn24_path_str.end()) + "/CN24";
+
+    std::string winglobalfolder_path = FindPathInternal(path, cn24_path);
+    if(winglobalfolder_path.length() > 0)
+      return winglobalfolder_path;
+
+    std::string winglobalwithhint_path = FindPathInternal(path, cn24_path + folder_hint);
+    if(winglobalwithhint_path.length() > 0)
+      return winglobalwithhint_path;
+  }
+#endif
+
   return "";
 }
 
@@ -54,7 +80,14 @@ std::string PathFinder::FindPathInternal(std::string path, std::string folder_hi
     }
   }
 
-#ifdef BUILD_POSIX
+#ifdef BUILD_WIN32
+  std::string home_path = "";
+  WCHAR windows_home_path[MAX_PATH];
+  if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_PROFILE, NULL, 0, windows_home_path))) {
+    std::wstring windows_home_path_str = windows_home_path;
+    home_path = std::string(windows_home_path_str.begin(), windows_home_path_str.end());
+  }
+#elif defined(BUILD_POSIX)
   // Find home directory
   const char* posix_home_dir = getenv("HOME");
   if(!posix_home_dir) {
@@ -63,15 +96,7 @@ std::string PathFinder::FindPathInternal(std::string path, std::string folder_hi
       posix_home_dir = "";
     }
   }
-
   std::string home_path = posix_home_dir;
-#elif defined(BUILD_WIN32)
-  std::string home_path = "";
-  WCHAR windows_home_path[MAX_PATH];
-  if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_PROFILE, NULL, 0, windows_home_path))) {
-    std::wstring windows_home_path_str = windows_home_path;
-    home_path = std::string(windows_home_path_str.begin(), windows_home_path_str.end());
-  }
 #endif
 
   // 2. See if we can replace a tilde with the home folder
