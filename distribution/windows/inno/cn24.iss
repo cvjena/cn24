@@ -49,11 +49,7 @@ Source: "{#SourcePath}..\packages\opencv\build2\bin\libopencv_videoio320.dll"; D
 Source: "{#SourcePath}..\packages\opencv\build2\bin\libopencv_imgproc320.dll"; DestDir: "{app}"; Components: opencl_clblas_cv
 Source: "{#SourcePath}..\packages\opencv\build2\bin\libopencv_imgcodecs320.dll"; DestDir: "{app}"; Components: opencl_clblas_cv
 Source: "{#SourcePath}..\packages\opencv\sources\3rdparty\ffmpeg\opencv_ffmpeg_64.dll"; DestDir: "{app}"; Components: opencl_clblas_cv
-Source: "C:\msys64\mingw64\bin\libgcc_s_seh-1.dll"; DestDir: "{app}"
-Source: "C:\msys64\mingw64\bin\libstdc++-6.dll"; DestDir: "{app}"
-Source: "C:\msys64\mingw64\bin\libreadline7.dll"; DestDir: "{app}"
-Source: "C:\msys64\mingw64\bin\libwinpthread-1.dll"; DestDir: "{app}"
-Source: "C:\msys64\mingw64\bin\libtermcap-0.dll"; DestDir: "{app}"
+Source: "{#SourcePath}..\dist-tmp\runtime\*"; DestDir: "{app}"
 
 [Registry]
 Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; \
