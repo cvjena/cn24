@@ -1,4 +1,4 @@
-cn24 (3.0.0-SNAPSHOT-1) unstable; urgency=medium
+cn24 (3.0.0-SNAPSHOT-1~xenial) xenial; urgency=low
 
   * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
 
