@@ -95,8 +95,8 @@ void System::Init(int requested_log_level) {
   } else
     log_level = requested_log_level;
   
-  LOGINFO << "CN24 version 3.0.0-SNAPSHOT";
-  LOGINFO << "Copyright (C) 2016 Clemens-Alexander Brust";
+  LOGINFO << "CN24 version " BUILD_VERSIONSTR;
+  LOGINFO << "Copyright (C) " BUILD_YEAR " Clemens-Alexander Brust";
   LOGINFO << "For licensing information, see the LICENSE"
           << " file included with this project.";
           
@@ -142,6 +142,10 @@ void System::Init(int requested_log_level) {
   // Initialize global StatAggregator
   stat_aggregator = new StatAggregator();
   
+}
+
+std::string System::GetVersion() {
+  return std::string(BUILD_VERSIONSTR);
 }
 
 void System::GetExecutablePath(std::string& binary_path) {

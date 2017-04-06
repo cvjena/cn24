@@ -26,6 +26,7 @@ public:
   static void Init(int requested_log_level = -1);
   static void Shutdown();
   static void GetExecutablePath(std::string& binary_path);
+  static std::string GetVersion();
   static TensorViewer* viewer;
   static TensorRegistry* registry;
   static StatAggregator* stat_aggregator;

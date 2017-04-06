@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
+#include <cstring>
 
 #ifdef BUILD_OPENCV
 #include <opencv2/opencv.hpp>
