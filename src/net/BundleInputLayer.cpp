@@ -40,7 +40,7 @@ BundleInputLayer::BundleInputLayer (JSON configuration,
   generator_ (seed), dist_ (0.0, 1.0), task_(task) {
   LOGDEBUG << "Instance created.";
 
-  if(task == DETECTION || task == CLASSIFICATION) {
+  if(task == DETECTION || task == CLASSIFICATION || task == BINARY_SEGMENTATION) {
     input_maps_ = 3;
   } else {
     FATAL("NIY");
@@ -97,6 +97,28 @@ bool BundleInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inpu
 
   if(task_ == SEMANTIC_SEGMENTATION) {
     FATAL("NIY")
+  } else if(task_ == BINARY_SEGMENTATION) {
+    CombinedTensor *data_output =
+        new CombinedTensor(batch_size_, input_width_,
+                           input_height_, input_maps_);
+
+    unsigned int current_class_count = 1;
+    CombinedTensor *label_output =
+        new CombinedTensor(current_class_count,input_width_,input_height_,batch_size_);
+    label_output->is_dynamic = false;
+
+    CombinedTensor *helper_output =
+        new CombinedTensor(batch_size_);
+
+    CombinedTensor *localized_error_output =
+        new CombinedTensor(batch_size_);
+
+    label_output->metadata = new DatasetMetadataPointer[batch_size_];
+
+    outputs.push_back(data_output);
+    outputs.push_back(label_output);
+    outputs.push_back(helper_output);
+    outputs.push_back(localized_error_output);
   } else if (task_ == CLASSIFICATION) {
     CombinedTensor *data_output =
         new CombinedTensor(batch_size_, input_width_,
@@ -199,6 +221,17 @@ bool BundleInputLayer::ForceLoadClassification(JSON &sample, unsigned int index)
   return Segment::CopyClassificationSample(sample, index, &(data_output_->data), &(label_output_->data), *class_manager_, Segment::SCALE);
 }
 
+bool BundleInputLayer::ForceLoadBinarySegmentation(JSON &sample, unsigned int index) {
+#ifdef BUILD_OPENCL
+  data_output_->data.MoveToCPU (true);
+  label_output_->data.MoveToCPU (true);
+  localized_error_output_->data.MoveToCPU (true);
+#endif
+  // TODO make this better
+  localized_error_output_->data.Clear(1.0, index);
+  return Segment::CopyBinarySegmentationSample(sample, index, &(data_output_->data), &(label_output_->data), *class_manager_, Segment::SCALE);
+}
+
 void BundleInputLayer::ForceWeightsZero() {
   for(unsigned int index = 0; index < localized_error_output_->data.samples(); index++) {
     localized_error_output_->data.Clear(0.0, index);
@@ -279,7 +312,14 @@ void BundleInputLayer::SelectAndLoadSamples() {
     bool success;
 
     if(do_augmentation_ && !testing_) {
-      success = set->CopyDetectionSample(selected_element, sample, &(preaug_data_buffer_), &(preaug_metadata_[sample]), *class_manager_, Segment::SCALE);
+      switch(task_) {
+      case DETECTION:
+        success = set->CopyDetectionSample(selected_element, sample, &(preaug_data_buffer_),
+                                           &(preaug_metadata_[sample]), *class_manager_, Segment::SCALE);
+        break;
+      default:
+        FATAL("Task not supported for augmented training yet!")
+      }
       LoadSampleAugmented(sample, x_scale, x_transpose_img, y_scale, y_transpose_img, flip_horizontal, flip_offset);
       if(data_output_->data.maps() == 3) {
         // HSV conversion and exposure / saturation adjustment
@@ -314,7 +354,17 @@ void BundleInputLayer::SelectAndLoadSamples() {
       }
 
     } else {
-      success = set->CopyDetectionSample(selected_element, sample, &(data_output_->data), &(metadata_[sample]), *class_manager_, Segment::SCALE);
+      switch(task_) {
+        case DETECTION:
+          success = set->CopyDetectionSample(selected_element, sample, &(data_output_->data), &(metadata_[sample]),
+                                             *class_manager_, Segment::SCALE);
+          break;
+        case BINARY_SEGMENTATION:
+          success = set->CopyBinarySegmentationSample(selected_element, sample, &(data_output_->data), &(label_output_->data), *class_manager_, Segment::NEVER_RESIZE);
+          break;
+        default:
+          FATAL("Task not implemented for training yet!");
+      }
     }
 
     // Set weight tensor

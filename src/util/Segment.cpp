@@ -130,6 +130,39 @@ bool Segment::CopyClassificationSample(JSON& sample, unsigned int target_index,
   return data_success && label_success;
 }
 
+bool Segment::CopyBinarySegmentationSample(JSON &sample, unsigned int target_index, Tensor *data, Tensor *label,
+                                           ClassManager &class_manager, CopyMode copy_mode) {
+  // Load image data
+  Tensor image_rgb;
+  image_rgb.LoadFromFile(sample["image_rpath"]);
+
+  // Copy data
+  bool data_success = Tensor::CopySample(image_rgb, 0, *data, target_index, copy_mode != NEVER_RESIZE, copy_mode == SCALE);
+  if(!data_success) {
+    LOGERROR << "Could not copy sample for " << sample["image_rpath"];
+    LOGERROR << "Tensor proportions: " << image_rgb;
+  }
+
+  // Load label data
+  label->Clear(0, target_index);
+
+  Tensor label_rgb;
+  if(sample.count("label_rpath") == 1 && sample["label_rpath"].is_string()) {
+    label_rgb.LoadFromFile(sample["label_rpath"]);
+
+    // Copy label
+    bool label_success = Tensor::CopyMap(label_rgb, 0, 0, *label, target_index, 0, copy_mode != NEVER_RESIZE,
+                                         copy_mode == SCALE);
+    if (!label_success) {
+      LOGERROR << "Could not copy sample for " << sample["image_rpath"];
+      LOGERROR << "Tensor proportions: " << image_rgb;
+    }
+
+    return data_success && label_success;
+  } else {
+    return data_success;
+  }
+}
 
 JSON Segment::Serialize() {
   JSON serialized = JSON::object();
@@ -185,6 +218,28 @@ bool Segment::AddSample(JSON sample_descriptor, std::string folder_hint, bool us
     samples_.push_back(sample_descriptor);
     return true;
   } else {
+    // Resolve relative paths
+
+    // (1) Segmentation labels
+    if (sample_descriptor.count("label_filename") == 1 && sample_descriptor["label_filename"].is_string()) {
+      std::string label_filename = sample_descriptor["label_filename"];
+      std::string resolved_path = PathFinder::FindPath(label_filename, folder_hint);
+
+      if (resolved_path.length() > 0 && folder_hint.length() > 0)
+        last_folder_hint_ = folder_hint;
+
+      if (resolved_path.length() == 0)
+        resolved_path = PathFinder::FindPath(label_filename, last_folder_hint_);
+
+      if (resolved_path.length() > 0) {
+        sample_descriptor["label_rpath"] = resolved_path;
+      } else {
+        LOGERROR << "Could not find sample label \"" << label_filename << "\", skipping!";
+        return false;
+      }
+    }
+
+    // (2) Image files
     if (sample_descriptor.count("image_filename") == 1 && sample_descriptor["image_filename"].is_string()) {
       std::string image_filename = sample_descriptor["image_filename"];
       std::string resolved_path = PathFinder::FindPath(image_filename, folder_hint);

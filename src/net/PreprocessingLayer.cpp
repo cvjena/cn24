@@ -81,7 +81,7 @@ bool PreprocessingLayer::Connect(const CombinedTensor* input, CombinedTensor* ou
     
     parameters_.push_back(mean_image_);
   }
-  
+
   return valid;
 }
 
@@ -90,7 +90,11 @@ void PreprocessingLayer::FeedForward()
   const unsigned int elements_per_map = input_->data.elements() / (input_->data.maps() * input_->data.samples());
   unsigned int crop_offset_x = floor((input_->data.width() - crop_x) / 2) + 1;
   unsigned int crop_offset_y = floor((input_->data.height() - crop_y) / 2) + 1;
-  
+  if(crop_x == input_->data.width())
+    crop_offset_x = 0;
+  if(crop_y == input_->data.height())
+    crop_offset_y = 0;
+
   // 1. Multiplication and subtraction (with channel swap if needed)
   for(unsigned int sample = 0; sample < input_->data.samples(); sample++) {
     for(unsigned int map = 0; map < input_->data.maps(); map++) {

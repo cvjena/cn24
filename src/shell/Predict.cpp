@@ -40,21 +40,28 @@ CN24_SHELL_FUNC_IMPL(PredictImage) {
   
   // Switch to testing mode, just in case
   graph_->SetIsTesting(true);
-  
+
+  bool load_result = true;
   // Load sample into net
   switch(input_layer_->GetTask()) {
     case DETECTION:
       sample_json["boxes"] = JSON::array();
-      input_layer_->ForceLoadDetection(sample_json, 0);
+      load_result = input_layer_->ForceLoadDetection(sample_json, 0);
+      break;
+    case BINARY_SEGMENTATION:
+      load_result = input_layer_->ForceLoadBinarySegmentation(sample_json, 0);
       break;
     case CLASSIFICATION:
-      input_layer_->ForceLoadClassification(sample_json, 0);
+      load_result = input_layer_->ForceLoadClassification(sample_json, 0);
       break;
     default:
       LOGERROR << "Not implemented yet!";
       return FAILURE;
   }
-  
+
+  if(!load_result) {
+    return FAILURE;
+  }
   // Predict!
   graph_->FeedForward();
   

@@ -56,6 +56,14 @@ public:
     ClassManager& class_manager,
     CopyMode copy_mode = NEVER_RESIZE);
 
+  static bool CopyBinarySegmentationSample(
+    JSON& sample,
+    unsigned int target_index,
+    Tensor* data,
+    Tensor* label,
+    ClassManager& class_manager,
+    CopyMode copy_mode = NEVER_RESIZE);
+
   unsigned int GetSampleCount() const { return (unsigned int)samples_.size(); }
   JSON& GetSample(unsigned int index) {return samples_[index]; }
 

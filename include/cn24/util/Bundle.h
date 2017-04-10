@@ -30,6 +30,22 @@ public:
     ClassManager& class_manager,
     Segment::CopyMode copy_mode = Segment::NEVER_RESIZE);
 
+  bool CopyClassificationSample(
+    unsigned int source_index,
+    unsigned int target_index,
+    Tensor* data,
+    Tensor* label,
+    ClassManager& class_manager,
+    Segment::CopyMode copy_mode = Segment::NEVER_RESIZE);
+
+  bool CopyBinarySegmentationSample(
+    unsigned int source_index,
+    unsigned int target_index,
+    Tensor* data,
+    Tensor* label,
+    ClassManager& class_manager,
+    Segment::CopyMode copy_mode = Segment::NEVER_RESIZE);
+
   unsigned int GetSampleCount() const;
   JSON GetSample(unsigned int index);
 

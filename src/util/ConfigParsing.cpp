@@ -23,6 +23,8 @@ Task TaskFromString(const std::string& task_name) {
     return DETECTION;
   } else if(task_name.compare("segmentation") == 0) {
     return SEMANTIC_SEGMENTATION;
+  } else if(task_name.compare("binary_segmentation") == 0) {
+    return BINARY_SEGMENTATION;
   } else {
     return UNKNOWN;
   }

@@ -33,7 +33,7 @@ ResizeLayer::ResizeLayer (JSON configuration)
 		FATAL("Invalid configuration (no size): " << configuration.dump());
 	} else {
 		borderx_ = configuration["border"][0];
-		bordery_ = configuration["border"][0];
+		bordery_ = configuration["border"][1];
 	}
 }
   

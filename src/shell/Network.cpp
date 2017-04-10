@@ -124,6 +124,19 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
         stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node, 3));
         graph_->AddNode(stat_node);
       }
+    } else if (task_ == Conv::BINARY_SEGMENTATION) {
+      for (Conv::NetGraphNode *output_node : graph_->GetOutputNodes()) {
+        // Add appropriate statistics layer
+        Conv::NetGraphNode *stat_node = nullptr;
+        Conv::BinaryStatLayer *binary_stat_layer = new Conv::BinaryStatLayer(13, -1, 1);
+        stat_node = new Conv::NetGraphNode(binary_stat_layer);
+
+        stat_node->input_connections.push_back(Conv::NetGraphConnection(output_node, 0, false));
+        stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node, 1));
+        stat_node->input_connections.push_back(Conv::NetGraphConnection(input_node, 3));
+
+        graph_->AddNode(stat_node);
+      }
     } else if (task_ == Conv::DETECTION) {
       for (Conv::NetGraphNode *output_node : graph_->GetOutputNodes()) {
         // Add appropriate statistics layer

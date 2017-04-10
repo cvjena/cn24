@@ -22,6 +22,28 @@ bool Bundle::CopyDetectionSample(unsigned int source_index, unsigned int target_
   }
 }
 
+bool Bundle::CopyClassificationSample(unsigned int source_index, unsigned int target_index, Tensor *data, Tensor *label,
+                                      ClassManager &class_manager, Segment::CopyMode copy_mode) {
+  JSON sample = GetSample(source_index);
+  if(sample.is_object()) {
+    return Segment::CopyClassificationSample(sample, target_index, data, label, class_manager, copy_mode);
+  } else {
+    LOGERROR << "Sample not an object: " << sample.dump();
+    return false;
+  }
+}
+
+bool Bundle::CopyBinarySegmentationSample(unsigned int source_index, unsigned int target_index, Tensor *data, Tensor *label,
+                                      ClassManager &class_manager, Segment::CopyMode copy_mode) {
+  JSON sample = GetSample(source_index);
+  if(sample.is_object()) {
+    return Segment::CopyBinarySegmentationSample(sample, target_index, data, label, class_manager, copy_mode);
+  } else {
+    LOGERROR << "Sample not an object: " << sample.dump();
+    return false;
+  }
+}
+
 void Bundle::AddSegment(Segment *segment) {
   if(segment != nullptr) {
     segments_.push_back(segment);
