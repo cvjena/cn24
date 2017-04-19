@@ -192,6 +192,8 @@ void Trainer::Train (unsigned int epochs, bool do_snapshots) {
 }
 
 void Trainer::Test() {
+  graph_.SetStatLayersEnabled(true);
+
   // Update hardcoded stats
   System::stat_aggregator->hardcoded_stats_.weights = weight_count_;
 
@@ -213,7 +215,19 @@ void Trainer::Test() {
   LOGDEBUG << "Testing, iterations: " << iterations <<
            ", batch size: " << first_training_layer_->GetBatchSize();
 
+  unsigned int fiftieth = 0;
+  unsigned int tenth = 0;
+
   for (unsigned int i = 0; i < iterations; i++) {
+    if ( (50 * i / iterations) > fiftieth) {
+      fiftieth = 50 * i / iterations;
+      std::cout << "." << std::flush;
+    }
+
+    if ( (10 * i / iterations) > tenth) {
+      tenth = 10 * i / iterations;
+      std::cout << tenth << "0%" << std::flush;
+    }
     aggregate_loss = 0.0;
 
     first_training_layer_->SelectAndLoadSamples();
