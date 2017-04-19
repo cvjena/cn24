@@ -111,7 +111,7 @@ bool BundleInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inpu
         new CombinedTensor(batch_size_);
 
     CombinedTensor *localized_error_output =
-        new CombinedTensor(batch_size_);
+        new CombinedTensor(batch_size_,input_width_,input_height_);
 
     label_output->metadata = new DatasetMetadataPointer[batch_size_];
 
@@ -221,7 +221,7 @@ bool BundleInputLayer::ForceLoadClassification(JSON &sample, unsigned int index)
   return Segment::CopyClassificationSample(sample, index, &(data_output_->data), &(label_output_->data), *class_manager_, Segment::SCALE);
 }
 
-bool BundleInputLayer::ForceLoadBinarySegmentation(JSON &sample, unsigned int index) {
+bool BundleInputLayer::ForceLoadBinarySegmentation(JSON &sample, unsigned int index, dataset_localized_error_function error_function) {
 #ifdef BUILD_OPENCL
   data_output_->data.MoveToCPU (true);
   label_output_->data.MoveToCPU (true);
@@ -229,7 +229,7 @@ bool BundleInputLayer::ForceLoadBinarySegmentation(JSON &sample, unsigned int in
 #endif
   // TODO make this better
   localized_error_output_->data.Clear(1.0, index);
-  return Segment::CopyBinarySegmentationSample(sample, index, &(data_output_->data), &(label_output_->data), *class_manager_, Segment::SCALE);
+  return Segment::CopyBinarySegmentationSample(sample, index, &(data_output_->data), &(label_output_->data), &(localized_error_output_->data), error_function, *class_manager_, Segment::SCALE);
 }
 
 void BundleInputLayer::ForceWeightsZero() {
@@ -360,7 +360,7 @@ void BundleInputLayer::SelectAndLoadSamples() {
                                              *class_manager_, Segment::SCALE);
           break;
         case BINARY_SEGMENTATION:
-          success = set->CopyBinarySegmentationSample(selected_element, sample, &(data_output_->data), &(label_output_->data), *class_manager_, Segment::NEVER_RESIZE);
+          success = set->CopyBinarySegmentationSample(selected_element, sample, &(data_output_->data), &(label_output_->data), &(localized_error_output_->data), *class_manager_, Segment::NEVER_RESIZE);
           break;
         default:
           FATAL("Task not implemented for training yet!");
@@ -514,11 +514,11 @@ unsigned int BundleInputLayer::GetBatchSize() {
 }
 
 unsigned int BundleInputLayer::GetLabelWidth() {
-  return 1;
+  return label_output_->data.width();
 }
 
 unsigned int BundleInputLayer::GetLabelHeight() {
-  return 1;
+  return label_output_->data.height();
 }
 
 unsigned int BundleInputLayer::GetSamplesInTestingSet() {

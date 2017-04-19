@@ -15,6 +15,7 @@
 #include "Tensor.h"
 #include "JSONParsing.h"
 #include "ClassManager.h"
+#include "Dataset.h"
 
 namespace Conv {
 typedef std::vector<BoundingBox> DetectionMetadata;
@@ -61,6 +62,8 @@ public:
     unsigned int target_index,
     Tensor* data,
     Tensor* label,
+    Tensor* error,
+    dataset_localized_error_function error_function,
     ClassManager& class_manager,
     CopyMode copy_mode = NEVER_RESIZE);
 

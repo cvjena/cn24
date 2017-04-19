@@ -7,6 +7,7 @@
 
 #include "Segment.h"
 
+#include "Dataset.h"
 #include "PathFinder.h"
 #include "Tensor.h"
 #include "Log.h"
@@ -131,6 +132,7 @@ bool Segment::CopyClassificationSample(JSON& sample, unsigned int target_index,
 }
 
 bool Segment::CopyBinarySegmentationSample(JSON &sample, unsigned int target_index, Tensor *data, Tensor *label,
+                                           Tensor* error, dataset_localized_error_function error_function,
                                            ClassManager &class_manager, CopyMode copy_mode) {
   // Load image data
   Tensor image_rgb;
@@ -156,6 +158,14 @@ bool Segment::CopyBinarySegmentationSample(JSON &sample, unsigned int target_ind
     if (!label_success) {
       LOGERROR << "Could not copy sample for " << sample["image_rpath"];
       LOGERROR << "Tensor proportions: " << image_rgb;
+    }
+
+    // Copy error
+    error->Clear(0, target_index);
+    for(unsigned int y = 0; y < image_rgb.height(); y++) {
+      for(unsigned int x = 0; x < image_rgb.width(); x++) {
+        *(error->data_ptr(x, y, 0, target_index)) = error_function(x, y, image_rgb.width(), image_rgb.height());
+      }
     }
 
     return data_success && label_success;

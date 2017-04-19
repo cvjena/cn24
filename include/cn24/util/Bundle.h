@@ -43,6 +43,7 @@ public:
     unsigned int target_index,
     Tensor* data,
     Tensor* label,
+    Tensor* error,
     ClassManager& class_manager,
     Segment::CopyMode copy_mode = Segment::NEVER_RESIZE);
 
