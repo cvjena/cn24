@@ -56,6 +56,20 @@ CN24_SHELL_FUNC_IMPL(ModelLoad) {
   return SUCCESS;
 }
 
+CN24_SHELL_FUNC_IMPL(ModelReset) {
+  CN24_SHELL_FUNC_DESCRIPTION("Resets the models weights");
+  CN24_SHELL_PARSE_ARGS;
+
+
+  // Check if shell state allows for model loading
+  if(state_ != NET_AND_TRAINER_LOADED && state_ != NET_LOADED) {
+    LOGERROR << "Cannot load model, no network is loaded.";
+    return FAILURE;
+  }
+
+  graph_->InitializeWeights();
+}
+
 CN24_SHELL_FUNC_IMPL(ModelSave) {
   CN24_SHELL_FUNC_DESCRIPTION("Saves a model to a CNParamX file");
 

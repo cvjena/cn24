@@ -107,6 +107,7 @@ typedef CommandStatus (ShellState::*ShellFunction)(cargo_t cargo, int argc, char
 
   CN24_SHELL_FUNC(ModelLoad);
   CN24_SHELL_FUNC(ModelSave);
+  CN24_SHELL_FUNC(ModelReset);
 
   CN24_SHELL_FUNC(ExperimentBegin);
 
@@ -142,6 +143,7 @@ private:
 
     CN24_SHELL_CMD("model-load", ModelLoad),
     CN24_SHELL_CMD("model-save", ModelSave),
+    CN24_SHELL_CMD("model-reset", ModelReset),
 
     CN24_SHELL_CMD("experiment-begin", ExperimentBegin),
 

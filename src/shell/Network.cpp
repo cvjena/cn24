@@ -191,7 +191,7 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
 
   // Initialize stat aggregator
   System::stat_aggregator->Initialize();
-  
+
   return SUCCESS;
 }
 
@@ -255,8 +255,14 @@ CN24_SHELL_FUNC_IMPL(NetworkUnload) {
 
 CN24_SHELL_FUNC_IMPL(NetworkStatus) {
   CN24_SHELL_FUNC_DESCRIPTION("Displays information about the current network");
+
+  int detailed_status = -1;
+
+  cargo_add_option(cargo, (cargo_option_flags_t)0, "-v --detailed-status",
+                   "Plots detailed information on every layer",
+                   "b", &detailed_status);
+
   CN24_SHELL_PARSE_ARGS;
-  
   switch(state_) {
     case NOTHING:
       LOGINFO << "No network loaded.";
@@ -276,6 +282,24 @@ CN24_SHELL_FUNC_IMPL(NetworkStatus) {
     case NET_LOADED:
       LOGINFO << "Network nodes: " << graph_->GetNodes().size();
       break;
+  }
+
+  if(detailed_status && (state_ == NET_LOADED || state_ == NET_AND_TRAINER_LOADED)) {
+    LOGINFO << "Doing forward pass for statistics...";
+    graph_->FeedForward();
+    for(NetGraphNode* node: graph_->GetNodes()) {
+      LOGINFO << "Node \"" << node->unique_name << "\", " << node->layer->GetLayerDescription();
+      for(NetGraphBuffer& buffer: node->output_buffers) {
+        LOGINFO << "  Buffer \"" << buffer.description << "\"";
+        LOGINFO << "    Data Size: " << buffer.combined_tensor->data;
+        unsigned int nans = 0;
+        for(unsigned int e = 0; e < buffer.combined_tensor->data.elements(); e++) {
+          datum element = buffer.combined_tensor->data(e);
+          if(!std::isfinite(element)) { nans++; }
+        }
+        LOGINFO << "    NaNs: " << nans << " of " << buffer.combined_tensor->data.elements();
+      }
+    }
   }
   return SUCCESS;
 }
