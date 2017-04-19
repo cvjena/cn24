@@ -104,7 +104,7 @@ bool BundleInputLayer::CreateOutputs (const std::vector< CombinedTensor* >& inpu
 
     unsigned int current_class_count = 1;
     CombinedTensor *label_output =
-        new CombinedTensor(current_class_count,input_width_,input_height_,batch_size_);
+        new CombinedTensor(batch_size_,input_width_,input_height_,current_class_count);
     label_output->is_dynamic = false;
 
     CombinedTensor *helper_output =
