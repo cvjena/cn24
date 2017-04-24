@@ -32,8 +32,8 @@ public:
 	* @param min_t The minimum binarization threshold
 	* @param max_t The maximum binarization threshold
 	*/
-  BinaryStatLayer(unsigned int thresholds = 24, const datum min_t = -0.458333,
-                  const datum max_t = 0.5);
+  BinaryStatLayer(unsigned int thresholds = 25, const datum min_t = 0,
+                  const datum max_t = 1);
   
   void UpdateAll();
 

@@ -506,6 +506,8 @@ cl_program CLHelper::CreateProgram ( const char* file_name ) {
     char build_log[16384];
     clGetProgramBuildInfo ( program, device, CL_PROGRAM_BUILD_LOG, 16384, build_log, NULL );
     LOGERROR << "Error compiling kernel " << file_name << ":\n" << std::string ( build_log );
+    LOGERROR << "Error code: " << error;
+    LOGERROR << "Kernel content: " << kernel_content;
     FATAL ( "Compilation failed, exiting..." );
   }
 

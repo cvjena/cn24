@@ -7,7 +7,6 @@
 
 #include "Bundle.h"
 #include "Segment.h"
-#include "Dataset.h"
 
 namespace Conv {
 
@@ -38,7 +37,7 @@ bool Bundle::CopyBinarySegmentationSample(unsigned int source_index, unsigned in
                                       Tensor* error, ClassManager &class_manager, Segment::CopyMode copy_mode) {
   JSON sample = GetSample(source_index);
   if(sample.is_object()) {
-    return Segment::CopyBinarySegmentationSample(sample, target_index, data, label, error, DefaultLocalizedErrorFunction, class_manager, copy_mode);
+    return Segment::CopyBinarySegmentationSample(sample, target_index, data, label, error, class_manager, copy_mode);
   } else {
     LOGERROR << "Sample not an object: " << sample.dump();
     return false;

@@ -53,7 +53,7 @@ std::string PathFinder::FindPath(std::string path, std::string folder_hint) {
 
 #ifdef BUILD_WIN32
   WCHAR windows_cn24_path[MAX_PATH];
-  if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA, NULL, 0, windows_cn24_path))) {
+  if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_PROGRAM_FILES_COMMON, NULL, 0, windows_cn24_path))) {
     std::wstring windows_cn24_path_str = windows_cn24_path;
     std::string cn24_path = std::string(windows_cn24_path_str.begin(), windows_cn24_path_str.end()) + "/CN24";
 

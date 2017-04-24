@@ -221,15 +221,13 @@ bool BundleInputLayer::ForceLoadClassification(JSON &sample, unsigned int index)
   return Segment::CopyClassificationSample(sample, index, &(data_output_->data), &(label_output_->data), *class_manager_, Segment::SCALE);
 }
 
-bool BundleInputLayer::ForceLoadBinarySegmentation(JSON &sample, unsigned int index, dataset_localized_error_function error_function) {
+bool BundleInputLayer::ForceLoadBinarySegmentation(JSON &sample, unsigned int index) {
 #ifdef BUILD_OPENCL
   data_output_->data.MoveToCPU (true);
   label_output_->data.MoveToCPU (true);
   localized_error_output_->data.MoveToCPU (true);
 #endif
-  // TODO make this better
-  localized_error_output_->data.Clear(1.0, index);
-  return Segment::CopyBinarySegmentationSample(sample, index, &(data_output_->data), &(label_output_->data), &(localized_error_output_->data), error_function, *class_manager_, Segment::SCALE);
+  return Segment::CopyBinarySegmentationSample(sample, index, &(data_output_->data), &(label_output_->data), &(localized_error_output_->data), *class_manager_, Segment::SCALE);
 }
 
 void BundleInputLayer::ForceWeightsZero() {
@@ -368,7 +366,14 @@ void BundleInputLayer::SelectAndLoadSamples() {
     }
 
     // Set weight tensor
-    localized_error_output_->data.Clear(1.0, sample);
+    switch(task_) {
+      case DETECTION:
+      case CLASSIFICATION:
+      localized_error_output_->data.Clear(1.0, sample);
+        break;
+      default:
+        break;
+    }
 
     if (!success) {
       FATAL ("Cannot load samples from Dataset!");

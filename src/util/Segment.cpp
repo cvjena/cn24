@@ -11,6 +11,7 @@
 #include "PathFinder.h"
 #include "Tensor.h"
 #include "Log.h"
+#include "KITTIData.h"
 
 namespace Conv {
 
@@ -132,7 +133,7 @@ bool Segment::CopyClassificationSample(JSON& sample, unsigned int target_index,
 }
 
 bool Segment::CopyBinarySegmentationSample(JSON &sample, unsigned int target_index, Tensor *data, Tensor *label,
-                                           Tensor* error, dataset_localized_error_function error_function,
+                                           Tensor* error,
                                            ClassManager &class_manager, CopyMode copy_mode) {
   // Load image data
   Tensor image_rgb;
@@ -153,14 +154,29 @@ bool Segment::CopyBinarySegmentationSample(JSON &sample, unsigned int target_ind
     label_rgb.LoadFromFile(sample["label_rpath"]);
 
     // Copy label
-    bool label_success = Tensor::CopyMap(label_rgb, 0, 0, *label, target_index, 0, copy_mode != NEVER_RESIZE,
-                                         copy_mode == SCALE);
+    bool label_success;
+    if(label_rgb.maps() == 3) {
+      label_success = Tensor::CopyMap(label_rgb, 0, 2, *label, target_index, 0, copy_mode != NEVER_RESIZE,
+                                      copy_mode == SCALE);
+    } else {
+      label_success = Tensor::CopyMap(label_rgb, 0, 0, *label, target_index, 0, copy_mode != NEVER_RESIZE,
+                                      copy_mode == SCALE);
+    }
     if (!label_success) {
       LOGERROR << "Could not copy sample for " << sample["image_rpath"];
       LOGERROR << "Tensor proportions: " << image_rgb;
     }
 
     // Copy error
+    dataset_localized_error_function error_function = DefaultLocalizedErrorFunction;
+
+    if(sample.count("localized_error_function") == 1 && sample["localized_error_function"].is_string()) {
+      const std::string& ef_name = sample["localized_error_function"];
+      if(ef_name.compare("kitti") == 0) {
+        error_function = KITTIData::LocalizedError;
+      }
+    }
+
     error->Clear(0, target_index);
     for(unsigned int y = 0; y < image_rgb.height(); y++) {
       for(unsigned int x = 0; x < image_rgb.width(); x++) {

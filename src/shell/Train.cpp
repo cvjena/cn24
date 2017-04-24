@@ -41,6 +41,7 @@ CN24_SHELL_FUNC_IMPL(Train) {
   }
 
   if(training_samples > 0) {
+    System::stat_aggregator->StartRecording();
     trainer_->SetStatsDuringTraining(enable_training_stats == 1);
     trainer_->Train((unsigned int)epochs, no_snapshot != 1);
     System::stat_aggregator->StopRecording();

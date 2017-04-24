@@ -63,7 +63,6 @@ public:
     Tensor* data,
     Tensor* label,
     Tensor* error,
-    dataset_localized_error_function error_function,
     ClassManager& class_manager,
     CopyMode copy_mode = NEVER_RESIZE);
 

@@ -125,6 +125,7 @@ void BinaryStatLayer::UpdateAll() {
       tfmax = t;
     }
   }
+  LOGDEBUG << "tmax: " << threshold_values_[tfmax];
 
   datum fpr = -1;
   datum fnr = -1;
@@ -237,7 +238,7 @@ void BinaryStatLayer::FeedForward() {
   for ( unsigned int t = 0; t < thresholds_; t++ ) {
     for ( std::size_t s = 0; s < first_->data.elements(); s++ ) {
       const bool sign = first_->data ( s ) > threshold_values_[t];
-      const bool expected_sign = second_->data ( s ) > 0; //threshold_values_[t];
+      const bool expected_sign = second_->data ( s ) > 0.5; //threshold_values_[t];
       const datum weight = third_->data ( s );
 
       if ( sign && expected_sign )
@@ -272,7 +273,6 @@ void BinaryStatLayer::Reset() {
 void BinaryStatLayer::Print ( std::string prefix, bool training ) {
   UNREFERENCED_PARAMETER(prefix);
   UNREFERENCED_PARAMETER(training);
-  // Now deprecated
 }
 
 

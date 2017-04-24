@@ -113,7 +113,7 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
         // Add appropriate statistics layer
         Conv::NetGraphNode *stat_node = nullptr;
         if (class_manager_->GetClassCount() == 1) {
-          Conv::BinaryStatLayer *binary_stat_layer = new Conv::BinaryStatLayer(13, -1, 1);
+          Conv::BinaryStatLayer *binary_stat_layer = new Conv::BinaryStatLayer(13, 0, 1);
           stat_node = new Conv::NetGraphNode(binary_stat_layer);
         } else {
           Conv::ConfusionMatrixLayer *confusion_matrix_layer = new Conv::ConfusionMatrixLayer(class_manager_);
@@ -128,7 +128,7 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
       for (Conv::NetGraphNode *output_node : graph_->GetOutputNodes()) {
         // Add appropriate statistics layer
         Conv::NetGraphNode *stat_node = nullptr;
-        Conv::BinaryStatLayer *binary_stat_layer = new Conv::BinaryStatLayer(13, -1, 1);
+        Conv::BinaryStatLayer *binary_stat_layer = new Conv::BinaryStatLayer(13, 0, 1);
         stat_node = new Conv::NetGraphNode(binary_stat_layer);
 
         stat_node->input_connections.push_back(Conv::NetGraphConnection(output_node, 0, false));

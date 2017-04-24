@@ -32,3 +32,4 @@ thesis.ps
 build
 ci/clBLAS
 cmake-build-debug
+cn24-distribution/
