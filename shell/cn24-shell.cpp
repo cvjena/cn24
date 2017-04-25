@@ -8,10 +8,10 @@
 #include <cn24.h>
 #include <cstdlib>
 #include <iostream>
-#include <readline/readline.h>
-#include <readline/history.h>
 
+#include "linenoise.h"
 #include "ShellState.h"
+
 extern "C" {
   #include "cargo.h"
 }
@@ -56,7 +56,10 @@ int main(int argc, char** argv) {
   } else if(cmdl_quiet == 1) {
     cmdl_log_level = 0;
   }
-    
+
+  // Initialize linenoise
+  linenoiseInstallWindowChangeHandler();
+
   // Initialize CN24
   Conv::System::Init(cmdl_log_level);
   
@@ -71,11 +74,11 @@ int main(int argc, char** argv) {
       free(shell_line);
       shell_line = nullptr;
     }
-    
-    shell_line = readline ("\ncn24> ");
+    std::cout << std::flush;
+    shell_line = linenoise ("\ncn24> ");
     
     if(shell_line && *shell_line) {
-      add_history(shell_line);
+      linenoiseHistoryAdd(shell_line);
     }
     
     // Process input
