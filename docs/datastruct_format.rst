@@ -27,12 +27,22 @@ schema depends on the task.
 Detection
 ~~~~~~~~~
 CN24 supports detection using the `YOLO method <https://arxiv.org/abs/1506.02640>`_.
-Samples need to specify an image file and bounding boxes. 
+Samples need to specify the following:
+
+* **image_filename**: Input image file
+* **boxes**: JSON array of bounding boxes
+
 Bounding boxes have the following properties:
 
-* **x**, **y**: Coordinates of the *center* of the bounding box
-* **w**, **h**: Width and height of the bounding box
+* **x**, **y**: Coordinates of the *center* of the bounding box (pixels)
+* **w**, **h**: Width and height of the bounding box (pixels)
 * **class**: Class of the object inside the bounding box
+
+Optionally, you can specificy these:
+
+* **difficult**: If set to 1, the box is ignored during testing
+* **dont_scale**: Instead of pixels, the coordinates and dimensions
+  of the box are specified as normalized fractions of the image dimensions
 
 The following is an
 example from the PASCAL VOC dataset:
@@ -58,3 +68,27 @@ Classification
 
 Binary Segmentation
 ~~~~~~~~~~~~~~~~~~~
+Samples for binary segmentation consist of two image files
+with equal dimensions. One is the actual input image and the
+other the label image. At the moment, only binary segmentation
+is supported. Grayscale label images are preferred. However,
+CN24 will also accept RGB images as labels. In this case, the
+value of the third channel will be used as a label.
+
+The following properties need to be specified:
+
+* **image_filename**: Input image file
+* **label_filename**: Label file
+
+Optionally, you can supply a value for **localized_error_function**.
+Currently, the only supported values are *default* and *kitti*.
+
+The following is an example from the KITTI-Vision Road Dataset:
+
+.. code-block:: json
+
+  {
+    "label_filename": "gt_image_2/umm_road_000049.png",
+    "localized_error_function": "kitti", 
+    "image_filename": "image_2/umm_000049.png"
+  }

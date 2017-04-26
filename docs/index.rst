@@ -11,6 +11,12 @@ Welcome to CN24's documentation!
    :caption: Contents:
    
    intro
+   library
+   shell
    datastruct
 
 To get started,...
+
+What is CN24?
+
+What is it not?
