@@ -286,6 +286,7 @@ CN24_SHELL_FUNC_IMPL(NetworkStatus) {
 
   if(detailed_status && (state_ == NET_LOADED || state_ == NET_AND_TRAINER_LOADED)) {
     LOGINFO << "Doing forward pass for statistics...";
+    input_layer_->ForceWeightsZero();
     graph_->FeedForward();
     for(NetGraphNode* node: graph_->GetNodes()) {
       LOGINFO << "Node \"" << node->unique_name << "\", " << node->layer->GetLayerDescription();

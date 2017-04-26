@@ -504,10 +504,13 @@ cl_program CLHelper::CreateProgram ( const char* file_name ) {
 
   if ( error != CL_SUCCESS ) {
     char build_log[16384];
-    clGetProgramBuildInfo ( program, device, CL_PROGRAM_BUILD_LOG, 16384, build_log, NULL );
-    LOGERROR << "Error compiling kernel " << file_name << ":\n" << std::string ( build_log );
+    cl_int new_error = clGetProgramBuildInfo ( program, device, CL_PROGRAM_BUILD_LOG, 16384, build_log, NULL );
+    if ( new_error != CL_SUCCESS ) {
+      LOGERROR << "Compilation failed and clGetProgramBuildInfo failed as well :( error code: " << new_error;
+    } else {
+      LOGERROR << "Error compiling kernel " << file_name << ":\n" << std::string ( build_log );
+    }
     LOGERROR << "Error code: " << error;
-    LOGERROR << "Kernel content: " << kernel_content;
     FATAL ( "Compilation failed, exiting..." );
   }
 
