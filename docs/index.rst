@@ -9,12 +9,8 @@ Welcome to CN24's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   
+   intro
+   datastruct
 
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+To get started,...
