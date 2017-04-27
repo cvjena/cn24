@@ -95,11 +95,20 @@ void System::Init(int requested_log_level) {
   } else
     log_level = requested_log_level;
   
-  LOGINFO << "CN24 version " BUILD_VERSIONSTR;
+  LOGINFO << "CN24 version " BUILD_VERSIONSTR " from " BUILD_DATE;
   LOGINFO << "Copyright (C) " BUILD_YEAR " Clemens-Alexander Brust";
   LOGINFO << "For licensing information, see the LICENSE"
           << " file included with this project.";
-          
+
+  LOGDEBUG << "Build features:" BUILD_FEATURES;
+#ifdef BUILD_CLBLAS
+  {
+    cl_uint major, minor, patch;
+    clblasStatus result = clblasGetVersion(&major, &minor, &patch);
+    LOGDEBUG << "Using clBLAS version " << major << "." << minor << "." << patch;
+  }
+#endif
+
   std::string binary_path;
   GetExecutablePath(binary_path);
   LOGDEBUG << "Executable path: " << binary_path;
