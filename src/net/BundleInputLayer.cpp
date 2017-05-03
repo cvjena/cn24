@@ -227,7 +227,7 @@ bool BundleInputLayer::ForceLoadBinarySegmentation(JSON &sample, unsigned int in
   label_output_->data.MoveToCPU (true);
   localized_error_output_->data.MoveToCPU (true);
 #endif
-  return Segment::CopyBinarySegmentationSample(sample, index, &(data_output_->data), &(label_output_->data), &(localized_error_output_->data), *class_manager_, Segment::SCALE);
+  return Segment::CopyBinarySegmentationSample(sample, index, &(data_output_->data), &(label_output_->data), &(localized_error_output_->data), *class_manager_, Segment::NEVER_RESIZE);
 }
 
 void BundleInputLayer::ForceWeightsZero() {
