@@ -738,6 +738,10 @@ void Tensor::LoadFromFile ( const std::string& filename ) {
 }
 
 void Tensor::WriteToFile ( const std::string& filename ) {
+#ifdef BUILD_OPENCL
+  MoveToCPU();
+#endif
+
   if ( ( filename.compare ( filename.length() - 3, 3, "png" ) == 0 )
        || ( filename.compare ( filename.length() - 3, 3, "PNG" ) == 0 )
      ) {
