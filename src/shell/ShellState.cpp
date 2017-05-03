@@ -122,6 +122,47 @@ ShellState::CommandStatus ShellState::ProcessCommand(std::string command)
   return result;
 }
 
+ShellState::CommandStatus ShellState::ProcessScript(std::string script_file, bool stop_on_fail) {
+  // Try opening
+  try {
+    std::string path = PathFinder::FindPath(script_file, {});
+    if(path.length() == 0) {
+      LOGERROR << "Could not open " << script_file << " for reading.";
+      return FAILURE;
+    }
+
+    std::ifstream script_stream(path, std::ios::in);
+    if(!script_stream.good()) {
+      LOGERROR << "Could not open " << script_file << " for reading.";
+      return FAILURE;
+    }
+
+    // Fetch lines
+    while(!script_stream.eof()) {
+      std::string line;
+      std::getline(script_stream, line);
+
+      CommandStatus status = ProcessCommand(line);
+      switch(status) {
+        case FAILURE:
+        case WRONG_PARAMS:
+          if(stop_on_fail) return status;
+          break;
+        case REQUEST_QUIT:
+          return status;
+        case SUCCESS:
+        default:
+          break;
+      }
+      script_stream.peek();
+    }
+    return SUCCESS;
+  } catch (std::exception& e) {
+    LOGERROR << "Exception during scripting: " << e.what();
+    return FAILURE;
+  }
+}
+
 CN24_SHELL_FUNC_IMPL(Quit) {
   CN24_SHELL_FUNC_DESCRIPTION("Exit CN24");
   CN24_SHELL_PARSE_ARGS;

@@ -8,6 +8,7 @@
 #include "ShellState.h"
 
 #include <fstream>
+#include <sstream>
 #include <exception>
 
 namespace Conv {
@@ -299,6 +300,20 @@ CN24_SHELL_FUNC_IMPL(NetworkStatus) {
           if(!std::isfinite(element)) { nans++; }
         }
         LOGINFO << "    NaNs: " << nans << " of " << buffer.combined_tensor->data.elements();
+
+        std::stringstream ss;
+        ss << "dbg_" << node->unique_name;
+        ss << "_buffer" << buffer.description << ".png";
+        if(buffer.combined_tensor->data.maps() == 1 || buffer.combined_tensor->data.maps() == 3) {
+          buffer.combined_tensor->data.WriteToFile(ss.str());
+        } else {
+          Tensor tmp_tensor(1, buffer.combined_tensor->data.width(), buffer.combined_tensor->data.height(), 3, "Shell.NetStatus");
+          tmp_tensor.Clear();
+          Tensor::CopyMap(buffer.combined_tensor->data, 0, 0, tmp_tensor, 0, 0);
+          Tensor::CopyMap(buffer.combined_tensor->data, 0, 1, tmp_tensor, 0, 1);
+          Tensor::CopyMap(buffer.combined_tensor->data, 0, 2, tmp_tensor, 0, 2);
+          tmp_tensor.WriteToFile(ss.str());
+        }
       }
     }
   }

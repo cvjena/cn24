@@ -69,6 +69,12 @@ public:
    * @return CommandStatus that encodes success or failure
    */
   CommandStatus ProcessCommand(std::string);
+
+  /**
+   * @brief Processes a script
+   * @return CommandsStatus that encodes last command's success or failure
+   */
+  CommandStatus ProcessScript(std::string script_file, bool stop_on_fail);
   
   /*
    * The following macros are for the command table for cn24-shell

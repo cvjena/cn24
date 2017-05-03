@@ -30,16 +30,16 @@ int main(int argc, char** argv) {
   // Flags
   int cmdl_verbose = 0;
   int cmdl_quiet = 0;
-  char* cmdl_network = nullptr;
-  
+  char* cmdl_script = nullptr;
+
   int success = 0;
   success |= cargo_add_option(cargo, (cargo_option_flags_t)0, "--verbose -v",
     "Verbose mode (for debugging)", "b", &cmdl_verbose);
   success |= cargo_add_option(cargo, (cargo_option_flags_t)0, "--quiet -q",
     "Quiet mode (for scripting)", "b", &cmdl_quiet);
-  success |= cargo_add_option(cargo, (cargo_option_flags_t)0, "--net",
-    "Specify network architecture", "s", &cmdl_network);
-  
+  success |= cargo_add_option(cargo, (cargo_option_flags_t)CARGO_OPT_NOT_REQUIRED, "script",
+    "Script to run instead of command line", "s", &cmdl_script);
+
   if(success != 0) {
     std::cerr << "Failed to initialize command line parser!" << std::endl;
     return -1;
@@ -65,36 +65,51 @@ int main(int argc, char** argv) {
   
   // Initialize shell state object
   Conv::ShellState shell_state;
-  
-  // Readline loop
-  char* shell_line = nullptr;
-  bool process_commands = true;
-  while(process_commands) {
-    if(shell_line) {
-      free(shell_line);
-      shell_line = nullptr;
-    }
-    std::cout << std::flush;
-    shell_line = linenoise ("\ncn24> ");
-    
-    if(shell_line && *shell_line) {
-      linenoiseHistoryAdd(shell_line);
-    }
-    
-    // Process input
-    std::string shell_line_str(shell_line);
 
-    Conv::ShellState::CommandStatus status = shell_state.ProcessCommand(shell_line_str);
+  if(cmdl_script != nullptr && cmdl_script[0] != '\0') {
+    // Run script
+    std::string script_file = cmdl_script;
+    Conv::ShellState::CommandStatus status = shell_state.ProcessScript(script_file, false);
     switch(status) {
       case Conv::ShellState::SUCCESS:
-      case Conv::ShellState::WRONG_PARAMS:
-	break;
-      case Conv::ShellState::FAILURE:
-	LOGERROR << "Command execution failed.";
-	break;
       case Conv::ShellState::REQUEST_QUIT:
-	process_commands = false;
-	break;
+        break;
+      case Conv::ShellState::WRONG_PARAMS:
+      case Conv::ShellState::FAILURE:
+        LOGERROR << "Excecution of " << script_file << " aborted.";
+        break;
+    }
+  } else {
+    // Readline loop
+    char *shell_line = nullptr;
+    bool process_commands = true;
+    while (process_commands) {
+      if (shell_line) {
+        free(shell_line);
+        shell_line = nullptr;
+      }
+      std::cout << std::flush;
+      shell_line = linenoise("\ncn24> ");
+
+      if (shell_line && *shell_line) {
+        linenoiseHistoryAdd(shell_line);
+      }
+
+      // Process input
+      std::string shell_line_str(shell_line);
+
+      Conv::ShellState::CommandStatus status = shell_state.ProcessCommand(shell_line_str);
+      switch (status) {
+        case Conv::ShellState::SUCCESS:
+        case Conv::ShellState::WRONG_PARAMS:
+          break;
+        case Conv::ShellState::FAILURE:
+          LOGERROR << "Command execution failed.";
+          break;
+        case Conv::ShellState::REQUEST_QUIT:
+          process_commands = false;
+          break;
+      }
     }
   }
   
