@@ -12,13 +12,13 @@ To get an overview of all possible commands, enter the :code:`help` command:
 
 Usage
 ~~~~~
-:code:`cn24-shell` supports the following arguments:
+:code:`cn24-shell [-v] [-q] [<SCRIPT>]`
 
 * :code:`-v`, :code:`--verbose`: *Verbose mode*, extra information useful
   for debugging.
 * :code:`-q`, :code:`--quiet`: *Quiet mode*, suppresses unimportant output, useful
   for scripting.
-* :code:`--net <NET>`: *Net preloading*, loads the specified net before processing
+* :code:`<SCRIPT>`: *Script file*, runs the specified script at startup
   commands. 
 
 Commands
