@@ -96,7 +96,7 @@ void LocalResponseNormalizationLayer::FeedForward() {
     if(normalization_method_ == WITHIN_CHANNELS) {
       for(unsigned int map = 0; map < maps_; map++) {
         for(unsigned int y = 0; y < input_height_; y++) {
-          for(unsigned int x = 0; x < input_height_; x++) {
+          for(unsigned int x = 0; x < input_width_; x++) {
             datum region_sum = 0;
             int region_size = 0;
             for(int iy = (((int)y-sub) > 0 ? (int)y-sub : 0); (iy < (int)input_height_) && (iy <= ((int)y+add)); iy++) {
@@ -116,7 +116,7 @@ void LocalResponseNormalizationLayer::FeedForward() {
     } else if(normalization_method_ == ACROSS_CHANNELS) {
       for(unsigned int map = 0; map < maps_; map++) {
         for(unsigned int y = 0; y < input_height_; y++) {
-          for(unsigned int x = 0; x < input_height_; x++) {
+          for(unsigned int x = 0; x < input_width_; x++) {
             datum region_sum = 0;
             unsigned int region_size = 0;
             for(int imap = (((int)map-sub) > 0 ? (int)map-sub : 0); (imap < (int)maps_) && (imap <= ((int)map+add)); imap++) {
@@ -148,7 +148,7 @@ void LocalResponseNormalizationLayer::BackPropagate() {
     if(normalization_method_ == WITHIN_CHANNELS) {
       for(unsigned int map = 0; map < maps_; map++) {
         for(unsigned int y = 0; y < input_height_; y++) {
-          for(unsigned int x = 0; x < input_height_; x++) {
+          for(unsigned int x = 0; x < input_width_; x++) {
             datum region_sum = (*region_sums_.data_ptr_const(x,y,map,sample));
             unsigned int region_size = 0;
             for(int iy = (((int)y-sub) > 0 ? (int)y-sub : 0); (iy < (int)input_height_) && (iy <= ((int)y+add)); iy++) {
@@ -176,7 +176,7 @@ void LocalResponseNormalizationLayer::BackPropagate() {
     } else if(normalization_method_ == ACROSS_CHANNELS) {
       for(unsigned int map = 0; map < maps_; map++) {
         for(unsigned int y = 0; y < input_height_; y++) {
-          for(unsigned int x = 0; x < input_height_; x++) {
+          for(unsigned int x = 0; x < input_width_; x++) {
             datum region_sum = (*region_sums_.data_ptr_const(x,y,map,sample));
             unsigned int region_size = 0;
             for(int imap = (((int)map-sub) > 0 ? (int)map-sub : 0); (imap < (int)maps_) && (imap <= ((int)map+add)); imap++) {
