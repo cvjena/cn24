@@ -7,9 +7,12 @@
 
 #include "ShellState.h"
 
+#include "linenoise.h"
 #include <cstring>
 
 namespace Conv {
+
+std::map<std::string, ShellState::ShellFunction>* ShellState::glob_name_func_map = nullptr;
   
 ShellState::ShellState()
 {
@@ -18,6 +21,27 @@ ShellState::ShellState()
   training_weights_->push_back(1);
   Bundle* default_testing_bundle = new Bundle("Default_Testing");
   testing_bundles_->push_back(default_testing_bundle);
+
+  glob_name_func_map = &cmd_name_func_map;
+}
+
+void ShellState::linenoiseCompletionCallback(const char *buf, linenoiseCompletions *completions) {
+  for(auto it : *glob_name_func_map) {
+    if(buf[0] == '\0') {
+      linenoiseAddCompletion(completions, it.first.c_str());
+    } else {
+      int i = 0;
+      bool match = true;
+      while(buf[i] != '\0') {
+        if(i >= it.first.size()) { match = false; break; }
+        if(it.first[i] != buf[i]) { match = false; break; }
+        i++;
+      }
+      if(match) {
+        linenoiseAddCompletion(completions, it.first.c_str());
+      }
+    }
+  }
 }
 
 ShellState::CommandStatus ShellState::ProcessCommand(std::string command)
@@ -120,6 +144,41 @@ ShellState::CommandStatus ShellState::ProcessCommand(std::string command)
   delete[] cmd_cstr;
   delete[] cmd_argv;
   return result;
+}
+
+void ShellState::OfferCommandLine(std::string prompt) {
+  // Readline loop
+  char *shell_line = nullptr;
+  bool process_commands = true;
+  linenoiseSetCompletionCallback(ShellState::linenoiseCompletionCallback);
+  while (process_commands) {
+    if (shell_line) {
+      free(shell_line);
+      shell_line = nullptr;
+    }
+    std::cout << std::endl << std::flush;
+    shell_line = linenoise(prompt.c_str());
+
+    if (shell_line && *shell_line) {
+      linenoiseHistoryAdd(shell_line);
+    }
+
+    // Process input
+    std::string shell_line_str(shell_line);
+
+    Conv::ShellState::CommandStatus status = ProcessCommand(shell_line_str);
+    switch (status) {
+      case Conv::ShellState::SUCCESS:
+      case Conv::ShellState::WRONG_PARAMS:
+        break;
+      case Conv::ShellState::FAILURE:
+        LOGERROR << "Command execution failed.";
+        break;
+      case Conv::ShellState::REQUEST_QUIT:
+        process_commands = false;
+        break;
+    }
+  }
 }
 
 ShellState::CommandStatus ShellState::ProcessScript(std::string script_file, bool stop_on_fail) {

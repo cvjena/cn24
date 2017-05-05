@@ -47,6 +47,8 @@ extern "C" {
 #include <map>
 #include <string>
 
+class linenoiseCompletions;
+
 namespace Conv {
   
 class ShellState {
@@ -63,7 +65,12 @@ public:
     WRONG_PARAMS,
     REQUEST_QUIT
   };
-  
+
+  /**
+   * @brief Offers a command line
+   */
+  void OfferCommandLine(std::string prompt);
+
   /**
    * @brief Processes a single command line
    * @return CommandStatus that encodes success or failure
@@ -158,7 +165,9 @@ private:
 
     CN24_SHELL_CMD("predict-image", PredictImage)
   };
-  
+
+  static std::map<std::string, ShellFunction>* glob_name_func_map;
+  static void linenoiseCompletionCallback(const char* buf, linenoiseCompletions* completions);
 private:
   enum State {
     NOTHING,

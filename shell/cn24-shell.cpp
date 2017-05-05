@@ -80,37 +80,7 @@ int main(int argc, char** argv) {
         break;
     }
   } else {
-    // Readline loop
-    char *shell_line = nullptr;
-    bool process_commands = true;
-    while (process_commands) {
-      if (shell_line) {
-        free(shell_line);
-        shell_line = nullptr;
-      }
-      std::cout << std::flush;
-      shell_line = linenoise("\ncn24> ");
-
-      if (shell_line && *shell_line) {
-        linenoiseHistoryAdd(shell_line);
-      }
-
-      // Process input
-      std::string shell_line_str(shell_line);
-
-      Conv::ShellState::CommandStatus status = shell_state.ProcessCommand(shell_line_str);
-      switch (status) {
-        case Conv::ShellState::SUCCESS:
-        case Conv::ShellState::WRONG_PARAMS:
-          break;
-        case Conv::ShellState::FAILURE:
-          LOGERROR << "Command execution failed.";
-          break;
-        case Conv::ShellState::REQUEST_QUIT:
-          process_commands = false;
-          break;
-      }
-    }
+    shell_state.OfferCommandLine("cn24>");
   }
   
   // Shutdown CN24
