@@ -18,8 +18,9 @@
 #include "Config.h"
 
 namespace Conv {
-
+class YOLODetectionLayer;
 class BoundingBox {
+  friend class YOLODetectionLayer;
 public:
   BoundingBox();
   BoundingBox(datum x, datum y, datum w, datum h) : x(x), y(y), w(w), h(h) {};
@@ -41,6 +42,9 @@ public:
   bool flag1 = false, flag2 = false;
 
   bool unknown = false;
+
+private:
+  unsigned int cell_id;
 };
 
 }
