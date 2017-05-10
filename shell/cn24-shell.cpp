@@ -77,7 +77,11 @@ int main(int argc, char** argv) {
       case Conv::ShellState::WRONG_PARAMS:
       case Conv::ShellState::FAILURE:
         LOGERROR << "Execution of " << script_file << " aborted.";
-        break;
+
+        // Shutdown CN24
+        Conv::System::Shutdown();
+        LOGEND;
+        return -1;
     }
   } else {
     shell_state.OfferCommandLine("cn24>");
