@@ -196,12 +196,13 @@ ShellState::CommandStatus ShellState::ProcessScript(std::string script_file, boo
       return FAILURE;
     }
 
+    CommandStatus status = SUCCESS;
     // Fetch lines
     while(!script_stream.eof()) {
       std::string line;
       std::getline(script_stream, line);
 
-      CommandStatus status = ProcessCommand(line);
+      status = ProcessCommand(line);
       switch(status) {
         case FAILURE:
         case WRONG_PARAMS:
@@ -215,7 +216,7 @@ ShellState::CommandStatus ShellState::ProcessScript(std::string script_file, boo
       }
       script_stream.peek();
     }
-    return SUCCESS;
+    return status;
   } catch (std::exception& e) {
     LOGERROR << "Exception during scripting: " << e.what();
     return FAILURE;

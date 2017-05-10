@@ -69,14 +69,14 @@ int main(int argc, char** argv) {
   if(cmdl_script != nullptr && cmdl_script[0] != '\0') {
     // Run script
     std::string script_file = cmdl_script;
-    Conv::ShellState::CommandStatus status = shell_state.ProcessScript(script_file, false);
+    Conv::ShellState::CommandStatus status = shell_state.ProcessScript(script_file, true);
     switch(status) {
       case Conv::ShellState::SUCCESS:
       case Conv::ShellState::REQUEST_QUIT:
         break;
       case Conv::ShellState::WRONG_PARAMS:
       case Conv::ShellState::FAILURE:
-        LOGERROR << "Excecution of " << script_file << " aborted.";
+        LOGERROR << "Execution of " << script_file << " aborted.";
         break;
     }
   } else {
