@@ -65,7 +65,7 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
   class_manager_ = new ClassManager();
   
   // Use factory
-  JSONNetGraphFactory factory = JSONNetGraphFactory(architecture_json,
+  JSONNetGraphFactory* factory = new JSONNetGraphFactory(architecture_json,
     (unsigned int)seed);
   
   Task task_ = UNKNOWN;
@@ -73,7 +73,7 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
     std::string task_str(task);
     task_ = TaskFromString(task_str);
   } else {
-    task_ = factory.GetTask();
+    task_ = factory->GetTask();
   }
   
   if(task_ == UNKNOWN) {
@@ -84,8 +84,8 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
   }
   
   // Create input layer
-  unsigned int batch_size = factory.GetParallelBatchSize();
-  input_layer_ = new BundleInputLayer(factory.GetDataInput(), task_,
+  unsigned int batch_size = factory->GetParallelBatchSize();
+  input_layer_ = new BundleInputLayer(factory->GetDataInput(), task_,
     class_manager_, batch_size, (unsigned int)(seed + 1));
   
   NetGraphNode* input_node = new NetGraphNode(input_layer_);
@@ -97,7 +97,7 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
   graph_->AddNode(input_node);
   
   bool add_result =
-    factory.AddLayers(*graph_, class_manager_, (unsigned int)(seed + 2));
+    factory->AddLayers(*graph_, class_manager_, (unsigned int)(seed + 2));
   
   if(!add_result) {
     LOGERROR << "Could not add layers to net graph! Destroying net.";
@@ -158,9 +158,10 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
   // Initialize DAG
   graph_->Initialize();
   graph_->InitializeWeights(true);
-  
+
+  factory_ = factory;
   state_ = NET_LOADED;
-  
+
   // Switch data around
   for(unsigned int i = 0; i < training_bundles_->size(); i++)
     input_layer_->training_sets_.push_back(training_bundles_->at(i));
@@ -182,7 +183,7 @@ CN24_SHELL_FUNC_IMPL(NetworkLoad) {
     return SUCCESS;
   
   // Create trainer
-  trainer_ = new Trainer(*graph_, factory.GetHyperparameters());
+  trainer_ = new Trainer(*graph_, factory->GetHyperparameters());
   state_ = NET_AND_TRAINER_LOADED;
 
   // Add console stat sink

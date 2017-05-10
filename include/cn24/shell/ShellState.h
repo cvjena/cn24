@@ -181,6 +181,7 @@ private:
   NetGraph* graph_ = nullptr;
   Trainer* trainer_ = nullptr;
   BundleInputLayer* input_layer_ = nullptr;
+  JSONNetGraphFactory* factory_ = nullptr;
   std::vector<StatSink*> stat_sinks_;
   
   std::vector<Bundle*>* training_bundles_ = new std::vector<Bundle*>();
@@ -195,6 +196,7 @@ public:
   inline const State state() const { return state_; }
   inline NetGraph* graph() { return graph_; }
   inline BundleInputLayer* input_layer() { return input_layer_; }
+  inline JSONNetGraphFactory* factory() { return factory_; }
   inline CombinedTensor* net_output() { return graph_->GetDefaultOutputNode()
     ->output_buffers[0].combined_tensor; }
   inline CombinedTensor* net_input() { return graph_->GetInputNodes()[0]

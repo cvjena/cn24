@@ -64,7 +64,11 @@ public:
   JSON GetDataInput() {
     return data_input_json_;
   }
-  
+
+  JSON GetYOLOConfiguration() {
+    return net_json_["yolo_configuration"];
+  }
+
   Task GetTask() {
     if(net_json_.count("task") == 1 && net_json_["task"].is_string()) {
       return TaskFromString(net_json_["task"]);

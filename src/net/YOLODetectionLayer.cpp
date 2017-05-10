@@ -175,6 +175,7 @@ void YOLODetectionLayer::FeedForward() {
                 BoundingBox box(x,y,w,h);
                 box.c = c;
                 box.score = class_prob;
+                box.cell_id = cell_id;
 
                 sample_boxes->push_back(box);
                 found_class = true;
@@ -186,6 +187,7 @@ void YOLODetectionLayer::FeedForward() {
               box.c = UNKNOWN_CLASS;
               box.unknown = true;
               box.score = iou;
+              box.cell_id = cell_id;
               sample_boxes->push_back(box);
             }
           }
