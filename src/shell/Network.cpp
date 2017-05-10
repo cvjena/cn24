@@ -286,7 +286,7 @@ CN24_SHELL_FUNC_IMPL(NetworkStatus) {
       break;
   }
 
-  if(detailed_status && (state_ == NET_LOADED || state_ == NET_AND_TRAINER_LOADED)) {
+  if(detailed_status == 1 && (state_ == NET_LOADED || state_ == NET_AND_TRAINER_LOADED)) {
     LOGINFO << "Doing forward pass for statistics...";
     input_layer_->ForceWeightsZero();
     graph_->FeedForward();
