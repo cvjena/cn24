@@ -293,6 +293,7 @@ CN24_SHELL_FUNC_IMPL(NetworkStatus) {
     for(NetGraphNode* node: graph_->GetNodes()) {
       LOGINFO << "Node \"" << node->unique_name << "\", " << node->layer->GetLayerDescription();
       for(NetGraphBuffer& buffer: node->output_buffers) {
+        buffer.combined_tensor->data.MoveToCPU();
         LOGINFO << "  Buffer \"" << buffer.description << "\"";
         LOGINFO << "    Data Size: " << buffer.combined_tensor->data;
         unsigned int nans = 0;
