@@ -106,6 +106,11 @@ void System::Init(int requested_log_level) {
     cl_uint major, minor, patch;
     clblasStatus result = clblasGetVersion(&major, &minor, &patch);
     LOGDEBUG << "Using clBLAS version " << major << "." << minor << "." << patch;
+    if(major < 2) {
+      FATAL("This version of clBLAS is not supported!");
+    } else if(major == 2 && (minor != 6 && minor < 12)) {
+      FATAL("This version of clBLAS does not compute correct results. Please use clBLAS v2.12 or later!");
+    }
   }
 #endif
 
