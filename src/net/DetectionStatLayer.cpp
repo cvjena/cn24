@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <vector>
 #include <cn24/util/BoundingBox.h>
+#include <sstream>
 
 #include "Log.h"
 #include "Init.h"
@@ -118,7 +119,7 @@ void DetectionStatLayer::UpdateAll() {
 
       // Sort vector
       std::sort(detections_[c].begin(), detections_[c].end(),
-                [](Detection &d1, Detection &d2) { return d1.confidence < d2.confidence; });
+                [](Detection &d1, Detection &d2) { return d1.confidence > d2.confidence; });
 
       // For AP calculation
       datum fp_sum = 0;
@@ -158,6 +159,17 @@ void DetectionStatLayer::UpdateAll() {
       for (int i = (int) detection_precision.size() - 2; i >= 0; --i) {
         detection_precision[i] = std::max(detection_precision[i], detection_precision[i + 1]);
       }
+
+      std::stringstream ss; ss << "[";
+      for (int i = 0; i < (int) detection_precision.size(); i++) {
+        ss << "(" << detection_precision[i] << "," << detection_recall[i] << ")";
+        if(i < ((int) detection_precision.size() - 1)) {
+          ss << ",";
+        }
+      }
+      ss << "]";
+      LOGDEBUG << ss.str();
+
       std::vector<int> different_indices;
       for (int i = 1; i < (int) detection_recall.size(); i++) {
         if (detection_recall[i] != detection_recall[i - 1])
