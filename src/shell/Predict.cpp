@@ -65,7 +65,9 @@ CN24_SHELL_FUNC_IMPL(PredictImage) {
   if(!load_result) {
     return FAILURE;
   }
+
   // Predict!
+  input_layer_->ForceWeightsZero();
   graph_->FeedForward();
   
   // Get output
