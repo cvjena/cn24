@@ -25,7 +25,7 @@ The repository contains pre-trained networks for these two applications, which a
 ### Licensing
 CN24 is available under a 3-clause BSD license. See [LICENSE](LICENSE) for details.
 If you use CN24 for research, please cite our paper
-[Clemens-Alexander Brust, Sven Sickert, Marcel Simon, Erik Rodner, Joachim Denzler. "Convolutional Patch Networks with Spatial Prior for Road Detection and Urban Scene Understanding". VISAPP 2015](http://hera.inf-cv.uni-jena.de:6680/pdf/Brust15:CPN.pdf).
+[Clemens-Alexander Brust, Sven Sickert, Marcel Simon, Erik Rodner, Joachim Denzler. "Convolutional Patch Networks with Spatial Prior for Road Detection and Urban Scene Understanding". VISAPP 2015](https://pub.inf-cv.uni-jena.de/pdf/Brust2015CPN).
 
 Remark: The paper does not discuss the fully convolutional network adaptations integrated in CN24.
 
