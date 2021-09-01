@@ -69,15 +69,3 @@ matrix:
     - os: linux
       env: TEST_SUITE=atlas
       compiler: gcc
-    - os: osx
-      env: TEST_SUITE=reference
-      compiler: clang
-    - os: osx
-      env: TEST_SUITE=accelerate
-      compiler: clang
-    - os: osx
-      env: TEST_SUITE=opencl USE_CLBLAS="ON"
-      compiler: clang
-    - os: osx
-      env: TEST_SUITE=opencl USE_CLBLAS="OFF"
-      compiler: clang
